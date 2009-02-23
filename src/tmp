@@ -1,0 +1,75 @@
+x()
+{
+    exceptionPush(exceptionNew(__FILE__, __LINE__));
+    if (exceptionNotRaised(sigsetjmp(exceptionCurHandler()->handler, 1))) {
+	// Protected Code
+        exceptionPop();
+    }
+    else {
+	Exception *x = exceptionCurHandler(); {
+	}
+	if (!(exceptionCurHandler()->caught)) { 
+	    exceptionCurHandler()->caught = TRUE;
+	    // Handler;
+	}
+	exceptionEnd(__FILE__, __LINE__);
+    }
+}
+		
+
+x2()
+{
+    { 
+	boolean exception_raised_jgjlksljksch = TRUE;
+	exceptionPush(exceptionNew(__FILE__, __LINE__));
+	if (exceptionNotRaised(sigsetjmp(exceptionCurHandler()->handler, 1))) {
+	    // Protected Code
+	    exceptionPop();
+	}
+	else {
+	    Exception *x = exceptionCurHandler(); {
+	    }
+	    if (!(exceptionCurHandler()->caught)) { 
+		exceptionCurHandler()->caught = TRUE;
+		// Handler;
+	    }
+	    exceptionEnd(__FILE__, __LINE__);
+	}
+    }
+}
+		
+x3()
+{
+    { 
+	boolean exception_raised_jgjlksljksch = TRUE;
+	exceptionPush(exceptionNew(__FILE__, __LINE__));
+	if (exceptionNotRaised(sigsetjmp(exceptionCurHandler()->handler, 1))) {
+	    // Protected Code
+	    exception_raised_jgjlksljksch = FALSE;
+	    //exceptionPop();
+	}
+	else {
+	    Exception *x = exceptionCurHandler(); {
+	    }
+	    if (!(exceptionCurHandler()->caught)) { 
+		exceptionCurHandler()->caught = TRUE;
+		// Handler;
+	    }
+	    //exceptionEnd(__FILE__, __LINE__);
+	}
+	// Final code
+	if (exception_raised_jgjlksljksch) {
+	    exceptionEnd(__FILE__, __LINE__);
+	}
+	else {
+	    exceptionPop();
+	}
+    }
+}
+		
+        if (exception_raised_jgjlksljksch) {		\
+	    ;// exceptionEnd(__FILE__, __LINE__);	\
+        }						\
+        else {						\
+	    ;//exceptionPop();				\
+        }						\

@@ -1,0 +1,38 @@
+<skit:stylesheet xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <cluster type="postgres" name="localhost:54329" skit_version="0.1" skit_xml_version="0.1" version="8.1.4">
+    <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
+    <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1"/>
+    <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
+      <grant with_admin="yes" from="keep" to="lose" priv="keep"/>
+    </role>
+    <role name="marc" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+      <privilege priv="createrole"/>
+      <privilege priv="createdb"/>
+      <profile param="client_min_messages" value="error"/>
+    </role>
+    <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+      <profile param="client_min_messages" value="error"/>
+    </role>
+    <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1">
+      <grant with_admin="yes" from="keep" to="wibble" priv="keep"/>
+      <grant with_admin="no" from="keep2" to="wibble" priv="keep2"/>
+      <profile param="client_min_messages" value="error"/>
+    </role>
+    <tablespace name="tbs2" privs="{regress=C/regress,keep2=C/regress}" owner="regress" location="/home/marc/proj/skit/tests/REGRESSDB/tbs/tbs2">
+      <grant with_grant="yes" priv="create" from="regress" to="regress"/>
+      <grant with_grant="no" priv="create" from="regress" to="keep2"/>
+    </tablespace>
+    <tablespace name="tbs3" privs="{regress=C/regress,wibble=C/regress,keep2=C*/regress,keep=C/regress}" owner="regress" location="/home/marc/proj/skit/tests/REGRESSDB/tbs/tbs3">
+      <grant with_grant="yes" priv="create" from="regress" to="regress"/>
+      <grant with_grant="no" priv="create" from="regress" to="wibble"/>
+      <grant with_grant="yes" priv="create" from="regress" to="keep2"/>
+      <grant with_grant="no" priv="create" from="regress" to="keep"/>
+    </tablespace>
+    <database name="skittest" encoding="UTF8" username="marc" tablespace="tbs3" privs="{=T/regress,regress=CT/regress}" owner="regress" comment="'old comment'" connections="-1">
+    </database>
+  </cluster>
+</skit:stylesheet>

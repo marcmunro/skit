@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <!-- <skit:exception text="EXCEPTION TEST IN ROLES.XML"/> -->
+  <skit:let>
+    <skit:var name="role_roles"/>
+    <skit:runsql to="role_roles" file="sql/role_roles.sql"/>
+    <skit:runsql file="sql/roles.sql" var="role">
+      <role>
+	<skit:attr name="name"/>
+	<skit:attr name="login"/>
+	<skit:attr name="password"/>
+	<skit:attr name="expires"/>
+	<skit:attr name="max_connections"/>
+	<skit:if test="(string= 'y' (select tuple 'superuser'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'superuser'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'inherit'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'inherit'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'createrole'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'createrole'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'createdb'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'createdb'"/>
+	  </privilege>
+	</skit:if>	
+	
+	<!-- The following is equivalent to the actual foreach below.
+	      This shows how tuplestack and tuple may be used instead of
+	      named variables
+	<skit:foreach from="role_roles"
+		      filter="(string= (select tuple 'to')
+			      (select tuplestack 1 'name'))">	-->
+	<skit:foreach from="role_roles"
+		      var="this_role_role"
+		      filter="(string= (select this_role_role 'to')
+			      (select role 'name'))">	
+	  <grant>	
+	    <skit:attr name="priv"/>
+	    <skit:attr name="from"/>
+	    <skit:attr name="to"/>
+	    <skit:attr name="with_admin"/>
+	  </grant>
+      </skit:foreach>
+
+      </role>
+    </skit:runsql>
+  </skit:let>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

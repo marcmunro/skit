@@ -1,0 +1,43 @@
+# ----------
+#  Makefile.global.in
+# 
+#       Autoconf input file for Makefile.global
+# 
+#       Copyright (c) 2008 Marc Munro
+#       Author:  Marc Munro
+# 	License: GLP V3
+#  
+#  $Id$
+#  ----------
+#
+
+#location substitutions
+
+PACKAGE_NAME=		@PACKAGE_NAME@
+VERSION=		@PACKAGE_VERSION@
+
+#build tools
+CC=			@CC@
+
+#build tool flags
+CFLAGS=			@CFLAGS@
+
+TAR=			@TAR@
+
+# support programs
+AWK=			@AWK@
+SED=			@SED@
+GZIP = gzip --best
+
+override CPPFLAGS := @GLIB_CFLAGS@ $(CPPFLAGS)
+
+override LDFLAGS := @GLIB_LIBS@ $(LDFLAGS)
+
+ifeq ($(GCC), yes)
+	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations
+endif
+
+# docs
+DOT=			@DOT@ -Tpng -Gsize="9,6" -Gnodesep=0.3 -o
+XSLTPROC=		@XSLTPROC@
+DOXYGEN=		@DOXYGEN@

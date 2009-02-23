@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+  <cluster type="postgres">
+    <skit:let>
+      <!-- Create a hash of privilege names keyed by the characters
+	   returned from queries on aclitem[] columns -->
+      <skit:var name="privnames" 
+		expr="&lt;('r' . 'select')
+		          ('w' . 'update')
+		          ('a' . 'insert')
+		          ('d' . 'delete')
+		          ('x' . 'references')
+		          ('t' . 'trigger')
+		          ('X' . 'execute')
+		          ('U' . 'usage')
+		          ('C' . 'create')
+		          ('c' . 'connect')
+		          ('T' . 'temporary')
+		      &gt;"/>
+      <!-- <skit:exec expr="(debug 'PRIVNAMES' privnames)"/> -->
+      <skit:attr name="port" expr="port"/>
+      <skit:attr name="version"/>
+      <skit:attr name="host" expr="host"/>
+
+      <skit:runsql file="sql/dbinfo.sql" var="dbinfo">
+	<skit:attr name="username"/>
+
+	<xi:include href="skitfile:extract/roles.xml"/>
+
+	<database>	
+	  <skit:attr name="name"/>
+	  <skit:attr name="owner"/>
+	  <skit:attr name="encoding"/>
+	  <skit:attr name="tablespace"/>
+	  <skit:attr name="connections"/>
+	  <skit:attr name="comment"/>
+	  <!-- <skit:exec expr="(debug 'PRIVS' (select dbinfo 'privs'))"/> -->
+	  <skit:let>
+	    <skit:var name="privs_list"/>
+	    <skit:exec expr="(setq privs_list
+			     (split (select dbinfo 'privs') ','))"/>
+	    <skit:foreach from="privs_list" var="privs_str">
+	      <skit:let>
+		<skit:var name="to"/>
+		<skit:var name="from"/>
+		<skit:var name="privs"/>
+		<skit:var name="privname"/>
+		<skit:var name="with_grant_or_admin" expr="'no'"/>
+		<skit:exec expr="(setq privinfo (split privs_str '/=') ','))"/>
+		<skit:exec expr="(setq to (select privinfo 0))"/>
+		<skit:exec expr="(setq privs (select privinfo 1))"/>
+		<skit:exec expr="(setq from (select privinfo 2))"/>
+		<skit:if test="(string= to '')">
+		  <skit:exec expr="(setq to 'public')"/>
+		</skit:if>
+		<!-- Regexp below reverses order of characters followed by 
+		     asterisks so that the asterisk precedes the character
+		     it previously followed -->
+		<skit:exec expr="(setq privs (replace privs /(.)\\*/ '*\1'))"/>
+		<skit:foreach from="privs" var="this_priv">
+		  <skit:if test="(string= this_priv '*')">
+		    <skit:exec expr="(setq with_grant_or_admin 'yes')"/>
+		  </skit:if>
+		  <skit:if test="(not (string= this_priv '*'))">
+		    <skit:exec expr="(setq privname 
+				      (select privnames this_priv))"/>
+		    <grant>
+		      <skit:attr name="priv" expr="privname"/>
+		      <skit:attr name="from" expr="from"/>
+		      <skit:attr name="to" expr="to"/>
+		      <skit:if test="(string= from to)">
+			<skit:exec expr="(setq with_grant_or_admin 'yes')"/>
+		      </skit:if>
+		      <skit:attr name="with_grant" expr="with_grant_or_admin"/>
+		    </grant>
+		    <skit:exec expr="(setq with_grant_or_admin 'no')"/>
+		  </skit:if>
+		</skit:foreach>
+	      </skit:let>
+	    </skit:foreach>
+	  </skit:let>	
+	  <skit:exec expr="(debug 'TODO' 'Finish database in cluster.xml')"/>
+	</database>
+      </skit:runsql>
+    </skit:let>
+  </cluster>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
