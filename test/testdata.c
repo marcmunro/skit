@@ -14,98 +14,60 @@
 
 
 #include <stdio.h>
+#include <string.h>
 #include "../src/skit_lib.h"
 #include "../src/exceptions.h"
 #include "../src/sql.h"
+#include "version.sql"
+#include "database.sql"
+#include "roles.sql"
+#include "users.sql"
 
 #ifdef WIBBLE
-CURSOR: <#OBJ_CURSOR# '
-select d.datname as name,
-       user as username,
-       r.rolname as owner,
-       pg_catalog.pg_encoding_to_char(d.encoding) as encoding,
-       t.spcname as tablespace,
-       d.datconnlimit as connections,
-       quote_literal(obj_description(d.oid, 'pg_database')) as comment,
-       
-       regexp_replace(d.datacl::text, '.(.*).', E'\\1') as privs
-from   pg_catalog.pg_database d
-inner join pg_catalog.pg_roles r 
-        on d.datdba = r.oid
-  inner join pg_catalog.pg_tablespace t
-          on t.oid = d.dattablespace
-where d.datname = pg_catalog.current_database();
-
-'
-[ 'name' 'username' 'owner' 'encoding' 'tablespace' 'connections' 'comment' 'privs']
-[[ 'skittest' 'marc' 'regress' 'UTF8' 'tbs3' '-1' nil '=Tc/regress,regress=CTc/regress']]>
-CURSOR: <#OBJ_CURSOR# '
-select role.rolname as priv,
-       member.rolname as "to",
-       grantor.rolname as "from",
-       case when a.admin_option then 'yes' else 'no' end as with_admin
-from   pg_catalog.pg_auth_members a,
-       pg_catalog.pg_authid role,
-       pg_catalog.pg_authid member,
-       pg_catalog.pg_authid grantor
-where  role.oid = a.roleid
-and    member.oid = a.member
-and    grantor.oid = a.grantor
-order by 1,2;
-'
-[ 'priv' 'to' 'from' 'with_admin']
-[[ 'keep' 'lose' 'keep' 'yes']
-[ 'keep' 'wibble' 'keep' 'yes']
-[ 'keep2' 'wibble' 'keep2' 'no']]>
-CURSOR: <#OBJ_CURSOR# '
-select a.rolname as name,
-       case when a.rolsuper then 'y' else 'n' end as superuser,
-       case when a.rolinherit then 'y' else 'n' end as inherit,
-       case when a.rolcreaterole then 'y' else 'n' end as createrole,
-       case when a.rolcreatedb then 'y' else 'n' end as createdb,
-       
-       case when a.rolcanlogin then 'y' else 'n' end as login,
-       a.rolconnlimit as max_connections,
-       a.rolpassword as password,
-       a.rolvaliduntil as expires,
-       a.rolconfig as config
-from   pg_catalog.pg_authid a
-order by a.rolname;
-'
-[ 'name' 'superuser' 'inherit' 'createrole' 'createdb' 'login' 'max_connections' 'password' 'expires' 'config']
-[[ 'keep' 'n' 'n' 'n' 'n' 'y' '-1' 'md5a6e3dfe729e3efdf117eeb1059051f77' nil nil]
-[ 'keep2' 'n' 'n' 'n' 'n' 'y' '-1' 'md5dd9b387fa54744451a97dc9674f6aba2' nil nil]
-[ 'lose' 'n' 'n' 'n' 'n' 'y' '-1' 'md5c62bc3e38bac4209132682f13509ba96' nil nil]
-[ 'marc' 'y' 'y' 'y' 'y' 'y' '-1' 'md5c62bc3e38bac4209132682f13509ba96' nil '{client_min_messages=error}']
-[ 'marco' 'n' 'n' 'n' 'n' 'y' '-1' 'md54ea9ea89bc47825ea7b2fe7c2288b27a' nil nil]
-[ 'regress' 'y' 'n' 'n' 'n' 'y' '-1' 'md5c2a101703f1e515ef9769f835d6fe78a' 'infinity' '{client_min_messages=warning}']
-[ 'wibble' 'n' 'n' 'n' 'n' 'y' '-1' 'md54ea9ea89bc47825ea7b2fe7c2288b27a' '2007-03-01 00:00:00-08' nil]]>
 
 #endif
 
-static String *last_key;
+static String *last_key = NULL;
+
+static String *
+despacedString(String *str)
+{
+    char *src = str->value;
+    char *result = skalloc(strlen(src) + 1);
+    char *targ = result;
+    char c;
+
+    while (c = *src++) {
+	if (!isspace(c)) {
+	    *targ++ = c;
+	}
+    }
+    *targ = '\0';
+    return stringNewByRef(result);
+}
 
 static void
 addQuery(Hash *hash, Cons *cons)
 {
-    String *key = (String *) cons->car;
+    String *orig = (String *) cons->car;
+    String *key = despacedString(orig);
     Cons *contents = (Cons *) cons->cdr;
     objectFree((Object *) cons, FALSE);
     hashAdd(hash, (Object *) key, (Object *) contents);
     last_key = key;
+    //printSexp(stderr, "LAST: ", last_key);
+    objectFree((Object *) orig, TRUE);
 }
 
 static Hash *
 initQueries()
 {
     Hash *hash = hashNew(TRUE);
-    Object *obj = objectFromStr("(\"\n\n"
-			   "select substring(pg_catalog.version() "
-			   "from E'\\\\([0-9]+\\\\.[0-9]+\\\\"
-				"(\\\\.[0-9]+\\\\)?\\\\)') \n"
-			   "	as version;\n\""
-			   "[ 'version'] [[ '8.3.5']])");
+    Object *obj = objectFromStr(VERSION_QRY);
     addQuery(hash, (Cons *) obj);
+    addQuery(hash, (Cons *) objectFromStr(DATABASE_QRY));
+    addQuery(hash, (Cons *) objectFromStr(ROLES_QRY));
+    addQuery(hash, (Cons *) objectFromStr(USERS_QRY));
 
     return hash;
 }
@@ -214,6 +176,24 @@ testConnect(Object *sqlfuncs)
 
 static Hash *query_hash = NULL;
 
+static void
+compare(String *str1, String *str2)
+{
+    char *s1 = str1->value;
+    char *s2 = str2->value;
+    char c;
+    while (c = *s1++) {
+	if (c == *s2++) {
+	    fprintf(stderr, "%c", c);
+	}
+	else {
+	    fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
+	    break;
+	}
+    }
+    fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
+}
+
 static Cursor *
 testExecQry(Connection *connection, 
 	    String *qry,
@@ -223,12 +203,13 @@ testExecQry(Connection *connection,
     Cursor *curs;
     Vector *fields;
     Vector *rows;
+    String *key = despacedString(qry);
 
     if (!query_hash) {
 	query_hash = initQueries();
     }
 
-    if (results = (Cons *) hashGet(query_hash, (Object *) qry)) {
+    if (results = (Cons *) hashGet(query_hash, (Object *) key)) {
 	curs = (Cursor *) skalloc(sizeof(Cursor));
 	curs->type = OBJ_CURSOR;
 	curs->cursor = (void *) results;
@@ -245,10 +226,13 @@ testExecQry(Connection *connection,
 	curs->querystr = stringNew(qry->value);
     }
     else {
+	compare(last_key, key);
+	objectFree((Object *) key, TRUE);
 	RAISE(NOT_IMPLEMENTED_ERROR,
 	      newstr("Query not defined: %s", qry->value));
     }
 
+    objectFree((Object *) key, TRUE);
     return curs;
 
 }
@@ -263,9 +247,11 @@ testFieldByIdx(Tuple *tuple, int col)
     int row = curs->rownum - 1;
     String *result;
 
-    result_row = rows->vector[row];
-    result = (String *) result_row->vector[col];
-    return (Object *) stringNew(result->value);
+    result_row = (Vector *) rows->vector[row];
+    if (result = (String *) result_row->vector[col]) {
+	return (Object *) stringNew(result->value);
+    }
+    return NULL;
 }
 
 static Object *

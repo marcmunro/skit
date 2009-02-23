@@ -236,8 +236,6 @@ getTemplateArgs(Cons *optionlist)
 	    }
 	    else {
 		if (expected_sources == 0) {
-		    objectFree((Object *) arg, TRUE);
-		    objectFree((Object *) params, TRUE);
 		    RAISE(PARAMETER_ERROR, newstr("getTemplateArgs: too many "
 						  "source files provided"));
 		}
@@ -252,7 +250,7 @@ getTemplateArgs(Cons *optionlist)
     EXCEPTION(ex) {
 	objectFree((Object *) arg, TRUE);
 	objectFree((Object *) value, TRUE);
-	objectFree(params, TRUE);
+	objectFree((Object *) params, TRUE);
     }
     END;
 
