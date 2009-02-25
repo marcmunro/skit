@@ -1,0 +1,38 @@
+# Ignore backup files
+*~
+
+# Object files 
+*.o
+
+# Log files
+*.log
+
+# configure scan files
+configure.scan
+
+# Anything in the top-level directory
+/*
+# Except makefiles
+!/*akefile
+# And any autoconf input files
+!/*.in
+# And subdirectories of the proj dir 
+!/*/
+
+# Automake cache directory
+autom4te.cache/
+
+# Make-generated dependency files
+*.d
+#
+# The contents of the test/log subdirectory
+/test/log/*
+
+# The symlink to the good/hacked check library
+/test/libcheck.a
+
+# The contents of the testdb subdirectory
+/testdb
+
+# The contents of the valgrind subdirectory
+/valgrind
