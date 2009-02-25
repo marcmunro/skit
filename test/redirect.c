@@ -15,6 +15,7 @@
 #include <check.h>
 #include <stdio.h>
 #include "../src/skit_lib.h"
+#include "../src/exceptions.h"
 #include "suites.h"
 
 
@@ -85,6 +86,10 @@ readfrom_stdout()
     char *result;
     undirect_stdout();
     fp = fopen(stdout_path, "r");
+    if (!fp) {
+	RAISE(GENERAL_ERROR, 
+	      newstr("UNABLE TO OPEN STDOUT CAPTURE FILE %s", stdout_path));
+    }
     result = readfile(fp);
     fclose(fp);
     return result;

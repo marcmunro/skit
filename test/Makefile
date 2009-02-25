@@ -29,7 +29,7 @@ TEST_DEPS = $(TEST_SOURCES:.c=.d)
 TEST_GARBAGE = $(garbage:%=$(TEST_DIR)/%)
 
 #LIBCHECK = /usr/lib/libcheck.a
-LIBCHECK = /home/marc/dpkg/check-0.9.5/src/.libs/libcheck.a
+#LIBCHECK = /home/marc/dpkg/check-0.9.5/src/.libs/libcheck.a
 
 MEMCHECK_OPTIONS = --leak-check=full --show-reachable=yes --trace-children=yes
 MEMCHECK_SUPPRESSIONS = --suppressions=valgrind/glib_hash_suppressions \

@@ -60,7 +60,7 @@ check: skit
 	./skit -t list.xml x.xml
 
 clean: $(SUBDIRS:%=%_clean)
-	@rm -f $(garbage)
+	@rm -f $(garbage) test.log
 
 
 # Provide a list of the targets buildable by this makefile.

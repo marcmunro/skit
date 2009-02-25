@@ -512,6 +512,10 @@ docFromFile(String *path)
     state = EXPECTING_OPTIONS;
     BEGIN {
 	doc = create_document(path);
+	if (!doc) {
+	    RAISE(PARAMETER_ERROR,
+		  newstr("Cannot find file %s.", path->value));
+	}
 	ret = xmlTextReaderRead(doc->reader);
 	while (ret == 1) {
 	    switch (state) {

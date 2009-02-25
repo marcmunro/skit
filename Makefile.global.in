@@ -13,31 +13,27 @@
 
 #location substitutions
 
-PACKAGE_NAME=		@PACKAGE_NAME@
-VERSION=		@PACKAGE_VERSION@
+PACKAGE_NAME=		FULL-PACKAGE-NAME
+VERSION=		VERSION
 
 #build tools
-CC=			@CC@
+CC=			gcc
 
 #build tool flags
-CFLAGS=			@CFLAGS@
+#CFLAGS=			-g -O2
+# Turn off optimisation as it makes gdb harder to use
+CFLAGS=			-g 
 
-TAR=			@TAR@
+override CPPFLAGS := @GLIB_CFLAGS@ \
+	 @PQINCPATH@ @XML_CFLAGS@ \
+	 @XSLT_CFLAGS@ $(CPPFLAGS) 
 
-# support programs
-AWK=			@AWK@
-SED=			@SED@
-GZIP = gzip --best
+override LDFLAGS := @GLIB_LIBS@ @PQLIB@ @XML_LIBS@ \
+	 @XSLT_LIBS@ $(LDFLAGS)
 
-override CPPFLAGS := @GLIB_CFLAGS@ $(CPPFLAGS)
-
-override LDFLAGS := @GLIB_LIBS@ $(LDFLAGS)
+LIBCHECK = @CHECK_LIBS@
 
 ifeq ($(GCC), yes)
 	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations
 endif
 
-# docs
-DOT=			@DOT@ -Tpng -Gsize="9,6" -Gnodesep=0.3 -o
-XSLTPROC=		@XSLTPROC@
-DOXYGEN=		@DOXYGEN@

@@ -129,7 +129,7 @@ process_args2(int argc,
 
 START_TEST(adddeps_options)
 {
-    char *args[] = {"./skit", "-a", "x.xml"};
+    char *args[] = {"./skit", "-a", "test/testfiles/x.xml"};
     Document *doc;
     Cons *param_list;
     Hash *params; 
@@ -140,51 +140,56 @@ START_TEST(adddeps_options)
 
     initBuiltInSymbols();
     initTemplatePath("./test");
+    BEGIN {
+	param_list = process_args(3, args);
+	params = (Hash *) param_list->car;
 
-    param_list = process_args(3, args);
-    params = (Hash *) param_list->car;
-
-    key = stringNew("sources");
-    sources = (Int4 *) hashGet(params, (Object *) key);
-    fail_if(sources == NULL, "Sources not defined");
-    fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
-    fail_unless(sources->value == 1, "Incorrect sources value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("action");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Action not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect action type");
-    fail_unless(streq(str->value, "adddeps"), "Incorrect action value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("template_name");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Template name not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
-    fail_unless(streq(str->value, "./test/templates/add_deps.xml"), 
-		"Incorrect template name value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("wibble");
-    wibble = (Int4 *) hashGet(params, (Object *) key);
-    fail_if(wibble == NULL, "Wibble not defined");
-    fail_unless(wibble->type == OBJ_INT4, "Incorrect wibble type");
-    fail_unless(wibble->value == 3, "Incorrect wibble value");
-    objectFree((Object *) key, TRUE);
-
-
-    objectFree((Object *) param_list, TRUE);
-    doc = (Document *) actionStackPop();
-    objectFree((Object *) doc, TRUE);
-
+	key = stringNew("sources");
+	sources = (Int4 *) hashGet(params, (Object *) key);
+	fail_if(sources == NULL, "Sources not defined");
+	fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
+	fail_unless(sources->value == 1, "Incorrect sources value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("action");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Action not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect action type");
+	fail_unless(streq(str->value, "adddeps"), "Incorrect action value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("template_name");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Template name not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
+	fail_unless(streq(str->value, "./test/templates/add_deps.xml"), 
+		    "Incorrect template name value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("wibble");
+	wibble = (Int4 *) hashGet(params, (Object *) key);
+	fail_if(wibble == NULL, "Wibble not defined");
+	fail_unless(wibble->type == OBJ_INT4, "Incorrect wibble type");
+	fail_unless(wibble->value == 3, "Incorrect wibble value");
+	objectFree((Object *) key, TRUE);
+	
+	
+	objectFree((Object *) param_list, TRUE);
+	doc = (Document *) actionStackPop();
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail("Unexpected exception: %s", ex->text);
+    }
+    END;
     FREEMEMWITHCHECK;
 }
 END_TEST
 
 START_TEST(template_options)
 {
-    char *args[] = {"./skit", "-t", "add_deps.xml", "x.xml"};
+    char *args[] = {"./skit", "-t", "add_deps.xml", "test/testfiles/x.xml"};
     Document *doc;
     Cons *param_list;
     Hash *params; 
@@ -196,50 +201,56 @@ START_TEST(template_options)
     initBuiltInSymbols();
     initTemplatePath("./test");
 
-    param_list = process_args(4, args);
-    params = (Hash *) param_list->car;
+    BEGIN {
+	param_list = process_args(4, args);
+	params = (Hash *) param_list->car;
 
-    key = stringNew("sources");
-    sources = (Int4 *) hashGet(params, (Object *) key);
-    fail_if(sources == NULL, "Sources not defined");
-    fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
-    fail_unless(sources->value == 1, "Incorrect sources value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("action");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Action not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect action type");
-    fail_unless(streq(str->value, "template"), "Incorrect action value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("template_name");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Template name not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
-    fail_unless(streq(str->value, "./test/templates/add_deps.xml"), 
-		"Incorrect template name value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("wibble");
-    wibble = (Int4 *) hashGet(params, (Object *) key);
-    fail_if(wibble == NULL, "Wibble not defined");
-    fail_unless(wibble->type == OBJ_INT4, "Incorrect wibble type");
-    fail_unless(wibble->value == 3, "Incorrect wibble value");
-    objectFree((Object *) key, TRUE);
-
-
-    objectFree((Object *) param_list, TRUE);
-    doc = (Document *) actionStackPop();
-    objectFree((Object *) doc, TRUE);
-
+	key = stringNew("sources");
+	sources = (Int4 *) hashGet(params, (Object *) key);
+	fail_if(sources == NULL, "Sources not defined");
+	fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
+	fail_unless(sources->value == 1, "Incorrect sources value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("action");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Action not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect action type");
+	fail_unless(streq(str->value, "template"), "Incorrect action value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("template_name");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Template name not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
+	fail_unless(streq(str->value, "./test/templates/add_deps.xml"), 
+		    "Incorrect template name value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("wibble");
+	wibble = (Int4 *) hashGet(params, (Object *) key);
+	fail_if(wibble == NULL, "Wibble not defined");
+	fail_unless(wibble->type == OBJ_INT4, "Incorrect wibble type");
+	fail_unless(wibble->value == 3, "Incorrect wibble value");
+	objectFree((Object *) key, TRUE);
+	
+	
+	objectFree((Object *) param_list, TRUE);
+	doc = (Document *) actionStackPop();
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail("Unexpected exception: %s", ex->text);
+    }
+    END;
     FREEMEMWITHCHECK;
 }
 END_TEST
 
 START_TEST(too_many_sources)
 {
-    char *args[] = {"./skit", "-a", "x.xml", "y.xml"};
+    char *args[] = {"./skit", "-a", "test/testfiles/x.xml", "y.xml"};
     Document *doc;
     Cons *param_list;
 
@@ -254,6 +265,33 @@ START_TEST(too_many_sources)
     WHEN_OTHERS {
 	fail_unless(contains(ex->text, "too many source files"),
 		    "Too many source files not detected(2)");
+    }
+    END;
+
+    doc = (Document *) actionStackPop();
+    objectFree((Object *) doc, TRUE);
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(missing_file)
+{
+    char *args[] = {"./skit", "-a", "missing.xml"};
+    Document *doc;
+    Cons *param_list;
+
+    initBuiltInSymbols();
+    initTemplatePath("./test");
+
+    BEGIN {
+	param_list = process_args(4, args);
+	fail("Missing file not detected(1)");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail_unless(contains(ex->text, "Cannot find file"),
+		    "Missing file not detected(2)");
     }
     END;
 
@@ -324,7 +362,7 @@ END_TEST
 
 START_TEST(multiple_options)
 {
-    char *args[] = {"./skit", "-t", "multiple.xml", "x.xml"};
+    char *args[] = {"./skit", "-t", "multiple.xml", "test/testfiles/x.xml"};
     Document *doc;
     Cons *param_list;
     Hash *params; 
@@ -336,42 +374,49 @@ START_TEST(multiple_options)
     initBuiltInSymbols();
     initTemplatePath("./test");
 
-    param_list = process_args(4, args);
-    params = (Hash *) param_list->car;
+    BEGIN {
+	param_list = process_args(4, args);
+	params = (Hash *) param_list->car;
+	
+	key = stringNew("sources");
+	sources = (Int4 *) hashGet(params, (Object *) key);
+	fail_if(sources == NULL, "Sources not defined");
+	fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
+	fail_unless(sources->value == 1, "Incorrect sources value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("action");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Action not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect action type");
+	
+	fail_unless(streq(str->value, "template"), "Incorrect action value");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("template_name");
+	str = (String *) hashGet(params, (Object *) key);
+	fail_if(str == NULL, "Template name not defined");
+	fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
+	objectFree((Object *) key, TRUE);
+	
+	key = stringNew("grants");
+	grants = (Symbol *) hashGet(params, (Object *) key);
+	fail_if(grants == NULL, "grants not defined");
+	fail_unless(grants->type == OBJ_SYMBOL, "Incorrect grants type");
+	fail_unless(grants->value != NULL, "Incorrect grants value");
+	objectFree((Object *) key, TRUE);
+	
 
-    key = stringNew("sources");
-    sources = (Int4 *) hashGet(params, (Object *) key);
-    fail_if(sources == NULL, "Sources not defined");
-    fail_unless(sources->type == OBJ_INT4, "Incorrect sources type");
-    fail_unless(sources->value == 1, "Incorrect sources value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("action");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Action not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect action type");
-
-    fail_unless(streq(str->value, "template"), "Incorrect action value");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("template_name");
-    str = (String *) hashGet(params, (Object *) key);
-    fail_if(str == NULL, "Template name not defined");
-    fail_unless(str->type == OBJ_STRING, "Incorrect template name type");
-    objectFree((Object *) key, TRUE);
-
-    key = stringNew("grants");
-    grants = (Symbol *) hashGet(params, (Object *) key);
-    fail_if(grants == NULL, "grants not defined");
-    fail_unless(grants->type == OBJ_SYMBOL, "Incorrect grants type");
-    fail_unless(grants->value != NULL, "Incorrect grants value");
-    objectFree((Object *) key, TRUE);
-
-
-    objectFree((Object *) param_list, TRUE);
-    doc = (Document *) actionStackPop();
-    objectFree((Object *) doc, TRUE);
-
+	objectFree((Object *) param_list, TRUE);
+	doc = (Document *) actionStackPop();
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail_unless(contains(ex->text, "Unexpected type wibble"),
+		    "Invalid type not detected(2)");
+    }
+    END;
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -489,9 +534,16 @@ START_TEST(option_usage)
 {
     char *out;
     redirect_stdout("option_usage2");
-    show_usage(stdout);
-    out = readfrom_stdout();
-    fail_unless_contains("stdout", out, "--add\\[deps\\]", NULL);
+    BEGIN {
+	show_usage(stdout);
+	out = readfrom_stdout();
+	fail_unless_contains("stdout", out, "--add\\[deps\\]", NULL);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail("Unexpected exception: %s", ex->text);
+    }
+    END;
     skfree(out);
     end_redirects();
     FREEMEMWITHCHECK;
@@ -547,6 +599,7 @@ params_suite(void)
     ADD_TEST(tc_core, usage);
     ADD_TEST(tc_core, adddeps_options);
     ADD_TEST(tc_core, template_options);
+    ADD_TEST(tc_core, missing_file);
     ADD_TEST(tc_core, too_many_sources);
     ADD_TEST(tc_core, too_few_sources);
     ADD_TEST(tc_core, missing_template);
