@@ -142,6 +142,11 @@ typedef struct Document {
     Cons             *options;
 } Document;
 
+typedef struct Node {
+    ObjType          type;
+    xmlNode         *node;
+} Node;
+
 typedef struct FnReference {
     ObjType  type;
     void    *fn;
@@ -384,6 +389,7 @@ extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
 
 // document.c
+extern Node *nodeNew(xmlNode *node);
 extern Document *documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader);
 extern void documentFree(Document *doc, boolean free_contents);
 extern char *documentStr(Document *doc);

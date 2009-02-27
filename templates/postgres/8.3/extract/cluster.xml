@@ -20,6 +20,50 @@
 		          ('c' . 'connect')
 		          ('T' . 'temporary')
 		      &gt;"/>
+
+      <skit:function name="grants_from_privs">
+	<skit:parameter name="privs_list"/>
+	<skit:foreach from="privs_list" var="privs_str">
+	  <skit:let>
+	    <skit:var name="to"/>
+	    <skit:var name="from"/>
+	    <skit:var name="privs"/>
+	    <skit:var name="privname"/>
+	    <skit:var name="with_grant_or_admin" expr="'no'"/>
+	    <skit:exec expr="(setq privinfo (split privs_str '/=') ','))"/>
+	    <skit:exec expr="(setq to (select privinfo 0))"/>
+	    <skit:exec expr="(setq privs (select privinfo 1))"/>
+	    <skit:exec expr="(setq from (select privinfo 2))"/>
+	    <skit:if test="(string= to '')">
+	      <skit:exec expr="(setq to 'public')"/>
+	    </skit:if>
+	    <!-- Regexp below reverses order of characters followed by 
+		 asterisks so that the asterisk precedes the character
+		 it previously followed -->
+	    <skit:exec expr="(setq privs (replace privs /(.)\\*/ '*\1'))"/>
+	    <skit:foreach from="privs" var="this_priv">
+	      <skit:if test="(string= this_priv '*')">
+		<skit:exec expr="(setq with_grant_or_admin 'yes')"/>
+	      </skit:if>
+	      <skit:if test="(not (string= this_priv '*'))">
+		<skit:exec expr="(setq privname 
+				 (select privnames this_priv))"/>
+		<grant>	
+		  <skit:attr name="priv" expr="privname"/>
+		  <skit:attr name="from" expr="from"/>
+		  <skit:attr name="to" expr="to"/>
+		  <skit:if test="(string= from to)">
+		    <skit:exec expr="(setq with_grant_or_admin 'yes')"/>
+		  </skit:if>
+		  <skit:attr name="with_grant" expr="with_grant_or_admin"/>
+		</grant>
+		<skit:exec expr="(setq with_grant_or_admin 'no')"/>
+	      </skit:if>
+	    </skit:foreach>
+	  </skit:let>
+	</skit:foreach>
+      </skit:function>
+	
       <!-- <skit:exec expr="(debug 'PRIVNAMES' privnames)"/> -->
       <skit:attr name="port" expr="port"/>
       <skit:attr name="version"/>
@@ -29,61 +73,7 @@
 	<skit:attr name="username"/>
 
 	<xi:include href="skitfile:extract/roles.xml"/>
-
-	<database>	
-	  <skit:attr name="name"/>
-	  <skit:attr name="owner"/>
-	  <skit:attr name="encoding"/>
-	  <skit:attr name="tablespace"/>
-	  <skit:attr name="connections"/>
-	  <skit:attr name="comment"/>
-	  <!-- <skit:exec expr="(debug 'PRIVS' (select dbinfo 'privs'))"/> -->
-	  <skit:let>
-	    <skit:var name="privs_list"/>
-	    <skit:exec expr="(setq privs_list
-			     (split (select dbinfo 'privs') ','))"/>
-	    <skit:foreach from="privs_list" var="privs_str">
-	      <skit:let>
-		<skit:var name="to"/>
-		<skit:var name="from"/>
-		<skit:var name="privs"/>
-		<skit:var name="privname"/>
-		<skit:var name="with_grant_or_admin" expr="'no'"/>
-		<skit:exec expr="(setq privinfo (split privs_str '/=') ','))"/>
-		<skit:exec expr="(setq to (select privinfo 0))"/>
-		<skit:exec expr="(setq privs (select privinfo 1))"/>
-		<skit:exec expr="(setq from (select privinfo 2))"/>
-		<skit:if test="(string= to '')">
-		  <skit:exec expr="(setq to 'public')"/>
-		</skit:if>
-		<!-- Regexp below reverses order of characters followed by 
-		     asterisks so that the asterisk precedes the character
-		     it previously followed -->
-		<skit:exec expr="(setq privs (replace privs /(.)\\*/ '*\1'))"/>
-		<skit:foreach from="privs" var="this_priv">
-		  <skit:if test="(string= this_priv '*')">
-		    <skit:exec expr="(setq with_grant_or_admin 'yes')"/>
-		  </skit:if>
-		  <skit:if test="(not (string= this_priv '*'))">
-		    <skit:exec expr="(setq privname 
-				      (select privnames this_priv))"/>
-		    <grant>
-		      <skit:attr name="priv" expr="privname"/>
-		      <skit:attr name="from" expr="from"/>
-		      <skit:attr name="to" expr="to"/>
-		      <skit:if test="(string= from to)">
-			<skit:exec expr="(setq with_grant_or_admin 'yes')"/>
-		      </skit:if>
-		      <skit:attr name="with_grant" expr="with_grant_or_admin"/>
-		    </grant>
-		    <skit:exec expr="(setq with_grant_or_admin 'no')"/>
-		  </skit:if>
-		</skit:foreach>
-	      </skit:let>
-	    </skit:foreach>
-	  </skit:let>	
-	  <skit:exec expr="(debug 'TODO' 'Finish database in cluster.xml')"/>
-	</database>
+	<xi:include href="skitfile:extract/database.xml"/>
       </skit:runsql>
     </skit:let>
   </cluster>

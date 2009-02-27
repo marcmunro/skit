@@ -374,6 +374,8 @@ objectFree(Object *obj, boolean free_contents)
 	    symbolFree((Symbol *) obj, free_contents); return;
 	case OBJ_DOCUMENT:
 	    documentFree((Document *) obj, free_contents); return;
+	case OBJ_XMLNODE:
+	    skfree(obj); return;
 	case OBJ_FN_REFERENCE:
 	    fnRefFree((FnReference *) obj); return;
 	case OBJ_OBJ_REFERENCE:

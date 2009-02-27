@@ -577,6 +577,9 @@ typedef xmlNode *(xmlFn)(xmlNode *template_node,
 static xmlNode *processChildren(xmlNode *template_node, 
 				xmlNode *parent_node, int depth);
 
+static xmlNode *processRemaining(xmlNode *template_node, 
+				 xmlNode *parent_node, int depth);
+
 static xmlNode *
 firstElement(xmlNode *start)
 {
@@ -808,7 +811,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     
 	conn = sqlConnect();
 	cursor = sqlExec(conn, sqltext, NULL);
-	printSexp(stderr, "CURSOR: ", cursor);
+	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    symbolSet(varname->value, (Object *) cursor);
 	}
@@ -821,7 +824,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     FINALLY {
 	if (!varname) {
 	    /* If a variable was defined, the cursor will be freed when
-	     * that variable goes out of scope. */
+	     * that variable goes out of scope, otherwise free it now. */
 	    objectFree((Object *) cursor, TRUE);
 	}
 	objectFree((Object *) filename, TRUE);
@@ -956,6 +959,131 @@ execException(xmlNode *template_node, xmlNode *parent_node, int depth)
     return NULL;
 }
 
+static xmlNode *
+execDeclareFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *name = nodeAttribute(template_node, "name");
+    Node *node = nodeNew(template_node);
+    Symbol *name_sym;
+
+    if (!name) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("name attribute must be provided for function"));
+    }
+    
+    name_sym = symbolNew(name->value);
+    name_sym->value = (Object *) node;
+    objectFree((Object *) name, TRUE);
+    return NULL;
+}
+
+static void
+getParam(xmlNode *template_node, xmlNode *cur_node)
+{
+    String *name = nodeAttribute(cur_node, "name");
+    String *dflt = NULL;
+    String *expr = NULL;
+    Object *value = NULL;
+    Symbol *sym;
+
+    if (!name) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("name attribute must be provided for parameter"));
+    }
+
+    BEGIN {
+	if (expr = nodeAttribute(template_node, name->value)) {
+	    value = evalSexp(expr->value);
+	}
+	else {
+	    if (dflt = nodeAttribute(cur_node, "default")) {
+		value = evalSexp(dflt->value);
+	    }
+	    else {
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("mandatory parameter %s not provided", 
+			     name->value));
+	    }
+	}
+	sym = symbolGet(name->value);
+    
+	if (!sym) {
+	    sym = symbolNew(name->value);
+	}
+	setScopeForSymbol(sym);
+	sym->value = value;
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) name, TRUE);
+	objectFree((Object *) dflt, TRUE);
+	objectFree((Object *) expr, TRUE);
+    }
+    END;
+}
+
+static xmlNode *
+handleFunctionParams(xmlNode *template_node, xmlNode *function_node)
+{
+    xmlNode *current = function_node->children;
+    xmlNs *ns;
+    char *nodename;
+
+    /* Skip over any leading text, comment, etc nodes */
+
+    while (current && (current->type != XML_ELEMENT_NODE)) {
+	current = current->next;
+    }
+    while (TRUE) {
+	if ((ns = current->ns) && streq(ns->prefix, "skit")) {
+	    nodename = (char *) current->name;
+	    if (streq(nodename, "parameter")) {
+		getParam(template_node, current);
+		current = current->next;
+		continue;
+	    }
+	}
+	break;
+    }
+    return current;
+}
+
+static xmlNode *
+execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *name = nodeAttribute(template_node, "name");
+    Node *node;
+    Symbol *name_sym;
+    xmlNode *function_start;
+    xmlNode *result;
+
+    if (!name) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("name attribute must be provided for function call"));
+    }
+    
+    name_sym = symbolGet(name->value);
+    if (!name_sym) {
+	char *errstr = newstr("No such function: %s", name->value);
+	objectFree((Object *) name, TRUE);
+	RAISE(XML_PROCESSING_ERROR, errstr);
+    }
+    node = (Node *) name_sym->value;
+    objectFree((Object *) name, TRUE);
+
+    newSymbolScope();
+    BEGIN {
+	function_start = handleFunctionParams(template_node, node->node);
+	result = processRemaining(function_start, parent_node, depth + 1);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	dropSymbolScope();
+    }
+    END;
+    return result;
+}
+
 static void
 addProcessor(char *name, xmlFn *processor)
 {
@@ -982,6 +1110,9 @@ initSkitProcessors()
 	addProcessor("var", &execVar);
 	addProcessor("foreach", &execForeach);
 	addProcessor("exception", &execException);
+	addProcessor("function", &execDeclareFunction);
+	addProcessor("exec_function", &execExecuteFunction);
+	addProcessor("exec_func", &execExecuteFunction);
     }
 }
 
@@ -1140,7 +1271,7 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
  * return only the first child as this will be the root element of a 
  * document. */
 static xmlNode *
-processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
+processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 {
     xmlNode *prev_node = NULL;
     xmlNode *cur_node;
@@ -1148,9 +1279,7 @@ processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
     xmlNode *child;
     boolean failed_once = FALSE;
 
-    //fprintf(stderr, "processChildren: template=%s, parent=%s\n", 
-    //        nodeName(template_node), nodeName(parent_node));
-    if (cur_node = template_node->children) {
+    if (cur_node = remaining) {
 	do {
 	    next_node = cur_node->next;
 	    BEGIN {
@@ -1175,7 +1304,7 @@ processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
 		    next_node = prev_node->next;
 		}
 		else {
-		    next_node = template_node->children;
+		    next_node = cur_node->parent->children;
 		}
 	    }
 	    END;
@@ -1191,6 +1320,12 @@ processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
 	} while (cur_node = next_node);
     }
     return NULL;
+}
+
+static xmlNode *
+processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    return processRemaining(template_node->children, parent_node, depth);
 }
 
 Document *

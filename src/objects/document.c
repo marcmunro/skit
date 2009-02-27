@@ -15,6 +15,15 @@
 #include "../skit_lib.h"
 
 
+Node *
+nodeNew(xmlNode *node)
+{
+    Node *result = (Node *) skalloc(sizeof(Node));
+    result->type = OBJ_XMLNODE;
+    result->node = node;
+    return result;
+}
+
 Document *
 documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader)
 {
