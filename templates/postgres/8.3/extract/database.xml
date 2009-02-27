@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+   <database>	
+     <skit:attr name="name"/>
+     <skit:attr name="owner"/>
+     <skit:attr name="encoding"/>
+     <skit:attr name="tablespace"/>
+     <skit:attr name="connections"/>
+     <skit:attr name="comment"/>
+     <skit:let>
+       <skit:var name="privs_list"/>
+       <skit:exec expr="(setq privs_list
+			(split (select dbinfo 'privs') ','))"/>
+       <skit:exec_function name="grants_from_privs"
+			   privs_list="privs_list"/>
+     </skit:let>	
+   </database>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
