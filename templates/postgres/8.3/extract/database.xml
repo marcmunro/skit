@@ -11,12 +11,26 @@
      <skit:attr name="connections"/>
      <skit:attr name="comment"/>
      <skit:let>
-       <skit:var name="privs_list"/>
-       <skit:exec expr="(setq privs_list
-			(split (select dbinfo 'privs') ','))"/>
+       <skit:if test="(not (select dbinfo 'privs'))">
+	 <!-- Define default privileges -->
+	 <grant with_grant="yes" priv="create">
+	   <skit:attr name="from" field="owner"/>
+	   <skit:attr name="to" field="owner"/>
+	 </grant>
+	 <grant with_grant="yes" priv="temporary">
+	   <skit:attr name="from" field="owner"/>
+	   <skit:attr name="to" field="owner"/>
+	 </grant>
+	 <grant with_grant="no" priv="temporary" to="public">
+	   <skit:attr name="from" field="owner"/>
+	 </grant>
+       </skit:if>
        <skit:exec_function name="grants_from_privs"
-			   privs_list="privs_list"/>
+			   privileges="(select dbinfo 'privs')"/>
      </skit:let>	
+     <xi:include href="skitfile:extract/schema.xml"/>
+<!--     <xi:include href="skitfile:extract/languages.xml"/> 
+     <xi:include href="skitfile:extract/casts.xml"/> -->
    </database>
 </skit:inclusion>  
 

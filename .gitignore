@@ -28,6 +28,15 @@ autom4te.cache/
 # The contents of the test/log subdirectory
 /test/log/*
 
+# The test/pgdata subdirectory
+/test/pgdata
+
+# Any postgres configuration and dump files
+/test/*.dmp
+
+# Any postgres configuration and dump files
+/test/*.conf
+
 # The symlink to the good/hacked check library
 /test/libcheck.a
 

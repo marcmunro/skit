@@ -141,6 +141,10 @@ symbolSet(char *name, Object *value)
     String *hashkey = stringNew(name);
     Symbol *sym = (Symbol *) hashGet(symbols, (Object *) hashkey);
 
+    if (!sym) {
+	RAISE(GENERAL_ERROR,
+	      newstr("Error in symbolSet - no such symbol: %s", name));
+    }
     if (sym->value && (sym->value != value)) {
 	objectFree(sym->value, TRUE);
     }

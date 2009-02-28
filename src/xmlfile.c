@@ -268,12 +268,13 @@ skitfileOpen(const char *URI)
 {
     file_context *fc;
     String *path = filenameFromUri(URI);
-    String *my_uri = stringNew(URI);
+    String *my_uri;
 
     if (!path) {
 	return NULL;
     }
 
+    my_uri = stringNew(URI);
     fc = new_file_context();
     fc->fp = fopen(path->value, "r");
     fc->URI = my_uri;
@@ -418,6 +419,7 @@ process_option_node(Document *doc)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION OPTION NODE\n");
     WHEN_OTHERS {
 	objectFree((Object *) name, TRUE);
 	objectFree((Object *) dflt, TRUE);
@@ -449,6 +451,7 @@ process_alias_node(Document *doc)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION ALIAS NODE\n");
     WHEN_OTHERS {
 	objectFree((Object *) name, TRUE);
 	objectFree((Object *) alias, TRUE);
@@ -483,6 +486,7 @@ process_possible_option(Document *doc)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION PROCESS POSSIBLE OPTION\n");
     WHEN_OTHERS {
 	char *context = errorContext(doc);
 	char *newmsg = newstr("%s\n  AT %s", ex->text, context);
@@ -539,6 +543,7 @@ docFromFile(String *path)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION DOC FROM FILE\n");
     WHEN_OTHERS {
 	objectFree((Object *) doc, TRUE);
 	RAISE();
@@ -619,6 +624,7 @@ hasExpr(xmlNode *node, Object **p_result)
 	    value = evalSexp(expr->value);
 	}
 	EXCEPTION(ex);
+	//fprintf(stderr, "EXCEPTION HASEXPR \n");
 	FINALLY {
 	    objectFree((Object *) expr, TRUE);
 	}
@@ -685,6 +691,7 @@ attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    strvalue = (String *) objSelect(container, field);
 	}
 	EXCEPTION(ex);
+	//fprintf(stderr, "EXCEPTION ATTRIBUTEFN\n");
 	WHEN(NOT_IMPLEMENTED_ERROR) {
 	    char *exstr;
 	    char *tmp = objectSexp(field);
@@ -759,6 +766,7 @@ iterate(Object *collection, String *filter,
 		}
 	    }
 	    EXCEPTION(ex);
+	    //fprintf(stderr, "EXCEPTION ITERATE(1)\n");
 	    FINALLY {
 		objectFree(tuple, TRUE);
 		tuplestackPop();
@@ -774,6 +782,7 @@ iterate(Object *collection, String *filter,
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION ITERATE(2)\n");
     FINALLY {
 	if (sym) {
 	    sym->value = NULL;
@@ -796,6 +805,8 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     Connection *conn;
     Tuple *tuple;
     xmlNode *child = NULL;
+    Symbol *sym;
+
     BEGIN {
 	if (!filename) {
 	    RAISE(XML_PROCESSING_ERROR, 
@@ -811,8 +822,9 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     
 	conn = sqlConnect();
 	cursor = sqlExec(conn, sqltext, NULL);
-	//printSexp(stderr, "CURSOR: ", cursor);
+	printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
+	    sym = symbolNew(varname->value);
 	    symbolSet(varname->value, (Object *) cursor);
 	}
 	else {
@@ -821,6 +833,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION RUNSQL\n");
     FINALLY {
 	if (!varname) {
 	    /* If a variable was defined, the cursor will be freed when
@@ -864,6 +877,7 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 	child = iterate(cursor, filter, template_node, parent_node, depth);
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION FOREACH\n");
     FINALLY {
 	objectFree((Object *) fromname, TRUE);
 	objectFree((Object *) filter, TRUE);
@@ -895,6 +909,7 @@ execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION EXECIF\n");
     FINALLY {
 	objectFree((Object *) expr, TRUE);
     }
@@ -911,6 +926,7 @@ execLet(xmlNode *template_node, xmlNode *parent_node, int depth)
 	result = processChildren(template_node, parent_node, depth + 1);
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION LET\n");
     FINALLY {
 	dropSymbolScope();
     }
@@ -972,6 +988,7 @@ execDeclareFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     
     name_sym = symbolNew(name->value);
+    objectFree(name_sym->value, TRUE);
     name_sym->value = (Object *) node;
     objectFree((Object *) name, TRUE);
     return NULL;
@@ -1014,6 +1031,7 @@ getParam(xmlNode *template_node, xmlNode *cur_node)
 	sym->value = value;
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION GETPARAM\n");
     FINALLY {
 	objectFree((Object *) name, TRUE);
 	objectFree((Object *) dflt, TRUE);
@@ -1077,6 +1095,7 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 	result = processRemaining(function_start, parent_node, depth + 1);
     }
     EXCEPTION(ex);
+    //fprintf(stderr, "EXCEPTION EXEC FUNC\n");
     FINALLY {
 	dropSymbolScope();
     }
@@ -1143,7 +1162,6 @@ execXmlNodeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
 }
 
-
 static xmlNode *
 processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1173,6 +1191,7 @@ processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    processChildren(template_node, this, depth + 1);
 	}
 	EXCEPTION(ex) {
+	    //fprintf(stderr, "EXCEPTION PROCESS NODE\n");
 	    if (this) xmlFreeNode(this);
 	    RAISE();
 	}
@@ -1258,6 +1277,7 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
 	char *location = nodeLocation(template_node);
 	char *oldtext = ex->text;
 	char *newtext = newstr("%s\nat %s", oldtext, location);
+	//fprintf(stderr, "EXCEPTION PROCESS ELEMENT\n");
 	ex->text = newtext;
 	skfree(location);
 	skfree(oldtext);
@@ -1286,6 +1306,7 @@ processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 		child = processElement(cur_node, parent_node, depth);
 	    }
 	    EXCEPTION(ex);
+	    //fprintf(stderr, "EXCEPTION PROCESS REMAINING: %d, %s\n", ex->signal, ex->text);
 	    WHEN(UNPROCESSED_INCLUSION) {
 		/* This will happen because finishDocument() has not
 		 * been called.  We don't want to call finishDocument()
@@ -1296,7 +1317,7 @@ processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 		 * continue processing. */
 
 		if (failed_once) {
-		    RAISE();
+		    RAISE(XML_PROCESSING_ERROR, newstr(ex->text));
 		}
 		failed_once = TRUE;
 		finishDocument(cur_template);

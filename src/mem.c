@@ -28,9 +28,9 @@ static GHashTable *hash_frees = NULL;
 
 
 static void
-debug(char *label)
+memdebug(char *label)
 {
-    fprintf(stderr, "DEBGUG: %s\n", label);
+    fprintf(stderr, "MEMDEBUG: %s\n", label);
 }
 
 static gboolean 
@@ -244,12 +244,12 @@ delChunk(void *chunk)
     //}
 //    fprintf(stderr, "FREED: %p\n", chunk);
     if (previous == -1) {
-	debug("XX");
+	memdebug("XX");
 	fprintf(stderr, "DelChunk %p already freed!\n", chunk);
 	abort();
     }
     if (!previous) {
-	debug("YY");
+	memdebug("YY");
 	fprintf(stderr, "DelChunk %p not allocated!\n", chunk);
 	//abort();
     }
@@ -297,9 +297,9 @@ memchunks_incr(void *chunk)
     /* Uncomment the following with a specific chunk_number if you want
      * use gdb to see where a chunk is being created (use set break
      * debug in gdb) */
-    //if (chunk_number == 2364) debug("2364");
-    //if (chunk_number == 1889) debug("1889");
-    //if (chunk_number == 1890) debug("1890");
+    //if (chunk_number == 3748) memdebug("3748");
+    //if (chunk_number == 1889) memdebug("1889");
+    //if (chunk_number == 1890) memdebug("1890");
     
     if (chunk_number == show_malloc_number) {
 	fprintf(stderr, "Allocating chunk no %d\n", chunk_number);
