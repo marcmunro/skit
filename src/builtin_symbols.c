@@ -330,18 +330,22 @@ fnStringEq(Object *obj)
 
     raiseIfNotList("string=", obj);
     evalCar(cons);
-    arg1 = (String *) dereference(cons->car);
-    raiseIfNotString("string= (first arg)", arg1);
-    cons = (Cons *) cons->cdr;
-    raiseIfNotList("string=", (Object *) cons);
-    evalCar(cons);
-    arg2 = (String *) dereference(cons->car);
-    raiseIfNotString("string= (first arg)", arg2);
+    if (arg1 = (String *) dereference(cons->car)) {
+	raiseIfNotString("string= (first arg)", arg1);
+	cons = (Cons *) cons->cdr;
+	raiseIfNotList("string=", (Object *) cons);
+	evalCar(cons);
+    }
+    else {
+	return NULL;
+    }
+    if (arg2 = (String *) dereference(cons->car)) {
+	raiseIfNotString("string= (first arg)", arg2);
+	raiseIfMoreArgs("string=", cons->cdr);
 
-    raiseIfMoreArgs("string=", cons->cdr);
-
-    if (streq(arg1->value, arg2->value)) {
-	return (Object *) symbolGet("t");
+	if (streq(arg1->value, arg2->value)) {
+	    return (Object *) symbolGet("t");
+	}
     }
 
     return NULL;

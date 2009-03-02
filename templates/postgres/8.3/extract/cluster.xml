@@ -25,13 +25,11 @@
 	<skit:parameter name="privileges"/>
 	<skit:var name="privs_list"/>
 	<skit:if test="privileges">
-	  <skit:exec expr="(debug 'Privs1' privileges)"/>
 	  <!-- Regexp below reverses order of characters followed by 
 	       asterisks so that the asterisk precedes the character
 	       it previously followed -->
 	  <skit:exec expr="(setq privileges 
 			    (replace privileges /(.)\\*/ '*\1'))"/>
-	  <skit:exec expr="(debug 'Privs' privileges)"/>
 	  <skit:exec expr="(setq privs_list (split privileges ','))"/>
 	  <skit:foreach from="privs_list" var="privs_str">
 	    <skit:let>

@@ -663,7 +663,7 @@ attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR,
-	      newstr("No name field provided for akit_attr"));
+	      newstr("No name field provided for skit_attr"));
     }
     if (hasExpr(template_node, &value)) {
 	if (value) {
@@ -868,9 +868,9 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
 
 	cursor = symbolGetValue(fromname->value);
-	if (!(cursor) && (isCollection(cursor))) {
+	if ((!cursor) || (!isCollection(cursor))) {
 	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("from %s does not contain a collection", 
+		  newstr("from variable %s does not contain a collection", 
 			 fromname->value));
 	}
 

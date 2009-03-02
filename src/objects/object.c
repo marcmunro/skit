@@ -618,6 +618,7 @@ isCollection(Object *object)
     switch (object->type) {
     case OBJ_CONS: 
     case OBJ_CURSOR:
+    case OBJ_STRING:
 	return TRUE;
     }
     return FALSE;

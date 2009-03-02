@@ -4,13 +4,9 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <!--
-      The issue with the following appears to be one of variable scope.
-      In fact variable scope in general appears to be an issue.
-
   <skit:runsql to="domains" file="sql/domains.sql"/>
-  <skit:exec expr="(debug 'DOMAINS' domains)"/> -->
-  <skit:runsql file="sql/schemata.sql">
+  <skit:runsql to="constraints" file="sql/constraints.sql"/>
+  <skit:runsql var="schema" file="sql/schemata.sql">
     <schema>
       <skit:attr name="name"/>
       <skit:attr name="owner"/>
@@ -29,10 +25,10 @@
       <skit:exec_function name="grants_from_privs"
 			  privileges="(select tuple 'privs')"/>
 
-<!--      <xi:include href="skitfile:extract/domains.xml"/> -->
+      <xi:include href="skitfile:extract/domains.xml"/>
     </schema>
   </skit:runsql>
-  <skit:exec expr="(debug 'TODO: domains, types, basetypes, composite types, constraints, functions, operators, operator classes, aggregates, sequences, tables' nil)"/>
+  <skit:exec expr="(debug 'TODO: types, basetypes, composite types, constraints, functions, operators, operator classes, aggregates, sequences, tables' nil)"/>
 </skit:inclusion>
 
 
@@ -77,14 +73,6 @@
       <skituls:foreach var="domains"
 		       filter="tuple['schema'] == tuple.parent['name']">
 	<domain>
-	  <skituls:attr field="name"/>
-	  <skituls:attr field="schema"/>
-	  <skituls:attr field="owner"/>
-	  <skituls:attr field="basetype"/>
-	  <skituls:attr field="basetype_schema"/>
-	  <skituls:attr field="default"/>
-	  <skituls:attr field="nullable"/>
-	  <skituls:attr field="comment"/>
 	  <skituls:foreach var="constraints"
 			   filter="tuple['oid'] == tuple.parent['conoid']">
 	    <constraint>

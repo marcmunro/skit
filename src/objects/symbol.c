@@ -130,6 +130,7 @@ symbolNew(char *name)
 	sym->value = NULL;
 	sym->scope = NULL;
 	hashAdd(symbols, (Object *) hashkey, (Object *) sym);
+	setScopeForSymbol(sym);
     }
     return sym;
 }
