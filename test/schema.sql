@@ -18,5 +18,5 @@
     "[ 'schema1' 'regress' '{regress=UC/regress,keep=U/regress}' nil]"	\
     "[ 'schema2' 'regress' '{regress=UC/regress,keep2="			\
     "U*C/regress,wibble=U*C*/regress,keep=U/regress,=U/regress}' "	\
-    "''wibble'']"							\
+    "\"'wibble'\"]"							\
     "[ 'schema3' 'regress' '{regress=UC/regress,keep2=UC/regress}' nil]])"

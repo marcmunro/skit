@@ -33,7 +33,7 @@
     "[ 'name' 'schema' 'owner' 'conoid' 'basetype' "			\
     "'basetype_schema' 'default' 'nullable' 'comment']"			\
     "[[ 'postal2' 'public' 'marc' nil 'mychar' 'public' nil 'yes' nil]"	\
-    "[ 'postal3' 'public' 'marc' nil 'mychar' 'public' ''x'::mychar'"	\
-    " 'no' ''wibble'']"							\
+    "[ 'postal3' 'public' 'marc' nil 'mychar' 'public' \"'x'::mychar\"" \
+    " 'no' \"'wibble'\"]"						\
     "[ 'us_postal_code' 'public' 'marc' '16427' 'text' "		\
     "'pg_catalog' nil 'yes' nil]])"
