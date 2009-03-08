@@ -278,7 +278,7 @@ cursorFields(Cursor *cursor)
 {
 	int col;
 	char *name;
-	char *result = newstr("");;
+	char *result = newstr("");
 	char *tmp;
 	for (col = 0; col < cursor->cols; col++) {
 		name = PQfname(cursor->cursor, col);
@@ -287,7 +287,8 @@ cursorFields(Cursor *cursor)
 		skfree(tmp);
 	}
 	tmp = result;
-	result = newstr("[%s]", tmp);
+	result = newstr("%s]", tmp);
+	result[0] = '[';
 	skfree(tmp);
 	return result;
 }
@@ -313,7 +314,8 @@ cursorRow(Cursor *cursor, int row)
 		skfree(tmp);
 	}
 	tmp = result;
-	result = newstr("[%s]", tmp);
+	result = newstr("%s]", tmp);
+	result[0] = '[';
 	skfree(tmp);
 	return result;
 }
@@ -328,7 +330,7 @@ cursorAllRows(Cursor *cursor)
 	for (row = 0; row < cursor->rows; row++) {
 		rowstr = cursorRow(cursor, row);
 		if (tmp = result) {
-			result = newstr("%s\n%s", tmp, rowstr);
+			result = newstr("%s %s", tmp, rowstr);
 			skfree(rowstr);
 			skfree(tmp);
 		}
@@ -348,7 +350,7 @@ cursorContents(Cursor *cursor)
 	char *tmp;
 	char *tmp2;
 	char *tmp3;
-	char *result = newstr("%s\n%s\n%s", 
+	char *result = newstr("%s\n(%s %s)", 
 						  tmp = objectSexp((Object *) cursor->querystr),
 						  tmp2 = cursorFields(cursor),
 						  tmp3 = cursorAllRows(cursor));
