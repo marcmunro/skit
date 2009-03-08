@@ -561,8 +561,8 @@ evalStr(char *str)
 
 START_TEST(extract)
 {
-    //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
-    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
+    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
+    //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest' port = '54329'"};
     Document *doc;

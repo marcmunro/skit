@@ -47,7 +47,11 @@ include $(TEST_DEPS)
 skit_test:	$(TEST_OBJECTS) $(SRC_TESTED_OBJECTS)
 	$(CC) $(LDFLAGS) $(TEST_OBJECTS) $(SRC_TESTED_OBJECTS) $(LIBCHECK) -o $@
 
-unit: skit_test
+test/log:
+	@-mkdir test/log 2>/dev/null
+	@touch test/log
+
+unit: skit_test test/log
 	@./skit_test $(TESTS)
 
 # Build a list of all tests known to the test suite.

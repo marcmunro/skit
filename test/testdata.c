@@ -187,11 +187,11 @@ compare(String *str1, String *str2)
 	    fprintf(stderr, "%c", c);
 	}
 	else {
-	    fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
+	    //fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
 	    break;
 	}
     }
-    fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
+    //fprintf(stderr, "\nSTR1: %s\nSTR2: %s\n", s1, s2);
 }
 
 static Cursor *
