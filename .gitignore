@@ -43,5 +43,3 @@ autom4te.cache/
 # The contents of the testdb subdirectory
 /testdb
 
-# The contents of the valgrind subdirectory
-/valgrind

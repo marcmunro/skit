@@ -1,0 +1,70 @@
+#! /bin/sh
+# Run valgrind memory tests against skit_test
+# It will do this one test at a time from the file valgrind/alltests
+# If args are given to the command only those tests that match the args
+# will be run.
+
+check_output()
+{
+    awk ' 
+        BEGIN {lost = 0}
+    	/==[0-9]*==.*lost: [1-9]/ {print; lost = 1}
+    	/==[0-9]*==.*reachable: [1-9]/ {print; lost = 1}
+	END {if (lost) {exit(1)}}' -
+}
+
+do_test()
+{
+    echo ======== testing $1 $2 ============ >>valgrind.log
+    valgrind ${flags} ${cmd} ${cmd_flags} $1 $2 2>&1 | \
+	tee -a valgrind/valgrind.log | check_output >/dev/null
+    this=$?
+    if [ ${this} != 0 ]; then
+        echo "FAIL: $1 $2"
+        status=${this}
+    else
+        echo "PASS: $1 $2"
+    fi
+}
+
+flags=""
+while 
+    case "x$1" in
+        x-*)
+	    flags="${flags} $1"
+	    shift
+	    true;;
+        *)  false;;
+    esac; do
+  echo
+done
+
+cmd="$1"
+shift
+
+cmd_flags=""
+while 
+    case "x$1" in
+        x-*)
+	    cmd_flags="${cmd_flags} $1"
+	    shift
+	    true;;
+        *)  false;;
+    esac; do
+  echo
+done
+
+rm -f valgrind/valgrind.log
+if [ "x$2" != "x" ]; then
+    do_test $1 $2
+    exit $status
+elif [ "x$1" != "x" ]; then
+    grep_expr="^$1 "
+else
+    grep_expr="."
+fi
+
+grep ${grep_expr} valgrind/alltests | while read a b; do
+    do_test $a $b
+done
+exit $status

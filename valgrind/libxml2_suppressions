@@ -1,0 +1,65 @@
+
+{
+   libxml2_textreader_suppresion1
+   Memcheck:Leak
+   fun:malloc
+   fun:xmlStrndup
+   fun:xmlStrdup
+   fun:xmlNewCharEncodingHandler
+   fun:xmlInitCharEncodingHandlers
+   fun:xmlGetCharEncodingHandler
+   fun:xmlAllocParserInputBuffer
+   fun:__xmlParserInputBufferCreateFilename
+   fun:xmlParserInputBufferCreateFilename
+   fun:xmlNewTextReaderFilename
+}
+
+{
+   libxml2_textreader_suppresion2
+   Memcheck:Leak
+   fun:malloc
+   fun:xmlNewRMutex
+   fun:xmlDictCreate
+   fun:xmlInitParserCtxt
+   fun:xmlNewParserCtxt
+   fun:xmlCreatePushParserCtxt
+   fun:xmlNewTextReader
+   fun:xmlNewTextReaderFilename
+}
+
+{
+   libxml2_textreader_suppresion3
+   Memcheck:Leak
+   fun:malloc
+   fun:xmlNewCharEncodingHandler
+   fun:xmlInitCharEncodingHandlers
+   fun:xmlGetCharEncodingHandler
+   fun:xmlAllocParserInputBuffer
+   fun:__xmlParserInputBufferCreateFilename
+   fun:xmlParserInputBufferCreateFilename
+   fun:xmlNewTextReaderFilename
+}
+
+{
+   libxml2_textreader_suppresion4
+   Memcheck:Leak
+   fun:malloc
+   fun:xmlInitCharEncodingHandlers
+   fun:xmlGetCharEncodingHandler
+   fun:xmlAllocParserInputBuffer
+   fun:__xmlParserInputBufferCreateFilename
+   fun:xmlParserInputBufferCreateFilename
+   fun:xmlNewTextReaderFilename
+}
+
+{
+   libxml2_docdump_suppression
+   Memcheck:Leak
+   fun:malloc
+   fun:xmlNewMutex
+   fun:xmlInitGlobals
+   fun:xmlInitParser
+   obj:/usr/lib/libxml2.so.2.6.32
+   fun:xmlDocDumpFormatMemoryEnc
+   fun:xmlDocDumpFormatMemory
+}

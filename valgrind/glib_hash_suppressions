@@ -1,0 +1,22 @@
+{
+   glib_hash_suppression1
+   Memcheck:Leak
+   fun:memalign
+   fun:posix_memalign
+   obj:/usr/lib/libglib-2.0.so.0.1600.6
+   fun:g_slice_alloc
+   fun:g_hash_table_new_full
+   fun:newHashTable
+   fun:chunkTable
+}
+{
+   glib_hash_suppression2
+   Memcheck:Leak
+   fun:calloc
+   fun:g_malloc0
+   obj:/usr/lib/libglib-2.0.so.0.1600.6
+   fun:g_slice_alloc
+   fun:g_hash_table_new_full
+   fun:newHashTable
+   fun:chunkTable
+}

@@ -1,0 +1,50 @@
+{
+   libpq_suppression1
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/i686/cmov/libc-2.7.so
+   fun:__nss_database_lookup
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   fun:PQconnectStart
+   fun:PQconnectdb
+}
+
+{
+   libpq_suppression2
+   Memcheck:Leak
+   fun:malloc
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   fun:PQconnectStart
+   fun:PQconnectdb
+   fun:pgsqlConnect
+}
+
+{
+   libpq_suppression3
+   Memcheck:Leak
+   fun:malloc
+   fun:tsearch
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   obj:/usr/lib/libpq.so.5.1
+   fun:PQconnectStart
+   fun:PQconnectdb
+}
