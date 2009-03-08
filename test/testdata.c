@@ -22,10 +22,10 @@
 #include "database.sql"
 #include "roles.sql"
 #include "users.sql"
-
-#ifdef WIBBLE
-
-#endif
+#include "tablespace.sql"
+#include "domain.sql"
+#include "constraint.sql"
+#include "schema.sql"
 
 static String *last_key = NULL;
 
@@ -68,6 +68,10 @@ initQueries()
     addQuery(hash, (Cons *) objectFromStr(DATABASE_QRY));
     addQuery(hash, (Cons *) objectFromStr(ROLES_QRY));
     addQuery(hash, (Cons *) objectFromStr(USERS_QRY));
+    addQuery(hash, (Cons *) objectFromStr(TABLESPACE_QRY));
+    addQuery(hash, (Cons *) objectFromStr(DOMAIN_QRY));
+    addQuery(hash, (Cons *) objectFromStr(CONSTRAINT_QRY));
+    addQuery(hash, (Cons *) objectFromStr(SCHEMA_QRY));
 
     return hash;
 }
@@ -284,7 +288,9 @@ static char *
 testCursorStr(Cursor *cursor)
 {
     char *tmp = objectSexp((Object *) cursor->cursor);
-    char *result = newstr("<#OBJ_CURSOR# %s>", tmp);
+    char *query = objectSexp((Object *) cursor->querystr);
+    char *result = newstr("<#OBJ_CURSOR# %s\n%s>", query, tmp);
+    skfree(query);
     skfree(tmp);
     return result;
 }
