@@ -25,6 +25,8 @@
 	<skit:parameter name="privileges"/>
 	<skit:var name="privs_list"/>
 	<skit:if test="privileges">
+	  <skit:exec expr="(setq privileges 
+			    (replace privileges /\\{(.*)\\}/ '\1'))"/>
 	  <!-- Regexp below reverses order of characters followed by 
 	       asterisks so that the asterisk precedes the character
 	       it previously followed -->
@@ -78,10 +80,9 @@
 
       <skit:runsql file="sql/dbinfo.sql" var="dbinfo">
 	<skit:attr name="username"/>
-
-	<xi:include href="skitfile:extract/roles.xml"/>
+	<xi:include href="skitfile:extract/roles.xml"/>-->
 	<xi:include href="skitfile:extract/tablespaces.xml"/>
-	<xi:include href="skitfile:extract/database.xml"/>
+	<xi:include href="skitfile:extract/database.xml"/>-->
       </skit:runsql>
     </skit:let>
   </cluster>

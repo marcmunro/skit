@@ -299,7 +299,7 @@ memchunks_incr(void *chunk)
      * debug in gdb) */
     //if (chunk_number == 3748) memdebug("3748");
     //if (chunk_number == 1889) memdebug("1889");
-    //if (chunk_number == 1890) memdebug("1890");
+    //if (chunk_number == 5027) memdebug("5027");
     
     if (chunk_number == show_malloc_number) {
 	fprintf(stderr, "Allocating chunk no %d\n", chunk_number);
@@ -371,8 +371,8 @@ skitFreeMem()
     xsltCleanupGlobals();
     xmlCleanupParser();
     freeStdTemplates();
+    freeOptions();
     freeSymbolTable();
-    freeCoreOptions();
 }
 
 void

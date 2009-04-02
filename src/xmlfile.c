@@ -36,34 +36,33 @@ static void
 tuplestackPush(Object *tuple)
 {
     Symbol *tuplestack = symbolGet("tuplestack");
-    Symbol *tuple_sym = symbolGet("tuple");
+    symbolSet("tuple", tuple);
 
     //fprintf(stderr, "TUPLEPUSH: tuple = %p\n", tuple);
-    tuple_sym->value = tuple;
-    (void) consPush((Cons **) &(tuplestack->value),  tuple);
+    (void) consPush((Cons **) &(tuplestack->svalue),  tuple);
 }
 
 static void
 tuplestackPop()
 {
     Symbol *tuplestack = symbolGet("tuplestack");
-    Symbol *tuple_sym = symbolGet("tuple");
+    //Symbol *tuple_sym = symbolGet("tuple");
     Cons *stack;
     Object *tuple = NULL;
     
-    (void) consPop((Cons **) &(tuplestack->value));
-    if (stack = (Cons *) tuplestack->value) {
+    (void) consPop((Cons **) &(tuplestack->svalue));
+    if (stack = (Cons *) tuplestack->svalue) {
 	tuple = stack->car;
     }
-    tuple_sym->value = tuple;
+    symbolSet("tuple", tuple);
+    //tuple_sym->svalue = tuple;
     //fprintf(stderr, "TUPLEPOP: tuple = %p\n", tuple);
 }
 
 static Object *
 curTuple()
 {
-    Symbol *tuple = symbolGet("tuple");
-    return (Object *) tuple->value;
+    return symbolGetValue("tuple");
 }
 
 static String *
@@ -746,7 +745,7 @@ iterate(Object *collection, String *filter,
     BEGIN {
 	while (tuple = objNext(collection, &placeholder), placeholder) {
 	    if (sym) {
-		sym->value = tuple;
+		sym->svalue = tuple;
 	    }
 	    tuplestackPush(tuple);
 	    
@@ -785,7 +784,7 @@ iterate(Object *collection, String *filter,
     //fprintf(stderr, "EXCEPTION ITERATE(2)\n");
     FINALLY {
 	if (sym) {
-	    sym->value = NULL;
+	    sym->svalue = NULL;
 	    dropSymbolScope();
 	}
 	objectFree(placeholder, TRUE);
@@ -806,7 +805,6 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     Tuple *tuple;
     xmlNode *child = NULL;
     Symbol *sym;
-
     BEGIN {
 	if (!filename) {
 	    RAISE(XML_PROCESSING_ERROR, 
@@ -821,8 +819,9 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	sqltext =  trimSqlText(filetext);
     
 	conn = sqlConnect();
+
 	cursor = sqlExec(conn, sqltext, NULL);
-	printSexp(stderr, "CURSOR: ", cursor);
+	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    sym = symbolNew(varname->value);
 	    symbolSet(varname->value, (Object *) cursor);
@@ -953,7 +952,7 @@ execVar(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     setScopeForSymbol(sym);
     objectFree((Object *) name, TRUE);
-    sym->value = getExpr(template_node);
+    sym->svalue = getExpr(template_node);
     return NULL;
 }
 
@@ -988,8 +987,8 @@ execDeclareFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     
     name_sym = symbolNew(name->value);
-    objectFree(name_sym->value, TRUE);
-    name_sym->value = (Object *) node;
+    objectFree(name_sym->svalue, TRUE);
+    name_sym->svalue = (Object *) node;
     objectFree((Object *) name, TRUE);
     return NULL;
 }
@@ -1028,7 +1027,7 @@ getParam(xmlNode *template_node, xmlNode *cur_node)
 	    sym = symbolNew(name->value);
 	}
 	setScopeForSymbol(sym);
-	sym->value = value;
+	sym->svalue = value;
     }
     EXCEPTION(ex);
     //fprintf(stderr, "EXCEPTION GETPARAM\n");
@@ -1086,7 +1085,7 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 	objectFree((Object *) name, TRUE);
 	RAISE(XML_PROCESSING_ERROR, errstr);
     }
-    node = (Node *) name_sym->value;
+    node = (Node *) name_sym->svalue;
     objectFree((Object *) name, TRUE);
 
     newSymbolScope();

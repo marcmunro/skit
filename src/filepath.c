@@ -212,18 +212,17 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 String *
 findFile(String *filename)
 {
-    Symbol *roots = symbolGet("template-paths");
-    Symbol *tmpltdir = symbolGet("templates-dir");
-    Symbol *dbdir = symbolGet("dbtype");
-    Symbol *ver = symbolGet("dbver");
+    Vector *roots = (Vector *) symbolGetValue("template-paths");
+    String *tmpltdir = (String *) symbolGetValue("templates-dir");
+    String *dbdir = (String *) symbolGetValue("dbtype");
+    Object *ver = symbolGetValue("dbver");
     char   *path;
     String *result;
-    //printSexp(stderr, "ROOTS: ", roots->value);
-    //printSexp(stderr, "TMPLATE: ", tmpltdir->value);
-    //printSexp(stderr, "DBDIR: ", dbdir->value);
-    //printSexp(stderr, "VER: ", ver->value);
-    path = pathToFile((Vector *) roots->value, (String *) tmpltdir->value,
-    	      (String *) dbdir->value, ver->value, filename);
+    //printSexp(stderr, "ROOTS: ", roots);
+    //printSexp(stderr, "TMPLATE: ", tmpltdir);
+    //printSexp(stderr, "DBDIR: ", dbdir);
+    //printSexp(stderr, "VER: ", value);
+    path = pathToFile(roots, tmpltdir, dbdir, ver, filename);
     freeGlobBuf();
     if (path) {
 	result = stringNewByRef(path);

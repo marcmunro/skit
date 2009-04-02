@@ -12,6 +12,8 @@ params no_alias_name
 params value_and_default
 params option_usage
 params extract
+params extract
+params print
 objects integer_object
 objects string_object1
 objects nil_object

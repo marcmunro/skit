@@ -44,7 +44,7 @@ sqlConnect()
     SqlFuncs *functions;
 
     if (!dbhash) {
-	dbhash = (Hash *) symbolGet("dbhandlers")->value;
+	dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
     }
 
     if (!cur_connection) {

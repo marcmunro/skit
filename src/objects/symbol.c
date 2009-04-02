@@ -26,6 +26,8 @@ dropScopeForSymbol(Symbol *sym)
 {
     Cons *prev = (Cons *) consPop(&(sym->scope));
     Cons *scope;
+    //printSexp(stderr, "connect: ", symbolGetValue("connect"));
+    //printSexp(stderr, "DROPPING SCOPE FOR SYM: ", sym);
     if (!prev) {
 	RAISE(LIST_ERROR, 
 	      newstr("Symbol %s has no past scope", sym->name));
@@ -35,9 +37,14 @@ dropScopeForSymbol(Symbol *sym)
 	RAISE(LIST_ERROR, 
 	      newstr("Symbol %s is not defined in this scope", sym->name));
     }
-    objectFree(sym->value, TRUE);
-    sym->value = prev->car;
+    objectFree(sym->svalue, TRUE);
+    sym->svalue = prev->car;
     objectFree((Object *) prev, FALSE);
+}
+
+void burble()
+{
+    fprintf(stderr, "BURBLE\n");
 }
 
 void
@@ -45,13 +52,14 @@ setScopeForSymbol(Symbol *sym)
 {
     Cons *prev;
     Cons *cur_scope;
-
     if (!symbol_scope) {
 	/* There is nothing to do if we have not defined a symbol scope
 	 * yet. */
 	return;
     }
 
+    //printSexp(stderr, "connect: ", symbolGetValue("connect"));
+    //printSexp(stderr, "SETTING SCOPE FOR SYM: ", sym);
     if (sym->scope) {
 	/* Check whether this symbol has already been defined in the
 	 * current scope.  If so, there is nothing to be done. */
@@ -60,9 +68,10 @@ setScopeForSymbol(Symbol *sym)
 	    return;
 	}
     }
-    prev = consNew(sym->value, (Object *) symbol_scope);
+    //burble();
+    prev = consNew(sym->svalue, (Object *) symbol_scope);
     (void) consPush(&(sym->scope), (Object *) prev);
-    sym->value = NULL;
+    sym->svalue = NULL;
 
     if (symbol_scope) {
 	consPush((Cons **) &(symbol_scope->car), (Object *) sym);
@@ -72,6 +81,7 @@ setScopeForSymbol(Symbol *sym)
 void
 newSymbolScope()
 {
+    //fprintf(stderr, "NEW SCOPE\n");
     (void) consPush(&symbol_scope, NULL);
 }
 
@@ -83,6 +93,7 @@ dropSymbolScope()
 
     symbol_list = symbol_scope? (Cons *) symbol_scope->car: NULL;
 
+    //printSexp(stderr, "DROPPING SCOPE FOR ", symbol_list);
     while (symbol_list) {
 	// TODO: Assert that symbol_list is a cons
 	sym = (Symbol *) consPop(&symbol_list);
@@ -127,12 +138,18 @@ symbolNew(char *name)
 	sym->type = OBJ_SYMBOL;
 	sym->name = newstr(name);
 	sym->fn = NULL;
-	sym->value = NULL;
+	sym->svalue = NULL;
 	sym->scope = NULL;
 	hashAdd(symbols, (Object *) hashkey, (Object *) sym);
 	setScopeForSymbol(sym);
     }
     return sym;
+}
+
+void
+symSet(Symbol *sym, Object *value)
+{
+   sym->svalue = value;
 }
 
 void
@@ -146,12 +163,12 @@ symbolSet(char *name, Object *value)
 	RAISE(GENERAL_ERROR,
 	      newstr("Error in symbolSet - no such symbol: %s", name));
     }
-    if (sym->value && (sym->value != value)) {
-	objectFree(sym->value, TRUE);
+    if (sym->svalue && (sym->svalue != value)) {
+	objectFree(sym->svalue, TRUE);
     }
     
     stringFree(hashkey, TRUE);
-    sym->value = value;
+    sym->svalue = value;
 }
 
 void
@@ -171,7 +188,7 @@ symbolSetRoot(char *name, Object *value)
 	valptr = &(value_node->car);
     }
     else {
-	valptr = &(sym->value);
+	valptr = &(sym->svalue);
     }
 
     if (*valptr && (*valptr != value)) {
@@ -195,6 +212,15 @@ symbolGet(char *name)
 
 
 Object *
+symGet(Symbol *sym)
+{
+    if (sym) {
+	return dereference(sym->svalue);
+    }
+    return NULL;
+}
+
+Object *
 symbolGetValue(char *name)
 {
     Hash *symbols = symbolTable();
@@ -202,10 +228,7 @@ symbolGetValue(char *name)
     Symbol *sym = (Symbol *) hashGet(symbols, (Object *) hashkey);
     
     stringFree(hashkey, TRUE);
-    if (sym) {
-	return sym->value;
-    }
-    return NULL;
+    return symGet(sym);
 }
 
 Object *
@@ -226,7 +249,7 @@ symbolGetValueWithStatus(char *name, boolean *in_local_scope)
 		*in_local_scope = TRUE;
 	    }
 	}
-	return sym->value;
+	return dereference(sym->svalue);
     }
     return NULL;
 }
@@ -239,9 +262,9 @@ symbolFree(Symbol *sym, boolean free_contents)
     assert((sym->type == OBJ_SYMBOL), "symbolFree: Not a symbol");
     if (!symbols) {
 	if (free_contents) {
-	    if (sym->value) {  // Do not free values that are their symbol
-		if (sym->value != (Object *) sym) {
-		    objectFree(sym->value, free_contents);
+	    if (sym->svalue) {  // Do not free values that are their symbol
+		if (sym->svalue != (Object *) sym) {
+		    objectFree(sym->svalue, free_contents);
 		}
 	    }
 	    skfree(sym->name);
@@ -277,13 +300,13 @@ symbolCopy(Symbol *old)
     assert((old->type == OBJ_SYMBOL), "symbolCopy: Not a symbol");
     new = symbolNew(old->name);
     new->fn = old->fn;
-    if (old->value == (Object *) old) {
+    if (old->svalue == (Object *) old) {
 	// Symbol is self-referencing, eg 't'
-	new->value = (Object *) new;
+	new->svalue = (Object *) new;
     }
     else {
-	if (old->value) {
-	    new->value = objectCopy(new->value);
+	if (old->svalue) {
+	    new->svalue = objectCopy(new->svalue);
 	}
     }
     return new;
@@ -294,7 +317,7 @@ symbolCreate(char *name, ObjectFn *fn, Object *value)
 {
    Symbol *new = symbolNew(name);
    new->fn = fn;
-   new->value = value;
+   new->svalue = value;
 }
 
 
@@ -303,8 +326,8 @@ symbolEval(Symbol *sym)
 {
     if (sym) {
 	assert(sym->type == OBJ_SYMBOL, "symbolEval arg is not a symbol");
-	if (sym->value) {
-	    return (Object *) objRefNew(sym->value);
+	if (sym->svalue) {
+	    return (Object *) objRefNew(sym->svalue);
 	}
     }
     return NULL;

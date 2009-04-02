@@ -121,6 +121,19 @@ documentStr(Document *doc)
     return result;
 }
 
+void
+documentPrint(FILE *fp, Document *doc)
+{
+    xmlChar *xmlbuf;
+    int buffersize;
+
+    if (doc->doc) {
+	xmlDocDumpFormatMemory(doc->doc, &xmlbuf, &buffersize, 1);
+	fputs(xmlbuf, fp);
+	xmlFree(xmlbuf);
+    }
+}
+
 static Document *cur_document = NULL;
 
 /* Documents that have not processed their xinclude directives are

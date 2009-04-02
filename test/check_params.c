@@ -99,6 +99,7 @@ process_args(int argc,
     BEGIN {
 	while (action = nextAction()) {
 	    params = parseAction(action);
+	    //printSexp(stderr, "PARAMS", params);
 	    cons = consNew((Object *) params, (Object *) cons);
 	}
     }
@@ -403,7 +404,7 @@ START_TEST(multiple_options)
 	grants = (Symbol *) hashGet(params, (Object *) key);
 	fail_if(grants == NULL, "grants not defined");
 	fail_unless(grants->type == OBJ_SYMBOL, "Incorrect grants type");
-	fail_unless(grants->value != NULL, "Incorrect grants value");
+	fail_unless(grants->svalue != NULL, "Incorrect grants value");
 	objectFree((Object *) key, TRUE);
 	
 
@@ -559,12 +560,36 @@ evalStr(char *str)
     skfree(tmp);
 }
 
+START_TEST(print)
+{
+    char *args[] = {"./skit", "--print", "test.xml"};
+    Document *doc;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    BEGIN {
+	process_args2(3, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(extract)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
     //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest' port = '54329'"};
+		    "dbname = 'skittest' port = '54329'",
+                    "--print"};
     Document *doc;
 
     initBuiltInSymbols();
@@ -572,10 +597,10 @@ START_TEST(extract)
     registerTestSQL();
 
     BEGIN {
-	process_args2(6, args);
-	doc = (Document *) actionStackPop();
-	printSexp(stderr, "DOC:", (Object *) doc);
-	objectFree((Object *) doc, TRUE);
+	process_args2(7, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
     }
     EXCEPTION(ex);
@@ -611,6 +636,7 @@ params_suite(void)
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
     ADD_TEST(tc_core, extract);
+    //ADD_TEST(tc_core, print);
 				
     suite_add_tcase(s, tc_core);
 

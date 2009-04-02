@@ -53,9 +53,23 @@ read_arg()
 }
 
 void
-unread_arg(String *arg)
+unread_arg(String *arg, boolean is_option)
 {
-    arglist = consNew((Object *) arg, (Object *) arglist);
+    String *my_arg;
+    if (is_option) {
+	/* Need to prepend the '-' flag indicators to arg */
+	if (strlen(arg->value) == 1) {
+	    my_arg = stringNewByRef(newstr("-%s", arg->value));
+	}
+	else {
+	    my_arg = stringNewByRef(newstr("--%s", arg->value));
+	}
+	objectFree((Object *) arg, TRUE);
+    }
+    else {
+	my_arg = arg;
+    }
+    arglist = consNew((Object *) my_arg, (Object *) arglist);
 }
 
 /* On the first call, record the arguments provided on the command line.
@@ -63,11 +77,22 @@ unread_arg(String *arg)
  * returning NULL when we are done
  */
 void
-record_args_old(int argc, char *argv[])
+record_args0(int argc, char *argv[])
 {
     cur_arg = 1;
     my_argc = argc;
     my_argv = argv;
+}
+
+String *
+read_arg0()
+{
+    String *result;
+    if (cur_arg < my_argc) {
+	result = stringNew(my_argv[cur_arg++]);
+	return result;
+    }
+    return NULL;
 }
 
 char *
@@ -82,6 +107,13 @@ read_arg_old()
 void
 unread_arg_old()
 {
+    cur_arg--;
+}
+
+void
+unread_arg0(String *arg)
+{
+    objectFree((Object *) arg, TRUE);
     cur_arg--;
 }
 
@@ -130,7 +162,7 @@ nextArg(String **p_arg, boolean *p_option)
 		if (equals = strchr(arg + 2, '=')) {
 		    *equals = '\0';
 		    param = stringNew(equals + 1); 
-		    unread_arg(param);
+		    unread_arg(param, FALSE);
 		}
 		result = stringNew(arg + 2);  // skip over leading hyphens
 		objectFree((Object *) argstr, TRUE);
@@ -139,7 +171,7 @@ nextArg(String **p_arg, boolean *p_option)
 		result = stringNewByRef(newstr("%c", arg[1]));
 		if (strlen(arg + 2)) {
 		    param = stringNew(arg + 2);
-		    unread_arg(param);
+		    unread_arg(param, FALSE);
 		}
 		objectFree((Object *) argstr, TRUE);
 	    }
@@ -165,6 +197,7 @@ nextAction()
     // TODO: We should be checking for the validity of the option as
     // well as the fact that it is an option.
     if (arg) {
+	//fprintf(stderr, "ARG \"%s\", is_option %d\n", arg->value, is_option);
 	if (is_option) {
 	    if (action = (String *) hashGet(option_hash, (Object *) arg)) {
 		objectFree((Object *) arg, TRUE);
@@ -186,7 +219,7 @@ initTemplatePath(char *arg)
     Symbol *sym = symbolNew("template-paths");
     Vector *v = vectorNew(10);
     vectorPush(v, (Object *) path);
-    sym->value = (Object *) v;
+    sym->svalue = (Object *) v;
 }
 
 Object *

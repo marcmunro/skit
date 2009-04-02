@@ -19,14 +19,17 @@
 #include "exceptions.h"
 
 static String action_str = {OBJ_STRING, "action"};
+static String print_str = {OBJ_STRING, "print"};
 static String template_str = {OBJ_STRING, "template"};
 static String sources_str = {OBJ_STRING, "sources"};
 static String value_str = {OBJ_STRING, "value"};
 static String type_str = {OBJ_STRING, "type"};
 static String default_str = {OBJ_STRING, "default"};
-static String add_deps_str= {OBJ_STRING, "add_deps"};
+static String add_deps_str= {OBJ_STRING, "add_deps"};  // TODO: deprecate
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
+static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
 static Document *adddeps_document = NULL;
+static Document *rmdeps_document = NULL;
 static Cons *action_stack = NULL;
 
 static void
@@ -49,6 +52,7 @@ actionStackPop()
     return result;
 }
 
+// TOO: deprecate
 /* Count starts at 1 */
 static Cons *
 actionStackNth(int n)
@@ -62,19 +66,60 @@ actionStackNth(int n)
 }
 
 static Document *
+getDoc(String *filename)
+{
+    String *doc_path = findFile(filename);
+    Document *doc;
+    if (!doc_path) {
+	RAISE(FILEPATH_ERROR, 
+	      newstr("getDoc: cannot find \"%s\"", filename->value));
+	}
+    doc = docFromFile(doc_path);
+    objectFree((Object *) doc_path, TRUE);
+    finishDocument(doc);
+    return doc;
+}
+
+static Document *
 getAddDepsDoc()
 {
     if (!adddeps_document) {
-	String *add_deps_path = findFile(&add_deps_filename);
-	if (!add_deps_path) {
-	    RAISE(FILEPATH_ERROR, 
-		  newstr("Cannot find \"%s\"", add_deps_filename.value));
-	}
-	adddeps_document = docFromFile(add_deps_path);
-	objectFree((Object *) add_deps_path, TRUE);
-	finishDocument(adddeps_document);
+	adddeps_document = getDoc(&add_deps_filename);
     }
     return adddeps_document;
+}
+
+static Document *
+getRmDepsDoc()
+{
+    if (!rmdeps_document) {
+	rmdeps_document = getDoc(&rm_deps_filename);
+    }
+    return rmdeps_document;
+}
+
+static void
+applyXSL(Document *xslsheet)
+{
+    Document *src_doc;
+    Document *result_doc;
+
+    src_doc = (Document *) actionStackPop();
+    result_doc = applyXSLStylesheet(src_doc, xslsheet);
+    objectFree((Object *) src_doc, TRUE);
+    actionStackPush((Object *) result_doc);
+}
+
+static void
+addDeps()
+{
+    applyXSL(getAddDepsDoc());
+}
+
+static void
+rmDeps()
+{
+    applyXSL(getRmDepsDoc());
 }
 
 void
@@ -84,10 +129,15 @@ freeStdTemplates()
 	objectFree((Object *) adddeps_document, TRUE);
     }
     adddeps_document = NULL;
+
+    if (rmdeps_document) {
+	objectFree((Object *) rmdeps_document, TRUE);
+    }
+    rmdeps_document = NULL;
 }
 
 /* Load an input file into memory and place it on the stack for
- * subsequent processing.  If 
+ * subsequent processing.
  */
 void
 loadInFile(String *filename)
@@ -127,7 +177,7 @@ getOptionValue(Cons *optionlist, String *option)
     Cons *optionalist = (Cons *) optionlistGetOption(optionlist, option);
     String *type;
     Object *value;
-    String *param;
+    String *param = NULL;
     boolean is_option;
 
     if (!optionalist) {
@@ -210,14 +260,14 @@ addDefaults(Hash *params, Cons *optionlist)
  * a hash of the args.
  */
 static Hash *
-getTemplateArgs(Cons *optionlist)
+getOptionlistArgs(Cons *optionlist)
 {
+    //printSexp(stderr, "OPTS", optionlist);
     String *arg = NULL;
     boolean is_option;
     Object *value = NULL;
     int expected_sources = getIntOption(optionlist, &sources_str, &value_str);
     Hash *params = hashNew(TRUE);
-
     BEGIN {
 	while (nextArg(&arg, &is_option)) {
 	    if (is_option) {
@@ -230,13 +280,13 @@ getTemplateArgs(Cons *optionlist)
 		}
 		else {
 		    /* This option must be for the next action. */
-		    unread_arg(arg);
+		    unread_arg(arg, TRUE);
 		    break;
 		}
 	    }
 	    else {
 		if (expected_sources == 0) {
-		    RAISE(PARAMETER_ERROR, newstr("getTemplateArgs: too many "
+		    RAISE(PARAMETER_ERROR, newstr("getOptionlistArgs: too many "
 						  "source files provided"));
 		}
 		/* Load the input file into memory and place it on the stack
@@ -276,7 +326,7 @@ doParseTemplate(String *filename)
 	
 	/* Load the template file, to get the option list. */
 	template_doc = docFromFile(path);
-	params = getTemplateArgs(template_doc->options);
+	params = getOptionlistArgs(template_doc->options);
 	hashAdd(params, (Object *) stringNew("template_name"), (Object *) path);
 	path = NULL;
 	hashAdd(params, (Object *) stringNew("template"), 
@@ -333,6 +383,13 @@ parseAdddeps(Object *obj)
     return params;
 }
 
+static Object *
+parsePrint(Object *obj)
+{
+    Hash *args = getOptionlistArgs(printOptionList());
+    return (Object *) args;
+}
+
 static void
 defineActionParsers()
 {
@@ -340,10 +397,13 @@ defineActionParsers()
     if (!done) {
 	Symbol adddepsParser = {OBJ_SYMBOL, "parse_adddeps", 
 				&parseAdddeps, NULL};
-	(void) symbolCopy(&adddepsParser);
 	Symbol templateParser = {OBJ_SYMBOL, "parse_template", 
 				 &parseTemplate, NULL};
+	Symbol printParser = {OBJ_SYMBOL, "parse_print", 
+			      &parsePrint, NULL};
+	(void) symbolCopy(&adddepsParser);
 	(void) symbolCopy(&templateParser);
+	(void) symbolCopy(&printParser);
     }
     done = TRUE;
 }
@@ -393,9 +453,7 @@ parseAction(String *action)
     return params;
 }
 
-
-
-void
+static void
 preprocessSourceDocs(int sources)
 {
     int i;
@@ -403,12 +461,8 @@ preprocessSourceDocs(int sources)
     Document *src_doc;
     Document *result_doc;
     Document *xslsheet;
-    Object *add_deps = symbolGetValue("add_deps");
-/*
-  CODE WAS:
-  hashGet((Hash *) params, 
-  (Object *) &add_deps_str);
-*/
+    Object *add_deps = dereference(symbolGetValue("add_deps"));
+
     for (i = 1; i <= sources; i++) {
 	cons = actionStackNth(i);
 	src_doc = (Document *) cons->car;
@@ -424,18 +478,55 @@ preprocessSourceDocs(int sources)
     }
 }
 
-Object *
+static Object *
+executePrint(Object *params)
+{
+    Int4 *sources = (Int4 *) dereference(symbolGetValue("sources"));
+    int action_stack_entries = consLen(action_stack);
+    boolean print_full;
+    boolean print_xml;
+    String *action_name;
+    Document *doc;
+    char *docstr;
+
+    // TODO: Ensure sources is retrieved successfully from the hash
+    if (action_stack_entries < sources->value) {
+	action_name = (String *) dereference(symbolGetValue("action"));
+
+	// TODO: Ensure action_name is retrieved successfully from the hash
+	RAISE(PARAMETER_ERROR, 
+	      newstr("Insufficient inputs for %s", action_name->value));
+    }
+
+    print_full = dereference(symbolGetValue("full")) && TRUE;
+    print_xml = dereference(symbolGetValue("xml")) && TRUE;
+
+    if (print_full) {
+	/* Ensure dependencies have been added */
+	addDeps();
+    }
+    else {
+	rmDeps();
+    }
+    doc = (Document *) actionStackPop();
+    documentPrint(stdout, doc);
+    objectFree((Object *) doc, TRUE);
+
+    return NULL;
+}
+
+static Object *
 executeTemplate(Object *params)
 {
-    Document *template = (Document *) symbolGetValue("template");
-    Int4 *sources = (Int4 *) symbolGetValue("sources");
+    Document *template = (Document *) dereference(symbolGetValue("template"));
+    Int4 *sources = (Int4 *) dereference(symbolGetValue("sources"));
     int action_stack_entries = consLen(action_stack);
     String *action_name;
     Document *result;
 
     // TODO: Ensure sources is retrieved successfully from the hash
     if (action_stack_entries < sources->value) {
-	action_name = (String *) symbolGetValue("action");
+	action_name = (String *) dereference(symbolGetValue("action"));
 
 	// TODO: Ensure action_name is retrieved successfully from the hash
 	RAISE(PARAMETER_ERROR, 
@@ -451,6 +542,8 @@ executeTemplate(Object *params)
     return NULL;
 }
 
+
+
 static void
 defineActionExecutors()
 {
@@ -458,10 +551,13 @@ defineActionExecutors()
     if (!done) {
 	Symbol adddepsExecutor = {OBJ_SYMBOL, "execute_adddeps", 
 				  &executeTemplate, NULL};
-	(void) symbolCopy(&adddepsExecutor);
 	Symbol templateExecutor = {OBJ_SYMBOL, "execute_template", 
 				   &executeTemplate, NULL};
+	Symbol printExecutor = {OBJ_SYMBOL, "execute_print", 
+				&executePrint, NULL};
+	(void) symbolCopy(&adddepsExecutor);
 	(void) symbolCopy(&templateExecutor);
+	(void) symbolCopy(&printExecutor);
     }
     done = TRUE;
 }
@@ -480,11 +576,11 @@ setVarFromParam(Object *obj, Object *params)
 	/* No symbol defined, so create a new one */
 	sym = symbolNew(key->value);
     }
+    setScopeForSymbol(sym);
+    symSet(sym, (Object *) objRefNew(value));
     //printSexp(stderr, "SYM: ", sym);
     //printSexp(stderr, "SYM VALUE: ", sym->value);
-    setScopeForSymbol(sym);
-    sym->value = value;
-    return NULL;
+    //return NULL;
     //((Cons *) obj)->cdr = NULL;
     return value;
 }
@@ -502,37 +598,28 @@ executeAction(String *action, Hash *params)
     String *executor_name;
     Object *result;
     char *tmp = NULL;
-    defineActionExecutors();
 
+    defineActionExecutors();
     newSymbolScope();
+    symbolSet("params", (Object *) objRefNew((Object *) params));
     setVarsFromParams(params);
 
-    symbolSet("params", (Object *) objRefNew((Object *) params));
-
     executor_name = stringNewByRef(newstr("execute_%s", action->value));
+
     BEGIN {
 	if (action_executor = symbolGet(executor_name->value)) {
-	    result = symbolExec(action_executor, NULL);
+	    result = symbolExec(action_executor, (Object *) params);
 	}
 	else {
 	    skitFail(newstr("%s not implemented\n", executor_name->value));
 	}
     }
     EXCEPTION(ex);
-    WHEN_OTHERS {
+    FINALLY {
 	finishWithConnection();
-	symbolSet("params", NULL);
-	objectFree((Object *) params, TRUE);
 	objectFree((Object *) executor_name, TRUE);
 	dropSymbolScope();
-	RAISE();
+	objectFree((Object *) params, TRUE);
     }
     END;
-
-    finishWithConnection();
-    symbolSet("params", NULL);
-    //printSexp(stderr, "PARAMS: ", (Object *) params);
-    objectFree((Object *) params, TRUE);
-    objectFree((Object *) executor_name, TRUE);
-    dropSymbolScope();
 }

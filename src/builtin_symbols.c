@@ -114,16 +114,17 @@ fnSetq(Object *obj)
     Cons *next;
     Object *obj_to_eval;
     Object *oldvalue;
+    Object *new;
 
     raiseIfNotList("setq", obj);
     sym = (Symbol *) cons->car;
     raiseIfNotSymbol("setq", sym);
     next = (Cons *) cons->cdr;
     obj_to_eval = next? next->car: NULL;
-    oldvalue = sym->value;
-    sym->value = objectEval(obj_to_eval);
+    oldvalue = sym->svalue;  /* Need raw, not dereferenced value */
+    symSet(sym, new = objectEval(obj_to_eval));
     objectFree(oldvalue, TRUE);
-    return (Object *) objRefNew(sym->value);
+    return (Object *) objRefNew(new);
 }
 
 // (split SRC DELIMITERS)
@@ -281,7 +282,13 @@ fnDebug(Object *obj)
     raiseIfNotList("debug", cons->cdr);
     cons = (Cons *) cons->cdr;
     result = objectEval(cons->car);
-    sexp = objectSexp(result);
+    BEGIN {
+	sexp = objectSexp(result);
+    }
+    EXCEPTION(ex) {
+	objectFree(result, TRUE);
+    }
+    END;
     fprintf(stderr, "DEBUG %s: %s\n", label->value, sexp);
     skfree(sexp);
     objectFree((Object *) result, TRUE);

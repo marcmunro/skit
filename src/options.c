@@ -17,11 +17,12 @@
 #include "skit_param.h"
 
 static Hash *core_options = NULL;
+static Cons *print_options = NULL;
 
-// This shows what an option key list should look like.  The * in 
-// the strings represents the shortest allowable abbreviation of the
-// option.  It also provides the list of core options for the skit
-// command-line interface.
+// This provides the list of core options for the skit command-line
+// interface.  It also shows what an option key list should look like.
+// The * in  the strings represents the shortest allowable abbreviation
+// of the option. 
 static Cons *
 coreOptions()
 {
@@ -36,8 +37,8 @@ coreOptions()
 	"('l*ist')"
 	"('m*erge')"
 	"('p*rint')"
-	"('printf*ull' 'f*ull')"
-	"('printx*xml' 'x*ml')"
+	"('printf*ull' 'f*ull' 'pf*ull')"
+	"('printx*xml' 'x*ml' 'px*ml')"
 	"('s*catter')"
 	"('t*emplate')"
 	"('u*sage')"
@@ -60,11 +61,30 @@ coreOptionHash()
     return core_options;
 }
 
+Cons *
+printOptionList()
+{
+    if (!print_options) {
+	print_options = optionlistNew();
+	optionlistAdd(print_options, stringNew("x*ml"), 
+		      stringNew("type"), (Object *) stringNew("flag"));
+	optionlistAdd(print_options, stringNew("f*ull"), 
+		      stringNew("type"), (Object *) stringNew("flag"));
+	optionlistAdd(print_options, stringNew("sources"), 
+		      stringNew("value"), (Object *) int4New(1));
+	optionlistAdd(print_options, stringNew("sources"), 
+		      stringNew("type"), (Object *) stringNew("integer"));
+    }
+    return print_options;
+}
+
 void
-freeCoreOptions()
+freeOptions()
 {
     objectFree((Object *) core_options, TRUE);
     core_options = NULL;
+    objectFree((Object *) print_options, TRUE);
+    print_options = NULL;
 }
 
 // Return a list of option names consisting of each legitimate

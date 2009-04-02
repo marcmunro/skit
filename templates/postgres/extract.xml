@@ -23,23 +23,15 @@
       <skit:attr name="time" expr="(current-timestamp)"/>
       <skit:exec expr="(setq dbver (version '7.1.4'))"/>
       <skit:exec expr="(setq dbver (version (select tuple 'version')))"/>
-      <!--
-      <skit:exec expr="(debug 'TUPLE' tuple)"/>
-      <skit:exec expr="(debug 'DBVERSION' dbver)"/> -->
+
+      <!-- <skit:exec expr="(debug 'TUPLE' tuple)"/> -->
+      <skit:exec expr="(debug 'DBVERSION' dbver)"/>
 
       <xi:include href="skitfile:extract/cluster.xml"/>
-
-<!--      <skit:exec expr="(setq dbver (version '7.1.4'))"/>
-      <skit:exec expr="(setq dbver (version '7.1.4'))"/>
-      <skit:exec expr="(setq dbver (version (get tuple 'version')))"/>
-      <skit:exec expr="(debug 'VERSION' (get tuple 'version')))"/>
-      <skit:exec expr="(debug 'DBVERSION' dbver)"/> -->
-
       <!--
-	  <skit:xslproc stylesheet="post_extract.xsl">
-	    <skit:include file="extract/cluster.xml"/>
-	  </skit:xslproc>
-	  -->
+      <skit:xslproc stylesheet="post_extract.xsl">
+	<skit:include file="extract/cluster.xml"/>
+      </skit:xslproc>-->
     </dump>	
   </skit:runsql>
 </skit:stylesheet>

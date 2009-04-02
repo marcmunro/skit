@@ -78,7 +78,7 @@ START_TEST(create_options)
     // Simply test that creation and destruction appears to go according
     // to plan.
     Hash *core_options = coreOptionHash();
-    freeCoreOptions();
+    freeOptions();
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -95,7 +95,7 @@ START_TEST(get_option1)
     fail_unless(streq(option->value, "connect"), 
 		"Incorrect option value: \"%s\"", option->value);
     objectFree((Object *) param, TRUE);
-    freeCoreOptions();
+    freeOptions();
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -112,7 +112,7 @@ START_TEST(get_option2)
     fail_unless(streq(option->value, "printfull"), 
 		"Incorrect option value(2): \"%s\"", option->value);
     objectFree((Object *) param, TRUE);
-    freeCoreOptions();
+    freeOptions();
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -129,7 +129,7 @@ START_TEST(get_option3)
     fail_unless(streq(option->value, "generate"), 
 		"Incorrect option value(3): \"%s\"", option->value);
     objectFree((Object *) param, TRUE);
-    freeCoreOptions();
+    freeOptions();
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -146,7 +146,7 @@ START_TEST(get_option4)
     fail_unless(streq(option->value, "diff"), 
 		"Incorrect option value(4): \"%s\"", option->value);
     objectFree((Object *) param, TRUE);
-    freeCoreOptions();
+    freeOptions();
     FREEMEMWITHCHECK;
 }
 END_TEST

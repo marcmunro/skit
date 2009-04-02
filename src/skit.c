@@ -62,7 +62,6 @@ process_args(int argc,
     while (action = nextAction()) {
 	params = parseAction(action);
 	executeAction(action, params);
-	objectFree((Object *) params, TRUE);
     }
 }
 

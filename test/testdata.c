@@ -159,7 +159,7 @@ testConnect(Object *sqlfuncs)
 	 * variables globally, otherwise we will define them only within
 	 * the scope of the current action. */
 	make_global = (connection == NULL);
-	record_param(connect, "connect", make_global);
+	record_param((String *) objectCopy((Object *) connect), "connect", make_global);
 	record_param(host, "host", make_global);
 	record_param(port, "port", make_global);
 	record_param(dbname, "dbname", make_global);
@@ -173,7 +173,7 @@ testConnect(Object *sqlfuncs)
 	connection->dbtype = stringNew("pgtest");
 	connection->conn = (void *) connection;
 	sym = symbolNew("dbconnection");
-	sym->value = (Object *) connection;
+	symSet(sym,  (Object *) connection);
     }
     return connection;
 }
@@ -295,6 +295,36 @@ testCursorStr(Cursor *cursor)
     return result;
 }
 
+static char *
+testTupleStr(Tuple *tuple)
+{
+    Cursor *cursor = tuple->cursor;
+    Cons *results = (Cons *) cursor->cursor;
+    Vector *fields = (Vector *) results->car;
+    String *name;
+    String *value;
+    int col;
+    char *result = newstr("");
+    char *tmp;
+    for (col = 0; col < cursor->cols; col++) {
+	name = (String *) fields->vector[col];
+	value = (String *) testFieldByIdx(tuple, col);
+	tmp = result;
+	if (value) {
+	    result = newstr("%s ('%s' . '%s')", tmp, name->value, value->value);
+	}
+	else {
+	    result = newstr("%s ('%s')", tmp, name);
+	}
+	skfree(tmp);
+	objectFree((Object *) value, TRUE);
+    }
+    tmp = result;
+    result = newstr("<#%s# (%s)>", objTypeName((Object *) tuple), tmp);
+    skfree(tmp);
+    return result;
+}
+
 static void
 testFreeCursor(Cursor *cursor)
 {
@@ -321,14 +351,14 @@ registerTestSQL()
 	&testNextRow,
 	&testFieldByIdx,
 	&testFieldByName,
-	NULL,
+	&testTupleStr,
 	&testCursorStr,
 	&testFreeCursor,
 	&testCleanup
     };
     
     ObjReference *obj = objRefNew((Object *) &funcs);
-    Hash *dbhash = (Hash *) symbolGet("dbhandlers")->value;
+    Hash *dbhash = (Hash *) symbolGetValue("dbhandlers");
     String *handlername = stringNew("pgtest");
     hashAdd(dbhash, (Object *) handlername, (Object *) obj);
 }

@@ -142,12 +142,18 @@ optionlistAdd(Cons *list, String *option_name,
     assert(isOptionlist(list), 
 	   "optionlistAdd: list is not an optionlist");
 
-    //fprintf(stderr, "ADD: %s, %s, %s\n", option_name->value,
-    //	    field->value, value->value);
+    //fprintf(stderr, "ADD: %s", option_name->value);
+    //if (field) fprintf(stderr, ", field=%s", field->value);
+    //if (value) {
+    //	if (value->type == OBJ_STRING) 
+    //	    fprintf(stderr, ", value=%s", ((String *) value)->value);
+    //}
+    //fprintf(stderr, "\n");
+
     setIncomplete(list);
     {
 	Hash *hash = getOptioninfo(list);
-	Cons *entry = consNew((Object *) field, value);
+	Cons *entry = consNew((Object *) field, (Object *) value);
 	Cons *old_alist = (Cons *) hashGet(hash, (Object *) option_name);
 	Cons *new_alist;
 	new_alist = consNew((Object *) entry, (Object *) old_alist);

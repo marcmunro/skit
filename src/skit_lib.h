@@ -129,7 +129,7 @@ typedef struct Symbol {
     ObjType     type;
     char       *name;
     ObjectFn   *fn;
-    Object     *value;
+    Object     *svalue;
     Cons       *scope;
 } Symbol;
 
@@ -306,6 +306,7 @@ extern Hash *symbolTable();
 extern void freeSymbolTable();
 extern Symbol *symbolNew(char *name);
 extern Symbol *symbolGet(char *name);
+extern void symSet(Symbol *sym, Object *obj);
 extern void symbolSet(char *name, Object *obj);
 extern void symbolFree(Symbol *sym, boolean free_contents);
 extern void symbolForget(Symbol *sym);
@@ -316,6 +317,7 @@ extern Object *symbolExec(Symbol *sym, Object *obj);
 extern void newSymbolScope();
 extern void dropSymbolScope();
 extern void setScopeForSymbol(Symbol *sym);
+extern Object *symGet(Symbol *sym);
 extern Object *symbolGetValue(char *name);
 extern Object *symbolGetValueWithStatus(char *name, boolean *in_local_scope);
 extern void symbolSetRoot(char *name, Object *value);
@@ -350,7 +352,8 @@ extern Object *optionlistGetOptionValue(Cons *list, String *key, String *field);
 
 // options.c
 extern Hash *coreOptionHash();
-extern void freeCoreOptions();
+extern Cons *printOptionList();
+extern void freeOptions();
 extern Hash *hashFromOptions(Cons *options);
 extern Cons *optionKeyList(String *name);
 
@@ -359,7 +362,7 @@ extern void record_args(int argc, char *argv[]);
 extern char *usage_msg();
 extern void show_usage(FILE *dest);
 extern String *read_arg();
-extern void unread_arg(String *arg);
+extern void unread_arg(String *arg, boolean is_option);
 extern String *nextArg(String **p_arg, boolean *p_option);
 extern String *nextAction();
 extern Object *validateParamValue(String *type, String *value);
@@ -393,6 +396,7 @@ extern Node *nodeNew(xmlNode *node);
 extern Document *documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader);
 extern void documentFree(Document *doc, boolean free_contents);
 extern char *documentStr(Document *doc);
+extern void documentPrint(FILE *fp, Document *doc);
 extern void finishDocument(Document *doc);
 extern void recordCurDocumentSource(String *URI, String *path);
 extern void recordCurDocumentSkippedLines(String *URI, int lines);

@@ -135,7 +135,7 @@ pgsqlConnect(Object *sqlfuncs)
 		}
 		END;
 		sym = symbolNew("dbconnection");
-		sym->value = (Object *) connection;
+		sym->svalue = (Object *) connection;
 	}
 	return connection;
 }
@@ -442,7 +442,7 @@ registerPGSQL()
 	};
 
 	ObjReference *obj = objRefNew((Object *) &funcs);
-	Hash *dbhash = (Hash *) symbolGet("dbhandlers")->value;
+	Hash *dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
 	String *handlername = stringNew("postgres");
 	hashAdd(dbhash, (Object *) handlername, (Object *) obj);
 }

@@ -539,8 +539,7 @@ END_TEST
 void
 printSym(char *name)
 {
-    Symbol *sym = symbolGet(name);
-    Object *obj = sym->value;
+    Object *obj = symbolGetValue(name);
     char *sexp = objectSexp(obj);
 
     fprintf(stderr, "Symbol %s = %s\n", name, sexp);
@@ -622,36 +621,36 @@ START_TEST(symbol_scope1)
     symbolSet("wibble", (Object *) tmp);
     symbolSet("wibble", (Object *) (tmp = stringNew("wubble")));
 
-    fail_unless(streq("wubble", ((String *) wibble->value)->value),
+    fail_unless(streq("wubble", ((String *) wibble->svalue)->value),
 	"Initial symbol value for wibble is incorrect");
 
-    fail_unless(wibble2->value == NULL,
+    fail_unless(wibble2->svalue == NULL,
 	"wibble2 has unexepected value");
 
     newSymbolScope();
     setScopeForSymbol(wibble);
     setScopeForSymbol(wibble2);
-    fail_unless(wibble->value == NULL,
+    fail_unless(wibble->svalue == NULL,
 	"wibble has unexepected value");
 
     symbolSet("wibble", (Object *) stringNew("wubble2"));
 
-    fail_unless(streq("wubble2", ((String *) wibble->value)->value),
+    fail_unless(streq("wubble2", ((String *) wibble->svalue)->value),
 	"Scoped symbol value for wibble is incorrect");
 
     symbolSet("wibble2", (Object *) (tmp = stringNew("wibble2")));
 
     symbolSetRoot("wibble2", (Object *) (tmp = stringNew("wibble3")));
 
-    fail_unless(streq("wibble2", ((String *) wibble2->value)->value),
+    fail_unless(streq("wibble2", ((String *) wibble2->svalue)->value),
 	"Scoped symbol value for wibble2 is incorrect");
 
     dropSymbolScope();
 
-    fail_unless(streq("wubble", ((String *) wibble->value)->value),
+    fail_unless(streq("wubble", ((String *) wibble->svalue)->value),
 	"Final symbol value for wibble is incorrect");
 
-    fail_unless(streq("wibble3", ((String *) wibble2->value)->value),
+    fail_unless(streq("wibble3", ((String *) wibble2->svalue)->value),
 	"Final symbol value for wibble2 is incorrect");
 
     FREEMEMWITHCHECK;
@@ -676,7 +675,7 @@ START_TEST(symbol_scope2)
 
     setScopeForSymbol(wibble2);
 
-    fail_unless(streq("wubble2", ((String *) wibble2->value)->value),
+    fail_unless(streq("wubble2", ((String *) wibble2->svalue)->value),
 	"Scoped symbol value for wibble2 is incorrect");
 
     symbolSet("wibble", (Object *) stringNew("wubble2"));
