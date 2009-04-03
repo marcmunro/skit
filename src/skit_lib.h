@@ -350,6 +350,7 @@ extern void optionlistAdd(Cons *list, String *option_name,
 extern void optionlistAddAlias(Cons *list, String *alias, String *key);
 extern Object *optionlistGetOption(Cons *list, String *key);
 extern Object *optionlistGetOptionValue(Cons *list, String *key, String *field);
+extern String *optionlistGetOptionName(Cons *list, String *key);
 
 // options.c
 extern Hash *coreOptionHash();

@@ -333,6 +333,29 @@ optionlistGetOption(Cons *list, String *key)
     return hashGet(hash, (Object *) real_key);
 }
 
+// Returns a reference to the fullname for a given key.  This
+// reference must not be freed by the caller.
+String *
+optionlistGetOptionName(Cons *list, String *key)
+{
+    Hash *hash;
+    String *real_key;
+    assert(isOptionlist(list), 
+	   "optionlistGetOptionName: list is not an optionlist");
+
+    if (!list->car) {
+	makeComplete(list);
+    }
+
+    hash = getAliases(list);
+    real_key = (String *) hashGet(hash, (Object *) key); 
+    if (!real_key) {
+	real_key = key;
+    }
+
+    return real_key;
+}
+
 Object *
 optionlistGetOptionValue(Cons *list, String *key, String *field)
 {

@@ -152,6 +152,7 @@ nextArg(String **p_arg, boolean *p_option)
     String *param;
     String *result = NULL;
 
+    *p_option = FALSE;
     if (argstr = read_arg()) {
 	arg = argstr->value;
 	if (arg[0] == '-') {
@@ -178,7 +179,6 @@ nextArg(String **p_arg, boolean *p_option)
 	}
 	else {
 	    result = argstr;
-	    *p_option = FALSE;
 	}
     }
     *p_arg = result;

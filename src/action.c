@@ -175,6 +175,7 @@ static Object *
 getOptionValue(Cons *optionlist, String *option)
 {
     Cons *optionalist = (Cons *) optionlistGetOption(optionlist, option);
+    String *fullname;
     String *type;
     Object *value;
     String *param = NULL;
@@ -212,9 +213,10 @@ getOptionValue(Cons *optionlist, String *option)
 	    objectFree((Object *) type, TRUE);
 	    objectFree((Object *) value, TRUE);
 	    objectFree((Object *) param, TRUE);
+	    fullname = optionlistGetOptionName(optionlist, option);
 	    RAISE(PARAMETER_ERROR, 
-		  newstr("Argument not provided for option %s", 
-			 option->value));
+		  newstr("Argument not provided for option \"%s\"", 
+			 fullname->value));
 	}
 	value = validateParamValue(type, param);
 	objectFree((Object *) param, TRUE);
@@ -277,6 +279,7 @@ getOptionlistArgs(Cons *optionlist)
 		
 		if (value = getOptionValue(optionlist, arg)) {
 		    hashAdd(params, (Object *) arg, value);
+		    value = NULL; /* Must not free this directly! */
 		}
 		else {
 		    /* This option must be for the next action. */
@@ -411,22 +414,22 @@ parsePrint(Object *obj)
 }
 
 static void
+defineActionSymbol(char *name, ObjectFn *fn)
+{
+    Symbol *sym = symbolNew(name);
+    sym->fn = fn;
+}
+		   
+
+static void
 defineActionParsers()
 {
     static boolean done = FALSE;
     if (!done) {
-	Symbol extractParser = {OBJ_SYMBOL, "parse_extract", 
-				&parseExtract, NULL};
-	Symbol adddepsParser = {OBJ_SYMBOL, "parse_adddeps", 
-				&parseAdddeps, NULL};
-	Symbol templateParser = {OBJ_SYMBOL, "parse_template", 
-				 &parseTemplate, NULL};
-	Symbol printParser = {OBJ_SYMBOL, "parse_print", 
-			      &parsePrint, NULL};
-	(void) symbolCopy(&extractParser);
-	(void) symbolCopy(&adddepsParser);
-	(void) symbolCopy(&templateParser);
-	(void) symbolCopy(&printParser);
+	defineActionSymbol("parse_extract", &parseExtract);
+	defineActionSymbol("parse_template", &parseTemplate);
+	defineActionSymbol("parse_print", &parsePrint);
+	defineActionSymbol("parse_adddeps", &parseAdddeps);
     }
     done = TRUE;
 }
@@ -571,18 +574,10 @@ defineActionExecutors()
 {
     static boolean done = FALSE;
     if (!done) {
-	Symbol extractExecutor = {OBJ_SYMBOL, "execute_extract", 
-				  &executeTemplate, NULL};
-	Symbol adddepsExecutor = {OBJ_SYMBOL, "execute_adddeps", 
-				  &executeTemplate, NULL};
-	Symbol templateExecutor = {OBJ_SYMBOL, "execute_template", 
-				   &executeTemplate, NULL};
-	Symbol printExecutor = {OBJ_SYMBOL, "execute_print", 
-				&executePrint, NULL};
-	(void) symbolCopy(&extractExecutor);
-	(void) symbolCopy(&adddepsExecutor);
-	(void) symbolCopy(&templateExecutor);
-	(void) symbolCopy(&printExecutor);
+	defineActionSymbol("execute_extract", &executeTemplate);
+	defineActionSymbol("execute_adddeps", &executeTemplate);
+	defineActionSymbol("execute_template", &executeTemplate);
+	defineActionSymbol("execute_print", &executePrint);
     }
     done = TRUE;
 }

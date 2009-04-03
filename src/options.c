@@ -30,6 +30,7 @@ coreOptions()
 	"(('add*deps' 'a')"
 	"('c*onnect')"
 	"('d*iff')"
+	"('db*type')"
 	"('e*xtract')"
 	"('ga*ther')"
 	"('ge*nerate' 'n')"

@@ -6,8 +6,8 @@
 
   <skit:options>
     <option name='sources' type='integer' value='0'/>
-    <option name='c*onnect' type='string'/>
     <option name='dbt*ype' type='string' default='postgres'/>
+    <option name='c*onnect' type='string'/>
     <option name='d*atabase' type='string'/>
     <option name='h*ost' type='string'/>
     <option name='p*ort' type='string'/>

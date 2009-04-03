@@ -205,7 +205,7 @@ checkChunk(void *chunk)
 	hash = freeTable();
 	if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 					 &key, &contents)) {
-	    fprintf(stderr, "Chunk %p was freed as number%d\n", 
+	    fprintf(stderr, "Chunk %p was freed as number %d\n", 
 		    chunk, (int) contents);
 	}
 	else {
