@@ -43,3 +43,5 @@ autom4te.cache/
 # The contents of the testdb subdirectory
 /testdb
 
+# Suppression files
+valgrind/*suppressions

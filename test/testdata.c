@@ -312,12 +312,12 @@ testTupleStr(Tuple *tuple)
 	tmp = result;
 	if (value) {
 	    result = newstr("%s ('%s' . '%s')", tmp, name->value, value->value);
+	    objectFree((Object *) value, TRUE);
 	}
 	else {
-	    result = newstr("%s ('%s')", tmp, name);
+	    result = newstr("%s ('%s')", tmp, name->value);
 	}
 	skfree(tmp);
-	objectFree((Object *) value, TRUE);
     }
     tmp = result;
     result = newstr("<#%s# (%s)>", objTypeName((Object *) tuple), tmp);

@@ -1,0 +1,37 @@
+#! /usr/bin/awk -f
+# Create suppression file output based on standard input
+# Each suppression should be created from a test in the Suppressions
+# test suite run from skit_test.  Each test should print to stdout
+# a line of the form:
+# SUPPRESSION: <name> <pattern>
+# Where name will be the name of the suppression file and the suppressions
+# contained within it, and pattern will match a function in the pattern file
+# Lines following and including pattern will be removed from the suppression
+# output.
+
+BEGIN {
+    printing = 0
+}
+/^{/ {
+    printing = 1
+}
+/^SUPPRESSION/ {
+    title = $2
+    pattern = $3
+    count = 1
+    next
+}
+/^==/ {
+    next
+}
+/insert/ {
+    print "   " title "_" count++
+    next
+}
+/fun:/ {
+    if ($1 ~ pattern) {
+	print "}"
+	printing = 0
+    }
+}
+(printing)

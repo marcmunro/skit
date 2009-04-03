@@ -27,12 +27,19 @@ static GHashTable *hash_chunks = NULL;
 static GHashTable *hash_frees = NULL;
 
 
+/**
+ * For debugging purposes.  Add a call to this from wherever you need 
+ * breakpoint and then you can break on it.
+ */
 static void
 memdebug(char *label)
 {
     fprintf(stderr, "MEMDEBUG: %s\n", label);
 }
 
+/**
+ * Key equality function for use in hash tables.
+ */
 static gboolean 
 equalKey(gconstpointer obj1, gconstpointer obj2)
 {
@@ -43,12 +50,18 @@ equalKey(gconstpointer obj1, gconstpointer obj2)
     return streq((char *) obj1, (char *) obj2);
 }
 
+/** 
+ * Function for freeing hash keys, required by hash table.
+ */
 static void
 freeHashKey(gpointer key)
 {
     free(key);
 }
 
+/**
+ * Create a hash table for tracking malloc and free usage.
+ */
 static GHashTable *
 newHashTable()
 {
@@ -57,13 +70,18 @@ newHashTable()
     return tbl;
 }
 
+/**
+ * Free a hash table previously used for tracking malloc and free usage.
+ */
 static void
 freeHashTable(GHashTable *hash)
 {
     g_hash_table_destroy(hash);
 }
 
-
+/**
+ * Return the hash table used to keep track of alloc'd chunks of memory.
+ */
 static GHashTable *
 chunkTable()
 {
@@ -74,6 +92,9 @@ chunkTable()
     return hash_chunks;
 }
 
+/**
+ * Return the hash table used to keep track of freed chunks of memory.
+ */
 static GHashTable *
 freeTable()
 {
@@ -81,25 +102,14 @@ freeTable()
 	char *x;
 	hash_frees = newHashTable();
 	(void) chunkTable();  
-	x = newstr("x");      // Alloc and free a string to initialise
-	skfree(x);            // usage of the the glib hash.  This
-			      // should make supression of valgrind
-			      // errors easier.
+	x = newstr("x");      
+	skfree(x);            /* Alloc and free a string to initialise 
+			       * usage of the the glib hash.  This
+			       * should make supression of valgrind
+			       * errors easier. */
     }
 
     return hash_frees;
-}
-
-static char *
-hash_name(GHashTable *hash)
-{
-    if (hash == freeTable()) {
-	return "freeTable";
-    }
-    if (hash == chunkTable()) {
-	return "chunkTable";
-    }
-    return "UNKNOWN HASH TABLE - BADBADBADBADBADBADBADBADBADBAD";
 }
 
 // This is nasty and probably not portable.  It's debug code though so I
@@ -119,6 +129,11 @@ toPtr(char *str)
     return (void *) ptr;
 }
 
+/**
+ * Function to print objects that have not been freed at the end of a
+ * run.  This is aimed at just being helpful enough for debugging
+ * purposes.  It is not intended as a general purpose print function.
+ */
 static void
 printObj(Object *obj)
 {

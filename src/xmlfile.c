@@ -36,7 +36,9 @@ static void
 tuplestackPush(Object *tuple)
 {
     Symbol *tuplestack = symbolGet("tuplestack");
-    symbolSet("tuple", tuple);
+    Symbol *tuple_sym = symbolGet("tuple");
+    tuple_sym->svalue = tuple;  /* We do this directly so that we don't
+				 * try to free the previous contents. */
 
     //fprintf(stderr, "TUPLEPUSH: tuple = %p\n", tuple);
     (void) consPush((Cons **) &(tuplestack->svalue),  tuple);
@@ -46,7 +48,7 @@ static void
 tuplestackPop()
 {
     Symbol *tuplestack = symbolGet("tuplestack");
-    //Symbol *tuple_sym = symbolGet("tuple");
+    Symbol *tuple_sym = symbolGet("tuple");
     Cons *stack;
     Object *tuple = NULL;
     
@@ -54,8 +56,8 @@ tuplestackPop()
     if (stack = (Cons *) tuplestack->svalue) {
 	tuple = stack->car;
     }
-    symbolSet("tuple", tuple);
-    //tuple_sym->svalue = tuple;
+    tuple_sym->svalue = tuple;  /* We do this directly so that we don't
+				 * try to free the previous contents. */
     //fprintf(stderr, "TUPLEPOP: tuple = %p\n", tuple);
 }
 
@@ -720,6 +722,15 @@ execFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     return NULL;
 }
 
+static Object *debug_obj = NULL;
+
+static void
+xmlfiledebug(Object *obj)
+{
+    debug_obj = obj;
+    fprintf(stderr, "XMLFILEDEBUG\n");
+}
+
 static xmlNode *
 iterate(Object *collection, String *filter,
 	xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -743,6 +754,7 @@ iterate(Object *collection, String *filter,
     }    
 
     BEGIN {
+	//printSexp(stderr, "COLLECTION: ", collection);
 	while (tuple = objNext(collection, &placeholder), placeholder) {
 	    if (sym) {
 		sym->svalue = tuple;
@@ -756,12 +768,21 @@ iterate(Object *collection, String *filter,
 	    }
 	    
 	    BEGIN {
+		//char *tmp = objectSexp(tuple);
+		//if (streq(tmp, "'regress=C/regress'")) {
+		//    xmlfiledebug(tuple);
+		//}
+		//skfree(tmp);
+		//fprintf(stderr, "TUPLE: %p\n", tuple);
+		//printSexp(stderr, "TUPLE: ", tuple);
 		if (do_it) {
 		    child = processChildren(template_node, parent_node, 
 					    depth + 1);
 		    if (!first_child) {
 			first_child = child;
 		    }
+		    //fprintf(stderr, "TUPLE2: %p\n", tuple);
+		    //printSexp(stderr, "TUPLE2: ", tuple);
 		}
 	    }
 	    EXCEPTION(ex);
@@ -1151,6 +1172,8 @@ execXmlNodeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     initSkitProcessors();
     if (ref = (FnReference *) hashGet(skit_processors, (Object *) name)) {
 	fn = (xmlFn *) ref->fn;
+	//printSexp(stderr, "ACTUAL:", debug_obj);
+	//printSexp(stderr, "EXECUTING: ", name);
 	objectFree((Object *) name, TRUE);
 	return (*fn)(template_node, parent_node, depth);
     }

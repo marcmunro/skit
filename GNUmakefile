@@ -65,9 +65,9 @@ clean: $(SUBDIRS:%=%_clean)
 
 # Provide a list of the targets buildable by this makefile.
 do_help: $(SUBDIRS:%=%_help)
-	@echo "help        - list major makefile targets"
-	@echo "check       - perform a simple interactive test run of skit"
-	@echo "clean       - remove all intermediate, backup and target files"
+	@echo "help         - list major makefile targets"
+	@echo "check        - perform a simple interactive test run of skit"
+	@echo "clean        - remove all intermediate, backup and target files"
 
 help:
 	@echo "Major targets of this makefile:"

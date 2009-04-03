@@ -53,4 +53,4 @@ src_clean: $(SRC_SUBDIRS:%=%_clean)
 
 # Describe what this makefile can build
 src_help: $(SRC_SUBDIRS:%=%_help)
-	@echo "skit        - build the skit executable"
+	@echo "skit         - build the skit executable"

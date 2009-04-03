@@ -23,17 +23,32 @@
 
 
 
+START_TEST(hash_suppressions)
+{
+    printf("SUPPRESSION: glib_hash_suppression addChunk\n");
+}
+END_TEST
 
 Suite *
-first_suite(void)
+suppressions_suite(void)
+{
+    Suite *s = suite_create("Suppressions");
+    TCase *tc_s = tcase_create("Suppressions");
+    ADD_TEST(tc_s, hash_suppressions);
+    suite_add_tcase(s, tc_s);
+    return s;
+}
+
+Suite *
+base_suite(void)
 {
     Suite *s = suite_create("");
     return s;
 }
 
-
 static boolean reporting_only = FALSE;
 static boolean nofork = FALSE;
+static boolean suppressions = FALSE;
 static char suite_name[100];
 static char test_name[100];
 
@@ -50,6 +65,7 @@ usage()
 	    "       skit_test [-n] [test_suite_name [test_name]]\n"
 	    "       skit_test -c\n"
 	    " -n is nofork for debugging\n"
+	    " -s is for generating suppressions\n"
 	    " -r is reporting only for showing available tests\n");
 }
 
@@ -63,6 +79,7 @@ handle_args(int argc, char *argv[])
 	    switch (arg->value[1]) {
 	    case 'r': reporting_only = TRUE; break;
 	    case 'n': nofork = TRUE; break;
+	    case 's': nofork = TRUE; suppressions = TRUE; break;
 	    default: usage(); break;
 	    }
 	    objectFree((Object *) arg, TRUE);
@@ -112,18 +129,24 @@ main(int argc, char *argv[])
     memShutdown();
 
     skit_register_signal_handler();
-    sr = srunner_create(first_suite());
+    sr = srunner_create(base_suite());
     global_sr = sr;
     if (nofork) {
+	fprintf(stderr, "NOT FORKING!!!!\n");
 	srunner_set_fork_status (sr, CK_NOFORK);
     }
 
-    ADD_SUITE(params);
-    ADD_SUITE(objects);
-    ADD_SUITE(options);
-    ADD_SUITE(exceptions);
-    ADD_SUITE(filepaths);
-    ADD_SUITE(xmlfile);
+    if (suppressions || reporting_only) {
+	ADD_SUITE(suppressions);
+    }
+    if (!suppressions) {
+	ADD_SUITE(objects);
+	ADD_SUITE(options);
+	ADD_SUITE(exceptions);
+	ADD_SUITE(filepaths);
+	ADD_SUITE(xmlfile);
+	ADD_SUITE(params);
+    }
 
     if (!reporting_only) {
 	srunner_set_log (sr, "test.log");

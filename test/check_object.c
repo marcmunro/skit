@@ -755,7 +755,6 @@ START_TEST(regexp_object)
 }
 END_TEST
 
-
 Suite *
 objects_suite(void)
 {
