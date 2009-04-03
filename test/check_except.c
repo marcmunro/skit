@@ -319,7 +319,8 @@ START_TEST(exceptions_new9)
 {
     int a;
     a = catcher3(9);
-    fail_unless(a == 54, "Function result 54 expected, got %d\n", a);
+    fail_unless(a == UNKNOWN_EXCEPTION, 
+		"Function result UNKNOWN_EXCEPTION expected, got %d\n", a);
     FREEMEMWITHCHECK;
 }
 END_TEST
