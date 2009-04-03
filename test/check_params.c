@@ -601,7 +601,7 @@ START_TEST(extract)
     //showFree(1205);
     //showMalloc(1986);
 
-    Begin {
+    BEGIN {
 	process_args2(6, args);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
