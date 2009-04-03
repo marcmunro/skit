@@ -366,6 +366,26 @@ parseTemplate(Object *obj)
 }
 
 static Object *
+parseExtract(Object *obj)
+{
+    String *filename;
+    Object *action_info;
+
+    BEGIN {
+	filename = stringNew("extract.xml");
+
+	action_info = doParseTemplate(filename);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) filename, TRUE);
+    }
+    END;
+
+    return action_info;
+}
+
+static Object *
 parseAdddeps(Object *obj)
 {
     String *filename = stringNew("add_deps.xml");
@@ -395,12 +415,15 @@ defineActionParsers()
 {
     static boolean done = FALSE;
     if (!done) {
+	Symbol extractParser = {OBJ_SYMBOL, "parse_extract", 
+				&parseExtract, NULL};
 	Symbol adddepsParser = {OBJ_SYMBOL, "parse_adddeps", 
 				&parseAdddeps, NULL};
 	Symbol templateParser = {OBJ_SYMBOL, "parse_template", 
 				 &parseTemplate, NULL};
 	Symbol printParser = {OBJ_SYMBOL, "parse_print", 
 			      &parsePrint, NULL};
+	(void) symbolCopy(&extractParser);
 	(void) symbolCopy(&adddepsParser);
 	(void) symbolCopy(&templateParser);
 	(void) symbolCopy(&printParser);
@@ -440,7 +463,8 @@ parseAction(String *action)
 		    (Object *) stringDup(action));
 	}
 	else {
-	    skitFail(newstr("%s not implemented\n", parser_name->value));
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		  newstr("%s not implemented\n", parser_name->value));
 	}
     }
     EXCEPTION(ex);
@@ -542,19 +566,20 @@ executeTemplate(Object *params)
     return NULL;
 }
 
-
-
 static void
 defineActionExecutors()
 {
     static boolean done = FALSE;
     if (!done) {
+	Symbol extractExecutor = {OBJ_SYMBOL, "execute_extract", 
+				  &executeTemplate, NULL};
 	Symbol adddepsExecutor = {OBJ_SYMBOL, "execute_adddeps", 
 				  &executeTemplate, NULL};
 	Symbol templateExecutor = {OBJ_SYMBOL, "execute_template", 
 				   &executeTemplate, NULL};
 	Symbol printExecutor = {OBJ_SYMBOL, "execute_print", 
 				&executePrint, NULL};
+	(void) symbolCopy(&extractExecutor);
 	(void) symbolCopy(&adddepsExecutor);
 	(void) symbolCopy(&templateExecutor);
 	(void) symbolCopy(&printExecutor);
@@ -611,7 +636,8 @@ executeAction(String *action, Hash *params)
 	    result = symbolExec(action_executor, (Object *) params);
 	}
 	else {
-	    skitFail(newstr("%s not implemented\n", executor_name->value));
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		  newstr("%s not implemented\n", executor_name->value));
 	}
     }
     EXCEPTION(ex);
@@ -622,4 +648,17 @@ executeAction(String *action, Hash *params)
 	objectFree((Object *) params, TRUE);
     }
     END;
+}
+
+void
+finalAction()
+{
+    if (action_stack) {
+	symbolSet("sources", (Object *) int4New(1));
+	(void) executePrint(NULL);
+    }
+    if (action_stack) {
+	RAISE(PARAMETER_ERROR, 
+	      newstr("Unprocessed documents still exist on the stack"));
+    }
 }

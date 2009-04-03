@@ -341,6 +341,7 @@ extern void curFree();
 extern void showFree(int number_to_show);
 extern void memShutdown();
 extern void skitFreeMem();
+extern void checkChunk(void *chunk);
 
 // optionlist.c
 extern Cons *optionlistNew();
@@ -374,7 +375,7 @@ extern void loadInFile(String *filename);
 extern Object *actionStackPop();
 extern Hash *parseAction(String *action);
 extern void executeAction(String *action, Hash *params);
-
+extern void finalAction();
 
 // builtin_symbols.c
 extern void initBuiltinSymbols();

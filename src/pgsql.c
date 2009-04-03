@@ -88,6 +88,9 @@ record_param(String *value, char *name, boolean make_global)
 	}
 }
 
+// TODO: Refactor this.  The objectCopy of connect below is a hack and
+// should not be required.  The whole thing feels horribly fragile.
+// Note that ../test/testdata.c is similar.
 static Connection *
 pgsqlConnect(Object *sqlfuncs)
 {
@@ -110,7 +113,8 @@ pgsqlConnect(Object *sqlfuncs)
 		 * variables globally, otherwise we will define them only within
 		 * the scope of the current action. */
 		make_global = (connection == NULL);
-		record_param(connect, "connect", make_global);
+		record_param((String *) objectCopy((Object *) connect), 
+					 "connect", make_global);
 		record_param(host, "host", make_global);
 		record_param(port, "port", make_global);
 		record_param(dbname, "dbname", make_global);
@@ -124,14 +128,19 @@ pgsqlConnect(Object *sqlfuncs)
 		connection->sqlfuncs = sqlfuncs;
 		connection->dbtype = stringNew("postgres");
 		connection->conn = NULL;
+		//fprintf(stderr, "Connecting to database type \"postgres\""
+		//				 " with \"%s\"\n", connect->value);
 		BEGIN {
 			connection->conn = (void *) PQconnectdb(connect->value);
 			pgsqlConnectionCheck((PGconn *) connection->conn);
 		}
-		EXCEPTION(ex);
-		WHEN_OTHERS {
+		EXCEPTION(ex) {
 			objectFree((Object *) connection, TRUE);
-			RAISE();
+		}
+		WHEN(SQL_ERROR) {
+			RAISE(SQL_ERROR,
+				  newstr("Cannot connect to database type \"postgres\""
+						 " with \"%s\"\n  %s", connect->value, ex->text));
 		}
 		END;
 		sym = symbolNew("dbconnection");

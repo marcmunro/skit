@@ -63,6 +63,7 @@ process_args(int argc,
 	params = parseAction(action);
 	executeAction(action, params);
     }
+    finalAction();
 }
 
 
@@ -77,6 +78,22 @@ main(int argc,
     initTemplatePath(templatedir);
     //parse_args(argc, argv);
     process_args(argc, argv);
-    printf("Done\n");
+
+    /* BEGIN DEBUG CODE SECTION
+     * This should be commented out in a live version
+     */
+    skfree(templatedir);
+    skfree(homedir);
+    skitFreeMem();
+    if (exceptionCurHandler())
+       fprintf(stderr, "There is still an exception handler in place!\n");
+    if (memchunks_in_use() != 0) {
+	showChunks();
+	fprintf(stderr, "There are still %d memory chunks allocated",
+		memchunks_in_use());
+    }
+    memShutdown();
+    /* END DEBUG CODE SECTION */
+
     return 0;
 }

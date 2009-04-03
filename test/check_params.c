@@ -122,8 +122,10 @@ process_args2(int argc,
     record_args(argc, argv);
     while (action = nextAction()) {
 	params = parseAction(action);
+	//printSexp(stderr, "PARAMS", params);
 	executeAction(action, params);
     }
+    finalAction();
 }
 
 
@@ -585,19 +587,22 @@ END_TEST
 
 START_TEST(extract)
 {
-    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
-    //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
+    //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
+    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest' port = '54329'",
                     "--print"};
     Document *doc;
+    char *bt;
 
     initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
+    //showFree(1205);
+    //showMalloc(1986);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(6, args);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -606,6 +611,7 @@ START_TEST(extract)
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
 	//RAISE();
 	//fail("extract fails with exception");
     }

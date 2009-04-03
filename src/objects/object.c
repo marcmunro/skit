@@ -391,6 +391,7 @@ objectFree(Object *obj, boolean free_contents)
 	       that contains it is freed */
 	    return;
 	default: 
+	    checkChunk(obj);
 	    fails = newstr("objectFree: Unhandled type: %d in %p\n", 
 			   obj->type, obj);
 	    RAISE(UNHANDLED_OBJECT_TYPE, fails);

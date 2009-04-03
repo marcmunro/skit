@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "skit_lib.h"
+#include "exceptions.h"
 
 // TODO: Make the debug stuff below conditionally compiled.
 
@@ -185,13 +186,42 @@ printObj(Object *obj)
     }
 }
 
+// Print to stderr whatever is known about the given memory chunk.
+void
+checkChunk(void *chunk)
+{
+    GHashTable *hash = chunkTable();
+    char *keystr = malloc(20);
+    gpointer key;
+    gpointer contents = NULL;
+
+    sprintf(keystr, "%p", chunk);
+    if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
+				     &key, &contents)) {
+	fprintf(stderr, "Chunk %p is malloc'd  as number %d\n", 
+		chunk, (int) contents);
+    }
+    else {
+	hash = freeTable();
+	if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
+					 &key, &contents)) {
+	    fprintf(stderr, "Chunk %p was freed as number%d\n", 
+		    chunk, (int) contents);
+	}
+	else {
+	    fprintf(stderr, "Chunk %p is not known to mem.c\n", chunk);
+	}
+    }
+}
+
 // Move the record of a chunk of memory from one hash to another.  The
 // result contains the previous contents, if present.  This does the
 // heavy lifting for addChunk and delChunk, and can be also used to
 // free hash table entries.  TODO: Make output interface better, we are
 // overloading the result in nasty ways.
 static int
-moveChunk(GHashTable *from_hash, GHashTable *to_hash, void *chunk)
+moveChunk(GHashTable *from_hash, GHashTable *to_hash, 
+	  void *chunk, int chunk_number)
 {
     char *keystr = malloc(20);
     gpointer previous_contents = NULL;
@@ -234,7 +264,7 @@ moveChunk(GHashTable *from_hash, GHashTable *to_hash, void *chunk)
 static void
 addChunk(void *chunk)
 {
-    int previous = moveChunk(freeTable(), chunkTable(), chunk);
+    int previous = moveChunk(freeTable(), chunkTable(), chunk, chunk_number);
 //    fprintf(stderr, "ALLOCED: %p\n", chunk);
     if (previous == -1) {
 	fprintf(stderr, "ARGGGGGGHHHHH(add)!\n");
@@ -245,28 +275,27 @@ addChunk(void *chunk)
 // Record the de-allocation of a chunk of free memory.  The existing
 // entry in the chunks hash is removed and a new entry is added to the
 // frees hash, indexed by the address (as a string) and containing the
-// current value of free_number.  If an attempt is made to free the same
-// memory again, we can tell when the original free was done.  This
-// should aid debugging.
+// chunk_number as malloc'd.  If an attempt is made to free the same
+// memory again, we can tell which chunk was.
 //
 static void
 delChunk(void *chunk)
 {
-    int previous = moveChunk(chunkTable(), freeTable(), chunk);
-    //if (previous == 2396) {
-    //	debug("FREEING 2396");
-    //	printObj((Object *) chunk);
-    //}
-//    fprintf(stderr, "FREED: %p\n", chunk);
-    if (previous == -1) {
-	memdebug("XX");
-	fprintf(stderr, "DelChunk %p already freed!\n", chunk);
-	abort();
-    }
+    int previous = moveChunk(chunkTable(), freeTable(), chunk, free_number);
+
     if (!previous) {
-	memdebug("YY");
-	fprintf(stderr, "DelChunk %p not allocated!\n", chunk);
-	//abort();
+	RAISE(MEMORY_ERROR, 
+	      newstr("DelChunk: Chunk %p not allocated", chunk));
+    }
+    if (previous == -1) {
+	RAISE(MEMORY_ERROR, 
+	      newstr("DelChunk: Chunk %p already freed", chunk));
+    }
+    if (free_number == show_free_number) {
+	memdebug("FREEING IDENTIFIED CHUNK");
+	fprintf(stderr, "  Freeing chunk %p: freed as %d, malloc'd as %d\n", 
+		chunk, free_number, previous);
+	printObj((Object *) chunk);
     }
 }
 
@@ -309,15 +338,10 @@ memchunks_incr(void *chunk)
 {
     MEMPRINTF("+");
     chunk_number++;
-    /* Uncomment the following with a specific chunk_number if you want
-     * use gdb to see where a chunk is being created (use set break
-     * debug in gdb) */
-    //if (chunk_number == 3748) memdebug("3748");
-    //if (chunk_number == 1889) memdebug("1889");
-    //if (chunk_number == 5027) memdebug("5027");
     
     if (chunk_number == show_malloc_number) {
-	fprintf(stderr, "Allocating chunk no %d\n", chunk_number);
+	memdebug("ALLOCATING IDENTIFIED CHUNK");
+	fprintf(stderr, "  Allocating %p, chunk no %d\n", chunk, chunk_number);
     }
     chunks_in_use++;
     addChunk(chunk);
@@ -337,13 +361,8 @@ skalloc(size_t size)
 void 
 skfree(void *ptr)
 {
-//    fprintf(stderr, "FREEING %p\n", ptr);
     MEMPRINTF("-");
     free_number++;
-    if (free_number == show_free_number) {
-	fprintf(stderr, "Freeing number %d\n", free_number);
-	printObj((Object *) ptr);
-    }
     chunks_in_use--;
     delChunk(ptr);
     free(ptr);

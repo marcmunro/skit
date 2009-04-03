@@ -45,3 +45,6 @@ autom4te.cache/
 
 # Suppression files
 valgrind/*suppressions
+
+# And the list of things to test
+valgrind/alltests

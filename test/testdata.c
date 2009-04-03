@@ -159,7 +159,8 @@ testConnect(Object *sqlfuncs)
 	 * variables globally, otherwise we will define them only within
 	 * the scope of the current action. */
 	make_global = (connection == NULL);
-	record_param((String *) objectCopy((Object *) connect), "connect", make_global);
+	record_param((String *) objectCopy((Object *) connect), 
+		     "connect", make_global);
 	record_param(host, "host", make_global);
 	record_param(port, "port", make_global);
 	record_param(dbname, "dbname", make_global);

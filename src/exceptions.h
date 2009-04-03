@@ -123,7 +123,8 @@
 #define REGEXP_ERROR            51
 #define SQL_ERROR               52
 #define UNPROCESSED_INCLUSION   53
-#define UNKNOWN_EXCEPTION       54
+#define MEMORY_ERROR            54
+#define UNKNOWN_EXCEPTION       55
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block
