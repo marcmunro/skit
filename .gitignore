@@ -48,3 +48,4 @@ valgrind/*suppressions
 
 # And the list of things to test
 valgrind/alltests
+valgrind/out

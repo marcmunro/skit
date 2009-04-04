@@ -424,6 +424,7 @@ extern char *tupleStr(Tuple *tuple);
 extern String *tupleGet(Tuple *tuple, Object *key);
 extern Object *cursorNext(Cursor *cursor, Object **p_placeholder);
 extern char *cursorStr(Cursor *cursor);
+extern boolean checkDbtypeIsRegistered(String *dbtype);
 
 
 // pgsql.c

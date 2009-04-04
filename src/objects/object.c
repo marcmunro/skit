@@ -43,6 +43,7 @@ objTypeName(Object *obj)
     case OBJ_CONNECTION: return "OBJ_CONNECTION";
     case OBJ_CURSOR: return "OBJ_CURSOR";
     case OBJ_TUPLE: return "OBJ_TUPLE";
+    case OBJ_MISC: return "OBJ_MISC";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -349,53 +350,95 @@ objectCmp(Object *obj1, Object *obj2)
     }
 }
 
+//#define DEBUG_FREE
+#ifdef DEBUG_FREE
+static int free_depth = 0;
+
+void
+indent()
+{
+    int i;
+    for (i = 0; i < free_depth; i++) {
+	putc(' ', stderr);
+    }
+}
+
+void
+startFree(Object *obj)
+{
+    char *str = "";
+    indent();
+    if (obj->type == OBJ_SYMBOL) {
+	str = ((Symbol *) obj)->name;
+    }
+    else if (obj->type == OBJ_STRING) {
+	str = ((String *) obj)->value;
+    }
+    fprintf(stderr, "Free %s (%p) %s\n", objTypeName(obj), obj, str);
+    free_depth++;
+}
+
+void
+endFree(Object *obj)
+{
+    free_depth--;
+    indent();
+    fprintf(stderr, "Done (%p)\n", obj);
+}
+#else
+#define startFree(x)
+#define endFree(x)
+#endif
+
 /* Free a dynamically allocated object. */
 void
 objectFree(Object *obj, boolean free_contents)
 {
     char *fails;
     if (obj) {
+	startFree(obj);
 	switch (obj->type) {
 	case OBJ_CONS: 
-	    consFree((Cons *) obj, free_contents); return;
+	    consFree((Cons *) obj, free_contents); break;
 	case OBJ_INT4: 
-	    int4Free((Int4 *) obj); return;
+	    int4Free((Int4 *) obj); break;
 	case OBJ_STRING: 
-	    stringFree((String *) obj, free_contents); return;
+	    stringFree((String *) obj, free_contents); break;
 	case OBJ_VECTOR:
-	    vectorFree((Vector *) obj, free_contents); return;
+	    vectorFree((Vector *) obj, free_contents); break;
 	case OBJ_HASH:
-	    hashFree((Hash *) obj, free_contents); return;
+	    hashFree((Hash *) obj, free_contents); break;
 	case OBJ_SYMBOL:
 	    // Note that symbolFree does not free symbols that are in
 	    // the symbol table.  We maybe shouldn't bother with
 	    // symbolFree at all since all symbols should be in the
 	    // table but I guess it does no harm.
-	    symbolFree((Symbol *) obj, free_contents); return;
+	    symbolFree((Symbol *) obj, free_contents); break;
 	case OBJ_DOCUMENT:
-	    documentFree((Document *) obj, free_contents); return;
+	    documentFree((Document *) obj, free_contents); break;
 	case OBJ_XMLNODE:
-	    skfree(obj); return;
+	    skfree(obj); break;
 	case OBJ_FN_REFERENCE:
-	    fnRefFree((FnReference *) obj); return;
+	    fnRefFree((FnReference *) obj); break;
 	case OBJ_OBJ_REFERENCE:
-	    objRefFree((ObjReference *) obj); return;
+	    objRefFree((ObjReference *) obj); break;
 	case OBJ_REGEXP:
-	    regexpFree((Regexp *) obj); return;
+	    regexpFree((Regexp *) obj); break;
 	case OBJ_CONNECTION:
-	    connectionFree((Connection *) obj); return;
+	    connectionFree((Connection *) obj); break;
 	case OBJ_CURSOR:
-	    cursorFree((Cursor *) obj); return;
+	    cursorFree((Cursor *) obj); break;
 	case OBJ_TUPLE:
 	    /* Nothing to be done - it will be freed when the cursor
 	       that contains it is freed */
-	    return;
+	    break;
 	default: 
 	    checkChunk(obj);
 	    fails = newstr("objectFree: Unhandled type: %d in %p\n", 
 			   obj->type, obj);
 	    RAISE(UNHANDLED_OBJECT_TYPE, fails);
 	}
+	endFree(obj);
     }
 }
 
@@ -432,6 +475,8 @@ objectSexp(Object *obj)
 	return newstr("<%s %p>", objTypeName(obj), ((FnReference *) obj)->fn);
     case OBJ_CONNECTION:
 	return newstr("<%s %p>", objTypeName(obj), ((Connection *) obj)->conn);
+    case OBJ_MISC:
+	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
     case OBJ_TUPLE:

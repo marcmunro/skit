@@ -144,7 +144,7 @@ printObj(Object *obj)
 	    fprintf(stderr, "int4: %d\n", ((Int4 *) obj)->value); 
 	    break;
 	case OBJ_STRING: 
-	    fprintf(stderr, "string: %s\n", ((String *) obj)->value); 
+	    fprintf(stderr, "string: \"%s\"\n", ((String *) obj)->value); 
 	    break;
 	case OBJ_CONS: 
 	    fprintf(stderr, "cons: car=%p, cdr=%p\n", 
@@ -288,6 +288,7 @@ delChunk(void *chunk)
 	      newstr("DelChunk: Chunk %p not allocated", chunk));
     }
     if (previous == -1) {
+	//checkChunk(chunk);
 	RAISE(MEMORY_ERROR, 
 	      newstr("DelChunk: Chunk %p already freed", chunk));
     }

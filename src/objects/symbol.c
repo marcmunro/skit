@@ -42,11 +42,6 @@ dropScopeForSymbol(Symbol *sym)
     objectFree((Object *) prev, FALSE);
 }
 
-void burble()
-{
-    fprintf(stderr, "BURBLE\n");
-}
-
 void
 setScopeForSymbol(Symbol *sym)
 {
@@ -68,7 +63,6 @@ setScopeForSymbol(Symbol *sym)
 	    return;
 	}
     }
-    //burble();
     prev = consNew(sym->svalue, (Object *) symbol_scope);
     (void) consPush(&(sym->scope), (Object *) prev);
     sym->svalue = NULL;

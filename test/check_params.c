@@ -585,6 +585,53 @@ START_TEST(print)
 }
 END_TEST
 
+START_TEST(dbtype)
+{
+    char *args[] = {"./skit", "--dbtype", "postgres"};
+    Document *doc;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    BEGIN {
+	process_args2(3, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fail("dbtype: failed to set dbtype");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(dbtype_unknown)
+{
+    char *args[] = {"./skit", "--dbtype", "wibble"};
+    Document *doc;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    BEGIN {
+	process_args2(3, args);
+	fail("dbtype_unknown: Invalid dbtype not detected(1)");
+    }
+    EXCEPTION(ex);
+    WHEN(PARAMETER_ERROR) {
+	fail_unless(contains(ex->text, "dbtype \"wibble\" is not known"),
+		    "dbtype_unknown: Invalid dbtype not detected(2)");
+    }
+    WHEN_OTHERS {
+	fail("dbtype_unknown: Invalid dbtype not detected(3)");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(extract)
 {
     //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
@@ -642,6 +689,8 @@ params_suite(void)
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
     ADD_TEST(tc_core, extract);
+    ADD_TEST(tc_core, dbtype);
+    ADD_TEST(tc_core, dbtype_unknown);
     //ADD_TEST(tc_core, print);
 				
     suite_add_tcase(s, tc_core);

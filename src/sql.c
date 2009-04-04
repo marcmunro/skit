@@ -27,12 +27,24 @@ trimSqlText(String *text)
 {
     Regexp *replace = regexpNew("--.*$");
     String *result;
+
     result =  regexpReplace(text, replace, &empty_str);
     objectFree((Object *) replace, TRUE);
     return result;
 }
 
 static Connection *cur_connection = NULL;
+
+boolean
+checkDbtypeIsRegistered(String *dbtype)
+{
+    Hash *dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
+    SqlFuncs *functions;
+
+    functions = (SqlFuncs *) dereference(
+	hashGet(dbhash, (Object *) dbtype));
+    return functions != NULL;
+}
 
 /* Called to establish a connection, or get the current connection. */
 Connection *

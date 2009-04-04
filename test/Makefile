@@ -59,27 +59,31 @@ unit: skit_test test/log
 # Build new suppression files for valgrind from the suppressions test suite
 # within skit_test.
 suppressions: skit_test valgrind/alltests
+	@rm -f $(SUPPRESSION_FILES) 2>/dev/null
 	@grep -i suppressions valgrind/alltests | \
-	   while read suite test; do $(MAKE) suppress_one TESTS=$${test}; done
+	   while read suite test; do $(MAKE) suppress_one \
+		SUITE=$${suite} THIS_TEST=$${test}; done
+
+EXISTING_SUPPRESSIONS = ls valgrind/?*suppressions 2>/dev/null | \
+	    xargs -I Z echo --suppressions=Z
 
 # Build a single suppression file.  This is called recursively from the
 # suppressions target.  As suppression files rarely require updating, this
-# is considered safe enough.  Note that if suppression files are automatically
-# built because of the valgrind/suppressions dependency, the 
-# MEMCHECK_SUPPRESSIONS variable will not be updated and so valgrind
-# warnings will not be correctly suppressed.  Work around this for now
-# by just running the tests a second time, and all will be well.  I'm too
-# lazy right now to fix this very minor problem.
+# is considered safe enough.  
 suppress_one:
-	@echo Creating valgrind/$(TESTS)...
-	@valgrind $(GEN_SUPPRESSIONS) ./skit_test -s $(TESTS) 2>&1 | \
-		valgrind/make_suppression >valgrind/$(TESTS)
+	@echo Creating valgrind/$(THIS_TEST)...
+	@suppression_files=`$(EXISTING_SUPPRESSIONS)` ; \
+	valgrind $(GEN_SUPPRESSIONS) $${suppression_files} \
+	    ./skit_test -s $(SUITE) $(THIS_TEST) 2>&1 | \
+		valgrind/make_suppression >valgrind/tmpout 
+	@mv valgrind/tmpout valgrind/$(THIS_TEST)
 
 # Target that simply ensures that suppression files have been created
 # It is not generally necessary to keep them up to date since they will
 # change very infrequently.  If there is any doubt about the accuracy
 # of the suppression files, simply run make suppressions explicitly.
-valgrind/suppressions: suppressions
+valgrind/suppressions: 
+	$(MAKE) suppressions
 	@touch valgrind/suppressions
 
 # Build a list of all tests known to the test suite.

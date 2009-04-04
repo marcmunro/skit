@@ -22,19 +22,48 @@
 #include "suites.h"
 
 
-
+/* This identifies the suppresions required by all tests, as all tests
+ * use glib hash functions (due to the memory subsystem using hashes to
+ * record debug info).
+ */
 START_TEST(hash_suppressions)
 {
     printf("SUPPRESSION: glib_hash_suppression addChunk\n");
 }
 END_TEST
 
+/* This identifies suppressions required when using xmlreader.
+ */
+START_TEST(xmlreader_suppressions)
+{
+    xmlTextReaderPtr reader;
+    int ret;
+
+    printf("SUPPRESSION: xmlreader_suppression xmlReaderForFile\n");
+    reader = xmlReaderForFile("test/templates/noname.xml", NULL, 0);
+
+    if (reader != NULL) {
+        ret = xmlTextReaderRead(reader);
+        while (ret == 1) {
+            ret = xmlTextReaderRead(reader);
+        }
+        xmlFreeTextReader(reader);
+    }
+    xmlCleanupParser();
+}
+END_TEST
+
+/* The suppressions suite is used to automagically generate suppresions
+ * files for valgrind.  See valgrind/make_supression and test/Makefile
+ * for more info.
+ */
 Suite *
 suppressions_suite(void)
 {
     Suite *s = suite_create("Suppressions");
     TCase *tc_s = tcase_create("Suppressions");
     ADD_TEST(tc_s, hash_suppressions);
+    ADD_TEST(tc_s, xmlreader_suppressions);
     suite_add_tcase(s, tc_s);
     return s;
 }
@@ -109,7 +138,7 @@ check_test(char *testname, boolean report_this)
 }
 
 #define ADD_SUITE(name)					\
-    if (reporting_only) {				\
+    if (suppressions || reporting_only) {		\
 	strcpy(suite_name, #name);			\
     }							\
     if (string_matches(#name, suite_name)) {		\

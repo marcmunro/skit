@@ -76,8 +76,8 @@ main(int argc,
     skit_register_signal_handler();
     initBuiltInSymbols();
     initTemplatePath(templatedir);
-    //showFree(857);
-    //showMalloc(2003);
+    showFree(614);
+    //showMalloc(1528);
     process_args(argc, argv);
 
     /* BEGIN DEBUG CODE SECTION

@@ -28,6 +28,7 @@ static String default_str = {OBJ_STRING, "default"};
 static String add_deps_str= {OBJ_STRING, "add_deps"};  // TODO: deprecate
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
+static String dbtype_str = {OBJ_STRING, "dbtype"};
 static Document *adddeps_document = NULL;
 static Document *rmdeps_document = NULL;
 static Cons *action_stack = NULL;
@@ -413,6 +414,33 @@ parsePrint(Object *obj)
     return (Object *) args;
 }
 
+static Object *
+parseDbtype(Object *obj)
+{
+    String *key;
+    String *dbtype = read_arg();
+    char *str;
+    Hash *result;
+
+    if (!dbtype) {
+	RAISE(PARAMETER_ERROR,
+	      newstr("dbtype requires an argument"));    
+    }
+    if (checkDbtypeIsRegistered(dbtype)) {
+	result = hashNew(TRUE);
+	key = stringNew("dbtype");
+	hashAdd(result, (Object *) key, (Object *) dbtype);
+	return (Object *) result;
+    }
+    else {
+	str = newstr("dbtype \"%s\" is not known to skit\n", dbtype->value);
+	objectFree(dbtype, TRUE);
+	RAISE(PARAMETER_ERROR, str);
+    }
+}
+
+
+
 static void
 defineActionSymbol(char *name, ObjectFn *fn)
 {
@@ -430,6 +458,7 @@ defineActionParsers()
 	defineActionSymbol("parse_template", &parseTemplate);
 	defineActionSymbol("parse_print", &parsePrint);
 	defineActionSymbol("parse_adddeps", &parseAdddeps);
+	defineActionSymbol("parse_dbtype", &parseDbtype);
     }
     done = TRUE;
 }
@@ -569,6 +598,13 @@ executeTemplate(Object *params)
     return NULL;
 }
 
+static Object *
+executeDoNothing(Object *params)
+{
+    return NULL;
+}
+
+
 static void
 defineActionExecutors()
 {
@@ -578,10 +614,13 @@ defineActionExecutors()
 	defineActionSymbol("execute_adddeps", &executeTemplate);
 	defineActionSymbol("execute_template", &executeTemplate);
 	defineActionSymbol("execute_print", &executePrint);
+	defineActionSymbol("execute_dbtype", &executeDoNothing);
     }
     done = TRUE;
 }
 
+/* This assigns to a symbol a value from the param hash.
+ */
 static Object *
 setVarFromParam(Object *obj, Object *params)
 {
@@ -599,12 +638,14 @@ setVarFromParam(Object *obj, Object *params)
     setScopeForSymbol(sym);
     symSet(sym, (Object *) objRefNew(value));
     //printSexp(stderr, "SYM: ", sym);
-    //printSexp(stderr, "SYM VALUE: ", sym->value);
+    //printSexp(stderr, "SYM VALUE: ", sym->svalue);
     //return NULL;
     //((Cons *) obj)->cdr = NULL;
     return value;
 }
 
+/* This assigns to symbols all values from the param hash.
+ */
 static void
 setVarsFromParams(Hash *params)
 {
@@ -630,9 +671,9 @@ executeAction(String *action, Hash *params)
 	if (action_executor = symbolGet(executor_name->value)) {
 	    result = symbolExec(action_executor, (Object *) params);
 	}
-	else {
+	else{
 	    RAISE(NOT_IMPLEMENTED_ERROR,
-		  newstr("%s not implemented\n", executor_name->value));
+	    	  newstr("%s not implemented\n", executor_name->value));
 	}
     }
     EXCEPTION(ex);
