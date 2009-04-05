@@ -63,7 +63,13 @@ suppressions: skit_test valgrind/alltests
 	@grep -i suppressions valgrind/alltests | \
 	   while read suite test; do $(MAKE) suppress_one \
 		SUITE=$${suite} THIS_TEST=$${test}; done
+	@touch valgrind/suppressions
 
+# Command to dynamically create suppressions arguments for valgrind while
+# we are creating new suppression files.  The point of this is to allow
+# suppressions from previous suppresions file to be used while creating the
+# next suppression file.  This prevents duplicates from appearing in the
+# suppressions files.
 EXISTING_SUPPRESSIONS = ls valgrind/?*suppressions 2>/dev/null | \
 	    xargs -I Z echo --suppressions=Z
 
@@ -84,7 +90,6 @@ suppress_one:
 # of the suppression files, simply run make suppressions explicitly.
 valgrind/suppressions: 
 	$(MAKE) suppressions
-	@touch valgrind/suppressions
 
 # Build a list of all tests known to the test suite.
 valgrind/alltests: skit_test
