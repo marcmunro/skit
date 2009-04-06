@@ -24,13 +24,13 @@ OBJECTS_DIR = src/objects
 OBJECTS_SOURCES = $(wildcard $(OBJECTS_DIR)/*.c)
 OBJECTS_HEADERS = $(wildcard $(OBJECTS_DIR)/*.h)
 
-OBJECT_OBJECTS = $(OBJECTS_SOURCES:%.c=%.o)
-OBJECT_DEPS = $(OBJECTS_SOURCES:.c=.d)
+OBJECTS_OBJECTS = $(OBJECTS_SOURCES:%.c=%.o)
+OBJECTS_DEPS = $(OBJECTS_SOURCES:.c=.d)
 OBJECTS_GARBAGE = $(garbage:%=$(OBJECTS_DIR)/%)
 
 
 # Include dependency files for each source file
-include $(OBJECT_DEPS) 
+include $(OBJECTS_DEPS) 
 
 
 # Remove the shared library and all generated/intermediate files

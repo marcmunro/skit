@@ -30,7 +30,7 @@ SRC_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 #SRC_SOURCES = $(filter skit.c, $(SRC_ALL_SOURCES))
 SRC_HEADERS = $(wildcard $(SRC_DIR)/*.h)
 
-SRC_OBJECTS = $(SRC_SOURCES:%.c=%.o) $(OBJECT_OBJECTS)
+SRC_OBJECTS = $(SRC_SOURCES:%.c=%.o) $(OBJECTS_OBJECTS)
 SRC_TESTED_OBJECTS = $(filter-out %/skit.o, $(SRC_OBJECTS)) 
 SRC_DEPS = $(SRC_SOURCES:.c=.d)
 SRC_GARBAGE = $(garbage:%=$(SRC_DIR)/%)

@@ -47,7 +47,7 @@ DB_CONNECT = $(DB_PORT) $(DB_HOST) $(DB_CLUSTER) $(DB_VERSION) $(DB_USER)
 
 #SOURCES = $(CODE_SOURCES) $(XML_SOURCES) $(XSL_SOURCES) $(SQL_SOURCES)
 include $(top_builddir)/Makefile.global
-SUBDIRS = src test
+SUBDIRS = src test dbscript
 include $(SUBDIRS:%=%/Makefile)
 
 

@@ -1,4 +1,6 @@
-/usr/lib/postgresql/8.3/bin//psql -p 54329 -d postgres <<'CLUSTEREOF'
+PSQL=/usr/lib/postgresql/8.3/bin//psql
+
+${PSQL} -p 54329 -d postgres <<'CLUSTEREOF'
 create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
 alter role "regress" valid until 'infinity';
@@ -24,7 +26,7 @@ comment on database "skittest" is
 CLUSTEREOF
 
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d skittest <<'DBEOF'
+${PSQL} -p 54329 -d skittest <<'DBEOF'
 
 alter schema "public" owner to "regress";
 
@@ -40,7 +42,7 @@ comment on language "plpgsql" is
 'Procedural language';
 DBEOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d postgres <<'CLUSTEREOF'
+${PSQL} -p 54329 -d postgres <<'CLUSTEREOF'
 create role "marc" with login;
 alter role "marc" password 'md5c62bc3e38bac4209132682f13509ba96';
 alter role "marc" with superuser;
@@ -51,7 +53,7 @@ alter role "marc" set client_min_messages = 'error';
 
 CLUSTEREOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d skittest <<'DBEOF'
+${PSQL} -p 54329 -d skittest <<'DBEOF'
 
 \echo updating schema "public";
 
@@ -154,7 +156,7 @@ comment on column "public"."additional"."str2" is
 
 DBEOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d postgres <<'CLUSTEREOF'
+${PSQL} -p 54329 -d postgres <<'CLUSTEREOF'
 create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "wibble" valid until '2007-03-01 00:00:00-08';
@@ -167,7 +169,7 @@ reset session authorization;
 
 CLUSTEREOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d skittest <<'DBEOF'
+${PSQL} -p 54329 -d skittest <<'DBEOF'
 
 \echo updating schema "public";
 
@@ -189,7 +191,7 @@ create table "public"."thing_2" (
 
 DBEOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d postgres <<'CLUSTEREOF'
+${PSQL} -p 54329 -d postgres <<'CLUSTEREOF'
 create role "lose" with login;
 alter role "lose" password 'md5c62bc3e38bac4209132682f13509ba96';
 alter role "lose" noinherit;
@@ -251,7 +253,7 @@ reset session authorization;
 
 CLUSTEREOF
 
-/usr/lib/postgresql/8.1/bin//psql -p 54329 -d skittest <<'DBEOF'
+${PSQL} -p 54329 -d skittest <<'DBEOF'
 
 set session authorization 'marco';
 grant create on database "skittest" to "keep";

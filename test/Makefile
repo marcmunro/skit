@@ -104,12 +104,13 @@ skgrind: skit_test valgrind/alltests valgrind/suppressions
 # Remove the shared library and all generated/intermediate files
 test_clean:
 	@echo Cleaning test...
-	@rm -f $(SRC_OBJECTS) $(SRC_TEST_OBJECTS) $(SRC_DEPS) \
-	       $(SRC_TESTDEPS) $(SRC_GARBAGE) skit skit_test \
+	@rm -f $(TEST_OBJECTS) $(TEST_DEPS) \
+	       $(TEST_GARBAGE) skit skit_test \
 	       valgrind/alltests valgrind/valgrind.log \
 	       valgrind/suppressions $(SUPPRESSION_FILES)
 
 tests_distclean: tests_clean
+
 
 # Describe what this makefile can build
 test_help:
