@@ -16,7 +16,7 @@
 # The whole strangeness of this makefile hierarchy derives from a, 
 # possibly misguided, attempt to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
-.PHONY: dbstart dbstop droptestdb
+.PHONY: dbstart dbstop droptestdb dbscript_clean dbscript_help
 
 INITDB=$(shell grep INITDB= dbscript/mkdb.sh | cut -d= -f2)
 PSQL=$(shell grep INITDB= dbscript/testdb.sh | cut -d= -f2)
@@ -42,21 +42,23 @@ testdb:
 dbstart: testdb
 	@echo Starting test database cluster...
 	@$(PSPG) >/dev/null || sh testdb.start
-	@echo Access the test database cluster using psql -p $(PORT)
+	@echo You may ccess the test database cluster using psql -p $(PORT)
 dbstop:
 	@echo Stopping test database cluster...
-	@(sed -e 's/start/stop/' testdb.start | sh) || true
+	@(sed -e 's/start/stop/' testdb.start | sh) 2>/dev/null || true
 	@# If that did not work, brute force a kill...
 	@if LINES=`$(PSPG)`; then \
-		PS=`echo $${LINES} | awk '{print $2}'`; \
-		kill $${PS} >/dev/null; sleep 2; kill -9 $${PS}; fi
+		PS=`echo "$${LINES}" | awk '{print $$2}'`; \
+		kill $${PS} >/dev/null 2>&1; sleep 2; \
+		kill -9 $${PS} >/dev/null 2>&1; fi || true
 
 droptestdb: dbstop
 	@echo "Dropping test database instance..."
 	@rm -rf testdb
 	@echo "Done"
 
-dbscript_clean:
+dbscript_clean: droptestdb
+	@rm -f testdb.start
 
 dbscript_help:
 	@echo "testdb       - Create a local test database"
