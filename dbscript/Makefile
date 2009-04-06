@@ -21,6 +21,8 @@
 INITDB=$(shell grep INITDB= dbscript/mkdb.sh | cut -d= -f2)
 PSQL=$(shell grep INITDB= dbscript/testdb.sh | cut -d= -f2)
 PORT=$(shell grep ' *port *=' dbscript/postgresql.conf | cut -d= -f2)
+ME=$(shell whoami)
+PSPG = ps auwwx | grep '$(ME).*postg[r]es'
 
 testdb:
 	@(groups | grep postgres >/dev/null 2>&1) || \
@@ -30,16 +32,24 @@ testdb:
 		(echo "INITDB is not valid as defined in mkdb.sh"; exit 1)
 	@test -x $(PSQL) || \
 		(echo "PSQL is not valid as defined in testdb.sh"; exit 1)
-	@echo "Creating test database in `pwd`/testdb..."
+	@echo "Creating test database cluster in `pwd`/testdb..."
 	@dbscript/mkdb.sh | grep pg_ctl >testdb.start
+	@sh testdb.start; sleep 2  # Start db and wait a couple of seconds
+	psql -l -p 54329
+	@echo Creating test database...
+	@dbscript/testdb.sh
 
 dbstart: testdb
-	@echo Starting test database instance...
-	@sh testdb.start
-	@echo Access the test database server using psql -p $(PORT)
+	@echo Starting test database cluster...
+	@$(PSPG) >/dev/null || sh testdb.start
+	@echo Access the test database cluster using psql -p $(PORT)
 dbstop:
-	@echo Stopping test database instance...
+	@echo Stopping test database cluster...
 	@(sed -e 's/start/stop/' testdb.start | sh) || true
+	@# If that did not work, brute force a kill...
+	@if LINES=`$(PSPG)`; then \
+		PS=`echo $${LINES} | awk '{print $2}'`; \
+		kill $${PS} >/dev/null; sleep 2; kill -9 $${PS}; fi
 
 droptestdb: dbstop
 	@echo "Dropping test database instance..."

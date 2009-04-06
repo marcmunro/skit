@@ -1,6 +1,9 @@
+EXECDIR=`dirname $0`
+HOMEDIR=`(cd ${EXECDIR}/..; pwd)`
+echo $HOMEDIR
 PSQL=/usr/lib/postgresql/8.3/bin//psql
 
-${PSQL} -p 54329 -d postgres <<'CLUSTEREOF'
+${PSQL} -p 54329 -d postgres <<$CLUSTEREOF
 create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
 alter role "regress" valid until 'infinity';
@@ -10,7 +13,7 @@ alter role "regress" set client_min_messages = 'warning';
 
 
 create tablespace "tbs3" owner "regress"
-  location '/home/marc/proj/skit2/testdb/tbs/tbs3';
+  location '${HOMEDIR}/testdb/tbs/tbs3';
 
 create database "skittest" with
  owner "regress"
@@ -23,8 +26,8 @@ comment on database "skittest" is
 'old comment';
 \connect postgres
 
-CLUSTEREOF
-
+$CLUSTEREOF
+exit
 
 ${PSQL} -p 54329 -d skittest <<'DBEOF'
 
