@@ -16,6 +16,7 @@
 # The whole strangeness of this makefile hierarchy derives from a, 
 # possibly misguided, attempt to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
+
 .PHONY: dbstart dbstop droptestdb dbscript_clean dbscript_help
 
 INITDB=$(shell grep INITDB= dbscript/mkdb.sh | cut -d= -f2)

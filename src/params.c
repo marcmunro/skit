@@ -1,11 +1,11 @@
 /**
  * @file   params.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides parameter handling functions, etc for dealing with the skit

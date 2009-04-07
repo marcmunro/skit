@@ -74,7 +74,7 @@ sqlConnect()
 	return cur_connection;
     }
 			 
-    skitFail("Unhandled database type");
+    RAISE(PARAMETER_ERROR, newstr("Unhandled database type"));
 }
 
 /* Called after executing an action.  This tells us that the next time

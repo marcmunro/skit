@@ -1,11 +1,9 @@
 #      Makefile for skit test files
 #
-#      Copyright (c) 2008 Marc Munro
+#      Copyright (c) 2009 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
-#
-# $Id$
 #
 # Do not attempt to use this makefile directly: its targets are available
 # and should be built from the main GNUmakefile in the parent directory.
@@ -116,6 +114,6 @@ tests_distclean: tests_clean
 test_help:
 	@echo "grind        - Run unit test executable for skit with valgrind"
 	@echo "skgrind      - Run valgrind one test at a time, filtering output"
-	@echo "suppressions - Run valgrind one test at a time, generating suppression files"
-	@echo "unit         - Run unit test executable for skit"
+	@echo "suppressions - Run valgrind to generate suppression files"
+	@echo "unit         - Run skit unit tests (define TESTS for specific tests)"
 	@echo "skit_test    - A Unit test executable for skit"

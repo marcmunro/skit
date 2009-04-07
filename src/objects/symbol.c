@@ -1,11 +1,11 @@
 /**
  * @file   symbol.c
  * \code
- *     Copyright (c) 2008 Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for dealing with symbols.  There is a single
@@ -271,8 +271,7 @@ void
 symbolForget(Symbol *sym)
 {
     assert((sym->type == OBJ_SYMBOL), "symbolForget: Not a symbol");
-    skitFail("symbolForget not implemented");
-    // Need to remove the symbol from the symbol table and then free it.
+    RAISE(NOT_IMPLEMENTED_ERROR, newstr("symbolForget not implemented"));
 }
 
 char *

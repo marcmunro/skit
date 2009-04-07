@@ -1,11 +1,11 @@
 /**
  * @file   exceptions.h
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Definitions for exception handling.
@@ -124,7 +124,8 @@
 #define SQL_ERROR               52
 #define UNPROCESSED_INCLUSION   53
 #define MEMORY_ERROR            54
-#define UNKNOWN_EXCEPTION       55
+#define ASSERTION_FAILURE       55
+#define UNKNOWN_EXCEPTION       56
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block

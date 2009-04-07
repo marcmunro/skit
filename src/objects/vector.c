@@ -1,11 +1,11 @@
 /**
  * @file   vector.c
  * \code
- *     Copyright (c) 2008 Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for manipulating vectors cells.
@@ -51,8 +51,9 @@ vectorPush(Vector *vector, Object *obj)
     }
     else {
 	// TODO: Vector resizing
-	skitFail("vectorPush: vector space exhausted "
-		 "(resizing not yet implemented)");
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("vectorPush: vector space exhausted "
+		     "(resizing not yet implemented)"));
     }
     return obj;
 }

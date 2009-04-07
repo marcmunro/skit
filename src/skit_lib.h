@@ -1,11 +1,11 @@
 /**
  * @file   skit_lib.h
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Define the skitlib API.
@@ -198,7 +198,7 @@ typedef struct TokenStr {
 
 #ifdef WITH_CASSERT
 #define assert(cond,str)						\
-    do { if (!(cond)) { skitFail(str);}} while (FALSE)
+    do { if (!(cond)) { RAISE(ASSERTION_FAILURE, str);}} while (FALSE)
 #else
 #define assert(cond,str) 
 #endif
@@ -216,9 +216,6 @@ typedef struct TokenStr {
 
 #define newstr(...)  memchunks_incr(g_strdup_printf(__VA_ARGS__))
 
-
-// from utils.c
-extern void skitFail(char *str);
 
 // cons.c
 extern Cons *consNew(Object *car, Object *cdr);

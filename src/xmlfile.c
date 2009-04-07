@@ -1,11 +1,11 @@
 /**
  * @file   xmlfile.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Read and process xmlfiles
@@ -444,7 +444,8 @@ process_alias_node(Document *doc)
 		name = NULL;
 	    }
 	    else {
-		skitFail(newstr("Alias %s has no value.", name->value));
+		RAISE(PARAMETER_ERROR,
+		      newstr("Alias %s has no value.", name->value));
 	    }
 	}
 	else {

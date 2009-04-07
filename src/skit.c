@@ -17,6 +17,7 @@
 #include <regex.h>
 #include "skit_param.h"
 #include "skit_lib.h"
+#include "exceptions.h"
 
 /* Return the home directory for skit.  This is where the templates dir
  * lives.
@@ -35,7 +36,8 @@ skitHome(char *executable)
     if (errcode = regcomp(&regex, expr, REG_EXTENDED)) {
 	char errmsg[200];
 	(void) regerror(errcode, &regex, errmsg, 199);
-	skitFail(newstr("skitHome: regexp compilation failure: %s", errmsg));
+	RAISE(REGEXP_ERROR,
+	      newstr("skitHome: regexp compilation failure: %s", errmsg));
     }
     if (regexec(&regex, executable, 1, matches, 0) == 0) {
 	// Match found
@@ -48,7 +50,8 @@ skitHome(char *executable)
     }
     else
     {
-	skitFail(newstr("skitHome: No '/' character found in %s", executable));
+	RAISE(FILEPATH_ERROR,
+	      newstr("skitHome: No '/' character found in %s", executable));
     }
 }
 

@@ -1,11 +1,11 @@
 /**
  * @file   document.c
  * \code
- *     Copyright (c) 2008 Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for manipulating Document types.
@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include "../skit_lib.h"
+#include "../exceptions.h"
 
 
 Node *

@@ -1,11 +1,11 @@
 /**
  * @file   action.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for parsing and executing actions.  An action is a
@@ -434,7 +434,7 @@ parseDbtype(Object *obj)
     }
     else {
 	str = newstr("dbtype \"%s\" is not known to skit\n", dbtype->value);
-	objectFree(dbtype, TRUE);
+	objectFree((Object *) dbtype, TRUE);
 	RAISE(PARAMETER_ERROR, str);
     }
 }

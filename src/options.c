@@ -1,11 +1,11 @@
 /**
  * @file   options.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Functions for managing command line options using hashes
@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "skit_lib.h"
+#include "exceptions.h"
 #include "skit_param.h"
 
 static Hash *core_options = NULL;

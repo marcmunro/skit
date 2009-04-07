@@ -1,11 +1,11 @@
 /**
  * @file   exceptions.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Signal/exception handling functions for skit
@@ -143,14 +143,15 @@ backtraceStr(Exception *ex, Exception *prev)
     return result;
 }
 
-/* Handle an exception that has no handler, by calling skitFail */
+/* Handle an exception that has no handler. */
 static void
 unhandled_exception(char *msg, int signal, char *file, int line, char *txt)
 {
     char *unhandled;
     unhandled = newstr(msg, signal, exceptionName(signal), file, line, txt);
     skfree(txt);
-    skitFail(unhandled);
+    fprintf(stderr, "%s\n", unhandled);
+    raise(SIGTERM);
 }
 
 /* Raise a new exception.  Called indirectly from the RAISE() macro.

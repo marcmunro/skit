@@ -1,11 +1,11 @@
 /**
  * @file   string.c
  * \code
- *     Copyright (c) 2008 Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for manipulating String objects
@@ -131,7 +131,8 @@ stringMatch(String *str, char *expr)
 	// Something went wrong with the regexp compilation
 	char errmsg[200];
 	(void) regerror(errcode, &regex, errmsg, 199);
-	skitFail(newstr("stringMatch: regexp compilation failure: %s", errmsg));
+	RAISE(REGEXP_ERROR,
+	      newstr("stringMatch: regexp compilation failure: %s", errmsg));
     }
 
     result = regexec(&regex, str->value, 0, NULL, 0) == 0;

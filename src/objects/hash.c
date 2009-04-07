@@ -1,11 +1,11 @@
 /**
  * @file   hash.c
  * \code
- *     Copyright (c) 2008 Marc Munro
+ *     Copyright (c) 2009 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Provides functions for manipulating hash cells.  The hash keys are always
@@ -147,7 +147,8 @@ toHash(Cons *cons)
     Cons *entry;
 
     if (!consIsAlist(cons)) {
-	skitFail("toHash: Invalid source for hash (expecting an alist)");
+	RAISE(TYPE_MISMATCH, 
+	      newstr("toHash: Invalid source for hash (expecting an alist)"));
     }
     hash = hashNew(TRUE);
     
@@ -214,8 +215,9 @@ hashDel(Hash *hash, Object *key)
 	objectFree((Object *) contents, TRUE);
 	if (!g_hash_table_steal((GHashTable *) hash->hash, 
 				 (gconstpointer) strkey)) {
-	    skitFail(newstr("hashDel: failed to remove hash item \"%s\"\n",
-			    strkey));
+	    RAISE(GENERAL_ERROR, 
+		  newstr("hashDel: failed to remove hash item \"%s\"\n",
+			 strkey));
 	}
 	skfree(orig_key);
     }
