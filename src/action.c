@@ -29,11 +29,13 @@ static String add_deps_str= {OBJ_STRING, "add_deps"};  // TODO: deprecate
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
 static String dbtype_str = {OBJ_STRING, "dbtype"};
+static String global_str = {OBJ_STRING, "global"};
+static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
 static Document *rmdeps_document = NULL;
 static Cons *action_stack = NULL;
 
-static void
+void
 actionStackPush(Object *obj)
 {
     action_stack = consNew(obj, (Object *) action_stack);
@@ -148,6 +150,14 @@ loadInFile(String *filename)
     actionStackPush((Object *) doc);
 }
 
+/* Determine whether the current action has a non-source file argument */
+static boolean
+hasArg(Cons *optionlist)
+{
+    Object *entry = optionlistGetOption(optionlist, &arg_str);
+    return entry != NULL;
+}
+
 static int
 getIntOption(Cons *optionlist, String *option_name, String *option_value)
 {
@@ -157,8 +167,7 @@ getIntOption(Cons *optionlist, String *option_name, String *option_value)
     char *exception_str;
     if (!obj) {
 	RAISE(PARAMETER_ERROR, 
-	      newstr("No value %s provided for option %s",
-		     option_value->value, option_name->value));
+	      newstr("No value provided for option %s", option_name->value));
     }
     if (obj->type != OBJ_INT4) {
 	exception_str = newstr(
@@ -265,13 +274,18 @@ addDefaults(Hash *params, Cons *optionlist)
 static Hash *
 getOptionlistArgs(Cons *optionlist)
 {
-    //printSexp(stderr, "OPTS", optionlist);
     String *arg = NULL;
     boolean is_option;
     Object *value = NULL;
     int expected_sources = getIntOption(optionlist, &sources_str, &value_str);
+    int expected_args = 0;
     Hash *params = hashNew(TRUE);
     BEGIN {
+	if (expected_sources == 0) {
+	    if (hasArg(optionlist)) {
+		expected_args = 1;
+	    }
+	}
 	while (nextArg(&arg, &is_option)) {
 	    if (is_option) {
 		// If this is an option, check its validity and deal with
@@ -290,14 +304,24 @@ getOptionlistArgs(Cons *optionlist)
 	    }
 	    else {
 		if (expected_sources == 0) {
-		    RAISE(PARAMETER_ERROR, newstr("getOptionlistArgs: too many "
-						  "source files provided"));
+		    if (expected_args > 0) {
+			expected_args--;
+			hashAdd(params, 
+				(Object *) stringNew("arg"), (Object *) arg);
+		    }
+		    else {
+			RAISE(PARAMETER_ERROR, 
+			      newstr("getOptionlistArgs: too many "
+				     "source files provided"));
+		    }
 		}
-		/* Load the input file into memory and place it on the stack
-		 * for later processing */
-		loadInFile(arg);
-		objectFree((Object *) arg, TRUE);
-		expected_sources--;
+		else {
+		    /* Load the input file into memory and place it on the
+		     * stack for later processing */
+		    loadInFile(arg);
+		    objectFree((Object *) arg, TRUE);
+		    expected_sources--;
+		}
 	    }
 	}
     }
@@ -390,6 +414,26 @@ parseExtract(Object *obj)
 }
 
 static Object *
+parseConnect(Object *obj)
+{
+    String *filename;
+    Object *action_info;
+
+    BEGIN {
+	filename = stringNew("connect.xml");
+
+	action_info = doParseTemplate(filename);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) filename, TRUE);
+    }
+    END;
+
+    return action_info;
+}
+
+static Object *
 parseAdddeps(Object *obj)
 {
     String *filename = stringNew("add_deps.xml");
@@ -414,6 +458,28 @@ parsePrint(Object *obj)
     return (Object *) args;
 }
 
+/* Set the "global" element in hash to t.  This will cause variables
+ * defined for this action to be made global rather than in-scope only
+ * for the current action.
+ */
+static void
+makeGlobal(Hash *hash)
+{
+    Symbol *t = symbolGet("t");
+    hashAdd(hash, (Object *) stringNew("global"), (Object *) t);
+}
+
+/* Get, and delete, the "global" element in hash.  If t, then variables
+ * for this action will be made global rather than in-scope only
+ * for the current action.
+ */
+static boolean
+getGlobal(Hash *hash)
+{
+    Object *global = hashDel(hash, (Object *) &global_str);
+    return global != NULL;
+}
+
 static Object *
 parseDbtype(Object *obj)
 {
@@ -430,6 +496,7 @@ parseDbtype(Object *obj)
 	result = hashNew(TRUE);
 	key = stringNew("dbtype");
 	hashAdd(result, (Object *) key, (Object *) dbtype);
+	makeGlobal(result);
 	return (Object *) result;
     }
     else {
@@ -456,6 +523,7 @@ defineActionParsers()
     if (!done) {
 	defineActionSymbol("parse_extract", &parseExtract);
 	defineActionSymbol("parse_template", &parseTemplate);
+	defineActionSymbol("parse_connect", &parseConnect);
 	defineActionSymbol("parse_print", &parsePrint);
 	defineActionSymbol("parse_adddeps", &parseAdddeps);
 	defineActionSymbol("parse_dbtype", &parseDbtype);
@@ -604,6 +672,15 @@ executeDoNothing(Object *params)
     return NULL;
 }
 
+static Object *
+executeConnect(Object *params)
+{
+    String *arg = (String *) symbolGetValue("arg");
+    Symbol *connect = symbolNew("connect");
+    symSet(connect, (Object *) stringNew(arg->value));
+    return NULL;
+}
+
 
 static void
 defineActionExecutors()
@@ -615,6 +692,7 @@ defineActionExecutors()
 	defineActionSymbol("execute_template", &executeTemplate);
 	defineActionSymbol("execute_print", &executePrint);
 	defineActionSymbol("execute_dbtype", &executeDoNothing);
+	defineActionSymbol("execute_connect", &executeConnect);
     }
     done = TRUE;
 }
@@ -636,7 +714,19 @@ setVarFromParam(Object *obj, Object *params)
 	sym = symbolNew(key->value);
     }
     setScopeForSymbol(sym);
-    symSet(sym, (Object *) objRefNew(value));
+
+    if ((value->type == OBJ_STRING) ||
+	(value->type == OBJ_INT4)) {
+	/* Copy objects that may be used in globals.  Other object
+	 * can (probably) safely be simply referenced.
+	 */
+	symSet(sym, (Object *) objectCopy(value));
+	//symSet(sym, (Object *) objRefNew(value));
+    }
+    else {
+	symSet(sym, (Object *) objRefNew(value));
+    }
+
     //printSexp(stderr, "SYM: ", sym);
     //printSexp(stderr, "SYM VALUE: ", sym->svalue);
     //return NULL;
@@ -659,12 +749,14 @@ executeAction(String *action, Hash *params)
     String *executor_name;
     Object *result;
     char *tmp = NULL;
+    boolean global = FALSE;
 
     defineActionExecutors();
-    newSymbolScope();
-    symbolSet("params", (Object *) objRefNew((Object *) params));
+    global = getGlobal(params);
+    if (!global) {
+	newSymbolScope();
+    }
     setVarsFromParams(params);
-
     executor_name = stringNewByRef(newstr("execute_%s", action->value));
 
     BEGIN {
@@ -680,7 +772,9 @@ executeAction(String *action, Hash *params)
     FINALLY {
 	finishWithConnection();
 	objectFree((Object *) executor_name, TRUE);
-	dropSymbolScope();
+	if (!global) {
+	    dropSymbolScope();
+	}
 	objectFree((Object *) params, TRUE);
     }
     END;
@@ -689,6 +783,10 @@ executeAction(String *action, Hash *params)
 void
 finalAction()
 {
+    //Object *x = actionStackPop();
+    //printSexp(stderr, "RESULT: ", x);
+    //objectFree(x, TRUE);
+    //return;
     if (action_stack) {
 	symbolSet("sources", (Object *) int4New(1));
 	(void) executePrint(NULL);
@@ -698,3 +796,4 @@ finalAction()
 	      newstr("Unprocessed documents still exist on the stack"));
     }
 }
+

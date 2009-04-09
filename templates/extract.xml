@@ -25,7 +25,7 @@
       <skit:exec expr="(setq dbver (version (select tuple 'version')))"/>
 
       <!-- <skit:exec expr="(debug 'TUPLE' tuple)"/> -->
-      <skit:exec expr="(debug 'DBVERSION' dbver)"/>
+      <!-- <skit:exec expr="(debug 'DBVERSION' dbver)"/> -->
 
       <xi:include href="skitfile:extract/cluster.xml"/>
       <!--

@@ -36,14 +36,15 @@ testdb:
 	@echo "Creating test database cluster in `pwd`/testdb..."
 	@dbscript/mkdb.sh | grep pg_ctl >testdb.start
 	@sh testdb.start; sleep 2  # Start db and wait a couple of seconds
-	psql -l -p 54329
+	$(PSQL) -l -p 54329
 	@echo Creating test database...
 	@dbscript/testdb.sh
+	@rm -f valgrind/alltests # To help the suppressions targets
 
 dbstart: testdb
 	@echo Starting test database cluster...
 	@$(PSPG) >/dev/null || sh testdb.start
-	@echo You may ccess the test database cluster using psql -p $(PORT)
+	@echo You may access the test database cluster using psql -p $(PORT)
 dbstop:
 	@echo Stopping test database cluster...
 	@(sed -e 's/start/stop/' testdb.start | sh) 2>/dev/null || true
@@ -55,7 +56,7 @@ dbstop:
 
 droptestdb: dbstop
 	@echo "Dropping test database instance..."
-	@rm -rf testdb
+	@rm -rf testdb valgrind/alltests
 	@echo "Done"
 
 dbscript_clean: droptestdb

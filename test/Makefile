@@ -71,6 +71,8 @@ suppressions: skit_test valgrind/alltests
 EXISTING_SUPPRESSIONS = ls valgrind/?*suppressions 2>/dev/null | \
 	    xargs -I Z echo --suppressions=Z
 
+SUPP_FLAG = -$(shell if test -d testdb; then echo S; else echo s; fi)
+
 # Build a single suppression file.  This is called recursively from the
 # suppressions target.  As suppression files rarely require updating, this
 # is considered safe enough.  
@@ -78,7 +80,7 @@ suppress_one:
 	@echo Creating valgrind/$(THIS_TEST)...
 	@suppression_files=`$(EXISTING_SUPPRESSIONS)` ; \
 	valgrind $(GEN_SUPPRESSIONS) $${suppression_files} \
-	    ./skit_test -s $(SUITE) $(THIS_TEST) 2>&1 | \
+	    ./skit_test $(SUPP_FLAG) $(SUITE) $(THIS_TEST) 2>&1 | \
 		valgrind/make_suppression >valgrind/tmpout 
 	@mv valgrind/tmpout valgrind/$(THIS_TEST)
 
@@ -91,7 +93,7 @@ valgrind/suppressions:
 
 # Build a list of all tests known to the test suite.
 valgrind/alltests: skit_test
-	@./skit_test -r >valgrind/alltests
+	@./skit_test -r $(SUPP_FLAG) >valgrind/alltests
 
 grind: skit_test valgrind/suppressions
 	valgrind $(VALGRIND_OPTIONS) ./skit_test $(TESTS)

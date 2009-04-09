@@ -121,9 +121,7 @@ fnSetq(Object *obj)
     raiseIfNotSymbol("setq", sym);
     next = (Cons *) cons->cdr;
     obj_to_eval = next? next->car: NULL;
-    oldvalue = sym->svalue;  /* Need raw, not dereferenced value */
     symSet(sym, new = objectEval(obj_to_eval));
-    objectFree(oldvalue, TRUE);
     return (Object *) objRefNew(new);
 }
 

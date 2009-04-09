@@ -403,9 +403,9 @@ skitFreeMem()
     }
 
     freeSkitProcessors();
+    freeStdTemplates();
     xsltCleanupGlobals();
     xmlCleanupParser();
-    freeStdTemplates();
     freeOptions();
     freeSymbolTable();
 }

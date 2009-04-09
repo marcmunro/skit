@@ -78,21 +78,82 @@ record_param(String *value, char *name, boolean make_global)
 	if (!sym) {
 		sym = symbolNew(name);
 	}
-	setScopeForSymbol(sym);
-	symbolSet(name, (Object *) value);
-	if (make_global && sym->scope) {
-		/* We have to also set the default value for this scoped
-		 * variable. */
-		value = (String *) objectCopy((Object *) value);
-		symbolSetRoot(name, (Object *) value);
+	if (!make_global) {
+		setScopeForSymbol(sym);
 	}
+	symSet(sym, (Object *) value);
 }
 
-// TODO: Refactor this.  The objectCopy of connect below is a hack and
-// should not be required.  The whole thing feels horribly fragile.
-// Note that ../test/testdata.c is similar.
 static Connection *
 pgsqlConnect(Object *sqlfuncs)
+{
+	/* If there is no existing connection then we must create a new
+	 * connection.
+	 * If new connection information has been provided, then we must
+	 * create a new connection.
+     * The first connection we create will be made global.
+     */
+
+	Connection *connection = (Connection *) symbolGetValue("dbconnection");
+	boolean make_global;
+	boolean new_connection;
+	String *connect;
+	String *host;
+    String *port;
+    String *dbname;
+    String *user;
+    String *pass;
+	Symbol *sym;
+
+	new_connection = make_global = (connection == NULL);
+
+	connect = (String *) symbolGetValueWithStatus("connect", &new_connection);
+	host = get_param(connect, "host", HOST_MATCH, &new_connection);
+    port = get_param(connect, "port", PORT_MATCH, &new_connection);
+    dbname = get_param(connect, "dbname", DBNAME_MATCH, &new_connection);
+    user = get_param(connect, "username", USER_MATCH, &new_connection);
+    pass = get_param(connect, "password", PASSWD_MATCH, &new_connection);
+
+	if (new_connection) {
+		record_param(host, "host", make_global);
+		record_param(port, "port", make_global);
+		record_param(dbname, "dbname", make_global);
+		record_param(user, "username", make_global);
+		record_param(pass, "password", make_global);
+
+		/* TODO: Rebuild the connect string based on the other parameter
+		 * values. */
+
+		record_param(connect, "connect", make_global);
+
+		connection = (Connection *) skalloc(sizeof(Connection));
+		connection->type = OBJ_CONNECTION;
+		connection->sqlfuncs = sqlfuncs;
+		connection->dbtype = stringNew("postgres");
+		connection->conn = NULL;
+
+		BEGIN {
+			connection->conn = (void *) PQconnectdb(connect->value);
+			pgsqlConnectionCheck((PGconn *) connection->conn);
+		}
+		EXCEPTION(ex) {
+			objectFree((Object *) connection, TRUE);
+		}
+		WHEN(SQL_ERROR) {
+			RAISE(SQL_ERROR,
+				  newstr("Cannot connect to database type \"postgres\""
+						 " with \"%s\"\n  %s", connect->value, ex->text));
+		}
+		END;
+		sym = symbolNew("dbconnection");
+		sym->svalue = (Object *) connection;
+	}
+	return connection;
+}
+
+
+static Connection *
+pgsqlConnectold(Object *sqlfuncs)
 {
 	boolean is_new = FALSE;
 	boolean make_global = FALSE;
@@ -110,8 +171,7 @@ pgsqlConnect(Object *sqlfuncs)
 		 * than the symbol table, then we have new database connection
 		 * information for this action, and so a new connection should
 		 * be made.  If there is no existing connection, we will define all
-		 * variables globally, otherwise we will define them only within
-		 * the scope of the current action. */
+		 * variables globally as well as locally. */
 		make_global = (connection == NULL);
 		record_param((String *) objectCopy((Object *) connect), 
 					 "connect", make_global);
@@ -148,6 +208,7 @@ pgsqlConnect(Object *sqlfuncs)
 	}
 	return connection;
 }
+
 
 static void
 pgsqlCleanup(Connection *connection)

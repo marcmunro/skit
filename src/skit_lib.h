@@ -209,6 +209,8 @@ typedef struct TokenStr {
 #define MEMPRINTF //
 #endif
 
+#define dbgSexp(x) printSexp(stderr, #x ": ", (Object *) x)
+
 
 #define streq(a,b) (strcmp(a,b)==0)
 //#define newstr (memchunks_incr(), g_strdup_printf)

@@ -143,7 +143,12 @@ symbolNew(char *name)
 void
 symSet(Symbol *sym, Object *value)
 {
-   sym->svalue = value;
+    assert((sym->type == OBJ_SYMBOL), "symSet: Not a symbol");
+    if (sym->svalue && (sym->svalue != value)) {
+	objectFree(sym->svalue, TRUE);
+    }
+    
+    sym->svalue = value;
 }
 
 void
@@ -157,14 +162,12 @@ symbolSet(char *name, Object *value)
 	RAISE(GENERAL_ERROR,
 	      newstr("Error in symbolSet - no such symbol: %s", name));
     }
-    if (sym->svalue && (sym->svalue != value)) {
-	objectFree(sym->svalue, TRUE);
-    }
-    
     stringFree(hashkey, TRUE);
-    sym->svalue = value;
+    symSet(sym, value);
 }
 
+/* TODO: Figure out if this is of any value, and remove it if not!
+ */
 void
 symbolSetRoot(char *name, Object *value)
 {
@@ -209,6 +212,7 @@ Object *
 symGet(Symbol *sym)
 {
     if (sym) {
+	assert((sym->type == OBJ_SYMBOL), "symGet: Not a symbol");
 	return dereference(sym->svalue);
     }
     return NULL;

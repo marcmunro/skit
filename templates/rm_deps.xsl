@@ -13,6 +13,7 @@
     </skituls:stylesheet>
   </xsl:template>
 
+  <!-- OLD FILTER TO REMOVE DATABASE CONTENTS 
   <xsl:template match="database">
     <xsl:copy select=".">
       <xsl:copy-of select="@*"/>
@@ -20,7 +21,7 @@
 	<xsl:apply-templates select="*"/>
       </xsl:for-each>	
     </xsl:copy>
-  </xsl:template>	
+  </xsl:template>	-->
 
   <!-- Eliminate db_visit objects which are artificially created
     by add_deps.xsl -->

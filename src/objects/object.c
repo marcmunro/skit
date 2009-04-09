@@ -519,6 +519,7 @@ objectCopy(Object *obj)
     if (!obj) {
 	return NULL;
     }
+    obj = dereference(obj);
     switch(obj->type) {
     case OBJ_CONS: 
 	return (Object *) consDup((Cons *) obj);

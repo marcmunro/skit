@@ -12,6 +12,7 @@ check_output()
     	/==[0-9]*==.*reachable: [1-9]/ {print; lost = 1}
     	/==[0-9]*==.*reachable: 0/ {print; found = 1}
 	/==[0-9]*== FATAL/ {print; exit(2)}
+	/[0-9]*%.* Errors: [1-9]/ {print; exit(2)}
 	END {
 	    if (lost) {
 		exit(1)

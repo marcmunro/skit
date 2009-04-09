@@ -17,6 +17,14 @@
 #include "../skit_lib.h"
 #include "../exceptions.h"
 
+/* Predicate to check whether an object is really a cons 
+ * QUESTION: would the arg be better as an (Object *)? */
+boolean
+isCons(Cons *obj)
+{
+    return obj && (obj->type == OBJ_CONS);
+}
+
 /* Create a new cons containing car and cdr */
 Cons *
 consNew(Object *car, Object *cdr)
@@ -44,7 +52,13 @@ consFree(Cons *cons, boolean free_contents)
 Object *
 consPush(Cons **head, Object *obj)
 {
-    Cons *cons = consNew(obj, (Object *) *head);
+    Cons *cons;
+
+    if (*head) {
+	assert((*head)->type == OBJ_CONS, 
+	       "consPush head is not a cons cell pointer");
+    }
+    cons = consNew(obj, (Object *) *head);
     *head = cons;
     return obj;
 }
@@ -54,8 +68,15 @@ consPush(Cons **head, Object *obj)
 Object *
 consPop(Cons **head)
 {
-    Cons *cons = *head;
-    Object *obj = cons->car;
+    Cons *cons;
+    Object *obj;
+
+    if (*head) {
+	assert((*head)->type == OBJ_CONS, 
+	       "consPush head is not a cons cell pointer");
+    }
+    cons = *head;
+    obj = cons->car;
     *head = (Cons *) cons->cdr;
     consFree(cons, FALSE);
     return obj;
@@ -149,8 +170,14 @@ static char *
 listStr(Cons *cons)
 {
     char *result;
-    char *carstr = objectSexp(cons->car);
-    Object *cdr = cons->cdr;
+    char *carstr;
+    Object *cdr;
+
+    assert(cons && (cons->type == OBJ_CONS), 
+	   "listStr arg is not a cons cell");
+    
+    carstr = objectSexp(cons->car);
+    cdr = cons->cdr;
 
     if (cdr) {
 	char *cdrstr;
@@ -216,6 +243,10 @@ int
 consLen(Cons *cons)
 {
     int len = 0;
+    if (cons) {
+	assert(cons->type == OBJ_CONS, "consLen arg is not a cons cell");
+    }
+
     while (cons && (cons->type == OBJ_CONS)) {
 	len++;
 	cons = (Cons *) cons->cdr;
@@ -228,6 +259,10 @@ boolean
 consIsAlist(Cons *cons)
 {
     Object *car;
+
+    if (cons) {
+	assert(cons->type == OBJ_CONS, "consIsAlist arg is not a cons cell");
+    }
 
     while (cons) {
 	if (cons->type != OBJ_CONS) {
@@ -248,7 +283,7 @@ consCmp(Cons *cons1, Cons *cons2)
 {
     int result;
     assert(cons1 && cons1->type == OBJ_CONS, "consCmp: cons1 is not cons");
-    assert(cons2, "consCmp: cons1 is NULL");
+    assert(cons2, "consCmp: cons2 is NULL");
 
     if (cons2->type != OBJ_CONS) {
 	objectCmpFail((Object *) cons1, (Object *) cons2);
@@ -258,14 +293,6 @@ consCmp(Cons *cons1, Cons *cons2)
 	result = objectCmp(cons1->cdr, cons2->cdr);
     } 
     return result;
-}
-
-/* Predicate to check whether an object is really a cons 
- * QUESTION: would the arg be better as an (Object *)? */
-boolean
-isCons(Cons *obj)
-{
-    return obj && (obj->type == OBJ_CONS);
 }
 
 /* Get the contents of alist that match key.  */
@@ -291,7 +318,9 @@ Object *
 consNth(Cons *list, int n)
 {
     list = (Cons *) dereference((Object *) list);
+
     while ((n > 0) && list) {
+	assert(isCons(list), "consNth: list is not cons");
 	list = (Cons *) list->cdr;
 	n--;
     }

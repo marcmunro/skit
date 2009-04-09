@@ -1286,7 +1286,7 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
     /*fprintf(stderr, "processElement: template=%s, parent=%s, base=%s\n", 
             nodeName(template_node), nodeName(parent_node), 
 	    xmlNodeGetBase(template_node->doc, template_node)); */
-    /*fprintf(stderr, "processElement: node=%s, base=%s\n", 
+    /* fprintf(stderr, "processElement: node=%s, base=%s\n", 
             nodeName(template_node), 
 	    xmlNodeGetBase(template_node->doc, template_node)); */
 	    
@@ -1329,7 +1329,6 @@ processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 		child = processElement(cur_node, parent_node, depth);
 	    }
 	    EXCEPTION(ex);
-	    //fprintf(stderr, "EXCEPTION PROCESS REMAINING: %d, %s\n", ex->signal, ex->text);
 	    WHEN(UNPROCESSED_INCLUSION) {
 		/* This will happen because finishDocument() has not
 		 * been called.  We don't want to call finishDocument()

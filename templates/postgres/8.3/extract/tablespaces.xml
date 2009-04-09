@@ -9,7 +9,7 @@
       <skit:attr name="name"/>
       <skit:attr name="owner"/>
       <skit:attr name="location"/>
-      <skit:exec expr="(debug 'TUPLE: ' tuple)"/>
+      <!-- <skit:exec expr="(debug 'TUPLE: ' tuple)"/> -->
 
       <skit:if test="(not (select tuple 'privs'))">
 	<grant with_grant="yes" priv="create">

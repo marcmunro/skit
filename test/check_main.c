@@ -53,6 +53,36 @@ START_TEST(xmlreader_suppressions)
 }
 END_TEST
 
+START_TEST(sql_suppressions)
+{
+    char *args[] = {"./skit", "--connect", 
+		    "dbname = 'skittest' port = '54329'"};
+    Hash *params;
+    String *action;
+
+    printf("SUPPRESSION: sql_suppression PQconnectdb\n");
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    record_args(3, args);
+    action = nextAction();
+    params = parseAction(action);
+    executeAction(action, params);
+    finalAction();
+    sqlConnect();
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+static boolean reporting_only = FALSE;
+static boolean nofork = FALSE;
+static boolean suppressions = FALSE;
+static boolean suppress_sql = FALSE;
+static char suite_name[100];
+static char test_name[100];
+
 /* The suppressions suite is used to automagically generate suppresions
  * files for valgrind.  See valgrind/make_supression and test/Makefile
  * for more info.
@@ -62,8 +92,12 @@ suppressions_suite(void)
 {
     Suite *s = suite_create("Suppressions");
     TCase *tc_s = tcase_create("Suppressions");
+    
     ADD_TEST(tc_s, hash_suppressions);
     ADD_TEST(tc_s, xmlreader_suppressions);
+    if (suppress_sql) {
+	ADD_TEST(tc_s, sql_suppressions);
+    }
     suite_add_tcase(s, tc_s);
     return s;
 }
@@ -74,12 +108,6 @@ base_suite(void)
     Suite *s = suite_create("");
     return s;
 }
-
-static boolean reporting_only = FALSE;
-static boolean nofork = FALSE;
-static boolean suppressions = FALSE;
-static char suite_name[100];
-static char test_name[100];
 
 boolean
 string_matches(char *str1, char *str2)
@@ -108,7 +136,8 @@ handle_args(int argc, char *argv[])
 	    switch (arg->value[1]) {
 	    case 'r': reporting_only = TRUE; break;
 	    case 'n': nofork = TRUE; break;
-	    case 's': nofork = TRUE; suppressions = TRUE; break;
+	    case 's': nofork = suppressions = TRUE; break;
+	    case 'S': nofork = suppressions = suppress_sql = TRUE; break;
 	    default: usage(); break;
 	    }
 	    objectFree((Object *) arg, TRUE);
@@ -165,8 +194,11 @@ main(int argc, char *argv[])
 	srunner_set_fork_status (sr, CK_NOFORK);
     }
 
-    if (suppressions || reporting_only) {
+    if (reporting_only || suppressions) {
 	ADD_SUITE(suppressions);
+	if (reporting_only) {
+	    suppressions = FALSE;
+	}
     }
     if (!suppressions) {
 	ADD_SUITE(objects);

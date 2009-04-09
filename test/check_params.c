@@ -632,6 +632,32 @@ START_TEST(dbtype_unknown)
 }
 END_TEST
 
+START_TEST(connect)
+{
+    char *args[] = {"./skit", "--connect", "--dbtype=pgtest", 
+		    "dbname = 'skittest' port = '54329'"};
+    Symbol *sym;
+    char *tmp;
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    BEGIN {
+	process_args2(4, args);
+	sym = symbolGet("connect");
+	fail_unless(sym && sym->svalue,
+		    tmp = newstr("connect: connect variable is not defined"));
+	skfree(tmp);
+    }
+    EXCEPTION(ex); 
+    WHEN_OTHERS {
+	fail(newstr("connect: exception - %s", ex->text));
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(extract)
 {
     //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
@@ -649,7 +675,7 @@ START_TEST(extract)
     //showMalloc(1986);
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(7, args);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -691,6 +717,7 @@ params_suite(void)
     ADD_TEST(tc_core, extract);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
+    ADD_TEST(tc_core, connect);
     //ADD_TEST(tc_core, print);
 				
     suite_add_tcase(s, tc_core);
