@@ -181,3 +181,31 @@ vectorGet(Vector *vec, Object *key)
 				 objTypeName(key)));
     }
 }
+
+Object *
+vectorRemove(Vector *vec, int index)
+{
+    Object *result;
+    assert(vec->type == OBJ_VECTOR, 
+	   "vectorRemove arg is not a vector");
+    if (index >= vec->elems) {
+	return NULL;
+    }
+    result = vec->vector[index];
+    vec->elems--;
+    while (index < vec->elems) {
+	vec->vector[index] = vec->vector[++index];
+    }
+    
+    return result;
+}
+
+typedef int (basicCmpFn)(const void *, const void *);
+
+void
+vectorSort(Vector *vec, ComparatorFn *fn)
+{
+    qsort((void *) vec->vector,
+	  vec->elems, sizeof(Object *),
+	  (basicCmpFn *) fn);
+}

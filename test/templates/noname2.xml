@@ -6,7 +6,7 @@
 -->
 
 <skit:stylesheet
-  xmlns:skit="http://www.bloodnok.com/xml/skituls">
+  xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
     <option name='sources' value='1' type='integer'/>

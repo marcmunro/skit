@@ -755,6 +755,72 @@ START_TEST(regexp_object)
 }
 END_TEST
 
+START_TEST(vectorremove)
+{
+    char *sexpstr;
+    char *tmp;
+    Vector *vec;
+    Int4 *result;
+
+    sexpstr = newstr("[0 1 2 3 4 5 6]");
+    vec = (Vector *) objectFromStr(sexpstr);
+    skfree(sexpstr);
+
+    result = (Int4 *) vectorRemove(vec, 3);
+    sexpstr = objectSexp((Object *) vec);
+
+    fail_unless(streq(sexpstr, "[0 1 2 4 5 6]"),
+		tmp = newstr("vectorremove: incorrect vector: %s", sexpstr));
+    skfree(tmp);
+    skfree(sexpstr);
+
+    sexpstr = objectSexp((Object *) result);
+    fail_unless(streq(sexpstr, "3"),
+		tmp = newstr("vectorremove: incorrect result: %s", sexpstr));
+    skfree(tmp);
+    skfree(sexpstr);
+
+    objectFree((Object *) vec, TRUE);
+    objectFree((Object *) result, TRUE);
+    
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+static int
+int4Comparator(Object **o1, Object **o2)
+{
+    Int4 *i1 = (Int4 *) *o1;
+    Int4 *i2 = (Int4 *) *o2;
+    //fprintf(stderr, "Comparing %d with %d\n", i1->value, i2->value);
+    return i1->value - i2->value;
+}
+
+START_TEST(vectorsort)
+{
+    char *sexpstr;
+    char *tmp;
+    Vector *vec;
+    Int4 *result;
+
+    sexpstr = newstr("[4 3 2 1 6 5 0]");
+    vec = (Vector *) objectFromStr(sexpstr);
+    skfree(sexpstr);
+
+    vectorSort(vec, &int4Comparator);
+
+    sexpstr = objectSexp((Object *) vec);
+    fail_unless(streq(sexpstr, "[0 1 2 3 4 5 6]"),
+		tmp = newstr("vectorsort: incorrect vector: %s", sexpstr));
+    skfree(tmp);
+    skfree(sexpstr);
+
+    objectFree((Object *) vec, TRUE);
+    
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 Suite *
 objects_suite(void)
 {
@@ -805,6 +871,8 @@ objects_suite(void)
     ADD_TEST(tc_core, symbol_scope3);
     ADD_TEST(tc_core, extract_from_list);
     ADD_TEST(tc_core, regexp_object);
+    ADD_TEST(tc_core, vectorremove);
+    ADD_TEST(tc_core, vectorsort);
     suite_add_tcase(s, tc_core);
 
     return s;

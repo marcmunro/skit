@@ -45,8 +45,8 @@
   <skit:runsql var="sequences" file="sql/sequences.sql"/>
   <skit:runsql var="tables" file="sql/tables.sql"/>
 
-  <skituls:foreach var="functions">
-    <skituls:expr>
+  <skit:foreach var="functions">
+    <skit:expr>
       <!-- Create signature and qname attributes for each function -->
       args = tuple['argtype_oids'].split      
       args.map! do |arg|
@@ -64,74 +64,74 @@
       tuple['signature'] = sig
       qname = '&quot;' + sig.gsub(/([\.,()])/, '&quot;\1&quot;') + '&quot;'
       tuple['qname'] = qname.gsub(/&quot;&quot;/, '')
-    </skituls:expr>
-  </skituls:foreach>
+    </skit:expr>
+  </skit:foreach>
 
-  <skituls:foreach var="schemas">
+  <skit:foreach var="schemas">
     <schema>
       
-      <skituls:foreach var="domains"
+      <skit:foreach var="domains"
 		       filter="tuple['schema'] == tuple.parent['name']">
 	<domain>
-	  <skituls:foreach var="constraints"
+	  <skit:foreach var="constraints"
 			   filter="tuple['oid'] == tuple.parent['conoid']">
 	    <constraint>
-	      <skituls:attr field="name"/>
-	      <skituls:attr field="schema"/>
-	      <skituls:attr field="constraint_type"/>
-	      <skituls:attr field="source"/>
+	      <skit:attr field="name"/>
+	      <skit:attr field="schema"/>
+	      <skit:attr field="constraint_type"/>
+	      <skit:attr field="source"/>
 	    </constraint>
-	  </skituls:foreach>
+	  </skit:foreach>
 	</domain>
-      </skituls:foreach>
+      </skit:foreach>
 
-      <skituls:foreach var="comptypes"
+      <skit:foreach var="comptypes"
 		       filter="tuple['schema'] == tuple.parent['name']">
 	<type>
-	  <skituls:attr field="name"/>
-	  <skituls:attr field="schema"/>
-	  <skituls:attr field="type"/>
-	  <skituls:attr field="owner"/>
-	  <skituls:attr field="comment"/>
-	  <skituls:runsql var="typcolumns" file="sql/type_columns.sql"
+	  <skit:attr field="name"/>
+	  <skit:attr field="schema"/>
+	  <skit:attr field="type"/>
+	  <skit:attr field="owner"/>
+	  <skit:attr field="comment"/>
+	  <skit:runsql var="typcolumns" file="sql/type_columns.sql"
 			  param_1="tuple['reloid']">
 	    <column>
-	      <skituls:copytuple/>
+	      <skit:copytuple/>
 	    </column>
-	  </skituls:runsql>
+	  </skit:runsql>
 	</type>
-      </skituls:foreach>
+      </skit:foreach>
 	  
       <!-- Note: basetypes are post-processed into types by 
 	   post_extract.xsl -->
-      <skituls:foreach var="basetypes"
+      <skit:foreach var="basetypes"
 		       filter="tuple['schema'] == tuple.parent['name']">
 	<basetype>
-	  <skituls:copytuple/>
+	  <skit:copytuple/>
 	</basetype>
-      </skituls:foreach>
+      </skit:foreach>
 	    
-      <skituls:foreach var="functions"
+      <skit:foreach var="functions"
       		 filter="tuple['schema'] == tuple.parent['name']">
         <function>	
-          <skituls:attr field="name"/>
-          <skituls:attr field="schema"/>
-          <skituls:attr field="owner"/>
-          <skituls:attr field="language"/>
-          <skituls:attr field="security_definer"/>
-          <skituls:attr field="is_strict"/>
-          <skituls:attr field="returns_set"/>
-          <skituls:attr field="volatility"/>
-          <skituls:attr field="argtypes"/>
-          <skituls:attr field="bin"/>
-          <skituls:attr field="privs"/>
-          <skituls:attr field="comment"/>
-          <skituls:attr field="signature"/>
-          <skituls:attr field="qname"/>   <!-- TODO: Remove this -->
-          <skituls:attr field="oid"/>	  <!-- TODO: Remove this -->
+          <skit:attr field="name"/>
+          <skit:attr field="schema"/>
+          <skit:attr field="owner"/>
+          <skit:attr field="language"/>
+          <skit:attr field="security_definer"/>
+          <skit:attr field="is_strict"/>
+          <skit:attr field="returns_set"/>
+          <skit:attr field="volatility"/>
+          <skit:attr field="argtypes"/>
+          <skit:attr field="bin"/>
+          <skit:attr field="privs"/>
+          <skit:attr field="comment"/>
+          <skit:attr field="signature"/>
+          <skit:attr field="qname"/>   <!-- TODO: Remove this -->
+          <skit:attr field="oid"/>	  <!-- TODO: Remove this -->
           
           <!-- Figure out parameter information -->
-          <skituls:expr>
+          <skit:expr>
             args = tuple['argtype_oids'].split
             modes, names = nil, nil
             if x = tuple['all_argmodes']
@@ -166,25 +166,25 @@
             restype = Globals['alltypes'][res_oid]
             Globals['result'] = restype
             Globals['params'] = params
-          </skituls:expr>
+          </skit:expr>
 
-          <skituls:foreach var="params">
+          <skit:foreach var="params">
             <param>
-      	      <skituls:copytuple/>
+      	      <skit:copytuple/>
             </param>
-          </skituls:foreach>  
+          </skit:foreach>  
           <result>
-            <skituls:attr id="type_schema" 
+            <skit:attr id="type_schema" 
       		    expr="Globals['result']['schema']"/>
-            <skituls:attr id="type_name" expr="Globals['result']['name']"/>
-            <skituls:if test="tuple['returns_set']">
-      	      <skituls:attr field="returns_set"/>
-            </skituls:if>
+            <skit:attr id="type_name" expr="Globals['result']['name']"/>
+            <skit:if test="tuple['returns_set']">
+      	      <skit:attr field="returns_set"/>
+            </skit:if>
           </result>
       		  
           <!-- If this function is a handler for a user-defined type -->
-          <skituls:if test="tuple['type_handler_oid']">
-            <skituls:expr>
+          <skit:if test="tuple['type_handler_oid']">
+            <skit:expr>
       	      oid = tuple['oid']
       	      input_oid = tuple['type_input_oid']
       	      output_oid = tuple['type_output_oid']
@@ -199,52 +199,52 @@
                     type = Globals['alltypes'][type_oid]
       	      tuple['type_schema'] = type['schema']
       	      tuple['type_name'] = type['name']
-            </skituls:expr>
+            </skit:expr>
             <handler_for>
-      	      <skituls:attr field="following_schema"/>
-      	      <skituls:attr field="following"/>
-      	      <skituls:attr field="type_schema"/>
-      	      <skituls:attr field="type_name"/>
+      	      <skit:attr field="following_schema"/>
+      	      <skit:attr field="following"/>
+      	      <skit:attr field="type_schema"/>
+      	      <skit:attr field="type_name"/>
             </handler_for>
-          </skituls:if>
+          </skit:if>
 
           <source>
-            <skituls:text field="source"/>
+            <skit:text field="source"/>
           </source>
 
-          <skituls:if test="!tuple['privs']">
+          <skit:if test="!tuple['privs']">
             <!-- No privileges defined for this function, so create
       	   grants for the implicit privs -->
             <grant with_grant="yes" priv="execute">
-      	      <skituls:attr id="from" field_expr="#{owner}"/>
-      	      <skituls:attr id="to" field_expr="#{owner}"/>
+      	      <skit:attr id="from" field_expr="#{owner}"/>
+      	      <skit:attr id="to" field_expr="#{owner}"/>
             </grant>
-          </skituls:if>
-          <skituls:foreach split="privs">
-            <skituls:pg_eachpriv field="privs" 
+          </skit:if>
+          <skit:foreach split="privs">
+            <skit:pg_eachpriv field="privs" 
       			   toname="to" privname="priv" fromname="from"
       			   withname="with_grant">
       	      <grant>
-      		<skituls:if test="tuple['to'] == tuple['from']">
+      		<skit:if test="tuple['to'] == tuple['from']">
       		  <!-- If this is the implied grant to the owner,
       		       then they have with_grant="yes" -->
-      		  <skituls:attr id="with_grant" expr="'yes'"/>
-      		</skituls:if>
-      		<skituls:if test="tuple['to'] != tuple['from']">
-      		  <skituls:attr field="with_grant"/>
-      		</skituls:if>
-      		<skituls:attr field="priv"/>
-      		<skituls:attr field="from"/>
-      		<skituls:attr field="to"/>
+      		  <skit:attr id="with_grant" expr="'yes'"/>
+      		</skit:if>
+      		<skit:if test="tuple['to'] != tuple['from']">
+      		  <skit:attr field="with_grant"/>
+      		</skit:if>
+      		<skit:attr field="priv"/>
+      		<skit:attr field="from"/>
+      		<skit:attr field="to"/>
       	      </grant>
-            </skituls:pg_eachpriv>
-          </skituls:foreach>
+            </skit:pg_eachpriv>
+          </skit:foreach>
         </function>
-      </skituls:foreach>
+      </skit:foreach>
 
-      <skituls:foreach var="operators"
+      <skit:foreach var="operators"
       		 filter="tuple['schema'] == tuple.parent['name']">
-        <skituls:expr>
+        <skit:expr>
           <!-- Create signature and params attributes -->
           params = '(' + tuple['leftarg_schema'] + '.' + tuple['leftarg'] + 
                    ',' + tuple['rightarg_schema'] + '.' + 
@@ -273,20 +273,20 @@
               raise "NO SIG FN FOR #{oid}, TYPE #{tuple['name']}"
             end
           end
-        </skituls:expr>
+        </skit:expr>
 
         <operator>
-          <skituls:copytuple/>
+          <skit:copytuple/>
         </operator>
-      </skituls:foreach>
+      </skit:foreach>
 	  
       <!-- The following stylesheet call formats parameters and
 	   generates sql lookups for converting type oids to names. -->
       
-      <skituls:foreach var="aggregates"
+      <skit:foreach var="aggregates"
 		       filter="tuple['schema'] == tuple.parent['name']">
 
-	<skituls:expr>
+	<skit:expr>
 	  <!-- Create signature attributes -->
 	  if oid = tuple['trans_oid']
 	    if oid != '0'
@@ -306,121 +306,121 @@
 	      end
 	    end
 	  end
-	</skituls:expr>
+	</skit:expr>
 	<aggregate>	
-	  <skituls:copytuple/>
+	  <skit:copytuple/>
 	</aggregate>
-      </skituls:foreach>
+      </skit:foreach>
 
-      <skituls:foreach var="operator_classes"
+      <skit:foreach var="operator_classes"
 		       filter="tuple['schema'] == tuple.parent['name']">
 	<operator_class>
-	  <skituls:copytuple/>
-	  <skituls:foreach var="opclass_opers"
+	  <skit:copytuple/>
+	  <skit:foreach var="opclass_opers"
 			   filter="tuple['opclass_oid'] == tuple.parent['oid']">
 	    <opclass_oper>
-	      <skituls:attr field='strategy'/>
-	      <skituls:attr field='op_name'/>
-	      <skituls:attr field='op_schema'/>
-	      <skituls:attr field='op_leftarg_name'/>
-	      <skituls:attr field='op_leftarg_schema'/>
-	      <skituls:attr field='op_rightarg_name'/>
-	      <skituls:attr field='op_rightarg_schema'/>
+	      <skit:attr field='strategy'/>
+	      <skit:attr field='op_name'/>
+	      <skit:attr field='op_schema'/>
+	      <skit:attr field='op_leftarg_name'/>
+	      <skit:attr field='op_leftarg_schema'/>
+	      <skit:attr field='op_rightarg_name'/>
+	      <skit:attr field='op_rightarg_schema'/>
 	    </opclass_oper>
-	  </skituls:foreach>
-	  <skituls:foreach var="opclass_funcs"
+	  </skit:foreach>
+	  <skit:foreach var="opclass_funcs"
 			   filter="tuple['opclass_oid'] == tuple.parent['oid']">
-	    <skituls:expr>
+	    <skit:expr>
 	      proc_oid = tuple['proc_oid']
 	      func = Globals['functions'][proc_oid]
 	      tuple['function_signature'] = sig = func['signature']
 	      tuple['function_qname'] = sig_to_qname(sig)
-	    </skituls:expr>
+	    </skit:expr>
 	    <opclass_func>
-	      <skituls:copytuple/>
-	      <!-- <skituls:attr id="proc_num" field="proc_num"/>
-	      <skituls:attr id="proc_oid" field="proc_oid"/> -->
+	      <skit:copytuple/>
+	      <!-- <skit:attr id="proc_num" field="proc_num"/>
+	      <skit:attr id="proc_oid" field="proc_oid"/> -->
 	    </opclass_func>
-	  </skituls:foreach>
+	  </skit:foreach>
 	</operator_class>
-      </skituls:foreach>
+      </skit:foreach>
 	  
-      <skituls:foreach var="sequences"
+      <skit:foreach var="sequences"
 		       filter="tuple['schema'] == tuple.parent['name']">
-	<skituls:expr>
+	<skit:expr>
 	  sig = tuple['schema'] + '.' + tuple['name']
 	  tuple['qname'] = sig_to_qname(sig)
-	</skituls:expr>
+	</skit:expr>
 	<sequence>
-	  <skituls:attribute field="name"/>
-	  <skituls:attribute field="schema"/>
-	  <skituls:attribute field="owner"/>
-	  <skituls:attribute field="comment"/>
-	  <skituls:attribute field="privs"/>
-	  <skituls:runsql var="seq_attributes" file="sql/sequence_cols.sql"
+	  <skit:attribute field="name"/>
+	  <skit:attribute field="schema"/>
+	  <skit:attribute field="owner"/>
+	  <skit:attribute field="comment"/>
+	  <skit:attribute field="privs"/>
+	  <skit:runsql var="seq_attributes" file="sql/sequence_cols.sql"
 			  param_1="tuple['qname']">
-	    <skituls:attribute field="start_with"/>
-	    <skituls:attribute field="increment_by"/>
-	    <skituls:attribute field="max_value"/>
-	    <skituls:attribute field="min_value"/>
-	    <skituls:attribute field="cache"/>
-	    <skituls:attribute field="is_cycled"/>
-	  </skituls:runsql>
-          <skituls:if test="!tuple['privs']">
+	    <skit:attribute field="start_with"/>
+	    <skit:attribute field="increment_by"/>
+	    <skit:attribute field="max_value"/>
+	    <skit:attribute field="min_value"/>
+	    <skit:attribute field="cache"/>
+	    <skit:attribute field="is_cycled"/>
+	  </skit:runsql>
+          <skit:if test="!tuple['privs']">
 	    <grant with_grant="yes" priv="trigger">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="references">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="rule">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="delete">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="insert">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="select">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
 	    <grant with_grant="yes" priv="update">
-	      <skituls:attr id="from" field_expr="#{owner}"/>
-	      <skituls:attr id="to" field_expr="#{owner}"/>
+	      <skit:attr id="from" field_expr="#{owner}"/>
+	      <skit:attr id="to" field_expr="#{owner}"/>
 	    </grant>
-	  </skituls:if>
-          <skituls:foreach split="privs">
-            <skituls:pg_eachpriv field="privs" 
+	  </skit:if>
+          <skit:foreach split="privs">
+            <skit:pg_eachpriv field="privs" 
       			   toname="to" privname="priv" fromname="from"
       			   withname="with_grant">
 	      <grant>
-      		<skituls:if test="tuple['to'] == tuple['from']">
+      		<skit:if test="tuple['to'] == tuple['from']">
       		  <!-- If this is the implied grant to the owner,
       		       then they have with_grant="yes" -->
-      		  <skituls:attr id="with_grant" expr="'yes'"/>
-      		</skituls:if>
-      		<skituls:if test="tuple['to'] != tuple['from']">
-      		  <skituls:attr field="with_grant"/>
-      		</skituls:if>
-      		<skituls:attr field="priv"/>
-      		<skituls:attr field="from"/>
-      		<skituls:attr field="to"/>
+      		  <skit:attr id="with_grant" expr="'yes'"/>
+      		</skit:if>
+      		<skit:if test="tuple['to'] != tuple['from']">
+      		  <skit:attr field="with_grant"/>
+      		</skit:if>
+      		<skit:attr field="priv"/>
+      		<skit:attr field="from"/>
+      		<skit:attr field="to"/>
 	      </grant>
-	    </skituls:pg_eachpriv>
-	  </skituls:foreach>
+	    </skit:pg_eachpriv>
+	  </skit:foreach>
 	</sequence>
-      </skituls:foreach>
+      </skit:foreach>
 
-      <skituls:include file="extract/tables.xml"/>
+      <skit:include file="extract/tables.xml"/>
     </schema>
-  </skituls:foreach>
+  </skit:foreach>
 
 
 <!-- Keep this comment at the end of the file

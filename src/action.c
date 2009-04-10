@@ -783,10 +783,6 @@ executeAction(String *action, Hash *params)
 void
 finalAction()
 {
-    //Object *x = actionStackPop();
-    //printSexp(stderr, "RESULT: ", x);
-    //objectFree(x, TRUE);
-    //return;
     if (action_stack) {
 	symbolSet("sources", (Object *) int4New(1));
 	(void) executePrint(NULL);

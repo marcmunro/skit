@@ -59,6 +59,7 @@ typedef enum {
     OBJ_CONNECTION,
     OBJ_CURSOR,
     OBJ_TUPLE,
+    OBJ_DAGNODE,
     OBJ_MISC,                   // Eg, SqlFuncs structure
     OBJ_DOT,       		// This is not a real-object
     OBJ_CLOSE_PAREN,    	// This is not a real-object
@@ -74,6 +75,7 @@ typedef struct Object {
 
 typedef Object *(ObjectFn)(Object *);
 typedef Object *(TraverserFn)(Object *, Object *);
+typedef int (ComparatorFn)(Object **, Object **);
 
 typedef struct Int4 {
     ObjType type;
@@ -181,6 +183,22 @@ typedef struct Cursor {
     Connection *connection;
 } Cursor;
 
+typedef enum {
+    DAGNODE_READY = 47,
+    DAGNODE_SORTING,
+    DAGNODE_SORTED
+} DagNodeStatus;
+
+typedef struct DagNode {
+    ObjType        type;
+    String        *fqn;
+    String        *object_type;
+    Node          *dbobject;
+    Node          *parent;
+    DagNodeStatus  status;
+    Vector        *dependencies;
+    Vector        *dependents;
+} DagNode;
 
 /* Used by sexpTok as its parameter, to retain position information
  * while tokenising a string expression */
@@ -273,6 +291,8 @@ extern void vectorFree(Vector *vector, boolean free_contents);
 extern void vectorStringSort(Vector *vector);
 extern String *vectorConcat(Vector *vector);
 extern Object *vectorGet(Vector *vec, Object *key);
+extern Object *vectorRemove(Vector *vec, int index);
+extern void vectorSort(Vector *vec, ComparatorFn *fn);
 
 // hash.c
 extern Hash *hashNew(boolean use_skalloc);
