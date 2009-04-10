@@ -42,27 +42,124 @@
     </xsl:copy>
   </xsl:template>
 
-
-
-
-
-
-
-
-  <!-- Handle the database and the cluster objects.  The cluster creates
-  an interesting problem: the database can only be created from within a
-  connection to a different database within the cluster.  So, to create
-  a database we must visit the cluster.  To create a database object, we
-  must visit the database.  But in visiting the database, we do not want
-  to visit the cluster.  To solve this, we create two distinct database
-  objects, one within the cluster for db creation purposes, and one not
-  within the cluster which depends on the first.  The first object we
-  will call dbincluster. -->
+  <!-- Cluster and database:
+       Handle the database and the cluster objects.  The cluster creates
+       an interesting problem: the database can only be created from
+       within a connection to a different database within the cluster.
+       So, to create a database we must visit the cluster.  To create a
+       database object, we must visit the database.  But in visiting the
+       database, we do not want to visit the cluster.  To solve this, we
+       create two distinct database objects, one within the cluster for
+       db creation purposes, and one not within the cluster which
+       depends on the first.  The first object we will call dbincluster. -->
 
   <xsl:template match="cluster">
     <dbobject type="cluster" root="true" visit="true"
-	      name="{@name}" fqn="{concat('cluster.', @name)}"
-	      qname='"{@name}"'>
+	      name="cluster" fqn="cluster">
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core" select="'cluster'"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+  <xsl:template match="database">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="db_fqn" select="concat('database.', 
+					  $parent_core, '.', @name)"/>
+    <xsl:variable name="dbv_fqn" select="concat('db_visit.', @name)"/>
+
+    <!-- Create the database object.  This is the object responsible for
+         database creation, etc -->
+    <dbobject type="database" visit="true"
+	      name="{@name}" qname='"{@name}"' fqn="{$db_fqn}">
+      <dependencies>
+	<xsl:if test="@tablespace != 'pg_default'">
+	  <dependency fqn="{concat('tablespace.', $parent_core, 
+			   '.', @tablespace)}"/>
+	</xsl:if>
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.', $parent_core, 
+			   '.', @owner)}"/>
+	</xsl:if>
+      </dependencies>
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+      </xsl:copy>
+    </dbobject>
+
+    <!-- now define the database visit object.  All non-cluster objects
+      will be children of this object.  This object exists purely to
+      encapsulate the code for visiting the database -->
+    <dbobject root="true" type="db_visit" visit="true"
+	      name="{@name}" qname='"{@name}"' fqn="{$dbv_fqn}">
+      <dependencies>
+	<dependency fqn="{$db_fqn}"/>
+      </dependencies>
+      <db_visit name="{@name}">
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core" select="@name"/>
+	</xsl:apply-templates>
+      </db_visit>
+    </dbobject>
+  </xsl:template>
+
+  <!-- Roles: roles are cluster level objects. -->
+
+  <xsl:template match="role">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
+    <dbobject type="role" name="{@name}" qname='"{@name}"'
+	      fqn="{concat('role.', $role_name)}">
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core" select="$role_name"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+  <!-- Grants: grants to roles are performed at the cluster, rather than
+       database level.  These grants can be differentiated from other
+       grants by their dbobject having a subtype of "role".  Note that
+       grants depend on all of the roles involved in the grant, and on
+       any grants of the necessary role to the grantor for this grant.
+       Because the dependencies on a grantor may potentially be
+       satisfied by a number of grants, these dependencies are specified
+       in terms of pqn (partially qualified name) rather than fqn (fully
+       qualified name). --> 
+ <xsl:template match="role/grant">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="grant_name" select="concat($parent_core, '.', @priv)"/>
+    <xsl:variable name="grantor" select="@from"/>
+    <dbobject type="grant" subtype="role" name="{concat(@priv, ':', @to)}"
+	      qname='"{concat(@priv, ":", @to)}"'
+	      pqn="{concat('grant.', $grant_name)}"
+	      fqn="{concat('grant.', $grant_name, ':', @from)}">
+
+      <dependencies>
+	<!-- Dependencies on roles from, to and priv -->
+	<dependency fqn="{concat('role.cluster.', @priv)}"/>
+	<dependency fqn="{concat('role.cluster.', @from)}"/>
+	<dependency fqn="{concat('role.', $parent_core)}"/>
+
+	<!-- Dependencies on previous grant. -->
+	<xsl:choose>
+	  <xsl:when test="@from=@priv">
+	    <!-- No dependency if the role is granted from the role -->
+	  </xsl:when>
+	  <xsl:when 
+	     test="../../role[@name=$grantor]/privilege[@priv='superuser']">
+	    <!-- No dependency if the role is granted from a superuser -->
+	  </xsl:when>
+	  <xsl:otherwise>  
+	    <dependency pqn="{concat('grant.cluster.', @from, '.', @priv)}"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
@@ -71,6 +168,104 @@
       </xsl:copy>
     </dbobject>
   </xsl:template>
+
+  <!-- DB object grants -->
+  <!-- pqn format for this type of grant is: grant.<parent_name>.<priv>:<to>
+       -->
+  <xsl:template match="grant">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="grant_name" select="concat($parent_core, '.', 
+					    @priv, ':', @to)"/>
+    <xsl:variable name="grantor" select="@from"/>
+    <!-- The owner attribute is needed when a grant is being done/revoked
+	 from the owner and the owner has changed (in a diff). --> 
+    <dbobject type="grant" 
+	      parent="{concat(name(..), '.', $parent_core)}"
+	      name="{concat(@priv, ':', @to)}"
+	      qname='"{concat(@priv, ":", @to)}"'
+	      pqn="{concat('grant.', $grant_name)}"
+	      fqn="{concat('grant.', $grant_name, ':', @from)}"
+	      owner="{../@owner}">
+      <xsl:attribute name="subtype">
+	<xsl:choose>
+	  <xsl:when test="name(..)='sequence'">
+	    <xsl:value-of select="'table'"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of select="name(..)"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:attribute>
+      <xsl:attribute name="on">
+	<xsl:choose>
+	  <xsl:when test="../@qname">
+	    <xsl:value-of select="../@qname"/>
+	  </xsl:when>	
+	  <xsl:otherwise>
+	    <xsl:value-of select="concat('&quot;', ../@name, '&quot;')"/>
+	  </xsl:otherwise>
+	</xsl:choose>	
+      </xsl:attribute>
+
+      <dependencies>
+	<!-- Roles -->
+	<xsl:if test="@to != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @to)}"/>
+	</xsl:if>
+	<xsl:if test="@from != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @from)}"/>
+	</xsl:if>
+
+	<!-- Dependencies on previous grant. -->
+	<xsl:choose>
+	  <xsl:when test="@from=../@owner">
+	    <!-- No dependency if the role is granted from the owner
+		 of the object -->
+	  </xsl:when>
+	  <xsl:when 
+	     test="//cluster/role[@name=$grantor]/privilege[@priv='superuser']">
+	    <!-- No dependency if the role is granted from a superuser -->
+	  </xsl:when>
+	  <xsl:otherwise>  
+	    <dependency pqn="{concat('grant.', $parent_core, '.', 
+			     @priv, ':', @from)}"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </dependencies>
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core" select="@name"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+ <!-- Tablespaces -->
+
+  <xsl:template match="tablespace">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="tbs_fqn" select="concat('tablespace.', 
+					  $parent_core, '.', @name)"/>
+    <dbobject type="tablespace" name="{@name}" qname='"{@name}"'
+	      fqn="{$tbs_fqn}">
+      <dependencies>
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.', $parent_core, '.',
+			   @owner)}"/>
+	</xsl:if>
+      </dependencies>
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core"
+			  select="concat($parent_core, '.', @name)"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+
 </xsl:stylesheet>
 
 <!-- Keep this comment at the end of the file

@@ -80,9 +80,9 @@
 
       <skit:runsql file="sql/dbinfo.sql" var="dbinfo">
 	<skit:attr name="username"/>
-	<xi:include href="skitfile:extract/roles.xml"/>-->
+	<xi:include href="skitfile:extract/roles.xml"/>
 	<xi:include href="skitfile:extract/tablespaces.xml"/>
-	<xi:include href="skitfile:extract/database.xml"/>-->
+	<xi:include href="skitfile:extract/database.xml"/>
       </skit:runsql>
     </skit:let>
   </cluster>
