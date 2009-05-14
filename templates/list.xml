@@ -9,16 +9,16 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
-    <option name='sources' value='1'/>
-    <option name='grants' type='flag'/>
+    <option name='sources' type='integer' value='1'/>
+    <option name='grants' type='flag' default='false'/>
     <alias value='g' for='grants'/>
-    <option name='details' type='flag'/>
-    <alias value='d' for='details'/>
-    <alias value='full' for='details'/>
-    <alias value='fulldetails' for='details'/>
-    <alias value='f' for='details'/>
+    <!-- Ensure add_deps.xsl is run before anything else is done -->
+    <option name='add_deps' type='boolean' value='true'/>
   </skit:options>
 
+  <skit:xslproc stylesheet="list.xsl" input="pop"/>
+
+  <!--
   <skit:result>
     <skit:xslproc stylesheet="list.xsl">
       <list>
@@ -30,6 +30,7 @@
       </list>	
     </skit:xslproc>
   </skit:result>
+  -->
 </skit:stylesheet>
 
 

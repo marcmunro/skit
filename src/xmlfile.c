@@ -508,7 +508,6 @@ Document *
 docFromFile(String *path)
 {
     Document *doc = NULL;
-    xmlDocPtr xmldoc = NULL;
     int ret;
     enum state_t {EXPECTING_OPTIONS, PROCESSING_OPTIONS, DONE} state;
     boolean reading_options = FALSE;
@@ -1124,6 +1123,47 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+static xmlNode *
+execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *stylesheet_name = nodeAttribute(template_node, "stylesheet");
+    String *input = nodeAttribute(template_node, "input");
+    Document *stylesheet = NULL;
+    Document *source_doc = NULL;
+    Document *result_doc = NULL;
+    xmlNode *result;
+
+    BEGIN {
+	if (!stylesheet_name) {
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("stylesheet attribute must be provided for xslproc"));
+	}
+
+	stylesheet = findDoc(stylesheet_name);
+	objectFree((Object *) stylesheet_name, TRUE);
+
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = (Document *) actionStackPop();
+	    result_doc = applyXSLStylesheet(source_doc, stylesheet);
+	}
+	else {
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("No input specified for xslproc"));
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) source_doc, TRUE);
+	objectFree((Object *) stylesheet, TRUE);
+	objectFree((Object *) input, TRUE);
+    }
+    END;
+
+    result = xmlDocGetRootElement(result_doc->doc);
+    objectFree((Object *) result_doc, FALSE);
+    return result;
+}
+
 static void
 addProcessor(char *name, xmlFn *processor)
 {
@@ -1153,6 +1193,7 @@ initSkitProcessors()
 	addProcessor("function", &execDeclareFunction);
 	addProcessor("exec_function", &execExecuteFunction);
 	addProcessor("exec_func", &execExecuteFunction);
+	addProcessor("xslproc", &execXSLproc);
     }
 }
 
@@ -1375,16 +1416,85 @@ Document *
 processTemplate(Document *template)
 {
     xmlNode *root;
-    xmlDocPtr newdoc; 
+    xmlDocPtr doc; 
     xmlNode *newroot;
     Document *result;
     cur_template = template;
     root = xmlDocGetRootElement(template->doc);
     newroot = processNode(root, NULL, 1);
-    newdoc = xmlNewDoc("1.0");
-    xmlDocSetRootElement(newdoc, newroot);
-    result = documentNew(newdoc, NULL);
+    doc = newroot->doc;
+    if (!doc) {
+	doc = xmlNewDoc("1.0");
+	xmlDocSetRootElement(doc, newroot);
+    }
+
+    result = documentNew(doc, NULL);
 
     return result;
+}
+
+static Object *
+addParamAttribute(Object *obj, Object *params_node)
+{
+    String *key = (String *) ((Cons *) obj)->car;
+    Cons *value = (Cons *) ((Cons *) obj)->cdr;
+    char *param = NULL;
+    xmlNode *node;
+
+    switch (value->type) {
+    case OBJ_SYMBOL:
+	if (((Symbol *) value)->svalue) {
+	    param = newstr("true");
+	}
+	else {
+	    param = newstr("false");
+	}
+	break;
+    case OBJ_STRING:
+	param = newstr(((String *) value)->value);
+	break;
+    case OBJ_INT4:
+	param = newstr("%d", ((Int4 *) value)->value);
+	break;
+    }
+    if (param) {
+	node = ((Node *) params_node)->node;
+	(void)  xmlNewProp(node, key->value, param);
+	skfree(param);
+    }
+
+    return (Object *) value;  /* Return the original contents of the hash
+			       * entry */
+}
+
+
+void
+addParamsNode(Document *doc, Object *params)
+{
+    xmlNode *root = xmlDocGetRootElement(doc->doc);
+    xmlNode *first;
+    xmlNode *param_node;
+    Node *node;
+
+    if (!root) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("Unable to retrieve document root"));
+    }
+
+    param_node = xmlNewNode(NULL, (xmlChar *) "params");
+    if (first = root->children) {
+	xmlAddPrevSibling(first, param_node);
+    }
+    else {
+	/* Looks like there are no contents here, so add params node
+	 * as root's first child */
+	xmlAddChild(root, param_node);
+    }
+
+    node = nodeNew(param_node);
+    hashEach((Hash *) params, addParamAttribute, (Object *) node);
+    objectFree((Object *) node, FALSE);
+
+    return;
 }
 

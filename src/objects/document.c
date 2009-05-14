@@ -122,8 +122,66 @@ documentStr(Document *doc)
     return result;
 }
 
+xmlNode *
+getFirstNode(Document *doc)
+{
+    xmlNode *root = xmlDocGetRootElement(doc->doc);
+    xmlNode *node;
+    
+    if (!root) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("Cannot access XML Document"));
+    }
+
+    node = root->children;
+    while (node) {
+	if (node->type == XML_ELEMENT_NODE) {
+	    return node; 
+	}
+	node = node->next;
+    }
+    return NULL;
+}
+
+xmlNode *
+getNextNode(xmlNode *node)
+{
+    node = node->next;
+    while (node) {
+	if (node->type == XML_ELEMENT_NODE) {
+	    return node; 
+	}
+	node = node->next;
+    }
+    return NULL;
+}
+
+xmlNode *
+nextPrintableNode(xmlNode *node)
+{
+    while (node = getNextNode(node)) {
+	if (streq(node->name, "print")) {
+	    return node;
+	}
+    }
+    return NULL;
+}
+
 void
 documentPrint(FILE *fp, Document *doc)
+{
+    xmlNode *node = getFirstNode(doc);
+    xmlChar *value;
+
+    while (node = nextPrintableNode(node)) {
+	value = xmlGetProp(node, (xmlChar *) "text");
+	fprintf(fp, "%s", value);
+	xmlFree(value);
+    }
+}
+
+void
+documentPrintXML(FILE *fp, Document *doc)
 {
     xmlChar *xmlbuf;
     int buffersize;
@@ -200,5 +258,45 @@ void
 recordCurDocumentSkippedLines(String *URI, int lines)
 {
     recordDocumentSkippedLines(cur_document, URI, lines);
+}
+
+Document *
+findDoc(String *filename)
+{
+    String *doc_path = findFile(filename);
+    Document *doc;
+    if (!doc_path) {
+	RAISE(FILEPATH_ERROR, 
+	      newstr("findDoc: cannot find \"%s\"", filename->value));
+    }
+
+    doc = docFromFile(doc_path);
+    objectFree((Object *) doc_path, TRUE);
+    finishDocument(doc);
+    return doc;
+}
+
+boolean 
+docIsPrintable(Document *doc)
+{
+    xmlNode *node = getFirstNode(doc);
+    if (node) {
+	return streq(node->name, "printable");
+    }
+    return FALSE;
+}
+
+boolean 
+docHasDeps(Document *doc)
+{
+    xmlNode *node = getFirstNode(doc);
+    if (streq(node->name, "printable")) {
+	node = getNextNode(node);
+    }
+
+    if (node) {
+	return streq(node->name, "dbobject");
+    }
+    return FALSE;
 }
 

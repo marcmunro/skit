@@ -411,6 +411,7 @@ extern Document *docFromFile(String *path);
 extern void parseXSLStylesheet(Document *doc);
 extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
+extern void addParamsNode(Document *doc, Object *params);
 
 // document.c
 extern Node *nodeNew(xmlNode *node);
@@ -418,10 +419,14 @@ extern Document *documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader);
 extern void documentFree(Document *doc, boolean free_contents);
 extern char *documentStr(Document *doc);
 extern void documentPrint(FILE *fp, Document *doc);
+extern void documentPrintXML(FILE *fp, Document *doc);
 extern void finishDocument(Document *doc);
 extern void recordCurDocumentSource(String *URI, String *path);
 extern void recordCurDocumentSkippedLines(String *URI, int lines);
 extern Cons *getDocumentInclusion(Document *doc, String *URI);
+extern Document *findDoc(String *filename);
+extern boolean docIsPrintable(Document *doc);
+extern boolean docHasDeps(Document *doc);
 
 // exceptions.c functions are defined in exceptions.h
 

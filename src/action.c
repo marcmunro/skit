@@ -55,6 +55,15 @@ actionStackPop()
     return result;
 }
 
+Object *
+actionStackHead()
+{
+    if (action_stack) {
+	return (Object *) action_stack->car;
+    }
+    return NULL;
+}
+
 // TOO: deprecate
 /* Count starts at 1 */
 static Cons *
@@ -69,25 +78,10 @@ actionStackNth(int n)
 }
 
 static Document *
-getDoc(String *filename)
-{
-    String *doc_path = findFile(filename);
-    Document *doc;
-    if (!doc_path) {
-	RAISE(FILEPATH_ERROR, 
-	      newstr("getDoc: cannot find \"%s\"", filename->value));
-	}
-    doc = docFromFile(doc_path);
-    objectFree((Object *) doc_path, TRUE);
-    finishDocument(doc);
-    return doc;
-}
-
-static Document *
 getAddDepsDoc()
 {
     if (!adddeps_document) {
-	adddeps_document = getDoc(&add_deps_filename);
+	adddeps_document = findDoc(&add_deps_filename);
     }
     return adddeps_document;
 }
@@ -96,7 +90,7 @@ static Document *
 getRmDepsDoc()
 {
     if (!rmdeps_document) {
-	rmdeps_document = getDoc(&rm_deps_filename);
+	rmdeps_document = findDoc(&rm_deps_filename);
     }
     return rmdeps_document;
 }
@@ -280,6 +274,8 @@ getOptionlistArgs(Cons *optionlist)
     int expected_sources = getIntOption(optionlist, &sources_str, &value_str);
     int expected_args = 0;
     Hash *params = hashNew(TRUE);
+    String *fullname;
+    
     BEGIN {
 	if (expected_sources == 0) {
 	    if (hasArg(optionlist)) {
@@ -293,8 +289,11 @@ getOptionlistArgs(Cons *optionlist)
 		// for this action and replace it into the arglist
 		
 		if (value = getOptionValue(optionlist, arg)) {
-		    hashAdd(params, (Object *) arg, value);
-		    value = NULL; /* Must not free this directly! */
+		    fullname = optionlistGetOptionName(optionlist, arg);
+		    fullname = stringNew(fullname->value);
+		    hashAdd(params, (Object *) fullname, value);
+		    objectFree((Object *) arg, TRUE);
+		    value = NULL; /* This is freed by freeing params! */
 		}
 		else {
 		    /* This option must be for the next action. */
@@ -458,6 +457,24 @@ parsePrint(Object *obj)
     return (Object *) args;
 }
 
+static Object *
+parseList(Object *obj)
+{
+    String *filename = stringNew("list.xml");
+    Object *params;
+    BEGIN {
+	params = doParseTemplate(filename);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) filename, TRUE);
+	RAISE();
+    }
+    END;
+    objectFree((Object *) filename, TRUE);
+    return params;
+}
+
 /* Set the "global" element in hash to t.  This will cause variables
  * defined for this action to be made global rather than in-scope only
  * for the current action.
@@ -527,6 +544,7 @@ defineActionParsers()
 	defineActionSymbol("parse_print", &parsePrint);
 	defineActionSymbol("parse_adddeps", &parseAdddeps);
 	defineActionSymbol("parse_dbtype", &parseDbtype);
+	defineActionSymbol("parse_list", &parseList);
     }
     done = TRUE;
 }
@@ -578,7 +596,7 @@ parseAction(String *action)
 }
 
 static void
-preprocessSourceDocs(int sources)
+preprocessSourceDocs(int sources, Object *params)
 {
     int i;
     Cons *cons;
@@ -591,6 +609,7 @@ preprocessSourceDocs(int sources)
 	cons = actionStackNth(i);
 	src_doc = (Document *) cons->car;
 	if (add_deps) {
+	    // TODO: Make this conditional on no deps existing
 	    xslsheet = getAddDepsDoc();
 	    result_doc = applyXSLStylesheet(src_doc, xslsheet);
 	    objectFree((Object *) src_doc, TRUE);
@@ -598,6 +617,7 @@ preprocessSourceDocs(int sources)
 	else {
 	    result_doc = src_doc;
 	}
+	addParamsNode(result_doc, params);
 	cons->car = (Object *) result_doc;
     }
 }
@@ -609,6 +629,7 @@ executePrint(Object *params)
     int action_stack_entries = consLen(action_stack);
     boolean print_full;
     boolean print_xml;
+    boolean has_deps;
     String *action_name;
     Document *doc;
     char *docstr;
@@ -625,15 +646,28 @@ executePrint(Object *params)
     print_full = dereference(symbolGetValue("full")) && TRUE;
     print_xml = dereference(symbolGetValue("xml")) && TRUE;
 
+    doc = (Document *) actionStackHead();
+    has_deps = docIsPrintable(doc);
+
     if (print_full) {
-	/* Ensure dependencies have been added */
-	addDeps();
+	if (!has_deps) {
+	    addDeps();
+	}
     }
     else {
-	rmDeps();
+	if (has_deps) {
+	    rmDeps();
+	}
     }
     doc = (Document *) actionStackPop();
-    documentPrint(stdout, doc);
+
+    if (docIsPrintable(doc) && (!print_xml) && (!print_full)) {
+	documentPrint(stdout, doc);
+    }
+    else {
+	documentPrintXML(stdout, doc);
+    }
+    
     objectFree((Object *) doc, TRUE);
 
     return NULL;
@@ -657,7 +691,7 @@ executeTemplate(Object *params)
 	      newstr("Insufficient inputs for %s", action_name->value));
     }
 
-    preprocessSourceDocs(sources->value);
+    preprocessSourceDocs(sources->value, params);
     
     if (result = processTemplate(template)) {
 	actionStackPush((Object *) result);
@@ -693,6 +727,7 @@ defineActionExecutors()
 	defineActionSymbol("execute_print", &executePrint);
 	defineActionSymbol("execute_dbtype", &executeDoNothing);
 	defineActionSymbol("execute_connect", &executeConnect);
+	defineActionSymbol("execute_list", &executeTemplate);
     }
     done = TRUE;
 }

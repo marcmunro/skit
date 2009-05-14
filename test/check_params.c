@@ -664,7 +664,7 @@ START_TEST(extract)
     //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest' port = '54329'",
-                    "--print", "--full"};
+                    "--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -675,7 +675,7 @@ START_TEST(extract)
     //showMalloc(1986);
 
     BEGIN {
-	process_args2(8, args);
+	process_args2(10, args);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
