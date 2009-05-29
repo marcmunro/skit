@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  TODO: Complete this comment
+
+-->
+
+
+<skit:stylesheet
+  xmlns:skit="http://www.bloodnok.com/xml/skit">
+  
+  <skit:options>
+    <option name='sources' type='integer' value='1'/>
+    <option name='d*rop' type='flag' default='false'/>
+    <option name='b*uild' type='flag' default='false'/>
+    <!-- Ensure add_deps.xsl is run before anything else is done -->
+    <option name='add_deps' type='boolean' value='true'/>
+  </skit:options>
+
+  <!-- If neither build or drop are specified, then we do a build -->
+  <skit:exec expr="(setq build (or build (not (or build drop))))"/>
+
+<!--  <skit:xslproc stylesheet="ddl.xsl"> -->
+    <skit:gensort input="pop"/>
+<!--  </skit:xslproc> -->
+
+</skit:stylesheet>
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

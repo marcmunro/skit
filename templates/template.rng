@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+  ns="http://www.bloodnok.com/xml/skit">
+
+  <define name="options_element">
+    <element name="options">
+      <zeroOrMore>
+	<choice>
+	  <ref name="option_element"/>
+	  <ref name="alias_element"/>
+	</choice>	
+      </zeroOrMore>
+    </element>
+  </define>
+
+  <define name="option_element">
+    <element name="option" ns="">
+      <choice>
+	<ref name="sources_option"/>
+	<ref name="add_deps_option"/>
+	<ref name="other_option"/>
+      </choice>
+    </element>
+  </define>
+
+  <define name="integer_type">
+    <attribute name="type">
+      <value>integer</value>
+    </attribute>
+  </define>
+
+  <define name="integers">
+    <data type="token" 
+	  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+      <param name="pattern">[0-9][0-9]*</param>
+    </data>
+  </define>
+
+  <define name="booleans">
+    <data type="token" 
+	  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+      <param name="pattern">false|true</param>
+    </data>
+  </define>
+
+  <define name="boolean_type">
+    <attribute name="type">
+      <choice>
+	<value>flag</value>
+	<value>boolean</value>
+      </choice>
+    </attribute>
+  </define>
+
+  <define name="sources_option">
+    <attribute name="name">
+      <value>sources</value>
+    </attribute>
+    <ref name="integer_type"/>
+    <attribute name="value">
+      <choice>
+	<value>0</value>
+	<value>1</value>
+	<value>2</value>
+      </choice>
+    </attribute>
+  </define>
+
+  <define name="add_deps_option">
+    <attribute name="name">
+      <value>add_deps</value>
+    </attribute>
+    <ref name="boolean_type"/>
+    <attribute name="value">
+      <ref name="booleans"/>
+    </attribute>
+  </define>
+
+  <define name="other_option">
+    <attribute name="name">
+      <data type="string">
+	<except>
+	  <value>sources</value>
+	  <value>add_deps</value>
+	</except>
+      </data>
+    </attribute>
+    <choice>
+      <ref name="boolean_option"/>
+      <ref name="nonboolean_option"/>
+    </choice>
+  </define>
+
+  <!-- Flag and boolean types must have boolean contents if provided -->
+  <define name="boolean_option">
+    <ref name="boolean_type"/>
+    <optional>
+      <choice>
+	<attribute name="value">
+	  <ref name="booleans"/>
+	</attribute>
+	<attribute name="default">
+	  <ref name="booleans"/>
+	</attribute>
+      </choice>
+    </optional>
+  </define>
+
+  <define name="nonboolean_option">
+    <attribute name="type">
+      <data type="string">
+	<except>
+	  <value>flag</value>
+	  <value>boolean</value>
+	</except>
+      </data>
+    </attribute>
+    <optional>
+      <choice>
+	<attribute name="value"/>
+	<attribute name="default"/>
+      </choice>
+    </optional>
+  </define>
+
+  <define name="alias_element">
+    <element name="alias" ns="">
+      <attribute name="value"/>
+      <attribute name="for"/>
+    </element>
+  </define>
+
+  <define name="stylesheet_elements">
+    <grammar>
+      
+      <define name="skit_element">
+	<choice>
+	  <ref name="runsql_element"/>
+	  <ref name="xslproc_element"/>
+	</choice>
+      </define>
+
+      <define name="stylesheet_elements">
+	<parentRef name="stylesheet_elements"/>
+      </define>
+
+      <define name="runsql_element">
+	<element name="runsql">
+	  <attribute name="file"/>
+	  <optional>
+	    <attribute name="var"/>
+	  </optional>
+	  <optional>
+	    <attribute name="to"/>
+	  </optional>
+	  <ref name="stylesheet_elements"/>
+	</element>
+      </define>
+  
+      <define name="xslproc_element">
+	<element name="xslproc">
+	  <attribute name="stylesheet"/>
+	  <attribute name="input"/>
+	</element>
+      </define>
+  
+      <define name="xml_element">
+	<element ns="">
+	  <nsName/>
+	  <zeroOrMore>
+	    <choice>
+	      <attribute>
+		<anyName/>
+	      </attribute>
+	      <ref name="stylesheet_elements"/>
+	    </choice>
+	  </zeroOrMore>
+	</element>
+      </define>
+
+      <start>
+	<zeroOrMore>
+	  <choice>
+	    <ref name="skit_element"/>
+	    <ref name="xml_element"/>
+	    <text/>
+	  </choice>
+	</zeroOrMore>
+      </start>
+    </grammar>
+  </define>
+
+  <start>
+    <element name="stylesheet">
+      <optional>
+	<ref name="options_element"/>
+      </optional>
+      <ref name="stylesheet_elements"/>
+    </element>
+  </start>
+</grammar>
+
+
+
+
+
