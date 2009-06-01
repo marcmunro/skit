@@ -157,6 +157,8 @@ optionlistAdd(Cons *list, String *option_name,
 	Cons *old_alist = (Cons *) hashGet(hash, (Object *) option_name);
 	Cons *new_alist;
 	new_alist = consNew((Object *) entry, (Object *) old_alist);
+	// TODO: HANDLE RESULT FROM hashAdd and thereby eliminate the 
+	// call to hashGet
 	hashAdd(hash, (Object *) option_name, (Object *) new_alist);
 	//fprintf(stderr, "IS NOW: %s\n", x = objectSexp((Object *) list));
 	//skfree(x);
@@ -171,6 +173,7 @@ optionlistAddAlias(Cons *list, String *alias, String *key)
 	   "optionlistAddAlias: list is not an optionlist");
     hash = getAliases(list);
     setIncomplete(list);
+    // TODO: HANDLE RESULT FROM hashAdd
     hashAdd(hash, (Object *) alias, (Object *) key);
 }
 
@@ -224,6 +227,7 @@ addAbbrevs(Cons *optionlist, String *newkey, Cons *abbrevs)
 	alias = (String *) list->car;
 	list->car = NULL;
 	if (!hashGet(hash, (Object *) alias)) {
+	    // TODO: HANDLE RESULT FROM hashAdd
 	    hashAdd(hash, (Object *) alias, objectCopy((Object *) newkey));
 	}
 	else {
@@ -275,6 +279,7 @@ makeComplete(Cons *optionlist)
 	original = hashDel(optionhash, (Object *) original_key);
 
 	// And replace with the full key
+	// TODO: HANDLE RESULT FROM hashAdd
 	hashAdd(optionhash, (Object *) fullkey, original);
 
 	objectFree((Object *) entries, FALSE);

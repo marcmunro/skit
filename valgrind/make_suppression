@@ -35,3 +35,6 @@ BEGIN {
     }
 }
 (printing)
+/^}/ {
+    printing = 0
+}

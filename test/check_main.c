@@ -53,6 +53,57 @@ START_TEST(xmlreader_suppressions)
 }
 END_TEST
 
+Document *
+getSupDoc(char *name)
+{
+    String *docname = stringNew(name);
+    Document *doc = findDoc(docname);
+    objectFree((Object *) docname, TRUE);
+    return doc;
+}
+
+void
+validateSupDoc(Document *doc, Document *rng_doc)
+{
+    int result;
+    xmlRelaxNGParserCtxtPtr ctx;
+    xmlRelaxNGPtr schema;
+    xmlRelaxNGValidCtxtPtr validator;
+
+    ctx = xmlRelaxNGNewDocParserCtxt(rng_doc->doc);
+    schema = xmlRelaxNGParse(ctx);
+    validator = xmlRelaxNGNewValidCtxt(schema);
+
+    result = xmlRelaxNGValidateDoc(validator, doc->doc);
+
+    xmlRelaxNGFreeValidCtxt(validator);
+    xmlRelaxNGFree(schema);
+    xmlRelaxNGFreeParserCtxt(ctx);
+}
+
+/* This identifies suppressions required when using relaxng validation.
+ */
+START_TEST(relaxng_suppressions)
+{
+    Document *list_template;
+    Document *rng_doc;
+
+    printf("SUPPRESSION: relaxng_suppression validateSupDoc\n");
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+
+    list_template = getSupDoc("list.xml");
+    rng_doc = getSupDoc("template.rng");
+
+    validateSupDoc(list_template, rng_doc);
+
+    objectFree((Object *) rng_doc, TRUE);
+    objectFree((Object *) list_template, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(sql_suppressions)
 {
     char *args[] = {"./skit", "--connect", 
@@ -86,6 +137,9 @@ static char test_name[100];
 /* The suppressions suite is used to automagically generate suppresions
  * files for valgrind.  See valgrind/make_supression and test/Makefile
  * for more info.
+ * To run the suppressions suite as a normal unit test use -s
+ * eg: make unit TESTS="-s"
+ * or" skit_test -s
  */
 Suite *
 suppressions_suite(void)
@@ -95,6 +149,7 @@ suppressions_suite(void)
     
     ADD_TEST(tc_s, hash_suppressions);
     ADD_TEST(tc_s, xmlreader_suppressions);
+    ADD_TEST(tc_s, relaxng_suppressions);
     if (suppress_sql) {
 	ADD_TEST(tc_s, sql_suppressions);
     }
@@ -191,7 +246,7 @@ main(int argc, char *argv[])
     global_sr = sr;
     if (nofork) {
 	fprintf(stderr, "NOT FORKING!!!!\n");
-	srunner_set_fork_status (sr, CK_NOFORK);
+	srunner_set_fork_status(sr, CK_NOFORK);
     }
 
     if (reporting_only || suppressions) {
@@ -207,6 +262,8 @@ main(int argc, char *argv[])
 	ADD_SUITE(filepaths);
 	ADD_SUITE(xmlfile);
 	ADD_SUITE(params);
+	ADD_SUITE(relaxng);
+	ADD_SUITE(tsort);
     }
 
     if (!reporting_only) {

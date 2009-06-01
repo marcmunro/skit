@@ -22,9 +22,10 @@ CC=			gcc
 #build tool flags
 #CFLAGS=			-g -O2
 # Turn off optimisation as it makes gdb harder to use
-CFLAGS=			-g 
+CFLAGS=			-g -O0
 
-override CPPFLAGS := @GLIB_CFLAGS@ \
+override CPPFLAGS := -I ./test \
+         @GLIB_CFLAGS@ \
 	 @PQINCPATH@ @XML_CFLAGS@ \
 	 @XSLT_CFLAGS@ $(CPPFLAGS) 
 

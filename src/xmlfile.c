@@ -104,20 +104,6 @@ getAttribute(xmlTextReaderPtr reader,
     return NULL;
 }
 
-static String *
-nodeAttribute(xmlNodePtr node, 
-	      const xmlChar *name)
-{
-    xmlChar *value = xmlGetProp(node, name);
-    String *result;
-
-    if (value) {
-	result = stringNew((char *) value);
-	xmlFree(value);
-	return result;
-    }
-    return NULL;
-}
 
 static void
 addAttribute(xmlNodePtr node, 
@@ -1164,12 +1150,40 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+static xmlNode *
+execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *input = nodeAttribute(template_node, "input");
+    Document *source_doc = NULL;
+    Hash *dagnodes = NULL;
+    Vector *sorted = NULL;
+ 
+    BEGIN {
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = (Document *) actionStackPop();
+	}
+	sorted = gensort(source_doc);
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("execgensort is not implemented"));
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) input, TRUE);
+	objectFree((Object *) source_doc, TRUE);
+    }
+    END;
+
+}
+
 static void
 addProcessor(char *name, xmlFn *processor)
 {
     String *sname = stringNew(name);
     FnReference *ref = fnRefNew(processor);
-    hashAdd(skit_processors, (Object *) sname, (Object *) ref);
+    if (hashAdd(skit_processors, (Object *) sname, (Object *) ref)) {
+	RAISE(GENERAL_ERROR,
+	      newstr("addProcessor: Attempt to add duplicate \"%s\"", name));
+    }
 }
 
 static void
@@ -1194,6 +1208,7 @@ initSkitProcessors()
 	addProcessor("exec_function", &execExecuteFunction);
 	addProcessor("exec_func", &execExecuteFunction);
 	addProcessor("xslproc", &execXSLproc);
+	addProcessor("gensort", &execGensort);
     }
 }
 
@@ -1497,4 +1512,5 @@ addParamsNode(Document *doc, Object *params)
 
     return;
 }
+
 

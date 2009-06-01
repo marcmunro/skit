@@ -321,7 +321,7 @@ initTupleFields(Tuple *tuple)
 		name = PQfname(cursor->cursor, col);
 		key = stringNew(name);
 		colidx = int4New(col);
-		hashAdd(fields, (Object *) key, (Object *) colidx);
+		(void) hashAdd(fields, (Object *) key, (Object *) colidx);
 	}
 	cursor->fields = fields;
 }
@@ -514,5 +514,5 @@ registerPGSQL()
 	ObjReference *obj = objRefNew((Object *) &funcs);
 	Hash *dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
 	String *handlername = stringNew("postgres");
-	hashAdd(dbhash, (Object *) handlername, (Object *) obj);
+	(void) hashAdd(dbhash, (Object *) handlername, (Object *) obj);
 }

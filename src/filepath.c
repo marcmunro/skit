@@ -52,8 +52,8 @@ next_match()
     return glob_buf.gl_pathv[glob_buf_idx++];
 }
 
-// Try finding filename in path/filename, path/dbstr/filename and
-// path/dbstr/*/filename.  Return -1 if the file was found in one of the
+// Try finding filename in path/filename, path/dbdir/filename and
+// path/dbdir/*/filename.  Return -1 if the file was found in one of the
 // two simple (non-wildcarded) paths, count otherwise.
 static int
 locateFile(char *path, char *templatedir, char *dbdir, char *filename)
@@ -144,6 +144,7 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
     int matches;
     int i;
     int cmp;
+    //printSexp(stderr, "VERSION: ", version);
     for (i = 0; i < roots->elems; i++) {
 	root = (String *) roots->vector[i];
 

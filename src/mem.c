@@ -278,12 +278,20 @@ addChunk(void *chunk)
 // chunk_number as malloc'd.  If an attempt is made to free the same
 // memory again, we can tell which chunk was.
 //
+
+static void
+debugdebug()
+{
+    fprintf(stderr, "HERE\n");
+}
+
 static void
 delChunk(void *chunk)
 {
     int previous = moveChunk(chunkTable(), freeTable(), chunk, free_number);
 
     if (!previous) {
+	debugdebug();
 	RAISE(MEMORY_ERROR, 
 	      newstr("DelChunk: Chunk %p not allocated", chunk));
     }

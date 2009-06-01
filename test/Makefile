@@ -78,7 +78,7 @@ SUPP_FLAG = -$(shell if test -d testdb; then echo S; else echo s; fi)
 # is considered safe enough.  
 suppress_one:
 	@echo Creating valgrind/$(THIS_TEST)...
-	@suppression_files=`$(EXISTING_SUPPRESSIONS)` ; \
+	suppression_files=`$(EXISTING_SUPPRESSIONS)` ; \
 	valgrind $(GEN_SUPPRESSIONS) $${suppression_files} \
 	    ./skit_test $(SUPP_FLAG) $(SUITE) $(THIS_TEST) 2>&1 | \
 		valgrind/make_suppression >valgrind/tmpout 
@@ -93,7 +93,7 @@ valgrind/suppressions:
 
 # Build a list of all tests known to the test suite.
 valgrind/alltests: skit_test
-	@./skit_test -r $(SUPP_FLAG) >valgrind/alltests
+	./skit_test -r $(SUPP_FLAG) >valgrind/alltests
 
 grind: skit_test valgrind/suppressions
 	valgrind $(VALGRIND_OPTIONS) ./skit_test $(TESTS)

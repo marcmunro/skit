@@ -226,7 +226,7 @@ recordDocumentSource(Document *doc,
     if (!doc->inclusions) {
 	doc->inclusions = hashNew(TRUE);
     }
-    hashAdd(doc->inclusions, (Object *) key, (Object *) contents);
+    (void) hashAdd(doc->inclusions, (Object *) key, (Object *) contents);
 }
 
 Cons *
@@ -245,7 +245,7 @@ recordDocumentSkippedLines(Document *doc, String *URI, int lines)
     Cons *contents = getDocumentInclusion(doc, URI);
     if (contents) {
 	contents->cdr = (Object *) my_lines;
-	}
+    }
 }
 
 void
@@ -300,3 +300,81 @@ docHasDeps(Document *doc)
     return FALSE;
 }
 
+static void
+assertXpathObj(void *obj, char *info)
+{
+    if (!obj) {
+	RAISE(XPATH_EXCEPTION, newstr(info));
+    }
+}
+
+Object *
+xpathEach(Document *doc, String *xpath,
+	  TraverserFn *traverser, Object *param)
+{
+    xmlXPathContextPtr context = NULL;
+    xmlXPathObjectPtr xpath_obj = NULL; 
+    xmlNodeSetPtr nodelist;
+    Node node = {OBJ_XMLNODE, NULL};
+    char *tmp_str = NULL;
+    int nodecount;
+    int i;
+
+    //dbgSexp(doc);
+    BEGIN {
+	context = xmlXPathNewContext(doc->doc);
+	assertXpathObj(context, "xpathEach: unable to establish context");
+	xpath_obj = xmlXPathEvalExpression(
+	    (xmlChar *) xpath->value, context);
+	assertXpathObj(xpath_obj, 
+		       tmp_str = newstr("xpathEach: failed to evaluate \"%s\"",
+					xpath->value));
+
+	nodelist = xpath_obj->nodesetval;
+	nodecount = (nodelist) ? nodelist->nodeNr : 0;
+    
+	for(i = 0; i < nodecount; ++i) {
+	    node.node = nodelist->nodeTab[i];
+	    assertXpathObj(node.node, "xpathEach: missing node");
+	    if(node.node->type == XML_ELEMENT_NODE) {
+		param = (*traverser)((Object *) &node, param);
+	    }
+	    else {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("xpathEach: cannot handle node type %d",
+			  node.node->type));
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	if (tmp_str) {
+	    skfree(tmp_str);
+	}
+
+	if (xpath_obj) {
+	    xmlXPathFreeObject(xpath_obj);
+	}
+	if (context) {
+	    xmlXPathFreeContext(context); 
+	}
+    }
+    END;
+
+    return param;
+}
+
+String *
+nodeAttribute(xmlNodePtr node, 
+	      const xmlChar *name)
+{
+    xmlChar *value = xmlGetProp(node, name);
+    String *result;
+
+    if (value) {
+	result = stringNew((char *) value);
+	xmlFree(value);
+	return result;
+    }
+    return NULL;
+}

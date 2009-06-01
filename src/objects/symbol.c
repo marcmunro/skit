@@ -134,7 +134,7 @@ symbolNew(char *name)
 	sym->fn = NULL;
 	sym->svalue = NULL;
 	sym->scope = NULL;
-	hashAdd(symbols, (Object *) hashkey, (Object *) sym);
+	(void) hashAdd(symbols, (Object *) hashkey, (Object *) sym);
 	setScopeForSymbol(sym);
     }
     return sym;

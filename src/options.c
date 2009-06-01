@@ -170,6 +170,7 @@ hashFromOptions(Cons *options)
 		assert(this_option->type == OBJ_STRING,
 		       "hashFromOptions: Expected this_option to be String(2)");
 		
+		// TODO: HANDLE RESULT FROM hashAdd
 		hashAdd(hash, (Object *) this_option, 
 			(Object *) stringDup(option_name));
 	    }

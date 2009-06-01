@@ -189,15 +189,25 @@ typedef enum {
     DAGNODE_SORTED
 } DagNodeStatus;
 
+typedef enum {
+    BUILD_NODE = 53,
+    DROP_NODE,
+    DIFF_NODE,
+    ARRIVE_NODE,
+    DEPART_NODE,
+    UNSPECIFIED_NODE
+} DagNodeBuildType;
+
 typedef struct DagNode {
-    ObjType        type;
-    String        *fqn;
-    String        *object_type;
-    Node          *dbobject;
-    Node          *parent;
-    DagNodeStatus  status;
-    Vector        *dependencies;
-    Vector        *dependents;
+    ObjType          type;
+    String          *fqn;
+    String          *object_type;
+    xmlNode         *dbobject;    // Reference only - not to be freed from here
+    DagNodeStatus    status;
+    DagNodeBuildType build_type;
+    Vector          *dependencies;
+    Vector          *dependents;
+    struct DagNode  *parent;
 } DagNode;
 
 /* Used by sexpTok as its parameter, to retain position information
@@ -216,7 +226,7 @@ typedef struct TokenStr {
 
 #ifdef WITH_CASSERT
 #define assert(cond,str)						\
-    do { if (!(cond)) { RAISE(ASSERTION_FAILURE, str);}} while (FALSE)
+    do { if (!(cond)) { RAISE(ASSERTION_FAILURE, newstr(str));}} while (FALSE)
 #else
 #define assert(cond,str) 
 #endif
@@ -281,10 +291,14 @@ extern Object *objSelect(Object *collection, Object *key);
 extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
+extern DagNode *dagnodeNew(Node *node, DagNodeBuildType build_type);
+extern char *nameForBuildType(DagNodeBuildType build_type);
+
 
 // vector.c
 extern Vector *vectorNew(int elems);
 extern Object *vectorPush(Vector *vector, Object *obj);
+extern Object *vectorPop(Vector *vector);
 extern Vector *toVector(Cons *cons);
 extern char *vectorStr(Vector *vector);
 extern void vectorFree(Vector *vector, boolean free_contents);
@@ -292,11 +306,12 @@ extern void vectorStringSort(Vector *vector);
 extern String *vectorConcat(Vector *vector);
 extern Object *vectorGet(Vector *vec, Object *key);
 extern Object *vectorRemove(Vector *vec, int index);
+extern Object *vectorDel(Vector *vec, Object *obj);
 extern void vectorSort(Vector *vec, ComparatorFn *fn);
 
 // hash.c
 extern Hash *hashNew(boolean use_skalloc);
-extern void hashAdd(Hash *hash, Object *key, Object *contents);
+extern Object *hashAdd(Hash *hash, Object *key, Object *contents);
 extern Object *hashDel(Hash *hash, Object *key);
 extern Hash *toHash(Cons *cons);
 extern char *hashStr(Hash *hash);
@@ -306,6 +321,8 @@ extern Cons *hashToAlist(Hash *hash);
 extern Object *alistGet(Cons *alist, Object *key);
 extern void hashEach(Hash *hash, TraverserFn *fn, Object *arg);
 extern Hash *hashCopy(Hash *hash);
+extern int hashElems(Hash *hash);
+extern Vector *vectorFromHash(Hash *hash);
 
 // string.c
 extern String *stringNew(const char *value);
@@ -427,6 +444,9 @@ extern Cons *getDocumentInclusion(Document *doc, String *URI);
 extern Document *findDoc(String *filename);
 extern boolean docIsPrintable(Document *doc);
 extern boolean docHasDeps(Document *doc);
+extern Object *xpathEach(Document *doc, String *xpath,
+			 TraverserFn *traverser, Object *param);
+extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);
 
 // exceptions.c functions are defined in exceptions.h
 
@@ -454,4 +474,6 @@ extern boolean checkDbtypeIsRegistered(String *dbtype);
 // pgsql.c
 extern void registerPGSQL();
 
+// tsort.c
+extern Vector *gensort(Document *doc);
 

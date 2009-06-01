@@ -125,7 +125,8 @@
 #define UNPROCESSED_INCLUSION   53
 #define MEMORY_ERROR            54
 #define ASSERTION_FAILURE       55
-#define UNKNOWN_EXCEPTION       56
+#define XPATH_EXCEPTION         56
+#define UNKNOWN_EXCEPTION       57
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block

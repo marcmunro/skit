@@ -244,7 +244,7 @@ addUnprovidedValue(Object *obj, Object *params)
 
     if (value) {
 	if (!hashGet((Hash *) params, key)) {
-	    hashAdd((Hash *) params, objectCopy(key), objectCopy(value));
+	    (void) hashAdd((Hash *) params, objectCopy(key), objectCopy(value));
 	}
     }
     return (Object *) alist;  /* Return the notional contents of the hash
@@ -271,6 +271,7 @@ getOptionlistArgs(Cons *optionlist)
     String *arg = NULL;
     boolean is_option;
     Object *value = NULL;
+    Object *old;
     int expected_sources = getIntOption(optionlist, &sources_str, &value_str);
     int expected_args = 0;
     Hash *params = hashNew(TRUE);
@@ -291,7 +292,8 @@ getOptionlistArgs(Cons *optionlist)
 		if (value = getOptionValue(optionlist, arg)) {
 		    fullname = optionlistGetOptionName(optionlist, arg);
 		    fullname = stringNew(fullname->value);
-		    hashAdd(params, (Object *) fullname, value);
+		    old = hashAdd(params, (Object *) fullname, value);
+		    objectFree(old, TRUE);  // maybe raise an error?
 		    objectFree((Object *) arg, TRUE);
 		    value = NULL; /* This is freed by freeing params! */
 		}
@@ -305,8 +307,9 @@ getOptionlistArgs(Cons *optionlist)
 		if (expected_sources == 0) {
 		    if (expected_args > 0) {
 			expected_args--;
-			hashAdd(params, 
-				(Object *) stringNew("arg"), (Object *) arg);
+			old = hashAdd(params, (Object *) stringNew("arg"), 
+				      (Object *) arg);
+			objectFree(old, TRUE); // maybe raise an error?
 		    }
 		    else {
 			RAISE(PARAMETER_ERROR, 
@@ -342,6 +345,7 @@ doParseTemplate(String *filename)
     char *tmp;
     Hash *params = NULL;
     Object *obj;
+    Object *old;
     Document *template_doc = NULL;
 
     BEGIN {
@@ -354,10 +358,13 @@ doParseTemplate(String *filename)
 	/* Load the template file, to get the option list. */
 	template_doc = docFromFile(path);
 	params = getOptionlistArgs(template_doc->options);
-	hashAdd(params, (Object *) stringNew("template_name"), (Object *) path);
+	old = hashAdd(params, (Object *) stringNew("template_name"), 
+		      (Object *) path);
+	objectFree(old, TRUE);  // Maybe we should raise an error?
 	path = NULL;
-	hashAdd(params, (Object *) stringNew("template"), 
-		(Object *) template_doc);
+	old = hashAdd(params, (Object *) stringNew("template"), 
+		      (Object *) template_doc);
+	objectFree(old, TRUE);  // Maybe we should raise an error?
 	template_doc = NULL;
     }
     EXCEPTION(ex);
@@ -393,13 +400,13 @@ parseTemplate(Object *obj)
 }
 
 static Object *
-parseExtract(Object *obj)
+execParseTemplate(char *name)
 {
-    String *filename;
     Object *action_info;
+    String *filename;
 
     BEGIN {
-	filename = stringNew("extract.xml");
+	filename = stringNew(name);
 
 	action_info = doParseTemplate(filename);
     }
@@ -410,44 +417,30 @@ parseExtract(Object *obj)
     END;
 
     return action_info;
+}
+
+static Object *
+parseExtract(Object *obj)
+{
+    return execParseTemplate("extract.xml");
+}
+
+static Object *
+parseGenerate(Object *obj)
+{
+    return execParseTemplate("generate.xml");
 }
 
 static Object *
 parseConnect(Object *obj)
 {
-    String *filename;
-    Object *action_info;
-
-    BEGIN {
-	filename = stringNew("connect.xml");
-
-	action_info = doParseTemplate(filename);
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) filename, TRUE);
-    }
-    END;
-
-    return action_info;
+    return execParseTemplate("connect.xml");
 }
 
 static Object *
 parseAdddeps(Object *obj)
 {
-    String *filename = stringNew("add_deps.xml");
-    Object *params;
-    BEGIN {
-	params = doParseTemplate(filename);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) filename, TRUE);
-	RAISE();
-    }
-    END;
-    objectFree((Object *) filename, TRUE);
-    return params;
+    return execParseTemplate("add_deps.xml");
 }
 
 static Object *
@@ -483,7 +476,7 @@ static void
 makeGlobal(Hash *hash)
 {
     Symbol *t = symbolGet("t");
-    hashAdd(hash, (Object *) stringNew("global"), (Object *) t);
+    (void) hashAdd(hash, (Object *) stringNew("global"), (Object *) t);
 }
 
 /* Get, and delete, the "global" element in hash.  If t, then variables
@@ -512,7 +505,7 @@ parseDbtype(Object *obj)
     if (checkDbtypeIsRegistered(dbtype)) {
 	result = hashNew(TRUE);
 	key = stringNew("dbtype");
-	hashAdd(result, (Object *) key, (Object *) dbtype);
+	(void) hashAdd(result, (Object *) key, (Object *) dbtype);
 	makeGlobal(result);
 	return (Object *) result;
     }
@@ -539,6 +532,7 @@ defineActionParsers()
     static boolean done = FALSE;
     if (!done) {
 	defineActionSymbol("parse_extract", &parseExtract);
+	defineActionSymbol("parse_generate", &parseGenerate);
 	defineActionSymbol("parse_template", &parseTemplate);
 	defineActionSymbol("parse_connect", &parseConnect);
 	defineActionSymbol("parse_print", &parsePrint);
@@ -569,6 +563,7 @@ parseAction(String *action)
     String *parser_name;
     Hash *params;
     char *tmp = NULL;
+    Object *old;
 
     defineActionParsers();
 
@@ -577,8 +572,9 @@ parseAction(String *action)
 
 	if (action_parser = symbolGet(parser_name->value)) {
 	    params = (Hash *) symbolExec(action_parser, NULL);
-	    hashAdd(params, (Object *) stringDup(&action_str), 
-		    (Object *) stringDup(action));
+	    old = hashAdd(params, (Object *) stringDup(&action_str), 
+			  (Object *) stringDup(action));
+	    objectFree(old, TRUE);  // Maybe we should raise an error?
 	}
 	else {
 	    RAISE(NOT_IMPLEMENTED_ERROR,
@@ -728,6 +724,7 @@ defineActionExecutors()
 	defineActionSymbol("execute_dbtype", &executeDoNothing);
 	defineActionSymbol("execute_connect", &executeConnect);
 	defineActionSymbol("execute_list", &executeTemplate);
+	defineActionSymbol("execute_generate", &executeTemplate);
     }
     done = TRUE;
 }

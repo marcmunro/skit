@@ -40,6 +40,9 @@ autom4te.cache/
 # The symlink to the good/hacked check library
 /test/libcheck.a
 
+# The symlink to the good/hacked check header
+/test/check.h
+
 # The contents of the testdb subdirectory
 /testdb
 
@@ -49,3 +52,4 @@ valgrind/*suppressions
 # And the list of things to test
 valgrind/alltests
 valgrind/out
+

@@ -664,7 +664,8 @@ START_TEST(extract)
     //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest' port = '54329'",
-                    "--list", "-g", "--print", "--full"};
+                    "--print", "--full"};
+    //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -675,7 +676,43 @@ START_TEST(extract)
     //showMalloc(1986);
 
     BEGIN {
-	process_args2(10, args);
+	process_args2(8, args);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(generate)
+{
+    char *args[] = {"./skit", "--extract", "--dbtype=pgtest", 
+		    "--connect", 
+		    "dbname = 'skittest' port = '54329'",
+                    "--generate", "--drop", "--build", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(1986);
+
+    BEGIN {
+	process_args2(8, args);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -715,6 +752,7 @@ params_suite(void)
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
     ADD_TEST(tc_core, extract);
+    //ADD_TEST(tc_core, generate);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

@@ -16,9 +16,7 @@
   <!-- Take the raw xml and add dependencies.  This allows filtering
        and dependency-based ordering to be performed -->
 
-  <skit:result>
-    <skit:xslproc stylesheet="add_deps.xsl" input="pop"/>
-  </skit:result>
+  <skit:xslproc stylesheet="add_deps.xsl" input="pop"/>
 
 </skit:stylesheet>
 

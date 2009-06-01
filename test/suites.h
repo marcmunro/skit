@@ -23,6 +23,8 @@ extern Suite *options_suite(void);
 extern Suite *params_suite(void);
 extern Suite *filepaths_suite(void);
 extern Suite *xmlfile_suite(void);
+extern Suite *relaxng_suite(void);
+extern Suite *tsort_suite(void);
 
 // Utility functions
 extern Object *objectFromStr(char *instr);
@@ -32,6 +34,8 @@ extern void fail_if_contains(char *bufname, char *buffer,
 extern void fail_unless_contains(char *bufname, char *buffer, 
 				 char *expr, char *errstr);
 extern boolean check_test(char *testname, boolean report_this);
+extern Document *getDoc(char *name);
+
 
 // capture.c
 extern void catchAndRelease();
@@ -93,3 +97,4 @@ extern int captureOutput(TestRunner *test_fn, void *param, int print,
         tcase_set_timeout (p1, TEST_TIMEOUT);	\
 	tcase_add_test_raise_signal(p1, p2, p3);	\
     }
+

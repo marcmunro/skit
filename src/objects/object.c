@@ -44,6 +44,7 @@ objTypeName(Object *obj)
     case OBJ_CURSOR: return "OBJ_CURSOR";
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
+    case OBJ_DAGNODE: return "OBJ_DAGNODE";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -390,6 +391,37 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
+DagNode *
+dagnodeNew(Node *node, DagNodeBuildType build_type)
+{
+    DagNode *new = skalloc(sizeof(DagNode));
+    String *source_fqn = nodeAttribute(node->node, "fqn");
+    String *actual_fqn = stringNewByRef(newstr("%s.%s", 
+					       nameForBuildType(build_type), 
+					       source_fqn->value));
+    objectFree((Object *) source_fqn, TRUE);
+    new->type = OBJ_DAGNODE;
+    new->fqn = actual_fqn;
+    new->object_type = nodeAttribute(node->node, "type");
+    new->dbobject = node->node;
+    new->status = DAGNODE_READY;
+    new->build_type = build_type;
+    new->dependencies = NULL;
+    new->dependents = NULL;
+    new->parent = NULL;
+    return new;
+}
+
+void
+dagnodeFree(DagNode *node)
+{
+    objectFree((Object *) node->fqn, TRUE);
+    objectFree((Object *) node->object_type, TRUE);
+    objectFree((Object *) node->dependencies, TRUE);
+    objectFree((Object *) node->dependents, TRUE);
+    skfree(node);
+}
+
 /* Free a dynamically allocated object. */
 void
 objectFree(Object *obj, boolean free_contents)
@@ -428,6 +460,8 @@ objectFree(Object *obj, boolean free_contents)
 	    connectionFree((Connection *) obj); break;
 	case OBJ_CURSOR:
 	    cursorFree((Cursor *) obj); break;
+	case OBJ_DAGNODE:
+	    dagnodeFree((DagNode *) obj); break;
 	case OBJ_TUPLE:
 	    /* Nothing to be done - it will be freed when the cursor
 	       that contains it is freed */
@@ -442,6 +476,19 @@ objectFree(Object *obj, boolean free_contents)
     }
 }
 
+char *
+nameForBuildType(DagNodeBuildType build_type)
+{
+    switch (build_type) {
+    case BUILD_NODE: return "build";
+    case DROP_NODE: return "drop";
+    case DIFF_NODE: return "diff";
+    case ARRIVE_NODE: return "arrive";
+    case DEPART_NODE: return "depart";
+    }
+    return "";
+}
+
 /* Return dynamically-created string representation of object. 
  * The full argument allows more information to be returned about the
  * object, for debugging purposes. */
@@ -449,6 +496,8 @@ char *
 objectSexp(Object *obj)
 {
     char *fails;
+    String *tmps;
+    char *tmp;
     if (!obj) {
 	return newstr("nil");
     }
@@ -477,6 +526,9 @@ objectSexp(Object *obj)
 	return newstr("<%s %p>", objTypeName(obj), ((Connection *) obj)->conn);
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
+    case OBJ_DAGNODE:
+	return newstr("<%s %s>", objTypeName(obj), 
+		      ((DagNode *) obj)->fqn->value); 
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
     case OBJ_TUPLE:

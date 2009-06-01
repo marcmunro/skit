@@ -58,6 +58,16 @@ vectorPush(Vector *vector, Object *obj)
     return obj;
 }
 
+Object *
+vectorPop(Vector *vector)
+{
+    Object *obj;
+    if (vector->elems) {
+	return vector->vector[--vector->elems];
+    }
+    return NULL;
+}
+
 // Create a vector from a Cons-cell list, moving the objects from the
 // list into the vector, and destroying the list.
 Vector *
@@ -208,4 +218,19 @@ vectorSort(Vector *vec, ComparatorFn *fn)
     qsort((void *) vec->vector,
 	  vec->elems, sizeof(Object *),
 	  (basicCmpFn *) fn);
+}
+
+Object *
+vectorDel(Vector *vec, Object *obj)
+{
+    Object *deref = dereference(obj);
+    Object *this;
+    int i;
+    for (i = 0; i < vec->elems; i++) {
+	this = dereference(vec->vector[i]);
+	if (this == obj) {
+	    return vectorRemove(vec, i);
+	}
+    }
+    return NULL;
 }

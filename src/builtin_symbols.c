@@ -397,22 +397,59 @@ fnNot(Object *obj)
     static Symbol *t = NULL;
 
     Cons *cons = (Cons *) obj;
-    String* arg1;
-    Object* arg2;
-    String* arg3;
-    String *result;
 
-    raiseIfNotList("replace ", obj);
+    raiseIfNotList("not", obj);
     evalCar(cons);
     if (cons->car) {
 	return NULL;
     }
     else {
 	if (!t) {
-	    t = symbolGet("t");
+	    t = symbolGet("t"); 
 	}
 	return (Object *) t;
     }
+}
+
+static Object *
+fnAnd(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Cons *prev;
+    Object *result;
+    raiseIfNotList("and", obj);
+
+    while (cons) {
+	evalCar(cons);
+	if (cons->car) {
+	    prev = cons;
+	    cons = (Cons *) cons->cdr;
+	}
+	else {
+	    return NULL;
+	}
+    }
+    result = prev->car;
+    prev->car = NULL;
+    return result;
+}
+
+static Object *
+fnOr(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *result;
+    raiseIfNotList("or", obj);
+
+    while (cons) {
+	evalCar(cons);
+	if (result = cons->car) {
+	    cons->car = NULL;
+	    return result;
+	}
+	cons = (Cons *) cons->cdr;
+    }
+    return NULL;
 }
 
 static void
@@ -448,6 +485,8 @@ initBaseSymbols()
     symbolCreate("select", &fnSelect, NULL);
     symbolCreate("replace", &fnReplace, NULL);
     symbolCreate("not", &fnNot, NULL);
+    symbolCreate("and", &fnAnd, NULL);
+    symbolCreate("or", &fnOr, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
 
     evalStr("(setq dbtype 'postgres')");

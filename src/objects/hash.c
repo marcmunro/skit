@@ -86,9 +86,12 @@ hashLookup(Hash *hash, char *key)
 }
 
 /* key and contents are consumed by this call and will be freed
- * when the hash is destroyed or the entry is deleted
+ * when the hash is destroyed.  If a hash is overwritten the old key is
+ * freed and the old contents returned.  This allows us to easily
+ * identify hash collisions and also to easily build lists where the
+ * old contents are appended to the new.
  */
-void
+Object *
 hashAdd(Hash *hash_in, Object *key, Object *contents)
 {
     // Make a string representation of the key object, and use that for
@@ -97,7 +100,7 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
     Hash *hash;
     char *keystr;
     Cons *cons;
-    Object *previous_contents;
+    Object *previous_contents = NULL;
     char *previous_key;
     boolean already_exists;
     
@@ -124,10 +127,11 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 	// order to retain control over memory management.
 	if (!g_hash_table_steal((GHashTable *) hash->hash, 
 				(gconstpointer) previous_key)) {
-	    skfree("hashAdd: failed to remove existing hash entry");
+	    RAISE(GENERAL_ERROR, 
+		  newstr("hashAdd: failed to remove existing hash entry"));
 	}
-
 	cons = (Cons *) previous_contents;
+	previous_contents = cons->cdr;
 	objectFree((Object *) cons->car, TRUE);
 	objectFree((Object *) cons, FALSE);
 	skfree((void *) previous_key);
@@ -136,6 +140,7 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 
     g_hash_table_insert((GHashTable *) hash->hash,
                         (gpointer) keystr, (gpointer) cons);
+    return previous_contents;
 }
 
 /* Create a hash from a Cons-cell alist, moving the objects from the
@@ -158,7 +163,8 @@ toHash(Cons *cons)
 	assert((cons->type == OBJ_CONS), "toHash: Not a cons cell");
     	entry = (Cons *) consPop(&cons);
 	assert((entry->type == OBJ_CONS), "toHash: Invalid alist entry");
-	hashAdd(hash, entry->car, entry->cdr);
+	// TODO: Maybe check result of addHash below
+	(void) hashAdd(hash, entry->car, entry->cdr);
 	objectFree((Object *) entry, FALSE);
     }
     return hash;
@@ -360,10 +366,20 @@ hashEach(Hash *hash, TraverserFn *fn, Object *arg)
 }
 
 
+static Object *
+hashDropEntry(Object *node_entry, Object *ignore)
+{
+    return NULL;
+}
+
+
 /* Free a skit hash.  */
 void 
 hashFree(Hash *hash, boolean free_contents)
 {
+    if (!free_contents) {
+	hashEach(hash, &hashDropEntry, NULL);
+    }
     if (hash->hash) {
 	g_hash_table_destroy(hash->hash);
     }
@@ -383,4 +399,29 @@ hashCopy(Hash *hash)
     result->hash = hash->hash;
     hash->hash = NULL;
     return result;
+}
+
+int 
+hashElems(Hash *hash)
+{
+    return (int) g_hash_table_size(hash->hash);
+}
+
+
+static Object *
+addElemToVector(Object *obj, Object *vector)
+{
+    Object *elem = ((Cons *) obj)->cdr;
+    vectorPush((Vector *) vector, elem);
+    return elem;
+}
+
+
+Vector *
+vectorFromHash(Hash *hash)
+{
+    int elems = hashElems(hash);
+    Vector *vector = vectorNew(elems);
+    hashEach(hash, &addElemToVector, (Object *) vector);
+    return vector;
 }
