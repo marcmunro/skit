@@ -1150,6 +1150,46 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+/* Copy the contents of the dbobject node */
+static xmlNode *
+copyObjectNode(xmlNode *source)
+{
+    xmlNode *new = xmlCopyNode(source, 2);
+    // TODO: copy any kids, recursively that are not dbobject nodes
+    return new;
+}
+
+static char *
+actionName(DagNode *node)
+{
+    if (node->fqn->value[0] == 'd') return "drop";
+    return "build";
+}
+
+static void
+addAction(xmlNode *node, char *action)
+{
+    xmlNewProp(node, "action", action);
+}
+
+
+static void
+treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
+{
+    DagNode *dnode;
+    xmlNode *prev = NULL;
+    xmlNode *curnode;
+    int i;
+
+    for (i = 0; i < sorted_nodes->elems; i++) {
+	dnode = (DagNode *) sorted_nodes->vector[i];
+	//navigateToNode(dnode, parent_node,)
+	curnode = copyObjectNode(dnode->dbobject);
+	addAction(curnode, actionName(dnode));
+	xmlAddChild(parent_node, curnode);
+    }
+}
+
 static xmlNode *
 execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1157,14 +1197,18 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *source_doc = NULL;
     Hash *dagnodes = NULL;
     Vector *sorted = NULL;
- 
+    xmlNode *root;
+
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = (Document *) actionStackPop();
 	}
 	sorted = gensort(source_doc);
-	RAISE(NOT_IMPLEMENTED_ERROR,
-	      newstr("execgensort is not implemented"));
+	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
+	treeFromVector(root, sorted);
+	objectFree((Object *) sorted, TRUE);
+	//RAISE(NOT_IMPLEMENTED_ERROR,
+	//      newstr("execgensort is not implemented"));
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1172,7 +1216,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	objectFree((Object *) source_doc, TRUE);
     }
     END;
-
+    return root;
 }
 
 static void

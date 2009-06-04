@@ -752,7 +752,7 @@ params_suite(void)
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
     ADD_TEST(tc_core, extract);
-    //ADD_TEST(tc_core, generate);
+    ADD_TEST(tc_core, generate);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

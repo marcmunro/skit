@@ -560,6 +560,37 @@ removeNodeFromDag(DagNode *node, Hash *allnodes)
     obj = hashDel(allnodes, (Object *) node->fqn);
 }
 
+static DagNode *
+nextNavigationStep(DagNode *start, DagNode *target)
+{
+    DagNode *node = NULL;
+    DagNode *prev = NULL;
+
+    if (!start) {
+	for (node = target; node; node = node->parent) {
+	    prev = node;
+	}
+	return prev;
+    }
+    return node;
+}
+
+
+static void
+addResultNode(Vector *results, DagNode *node)
+{
+    DagNode *prev = NULL;
+    DagNode *navigation = NULL;
+    if (results->elems) {
+	prev = (DagNode *) results->vector[results->elems - 1];
+    }
+    while (navigation = nextNavigationStep(prev, node)) {
+	prev = navigation;
+	dbgSexp(navigation);
+    }
+    vectorPush(results, (Object *) node);
+}
+
 static void
 buildInContext(String *context_fqn, Hash *buildlist,
 	       Hash *allnodes, Vector *results)
@@ -578,7 +609,7 @@ buildInContext(String *context_fqn, Hash *buildlist,
 	    node = (DagNode *) dereference(ref);
 	    objectFree((Object *) ref, FALSE);
 	    removeNodeFromDag(node, allnodes);
-	    vectorPush(results, (Object *) node);
+	    addResultNode(results, node);
 
 	    /* Building this node has established a new build context.
 	     * Try building under that context. */
