@@ -429,6 +429,8 @@ extern void parseXSLStylesheet(Document *doc);
 extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
 extern void addParamsNode(Document *doc, Object *params);
+extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
+
 
 // document.c
 extern Node *nodeNew(xmlNode *node);
@@ -447,6 +449,7 @@ extern boolean docHasDeps(Document *doc);
 extern Object *xpathEach(Document *doc, String *xpath,
 			 TraverserFn *traverser, Object *param);
 extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);
+extern void readDocDbver(Document *doc);
 
 // exceptions.c functions are defined in exceptions.h
 
@@ -476,4 +479,5 @@ extern void registerPGSQL();
 
 // tsort.c
 extern Vector *gensort(Document *doc);
+extern Vector *navigationToNode(DagNode *current, DagNode *target);
 

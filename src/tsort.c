@@ -151,7 +151,10 @@ addDagNodeToHash(Object *node, Object *hash)
 }
 
 
-
+/* Build a hash of dagnodes from the provided document.  The hash
+ * may contain one build node and one drop node per database object,
+ * depending on which build and drop options have been selected.
+ */
 Hash *
 dagnodesFromDoc(Document *doc)
 {
@@ -176,23 +179,90 @@ dagnodesFromDoc(Document *doc)
 }
 
 static Object *
-addParentForNode(Object *node_entry, Object *dagnodes)
+addPqnEntry(Object *node, Object *hash)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
-    xmlNode *xmlnode = node->dbobject;
-    String *fqn;
-
-    //printSexp(stderr, "CHECKING FOR PARENT OF: ", node);
-    //printElem(xmlnode);
-    while (xmlnode = (xmlNode *) xmlnode->parent) {
-	if ((xmlnode->type == XML_ELEMENT_NODE) &&
-	    streq(xmlnode->name, "dbobject")) {
-	    break;
+    xmlChar *pqn = xmlGetProp(((Node *)node)->node, "pqn");
+    xmlChar *fqn = xmlGetProp(((Node *)node)->node, "fqn");
+    String *key;
+    String *value;
+    Cons *list;
+    Cons *prev;
+    if (pqn) {
+	key = stringNew(pqn);
+	value = stringNew(fqn);
+	xmlFree(pqn);
+	xmlFree(fqn);
+	list = consNew((Object *) value, NULL);
+	if (prev = (Cons *) hashAdd((Hash *) hash, 
+				    (Object *) key, (Object *) list)) {
+	    /* Append previous hash contents to list */
+	    list->cdr = (Object *) prev;
 	}
     }
 
+    return hash;
+}
+
+static Hash *
+makePqnHash(Document *doc)
+{
+    Hash *pqnhash = hashNew(TRUE);
+    String *xpath_expr = stringNew("//dbobject");
+    
+    BEGIN {
+	(void) xpathEach(doc, xpath_expr, &addPqnEntry, 
+			 (Object *) pqnhash);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) pqnhash, TRUE);
+    }
+    FINALLY {
+	objectFree((Object *) xpath_expr, TRUE);
+    }
+    END;
+    return pqnhash;
+}
+
+static xmlNode *
+findAncestor(xmlNode *start, char *name)
+{
+    xmlNode *result = start;
+    while (result = (xmlNode *) result->parent) {
+	if ((result->type == XML_ELEMENT_NODE) &&
+	    streq(result->name, name)) {
+	    return result;
+	}
+    }
+    return NULL;
+}
+
+static xmlNode *
+findNextSibling(xmlNode *start, char *name)
+{
+    xmlNode *result = start;
+    while (result = (xmlNode *) result->next) {
+	if ((result->type == XML_ELEMENT_NODE) &&
+	    streq(result->name, name)) {
+	    return result;
+	}
+    }
+    return NULL;
+}
+
+static xmlNode *
+findFirstChild(xmlNode *parent, char *name)
+{
+    return findNextSibling(parent->children, name);
+}
+
+static Object *
+addParentForNode(Object *node_entry, Object *dagnodes)
+{
+    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
+    String *fqn;
+
     if (xmlnode) {
-	//fprintf(stderr, "FOUND PARENT\n");
 	BEGIN {
 	    switch (node->build_type) {
 	    case BUILD_NODE:
@@ -219,14 +289,15 @@ addParentForNode(Object *node_entry, Object *dagnodes)
 }
 
 static void
-addDependency(DagNode *node, DagNode *dep)
+addDependent(DagNode *node, DagNode *dep)
 {
-    ObjReference *refdep = objRefNew((Object *) dep);
-    ObjReference *refnode = objRefNew((Object *) node);
-    if (!(node->dependencies)) {
-	node->dependencies = vectorNew(10);
-    }
-    vectorPush(node->dependencies, (Object *) refdep);
+    ObjReference *refnode = objRefNew(dereference((Object *) node));
+
+    assert(node->type == OBJ_DAGNODE,
+	"addDependent: Cannot handle non-dagnode nodes");
+    assert(dep->type == OBJ_DAGNODE,
+	"addDependent: Cannot handle non-dagnode dependent");
+    
     if (!(dep->dependents)) {
 	dep->dependents = vectorNew(10);
     }
@@ -234,14 +305,55 @@ addDependency(DagNode *node, DagNode *dep)
 }
 
 static void
-addDirectedDependency(DagNode *node, DagNode *dep)
+addDependency(DagNode *node, Cons *deps)
+{
+    assert(node->type == OBJ_DAGNODE,
+	"addDependency: Cannot handle non-dagnode nodes");
+    if (!(node->dependencies)) {
+	node->dependencies = vectorNew(10);
+    }
+    vectorPush(node->dependencies, (Object *) deps);
+
+    while (deps) {
+	addDependent(node, (DagNode *) dereference(deps->car));
+	deps = (Cons *) deps->cdr;
+    }
+}
+
+static Cons *
+consNode(DagNode *node)
+{
+    ObjReference *ref = objRefNew(dereference((Object *) node));
+    Cons *result = consNew((Object *) ref, NULL);
+    return result;
+}
+
+/* Like addDependency but handles dependencies in the opposite direction
+ * (eg for drops) */
+static void
+addInvertedDependencies(DagNode *node, Cons *deps)
+{
+    Cons *prev;
+    DagNode *dep;
+    while (deps) {
+	dep = (DagNode *) dereference(deps->car);
+	addDependency(dep, consNode(node));
+	prev = deps;
+	deps = (Cons *) deps->cdr;
+	objectFree(prev->car, FALSE);
+	objectFree((Object *) prev, FALSE);
+    }
+}
+
+static void
+addDirectedDependency(DagNode *node, Cons *deps)
 {
     switch (node->build_type) {
     case BUILD_NODE: 
-	addDependency(node, dep);
+	addDependency(node, deps);
 	break;
     case DROP_NODE: 
-	addDependency(dep, node);
+	addInvertedDependencies(node, deps);
 	break;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -250,15 +362,40 @@ addDirectedDependency(DagNode *node, DagNode *dep)
     }
 }
 
-static void
-processDependenciesForNode(DagNode *node, xmlNode *xmlnode, Hash *dagnodes)
+static Cons *
+dagnodeListFromFqnList(Cons *fqnlist, char *prefix, Hash *dagnodes)
 {
+    Cons *result = NULL;
+    Cons *prev;
+    String *base_fqn;
+    String *key;
+    Object *node;
+
+    while (fqnlist) {
+	base_fqn = (String *) fqnlist->car;
+	key = stringNewByRef(newstr("%s.%s", prefix, base_fqn->value));
+	node = dereference(hashGet(dagnodes, (Object *) key));
+	objectFree((Object *) key, TRUE);
+	prev = result;
+	result = consNew((Object *) objRefNew(node), (Object *) prev);
+	fqnlist = (Cons *) fqnlist->cdr;
+    }
+    return result;
+}
+
+static void
+addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
+{
+    Hash *dagnodes = (Hash *) hashes->car;
     String *fqn;
     String *pqn;
     DagNode *found;
     char *prefix = nameForBuildType(node->build_type);
     char *tmpstr;
-    
+    //Hash *pqnlist = (Hash *) hashes->cdr;
+    //Cons *fqnlist;
+    //Cons *dagnodelist;
+
     if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
 	found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
 	if (!found) {
@@ -268,20 +405,26 @@ processDependenciesForNode(DagNode *node, xmlNode *xmlnode, Hash *dagnodes)
 	    RAISE(GENERAL_ERROR, tmpstr);
 	}
 	objectFree((Object *) fqn, TRUE);
-	addDirectedDependency(node, found);
+	addDirectedDependency(node, consNode(found));
     }
-    else if (pqn = getPrefixedAttribute(xmlnode, prefix, "pqn")) {
-	// PQNs should be handled as a list of matches rather than a
-	// single match.
-	printSexp(stderr, "PQN: ", (Object *) pqn);
-	objectFree((Object *) pqn, TRUE);
+    else if (pqn = nodeAttribute(xmlnode, "pqn")) {
 	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("processDependenciesForNode does not yet handle pqns"));
+	      newstr("CANNOT YET HANDLE PQNs"));
+	/* For PQNs, the dependency is a list of possible DagNodes
+	 * rather than a single DagNode */
+	//fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
+	//dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
+	//printSexp(stderr, "ADDING DEP ON PQN: ", (Object *) pqn);
+	//printSexp(stderr, "PQN DEPS ARE: ", (Object *) dagnodelist);
+	//addDirectedDependency(node, (Object *) dagnodelist);
+	objectFree((Object *) pqn, TRUE);
     }
 }
 
+/* Find all of the dependency elements and add their dependencies to the
+ * DAG */
 static void
-processDependencies(DagNode *node, Hash *dagnodes)
+processDependencies(DagNode *node, Cons *hashes)
 {
     // Looks like we cannot use xpath here as we have no appropriate
     // context node.  Instead we should directly traverse to child nodes
@@ -289,27 +432,25 @@ processDependencies(DagNode *node, Hash *dagnodes)
     xmlNode *deps_node = node->dbobject->children;
     xmlNode *dep_node;
 
-    for (; deps_node; deps_node = deps_node->next) {
-	if ((deps_node->type == XML_ELEMENT_NODE) &&
-	    streq(deps_node->name, "dependencies")) {
-	    for (dep_node = deps_node->children; dep_node; 
-		 dep_node = dep_node->next) {
-		if ((dep_node->type == XML_ELEMENT_NODE) &&
-		    streq(dep_node->name, "dependency")) {
-		    processDependenciesForNode(node, dep_node, dagnodes);
-		}
-	    }
-	    break;
+    for (deps_node = findFirstChild(node->dbobject, "dependencies");
+	 deps_node;
+	 deps_node = findNextSibling(deps_node, "dependencies")) {
+	for (dep_node = findFirstChild(deps_node, "dependency");
+	     dep_node;
+	     dep_node = findNextSibling(dep_node, "dependency")) {
+	    addXmlnodeDependencies(node, dep_node, hashes);
 	}
+	break;
     }
 }
 
 static void
-addDepsForBuildNode(DagNode *node, Hash *dagnodes)
+addDepsForBuildNode(DagNode *node, Cons *hashes)
 {
     char *base_fqn = strchr(node->fqn->value, '.');
     char *depname = newstr("drop%s", base_fqn);
     String *depkey = stringNewByRef(depname);
+    Hash *dagnodes = (Hash *) hashes->car;
     DagNode *drop_node = (DagNode *) hashGet(dagnodes, (Object *) depkey);
 
     BEGIN {
@@ -317,11 +458,11 @@ addDepsForBuildNode(DagNode *node, Hash *dagnodes)
 	 * exists (ie if we are doing a drop and build, the drop must
 	 * happen first) */
 	if (drop_node) {
-	    addDependency(node, drop_node);
+	    addDependency(node, consNode(drop_node));
 	}
-	processDependencies(node, dagnodes);
+	processDependencies(node, hashes);
 	if (node->parent) {
-	    addDependency(node, node->parent);
+	    addDependency(node, consNode(node->parent));
 	}
     }
     EXCEPTION(ex);
@@ -332,22 +473,22 @@ addDepsForBuildNode(DagNode *node, Hash *dagnodes)
 }
 
 static void
-addDepsForDropNode(DagNode *node, Hash *dagnodes)
+addDepsForDropNode(DagNode *node, Cons *hashes)
 {
-    processDependencies(node, dagnodes);
+    processDependencies(node, hashes);
     if (node->parent) {
-	addDependency(node->parent, node);
+	addDependency(node->parent, consNode(node));
     }
 }
 
 static Object *
-addDepsForNode(Object *node_entry, Object *dagnodes)
+addDepsForNode(Object *node_entry, Object *hashes)
 {
     DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
 
     switch (node->build_type) {
-    case BUILD_NODE: addDepsForBuildNode(node, (Hash *) dagnodes); break;
-    case DROP_NODE:  addDepsForDropNode(node, (Hash *) dagnodes); break;
+    case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
+    case DROP_NODE:  addDepsForDropNode(node, (Cons *) hashes); break;
     default: RAISE(NOT_IMPLEMENTED_ERROR,
 		   newstr("addDepsForNode of type %d is not implemented",
 			  node->build_type));
@@ -356,11 +497,18 @@ addDepsForNode(Object *node_entry, Object *dagnodes)
 }
 
 void
-identifyDependencies(Document *doc,
-		     Hash *dagnodes)
+identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 {
-    hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
-    hashEach(dagnodes, &addDepsForNode, (Object *) dagnodes);
+    Cons *hashes = consNew((Object *) dagnodes, (Object *) pqnlist);
+    BEGIN {
+	hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
+	hashEach(dagnodes, &addDepsForNode, (Object *) hashes);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) hashes, FALSE);
+    }
+    END;
 }
 
 static String root_name = {OBJ_STRING, ".."};
@@ -372,6 +520,7 @@ addCandidateToBuild(Object *node_entry, Object *buildlist)
     Vector *vector;
     String *parent_name;
 
+    assert(node->type == OBJ_DAGNODE, "ARG");
     if ((node->status == DAGNODE_READY) &&
 	(!node->dependencies)) {
 	if (node->parent) {
@@ -429,7 +578,7 @@ isDescendant(String *fqn, String *child_fqn)
     char *parent = strchr(strchr(fqn->value, '.'), '.');
     char *child = strchr(strchr(child_fqn->value, '.'), '.');
 
-    /* dname is a descendant iff, it all characters match up to length
+    /* dname is a descendant iff, all characters match up to length
      * of aname */
 
     assert(parent, "isDescendant: Oops, parent is not defined");
@@ -487,7 +636,7 @@ get_child_context_node(DagNode *cur_node, Hash *buildlist)
     return (String *) cons.cdr;
 }
 
-
+/* Compare two DagNodes with the result providing a reverse ordering */
 static int
 dagnodercmp(const void *node1, const void *node2)
 {
@@ -522,9 +671,42 @@ reverseSortBuildVector(Vector *vector)
     qsort(vector->vector, vector->elems, sizeof(Object *), &dagnodercmp);
 }
 
+static boolean
+inList(Cons *list, Object *obj)
+{
+    while (list) {
+	if (dereference(list->car) == obj) {
+	    return TRUE;
+	}
+	list = (Cons *) list->cdr;
+    }
+    return FALSE;
+}
 
-/* Remove dependencies to and from node.
- */
+static void
+removeDependency(DagNode *from, DagNode *dependency)
+{
+    int i;
+    Cons *deplist;
+    Object *obj;
+
+    if (from->dependencies) {
+	for (i = 0; i < from->dependencies->elems; i++) {
+	    deplist = (Cons *) from->dependencies->vector[i];
+	    if (inList(deplist, (Object *) dependency)) {
+		obj = vectorRemove(from->dependencies, i);
+		objectFree(obj, TRUE);
+	    }
+	}
+	if (!from->dependencies->elems) {
+	    objectFree((Object *) from->dependencies, TRUE);
+	    from->dependencies = NULL;
+	}
+    }
+}
+
+/* Remove dependencies to and from node, prior to adding node to the
+ * results list. */
 static void
 removeNodeFromDag(DagNode *node, Hash *allnodes)
 {
@@ -538,12 +720,14 @@ removeNodeFromDag(DagNode *node, Hash *allnodes)
     if (vec) {
 	for (i = vec->elems-1; i >= 0; i--) {
 	    depnode = (DagNode *) dereference(vec->vector[i]);
+	    assert(depnode->type == OBJ_DAGNODE,
+		   "removeNodeFromDag: Cannot handle non-dagnode depnodes");
 	    if (depnode->dependencies->elems <= 1) {
 		objectFree((Object *) depnode->dependencies, TRUE);
 		depnode->dependencies = NULL;
 	    }
-	    else if (obj = vectorDel(depnode->dependencies, (Object *) node)) {
-		objectFree(obj, TRUE);
+	    else {
+		removeDependency(depnode, node);
 	    }
 	    node->status = DAGNODE_SORTED;
 	}
@@ -560,35 +744,35 @@ removeNodeFromDag(DagNode *node, Hash *allnodes)
     obj = hashDel(allnodes, (Object *) node->fqn);
 }
 
-static DagNode *
-nextNavigationStep(DagNode *start, DagNode *target)
+static Object *
+showDeps(Object *node_entry, Object *dagnodes)
 {
-    DagNode *node = NULL;
-    DagNode *prev = NULL;
-
-    if (!start) {
-	for (node = target; node; node = node->parent) {
-	    prev = node;
+    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    int i;
+    printSexp(stderr, "NODE: ", (Object *) node);
+    if (node->dependencies) {
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    printSexp(stderr, "   --> ", node->dependencies->vector[i]);
 	}
-	return prev;
     }
-    return node;
+    if (node->dependents) {
+	for (i = 0; i < node->dependents->elems; i++) {
+	    printSexp(stderr, "   <-- ", node->dependents->vector[i]);
+	}
+    }
+    return (Object *) node;
 }
 
+static void
+showAllDeps(Hash *buildlist)
+{
+    hashEach(buildlist, &showDeps, (Object *) buildlist);
+}
 
 static void
-addResultNode(Vector *results, DagNode *node)
+tsort_debug()
 {
-    DagNode *prev = NULL;
-    DagNode *navigation = NULL;
-    if (results->elems) {
-	prev = (DagNode *) results->vector[results->elems - 1];
-    }
-    while (navigation = nextNavigationStep(prev, node)) {
-	prev = navigation;
-	dbgSexp(navigation);
-    }
-    vectorPush(results, (Object *) node);
+    fprintf(stderr, "TSORT_DEBUG\n");
 }
 
 static void
@@ -602,27 +786,43 @@ buildInContext(String *context_fqn, Hash *buildlist,
     int i;
     String *child_context_fqn;
 
+    //fprintf(stderr, "START\n");
+    //printSexp(stderr, "CONTEXT: ", context_fqn);
+    //printSexp(stderr, "BUILDLIST: ", buildlist);
+    //printSexp(stderr, "TO_BUILD: ", to_build);
     while (to_build->elems) {
+	//fprintf(stderr, "LOOP\n");
 	while (to_build->elems) {
 	    reverseSortBuildVector(to_build);
+	    //showAllDeps(allnodes);
 	    ref = vectorPop(to_build);
 	    node = (DagNode *) dereference(ref);
+	    //if (streq(node->fqn->value, "build.grant.cluster.keep2.keep:lose") ||
+	    //streq(node->fqn->value, "drop.grant.cluster.keep2.keep:lose")) {
+	    //tsort_debug();
+	    //}
 	    objectFree((Object *) ref, FALSE);
 	    removeNodeFromDag(node, allnodes);
-	    addResultNode(results, node);
-
+	    //printSexp(stderr, "BUILDING: ", node);
+	    vectorPush(results, (Object *) node);
 	    /* Building this node has established a new build context.
 	     * Try building under that context. */
+	    get_build_candidates(allnodes, buildlist);
 	    if (child_context_fqn = get_child_context_node(node, buildlist)) {
 		buildInContext(child_context_fqn, buildlist, allnodes, results);
 	    }
 	}
 	get_build_candidates(allnodes, buildlist);
+	to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn);
+	//printSexp(stderr, "CONTEXT: ", context_fqn);
+	//printSexp(stderr, "BUILDLIST: ", buildlist);
+	//printSexp(stderr, "TO_BUILD: ", to_build);
     }
     /* Now remove this context from the buildlist */
 
     entry = hashDel(buildlist, (Object *) context_fqn);
     objectFree(entry, TRUE);
+    //fprintf(stderr, "END\n");
     return;
 }
 
@@ -651,16 +851,172 @@ Vector *
 gensort(Document *doc)
 {
     Hash *dagnodes = NULL;
+    Hash *pqnhash = NULL;
     Vector *sorted = NULL;
     BEGIN {
 	dagnodes = dagnodesFromDoc(doc);
-	identifyDependencies(doc, dagnodes);
+	pqnhash = makePqnHash(doc);
+	identifyDependencies(doc, dagnodes, pqnhash);
+	//showAllDeps(dagnodes);
 	sorted = tsort(dagnodes);
     }
     EXCEPTION(ex);
     FINALLY {
 	objectFree((Object *) dagnodes, TRUE);
+	objectFree((Object *) pqnhash, TRUE);
     }
     END;
     return sorted;
 }
+
+static int
+generationCount(DagNode *node)
+{
+    int count = 0;
+    while (node) {
+	count++;
+	node = node->parent;
+    }
+    return count;
+}
+
+static boolean
+nodeEq(DagNode *node1, DagNode *node2)
+{
+    if (node1 && node2) {
+	return node1->dbobject == node2->dbobject;
+    }
+    if (node1 || node2) {
+	return FALSE;
+    }
+    return TRUE;
+}
+
+static DagNode *
+getCommonRoot(DagNode *current, DagNode *target)
+{
+    int cur_depth = generationCount(current);
+    int target_depth = generationCount(target);
+
+    while (cur_depth > target_depth) {
+	current = current->parent;
+	cur_depth = generationCount(current);
+    }
+    while (target_depth > cur_depth) {
+	target = target->parent;
+	target_depth = generationCount(target);
+    }
+    while (!nodeEq(current, target)) {
+	current = current->parent;
+	target = target->parent;
+    }
+    return current;
+}
+
+/* Identify whether it is necessary to navigate to/from node */
+static boolean
+requiresNavigation(xmlNode *node)
+{
+    String *visit = nodeAttribute(node, "visit");
+    if (visit) {
+	objectFree((Object *) visit, TRUE);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/* Depart the current node, returning a navigation DagNode if
+ * appropriate
+ */
+static DagNode *
+departNode(DagNode *current)
+{
+    DagNode *navigation = NULL;
+    Node node = {OBJ_XMLNODE, NULL};
+    if (requiresNavigation(current->dbobject)) {
+	node.node = current->dbobject;
+	navigation = dagnodeNew(&node, DEPART_NODE);
+    }
+    return navigation;
+}
+
+/* Arrive at the target node, returning a navigation DagNode if
+ * appropriate
+ */
+static DagNode *
+arriveNode(DagNode *target)
+{
+    DagNode *navigation = NULL;
+    Node node = {OBJ_XMLNODE, NULL};
+    if (requiresNavigation(target->dbobject)) {
+	node.node = target->dbobject;
+	navigation = dagnodeNew(&node, ARRIVE_NODE);
+    }
+    return navigation;
+}
+
+/* Return the node in to's ancestry that is the direct descendant of
+ * from */
+static DagNode *
+nextNodeFrom(DagNode *from, DagNode *to)
+{
+    DagNode *cur = to;
+    DagNode *prev = NULL;
+    while (!nodeEq(from, cur)) {
+	prev = cur;
+	cur = cur->parent;
+    }
+    return prev;
+}
+
+/* Return a vector of DagNodes containing the navigation to get from
+ * from to target */
+Vector *
+navigationToNode(DagNode *from, DagNode *target)
+{
+    Vector *results = vectorNew(10);
+    DagNode *current = NULL;
+    DagNode *next = NULL;
+    DagNode *common_root = NULL;
+    DagNode *navigation = NULL;
+    BEGIN {
+	if (from) {
+	    common_root = getCommonRoot(from, target);
+	    current = from;
+	    while (!nodeEq(current, common_root)) {
+		if ((current == from) &&
+		    (current->build_type == DROP_NODE)) {
+		    /* We don't need to depart from a drop node as
+		     * the drop must perform the departure for us. */ 
+		}
+		else {
+		    if (navigation = departNode(current)) {
+			vectorPush(results, (Object *) navigation);
+		    }
+		}
+		current = current->parent;
+	    }
+	}
+	/* Now navigate from common root towards target */
+	current = common_root;
+	while (!nodeEq(current, target)) {
+	    current = nextNodeFrom(current, target);
+	    if ((current == target) &&
+		(current->build_type == BUILD_NODE)) {
+		/* We don't need to arrive at a build node as the build
+		 * must perform the arrival for us. */
+	    }
+	    else {
+		if (navigation = arriveNode(current)) {
+		    vectorPush(results, (Object *) navigation);
+		}
+	    }
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, TRUE);
+    }
+    END;
+    return results;
+}
+

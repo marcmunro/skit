@@ -43,7 +43,7 @@
       <xsl:copy-of select="@*"/>
       <print>
 	<xsl:attribute name="text">
-	  <xsl:if test="@type!='cluster'">
+	  <xsl:if test="@type!='cluster' and @type != 'database'">
 	    <xsl:value-of 
 	       select="substring('                            ', 1, $depth*2)"/>
 	  </xsl:if>
@@ -53,6 +53,10 @@
 	  <xsl:value-of select="@name"/>
 	  <xsl:text>|</xsl:text>
 	  <xsl:value-of select="@fqn"/>
+	  <xsl:if test="@action">
+	    <xsl:text>|</xsl:text>
+	    <xsl:value-of select="@action"/>
+	  </xsl:if>
 	  <xsl:text>&#xA;</xsl:text>
 	</xsl:attribute>
       </print>

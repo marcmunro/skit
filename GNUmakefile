@@ -50,6 +50,15 @@ SUBDIRS = src test dbscript
 include $(SUBDIRS:%=%/Makefile)
 
 
+try:	skit
+	./skit --extract --connect "dbname = 'skittest'" --generate --build --list
+
+tryf:	skit
+	./skit --generate --build  x --print --full
+
+tryl:	skit
+	./skit --generate --build x --list -g
+
 # Build per-source object dependency files for inclusion
 %.d: %.c
 	@echo Recreating $@...

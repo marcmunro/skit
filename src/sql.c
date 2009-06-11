@@ -64,6 +64,11 @@ sqlConnect()
 	functions = (SqlFuncs *) dereference(
 	    hashGet(dbhash, (Object *) dbtype));
 
+	if (!functions) {
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		  newstr("No handler for database type %s", dbtype->value));
+	}
+
 	if (!functions->connect) {
 	    RAISE(NOT_IMPLEMENTED_ERROR,
 		  newstr("Db connection function is not registered"));

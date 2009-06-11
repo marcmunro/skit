@@ -95,7 +95,8 @@ START_TEST(check_gensort)
 
     doc = getDoc("test/data/gensource1.xml");
     results = gensort(doc);
-    printSexp(stderr, "RESULTS: ", (Object *) results);
+    //printSexp(stderr, "RESULTS: ", (Object *) results);
+
     check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
 		      "'build.cluster' 'build.role.cluster.keep')");
     check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
@@ -132,6 +133,45 @@ START_TEST(check_gensort)
 }
 END_TEST
 
+START_TEST(check_navigation)
+{
+    Document *src_doc;
+    Document *result_doc;
+    Vector *sorted;
+    Object *ignore;
+    char *tmp;
+    int result;
+    xmlNode *root;
+    xmlDocPtr xmldoc;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    ignore = evalSexp(tmp = newstr("(setq build t)"));
+    objectFree(ignore, TRUE);
+    skfree(tmp);
+    ignore = evalSexp(tmp = newstr("(setq drop t)"));
+    objectFree(ignore, TRUE);
+    skfree(tmp);
+
+    src_doc = getDoc("test/data/gensource1.xml");
+    sorted = gensort(src_doc);
+
+    xmldoc = xmlNewDoc(BAD_CAST "1.0");
+    root = xmlNewNode(NULL, BAD_CAST "root");
+    xmlDocSetRootElement(xmldoc, root);
+    result_doc = documentNew(xmldoc, NULL);
+
+    treeFromVector(root, sorted);
+
+    // dbgSexp(result_doc);
+
+    objectFree((Object *) sorted, TRUE);
+    objectFree((Object *) src_doc, TRUE);
+    objectFree((Object *) result_doc, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 Suite *
 tsort_suite(void)
 {
@@ -140,6 +180,7 @@ tsort_suite(void)
     /* Core test case */
     TCase *tc_core = tcase_create("tsort");
     ADD_TEST(tc_core, check_gensort);
+    ADD_TEST(tc_core, check_navigation);
 				
     suite_add_tcase(s, tc_core);
 

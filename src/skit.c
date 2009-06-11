@@ -77,12 +77,19 @@ main(int argc,
     char *homedir = skitHome(argv[0]);
     char *templatedir = newstr("%s/", homedir);
     skit_register_signal_handler();
-    initBuiltInSymbols();
-    initTemplatePath(templatedir);
-    //showFree(614);
-    //showMalloc(1528);
-    process_args(argc, argv);
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(templatedir);
+	//showFree(614);
+	//showMalloc(1528);
+	process_args(argc, argv);
 
+    }
+    EXCEPTION(ex) {
+	fprintf(stderr, "Error: %s\n", ex->text);
+	return 1;
+    }
+    END;
     /* BEGIN DEBUG CODE SECTION
      * This should be commented out in a live version
      */
@@ -90,7 +97,7 @@ main(int argc,
     skfree(homedir);
     skitFreeMem();
     if (exceptionCurHandler())
-       fprintf(stderr, "There is still an exception handler in place!\n");
+	fprintf(stderr, "There is still an exception handler in place!\n");
     if (memchunks_in_use() != 0) {
 	showChunks();
 	fprintf(stderr, "There are still %d memory chunks allocated",
@@ -98,6 +105,5 @@ main(int argc,
     }
     memShutdown();
     /* END DEBUG CODE SECTION */
-
     return 0;
 }

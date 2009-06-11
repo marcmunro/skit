@@ -215,6 +215,8 @@ read_item(file_context *context)
     context->buflen = i;
 }
 
+/* This code is slightly dangerous.  If the context->buf contains only
+ * part of the skit_inclusion element, things are likely to go awry */
 static char
 next_char(file_context *context)
 {
@@ -222,7 +224,8 @@ next_char(file_context *context)
 	read_item(context);
 	if (context->skipping) {
 	    /* We skip everything outside the <skit:inclusion> element */
-	    if (strncmp(context->buf, "<skit:inclusion", 15) == 0) {
+	    if ((strncmp(context->buf, "<skit:inclusion", 15) == 0)||
+		(strncmp(context->buf, "<xsl:stylesheet", 15) == 0)) {
 		/* We have reached the start of the 'real' inclusion.
 		 * Record the number of lines we have skipped up to now.
 		 */
@@ -236,7 +239,8 @@ next_char(file_context *context)
 	    }
 	}
 	else {
-	    if (strncmp(context->buf, "</skit:inclusion", 16) == 0) {
+	    if ((strncmp(context->buf, "</skit:inclusion", 16) == 0) ||
+		(strncmp(context->buf, "</xsl:stylesheet", 16) == 0)) {
 		/* We are done!  No need to read any more */
 		fclose(context->fp);
 		context->fp = NULL;
@@ -257,6 +261,7 @@ skitfileOpen(const char *URI)
     String *path = filenameFromUri(URI);
     String *my_uri;
 
+    //fprintf(stderr, "Opening %s\n", URI);
     if (!path) {
 	return NULL;
     }
@@ -351,7 +356,6 @@ create_document(String *path)
 {
     xmlTextReaderPtr reader;
     setup_input_readers();
-
     reader = xmlReaderForFile(path->value, NULL, 0);
     if (reader == NULL) {
 	return NULL;
@@ -1109,6 +1113,14 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+static Document *
+docForNode(xmlNode *node) {
+    if (node && node->doc) {
+	return node->doc->_private;
+    }
+    return NULL;
+}
+
 static xmlNode *
 execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1118,6 +1130,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *source_doc = NULL;
     Document *result_doc = NULL;
     xmlNode *result;
+    xmlNode *root_node;
 
     BEGIN {
 	if (!stylesheet_name) {
@@ -1126,21 +1139,23 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
 
 	stylesheet = findDoc(stylesheet_name);
-	objectFree((Object *) stylesheet_name, TRUE);
 
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = (Document *) actionStackPop();
-	    result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	}
 	else {
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("No input specified for xslproc"));
+	    root_node = processChildren(template_node, parent_node, depth + 1);
+	    source_doc = docForNode(root_node);
 	}
+	//dbgSexp(source_doc);
+	//dbgSexp(stylesheet);
+	result_doc = applyXSLStylesheet(source_doc, stylesheet);
     }
     EXCEPTION(ex);
     FINALLY {
 	objectFree((Object *) source_doc, TRUE);
 	objectFree((Object *) stylesheet, TRUE);
+	objectFree((Object *) stylesheet_name, TRUE);
 	objectFree((Object *) input, TRUE);
     }
     END;
@@ -1150,44 +1165,137 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+static 
+addSavedTextNode(xmlNode *parent, xmlNode *text)
+{
+    if (text) {
+	xmlAddChild(parent, xmlCopyNode(text, 2));
+    }
+}
+
+static xmlNode *copyNodeContents(xmlNode *source);
+
+/* Note that we do not copy text nodes that precede an element that we
+ * are not going to copy. */ 
+static
+copyKidsContents(xmlNode *parent, xmlNode *kid)
+{
+    xmlNode *newkid;
+    xmlNode *text_node = NULL;
+
+    while (kid) {
+	if (kid->type == XML_TEXT_NODE) {
+	    text_node = kid;
+	}
+	else {
+	    if (newkid = copyNodeContents(kid)) {
+		addSavedTextNode(parent, text_node);
+		xmlAddChild(parent, newkid);
+	    }
+	    text_node = NULL;
+	}
+	kid = kid->next;
+    }
+    addSavedTextNode(parent, text_node);
+}
+
+/* copy any kids, recursively, that are not dbobject or dependency
+ * nodes. 
+ */
+static xmlNode *
+copyNodeContents(xmlNode *source)
+{
+    xmlNode *new;
+    xmlNode *kids = NULL;
+
+    if (source->type == XML_ELEMENT_NODE) {
+	if (streq(source->name, "dbobject") ||
+	    streq(source->name, "dependencies"))  {
+	    return NULL;
+	}
+	else {
+	    kids = source->children;
+	}
+    }
+    new = xmlCopyNode(source, 2);
+    copyKidsContents(new, kids);
+    return new;
+}
+
 /* Copy the contents of the dbobject node */
 static xmlNode *
 copyObjectNode(xmlNode *source)
 {
     xmlNode *new = xmlCopyNode(source, 2);
-    // TODO: copy any kids, recursively that are not dbobject nodes
+
+    copyKidsContents(new, source->children);
     return new;
 }
 
 static char *
 actionName(DagNode *node)
 {
-    if (node->fqn->value[0] == 'd') return "drop";
-    return "build";
+    /* Simplest test is againt the 3rd character of the fqn */
+    switch (node->fqn->value[2]) {
+    case 'r': return "arrive";
+    case 'i': return "build";
+    case 'o': return "drop";
+    case 'p': return "depart";
+    case 'f': return "diff";
+    }
+    RAISE(GENERAL_ERROR,
+	  newstr("actionName: cannot identify action from fqn \"%s\"", 
+		 node->fqn->value));
 }
 
 static void
 addAction(xmlNode *node, char *action)
 {
+    Vector *navigation = NULL;
     xmlNewProp(node, "action", action);
 }
 
+void
+addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
+{
+    Vector *navigation = NULL;
+    DagNode *nnode;
+    xmlNode *curnode;
+    int i;
 
-static void
+    BEGIN {
+	navigation = navigationToNode(cur, target);
+	for (i = 0; i < navigation->elems; i++) {
+	    nnode = (DagNode *) navigation->vector[i];
+	    curnode = copyObjectNode(nnode->dbobject);
+	    addAction(curnode, actionName(nnode));
+	    xmlAddChild(parent_node, curnode);
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) navigation, TRUE);
+    }
+    END;
+}
+
+void
 treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
 {
+    DagNode *prev = NULL;
     DagNode *dnode;
-    xmlNode *prev = NULL;
     xmlNode *curnode;
     int i;
 
     for (i = 0; i < sorted_nodes->elems; i++) {
 	dnode = (DagNode *) sorted_nodes->vector[i];
-	//navigateToNode(dnode, parent_node,)
+	addNavigationNodes(parent_node, prev, dnode);
 	curnode = copyObjectNode(dnode->dbobject);
 	addAction(curnode, actionName(dnode));
 	xmlAddChild(parent_node, curnode);
+	prev = dnode;
     }
+    addNavigationNodes(parent_node, prev, NULL);
 }
 
 static xmlNode *
@@ -1195,16 +1303,22 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *input = nodeAttribute(template_node, "input");
     Document *source_doc = NULL;
+    Document *result_doc;
     Hash *dagnodes = NULL;
     Vector *sorted = NULL;
     xmlNode *root;
+    xmlDocPtr xmldoc;
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = (Document *) actionStackPop();
 	}
 	sorted = gensort(source_doc);
+	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
+	xmlDocSetRootElement(xmldoc, root);
+	result_doc = documentNew(xmldoc, NULL);
+
 	treeFromVector(root, sorted);
 	objectFree((Object *) sorted, TRUE);
 	//RAISE(NOT_IMPLEMENTED_ERROR,

@@ -37,6 +37,9 @@ documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader)
     doc->stylesheet = NULL;
     doc->options = NULL;
     doc->inclusions = NULL;
+    if (xmldoc) {
+	xmldoc->_private = doc;
+    }
     return doc;
 }
 
@@ -171,12 +174,26 @@ void
 documentPrint(FILE *fp, Document *doc)
 {
     xmlNode *node = getFirstNode(doc);
+    xmlNode *kid;
     xmlChar *value;
 
     while (node = nextPrintableNode(node)) {
-	value = xmlGetProp(node, (xmlChar *) "text");
-	fprintf(fp, "%s", value);
-	xmlFree(value);
+	if (value = xmlGetProp(node, (xmlChar *) "text")) {
+	    fprintf(fp, "%s", value);
+	    xmlFree(value);
+	}
+	else {
+	    /* No text attribute, so print any text elements instead */
+	    kid = node->children;
+	    while (kid) {
+		if (xmlNodeIsText(kid)) {
+		    value = xmlNodeGetContent(kid);
+		    fprintf(fp, "%s", value);
+		    xmlFree(value);
+		}
+		kid = kid->next;
+	    }
+	}
     }
 }
 
@@ -208,8 +225,10 @@ finishDocument(Document *doc)
 	    fprintf(stderr, "XInclude processing failed\n");
 	    exit(1);
 	}
-	xmlFreeTextReader(doc->reader);
-	doc->reader = NULL;
+	if (doc->reader) {
+	    xmlFreeTextReader(doc->reader);
+	    doc->reader = NULL;
+	}
     }
     doc->doc->_private = doc;
     cur_document = NULL;
@@ -241,9 +260,10 @@ getDocumentInclusion(Document *doc, String *URI)
 void
 recordDocumentSkippedLines(Document *doc, String *URI, int lines)
 {
-    Int4 *my_lines = int4New(lines);
+    Int4 *my_lines;
     Cons *contents = getDocumentInclusion(doc, URI);
     if (contents) {
+	my_lines = int4New(lines);
 	contents->cdr = (Object *) my_lines;
     }
 }
@@ -251,7 +271,11 @@ recordDocumentSkippedLines(Document *doc, String *URI, int lines)
 void
 recordCurDocumentSource(String *URI, String *path)
 {
-    recordDocumentSource(cur_document, URI, path);
+    /* cur_document will not be set if we are dealing with an xsl
+     * inclusion.  That's just too bad, so don't worry about it. */
+    if (cur_document) {
+	recordDocumentSource(cur_document, URI, path);
+    }
 }
 
 void
@@ -269,7 +293,6 @@ findDoc(String *filename)
 	RAISE(FILEPATH_ERROR, 
 	      newstr("findDoc: cannot find \"%s\"", filename->value));
     }
-
     doc = docFromFile(doc_path);
     objectFree((Object *) doc_path, TRUE);
     finishDocument(doc);
@@ -298,6 +321,61 @@ docHasDeps(Document *doc)
 	return streq(node->name, "dbobject");
     }
     return FALSE;
+}
+
+static Object *
+setFoundNode(Object *node, Object *result)
+{
+    ((Node *) result)->node = ((Node *) node)->node;
+    return result;
+}
+
+static Node *
+getClusterNode(Document *doc)
+{
+    String *xpath_expr = stringNew("//cluster");
+    Node *node = nodeNew(NULL);
+
+    BEGIN {
+	(void) xpathEach(doc, xpath_expr, &setFoundNode, (Object *) node);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) node, TRUE);
+    }
+    FINALLY {
+	objectFree((Object *) xpath_expr, TRUE);
+    }
+    END;
+
+    return node;
+}
+
+void
+readDocDbver(Document *doc)
+{
+    Node *node = getClusterNode(doc);
+    String *version_str = NULL;
+    char *sexp = NULL;
+    Object *obj = NULL;
+
+    BEGIN {
+	if (node->node) {
+	    version_str = nodeAttribute(node->node, "version");
+	    sexp = newstr("(setq dbver-from-source (version '%s'))", 
+			  version_str->value);
+	    obj = evalSexp(sexp);
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	if (sexp) {
+	    skfree(sexp);
+	}
+	objectFree((Object *) node, TRUE);
+	objectFree((Object *) version_str, TRUE);
+	objectFree((Object *) obj, TRUE);
+    }
+    END;
 }
 
 static void

@@ -490,7 +490,7 @@ initBaseSymbols()
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
 
     evalStr("(setq dbtype 'postgres')");
-    evalStr("(setq dbver (version '8.1'))");
+    evalStr("(setq dbver nil)");
     evalStr("(setq templates-dir 'templates')");
 
     registerPGSQL();

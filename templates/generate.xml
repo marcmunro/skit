@@ -7,6 +7,7 @@
 
 
 <skit:stylesheet
+  xmlns:xi="http://www.w3.org/2003/XInclude"
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
@@ -20,9 +21,16 @@
   <!-- If neither build or drop are specified, then we do a build -->
   <skit:exec expr="(setq build (or build (not (or build drop))))"/>
 
-<!--  <skit:xslproc stylesheet="ddl.xsl"> -->
-    <skit:gensort input="pop"/>
-<!--  </skit:xslproc> -->
+  <skit:xslproc stylesheet="ddl.xsl">
+    <dump>
+      <skit:attr name="dbtype" expr="dbtype"/>
+      <skit:attr name="dbname" expr="dbname"/>
+      <skit:attr name="user" expr="username"/> 
+      <skit:attr name="time" expr="(current-timestamp)"/>
+      <printable/>
+      <skit:gensort input="pop"/>
+    </dump>	
+  </skit:xslproc>
 
 </skit:stylesheet>
 

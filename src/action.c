@@ -38,6 +38,9 @@ static Cons *action_stack = NULL;
 void
 actionStackPush(Object *obj)
 {
+    if (obj->type == OBJ_DOCUMENT) {
+	readDocDbver((Document *) obj);
+    }
     action_stack = consNew(obj, (Object *) action_stack);
 }
 
@@ -52,6 +55,10 @@ actionStackPop()
 	result = front->car;
 	objectFree((Object *) front, FALSE);
     }
+    if (result && (result->type == OBJ_DOCUMENT)) {
+	readDocDbver((Document *) result);
+    }
+
     return result;
 }
 
@@ -604,8 +611,7 @@ preprocessSourceDocs(int sources, Object *params)
     for (i = 1; i <= sources; i++) {
 	cons = actionStackNth(i);
 	src_doc = (Document *) cons->car;
-	if (add_deps) {
-	    // TODO: Make this conditional on no deps existing
+	if (add_deps && (!docHasDeps(src_doc))) {
 	    xslsheet = getAddDepsDoc();
 	    result_doc = applyXSLStylesheet(src_doc, xslsheet);
 	    objectFree((Object *) src_doc, TRUE);
@@ -643,7 +649,8 @@ executePrint(Object *params)
     print_xml = dereference(symbolGetValue("xml")) && TRUE;
 
     doc = (Document *) actionStackHead();
-    has_deps = docIsPrintable(doc);
+    has_deps = docHasDeps(doc);
+    //dbgSexp(doc);
 
     if (print_full) {
 	if (!has_deps) {

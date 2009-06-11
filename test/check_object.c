@@ -566,6 +566,15 @@ START_TEST(map)
 }
 END_TEST
 
+static void
+evalStr(char *str)
+{
+    char *tmp = newstr(str);
+    Object *obj = evalSexp(tmp);
+    objectFree(obj, TRUE);
+    skfree(tmp);
+}
+
 START_TEST(setq)
 {
     char *sexpstr;
@@ -573,6 +582,7 @@ START_TEST(setq)
     Object *obj;
 
     initBuiltInSymbols();
+    evalStr("(setq dbver (version '8.1'))");
     sexpstr = newstr("dbver");
     obj = evalSexp(sexpstr);
     skfree(sexpstr);

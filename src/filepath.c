@@ -223,6 +223,9 @@ findFile(String *filename)
     //printSexp(stderr, "TMPLATE: ", tmpltdir);
     //printSexp(stderr, "DBDIR: ", dbdir);
     //printSexp(stderr, "VER: ", value);
+    if (!ver) {
+	ver = symbolGetValue("dbver-from-source");
+    }
     path = pathToFile(roots, tmpltdir, dbdir, ver, filename);
     freeGlobBuf();
     if (path) {

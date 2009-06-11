@@ -524,6 +524,7 @@ objectSexp(Object *obj)
 	return newstr("<%s %p>", objTypeName(obj), ((FnReference *) obj)->fn);
     case OBJ_CONNECTION:
 	return newstr("<%s %p>", objTypeName(obj), ((Connection *) obj)->conn);
+    case OBJ_XMLNODE:
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_DAGNODE:
