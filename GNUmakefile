@@ -46,18 +46,15 @@ DB_CONNECT = $(DB_PORT) $(DB_HOST) $(DB_CLUSTER) $(DB_VERSION) $(DB_USER)
 
 #SOURCES = $(CODE_SOURCES) $(XML_SOURCES) $(XSL_SOURCES) $(SQL_SOURCES)
 include $(top_builddir)/Makefile.global
-SUBDIRS = src test dbscript
+SUBDIRS = src test dbscript regress
 include $(SUBDIRS:%=%/Makefile)
 
 
-try:	skit
-	./skit --extract --connect "dbname = 'skittest'" --generate --build --list
-
 tryf:	skit
-	./skit --generate --build  x --print --full
+	./skit --generate --build  y --print --full
 
 tryl:	skit
-	./skit --generate --build x --list -g
+	./skit --generate --build y --list -g
 
 # Build per-source object dependency files for inclusion
 %.d: %.c

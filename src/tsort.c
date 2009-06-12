@@ -182,12 +182,13 @@ static Object *
 addPqnEntry(Object *node, Object *hash)
 {
     xmlChar *pqn = xmlGetProp(((Node *)node)->node, "pqn");
-    xmlChar *fqn = xmlGetProp(((Node *)node)->node, "fqn");
+    xmlChar *fqn;
     String *key;
     String *value;
     Cons *list;
     Cons *prev;
     if (pqn) {
+	fqn = xmlGetProp(((Node *)node)->node, "fqn");
 	key = stringNew(pqn);
 	value = stringNew(fqn);
 	xmlFree(pqn);
@@ -223,13 +224,18 @@ makePqnHash(Document *doc)
     return pqnhash;
 }
 
+static boolean
+xmlnodeMatch(xmlNode *node, char *name)
+{
+    return (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
+}
+
 static xmlNode *
 findAncestor(xmlNode *start, char *name)
 {
     xmlNode *result = start;
     while (result = (xmlNode *) result->parent) {
-	if ((result->type == XML_ELEMENT_NODE) &&
-	    streq(result->name, name)) {
+	if (xmlnodeMatch(result, name)) {
 	    return result;
 	}
     }
@@ -241,8 +247,7 @@ findNextSibling(xmlNode *start, char *name)
 {
     xmlNode *result = start;
     while (result = (xmlNode *) result->next) {
-	if ((result->type == XML_ELEMENT_NODE) &&
-	    streq(result->name, name)) {
+	if (xmlnodeMatch(result, name)) {
 	    return result;
 	}
     }
@@ -252,6 +257,9 @@ findNextSibling(xmlNode *start, char *name)
 static xmlNode *
 findFirstChild(xmlNode *parent, char *name)
 {
+    if (xmlnodeMatch(parent->children, name)) {
+	return parent->children;
+    }
     return findNextSibling(parent->children, name);
 }
 
@@ -392,9 +400,9 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
     DagNode *found;
     char *prefix = nameForBuildType(node->build_type);
     char *tmpstr;
-    //Hash *pqnlist = (Hash *) hashes->cdr;
-    //Cons *fqnlist;
-    //Cons *dagnodelist;
+    Hash *pqnlist = (Hash *) hashes->cdr;
+    Cons *fqnlist;
+    Cons *dagnodelist;
 
     if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
 	found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
@@ -408,16 +416,10 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
 	addDirectedDependency(node, consNode(found));
     }
     else if (pqn = nodeAttribute(xmlnode, "pqn")) {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("CANNOT YET HANDLE PQNs"));
-	/* For PQNs, the dependency is a list of possible DagNodes
-	 * rather than a single DagNode */
-	//fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
-	//dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
-	//printSexp(stderr, "ADDING DEP ON PQN: ", (Object *) pqn);
-	//printSexp(stderr, "PQN DEPS ARE: ", (Object *) dagnodelist);
-	//addDirectedDependency(node, (Object *) dagnodelist);
+	fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
 	objectFree((Object *) pqn, TRUE);
+	dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
+	addDirectedDependency(node, dagnodelist);
     }
 }
 
@@ -513,6 +515,28 @@ identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 
 static String root_name = {OBJ_STRING, ".."};
 
+static void
+addToBuildList(Hash *buildlist, DagNode *node)
+{
+    Vector *vector;
+    String *parent_name;
+    if (node->parent) {
+	parent_name = node->parent->fqn;
+    }
+    else {
+	parent_name = &root_name;
+    }
+    
+    vector = (Vector *) hashGet(buildlist, (Object *) parent_name);
+    if (!vector) {
+	vector = vectorNew(20);
+	(void) hashAdd(buildlist, (Object *) stringDup(parent_name),
+		       (Object *) vector);
+    }
+    vectorPush(vector, (Object *) objRefNew((Object *) node));
+    node->status = DAGNODE_SORTING;
+}
+
 static Object *
 addCandidateToBuild(Object *node_entry, Object *buildlist)
 {
@@ -521,25 +545,8 @@ addCandidateToBuild(Object *node_entry, Object *buildlist)
     String *parent_name;
 
     assert(node->type == OBJ_DAGNODE, "ARG");
-    if ((node->status == DAGNODE_READY) &&
-	(!node->dependencies)) {
-	if (node->parent) {
-	    parent_name = node->parent->fqn;
-	}
-	else {
-	    parent_name = &root_name;
-	}
-	
-	vector = (Vector *) hashGet((Hash *) buildlist, 
-				    (Object *) parent_name);
-	if (!vector) {
-	    vector = vectorNew(20);
-	    (void) hashAdd((Hash *) buildlist, 
-			   (Object *) stringDup(parent_name),
-			   (Object *) vector);
-	}
-	vectorPush(vector, (Object *) objRefNew((Object *) node));
-	node->status = DAGNODE_SORTING;
+    if ((node->status == DAGNODE_READY) && (!node->dependencies)) {
+	addToBuildList((Hash *) buildlist, node);
     }
     return (Object *) node;
 }
@@ -571,20 +578,40 @@ fqncmp(String *fqn1, String *fqn2)
     return strcmp(fqn1->value, fqn2->value);
 }
 
+/* Return the heridity part of the fqn.  FQNs have the form:
+ * action.type.ancestor_heridity.name or action.type in the case of the
+ * cluster. */
+static char *
+fqnHeridity(char *fqn)
+{
+    char *notype = strchr(fqn, '.');
+    char *result;
+    if (notype) {
+	notype++;
+	if (result = strchr(notype, '.')) {
+	    return result + 1;
+	}
+    }
+    return notype;
+}
+
 static boolean
 isDescendant(String *fqn, String *child_fqn)
 {
-    /* Eliminate the type prefix from fqns for both aname and dname */
-    char *parent = strchr(strchr(fqn->value, '.'), '.');
-    char *child = strchr(strchr(child_fqn->value, '.'), '.');
+    /* Eliminate the type prefix from both fqns */
+    char *parent = fqnHeridity(fqn->value);
+    char *child = fqnHeridity(child_fqn->value);
 
     /* dname is a descendant iff, all characters match up to length
-     * of aname */
+     * of the parent fqn */
 
     assert(parent, "isDescendant: Oops, parent is not defined");
     assert(child, "isDescendant: Oops, child is not defined");
 
-    while (*parent++ == *child++) ;
+    while ((*parent != '\0') && (*parent == *child)) {
+	parent++;
+	child++;
+    }
     return *parent == '\0';
 }
 
@@ -706,9 +733,10 @@ removeDependency(DagNode *from, DagNode *dependency)
 }
 
 /* Remove dependencies to and from node, prior to adding node to the
- * results list. */
+ * results list.  If this results in nodes having no dependencies, they
+ * will be added to buildlist.  */
 static void
-removeNodeFromDag(DagNode *node, Hash *allnodes)
+removeNodeFromDag(DagNode *node, Hash *allnodes, Hash *buildlist)
 {
     Vector *vec = node->dependents;
     DagNode *depnode;
@@ -725,6 +753,7 @@ removeNodeFromDag(DagNode *node, Hash *allnodes)
 	    if (depnode->dependencies->elems <= 1) {
 		objectFree((Object *) depnode->dependencies, TRUE);
 		depnode->dependencies = NULL;
+		addToBuildList(buildlist, depnode);
 	    }
 	    else {
 		removeDependency(depnode, node);
@@ -770,60 +799,44 @@ showAllDeps(Hash *buildlist)
 }
 
 static void
-tsort_debug()
-{
-    fprintf(stderr, "TSORT_DEBUG\n");
-}
-
-static void
 buildInContext(String *context_fqn, Hash *buildlist,
 	       Hash *allnodes, Vector *results)
 {
-    Vector *to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn);
+    Vector *to_build;
     Object *ref;
     Object *entry;
     DagNode *node;
     int i;
     String *child_context_fqn;
 
-    //fprintf(stderr, "START\n");
-    //printSexp(stderr, "CONTEXT: ", context_fqn);
-    //printSexp(stderr, "BUILDLIST: ", buildlist);
-    //printSexp(stderr, "TO_BUILD: ", to_build);
-    while (to_build->elems) {
-	//fprintf(stderr, "LOOP\n");
-	while (to_build->elems) {
-	    reverseSortBuildVector(to_build);
-	    //showAllDeps(allnodes);
-	    ref = vectorPop(to_build);
-	    node = (DagNode *) dereference(ref);
-	    //if (streq(node->fqn->value, "build.grant.cluster.keep2.keep:lose") ||
-	    //streq(node->fqn->value, "drop.grant.cluster.keep2.keep:lose")) {
-	    //tsort_debug();
-	    //}
-	    objectFree((Object *) ref, FALSE);
-	    removeNodeFromDag(node, allnodes);
-	    //printSexp(stderr, "BUILDING: ", node);
-	    vectorPush(results, (Object *) node);
-	    /* Building this node has established a new build context.
-	     * Try building under that context. */
-	    get_build_candidates(allnodes, buildlist);
-	    if (child_context_fqn = get_child_context_node(node, buildlist)) {
-		buildInContext(child_context_fqn, buildlist, allnodes, results);
-	    }
-	}
-	get_build_candidates(allnodes, buildlist);
-	to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn);
+    //fprintf(stderr, "BEGIN\n");
+    while (to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn),
+	   to_build->elems) {
+	reverseSortBuildVector(to_build);
 	//printSexp(stderr, "CONTEXT: ", context_fqn);
 	//printSexp(stderr, "BUILDLIST: ", buildlist);
-	//printSexp(stderr, "TO_BUILD: ", to_build);
+	ref = vectorPop(to_build);
+	node = (DagNode *) dereference(ref);
+	//printSexp(stderr, "BUILDING: ", node);
+	objectFree((Object *) ref, FALSE);
+	removeNodeFromDag(node, allnodes, buildlist);
+	//showAllDeps(allnodes);
+	vectorPush(results, (Object *) node);
+
+	/* Building this node has established a new build context.
+	 * Try building under that context. */
+	get_build_candidates(allnodes, buildlist);
+	while (child_context_fqn = get_child_context_node(node, buildlist)) {
+	    buildInContext(child_context_fqn, buildlist, allnodes, results);
+	}
     }
     /* Now remove this context from the buildlist */
 
+    //printSexp(stderr, "CONTEXT: ", context_fqn);
+    //printSexp(stderr, "BUILDLIST: ", buildlist);
     entry = hashDel(buildlist, (Object *) context_fqn);
     objectFree(entry, TRUE);
     //fprintf(stderr, "END\n");
-    return;
 }
 
 static Vector *
@@ -841,7 +854,6 @@ tsort(Hash *allnodes)
     while (hashElems(buildlist)) {
 	context_fqn = get_context_node(buildlist);
 	buildInContext(context_fqn, buildlist, allnodes, results);
-	get_build_candidates(allnodes, buildlist);
     }
     objectFree((Object *) buildlist, TRUE);
     return results;

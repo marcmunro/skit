@@ -46,6 +46,9 @@ autom4te.cache/
 # The contents of the testdb subdirectory
 /testdb
 
+# The contents of the regress/REGRESSDB subdirectory
+/regress/REGRESSDB/
+
 # Suppression files
 valgrind/*suppressions
 

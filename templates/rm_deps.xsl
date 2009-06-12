@@ -9,9 +9,9 @@
     </xsl:for-each>	
   </xsl:template>
 
-  <!-- Eliminate db_visit objects which are artificially created
+  <!-- Eliminate dbincluster objects which are artificially created
     by add_deps.xsl -->
-  <xsl:template match="db_visit"/>
+  <xsl:template match="dbincluster"/>
 
   <!-- Eliminate dependencies and their contents -->
   <xsl:template match="dependencies"/>

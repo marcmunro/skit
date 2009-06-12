@@ -95,8 +95,12 @@ START_TEST(check_gensort)
 
     doc = getDoc("test/data/gensource1.xml");
     results = gensort(doc);
-    //printSexp(stderr, "RESULTS: ", (Object *) results);
+    printSexp(stderr, "RESULTS: ", (Object *) results);
 
+    check_build_order(results, "('drop.database.cluster.skittest' "
+		      "'drop.dbincluster.cluster.skittest' "
+		      "'build.dbincluster.cluster.skittest' "
+		      "'build.database.cluster.skittest')");
     check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
 		      "'build.cluster' 'build.role.cluster.keep')");
     check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
@@ -133,7 +137,7 @@ START_TEST(check_gensort)
 }
 END_TEST
 
-START_TEST(check_navigation)
+START_TEST(navigation)
 {
     Document *src_doc;
     Document *result_doc;
@@ -180,7 +184,7 @@ tsort_suite(void)
     /* Core test case */
     TCase *tc_core = tcase_create("tsort");
     ADD_TEST(tc_core, check_gensort);
-    ADD_TEST(tc_core, check_navigation);
+    ADD_TEST(tc_core, navigation);
 				
     suite_add_tcase(s, tc_core);
 

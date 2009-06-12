@@ -57,25 +57,6 @@
 
   <!-- Object-level grants -->
   <xsl:template match="dbobject[@subtype!='role']/grant">
-    <info>
-      <xsl:copy select=".">
-	<xsl:copy-of select="@priv"/>
-	<xsl:copy-of select="@to"/>
-	<xsl:copy-of select="@with_grant"/>
-	<xsl:copy-of select="@from_owner"/>
-	<xsl:attribute name="from">
-	  <xsl:choose>
-	    <xsl:when test="@from_owner='yes' and ../@owner!=''">
-	      <xsl:value-of select="../@owner"/>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <xsl:value-of select="@from"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	</xsl:attribute>
-      </xsl:copy>
-    </info>
-
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>&#x0A;</xsl:text>

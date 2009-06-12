@@ -16,7 +16,7 @@
 # possibly misguided, attempt to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
 
-.PHONY: tests_all test_clean grind skgrind suppressions
+.PHONY: tests_all test_clean grind skgrind suppressions 
 
 TEST_DIR = test
 TEST_SOURCES = $(wildcard $(TEST_DIR)/*.c)
@@ -110,7 +110,6 @@ test_clean:
 	       valgrind/suppressions $(SUPPRESSION_FILES)
 
 tests_distclean: tests_clean
-
 
 # Describe what this makefile can build
 test_help:

@@ -3,11 +3,11 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   version="1.0">
 
+  <xsl:output method="xml" indent="yes"/>
+  <xsl:strip-space elements="*"/>
+
   <!-- This stylesheet adds dependency definitions to dbobjects unless
-       they appear to already exist. The manual indentation provided
-       by xsl_text elements below is intended to be just good enough to
-       enable the output from add_deps to be readable.  It is not
-       intended to be perfect or even close. -->
+       they appear to already exist. -->
 
   <xsl:template match="/*">
     <xsl:copy select=".">
@@ -40,7 +40,7 @@
     <xsl:copy select=".">
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates>
-	<xsl:with-param name="parent_core" select="$parent_core"/>
+        <xsl:with-param name="parent_core" select="$parent_core"/>
       </xsl:apply-templates>
     </xsl:copy>
   </xsl:template>
@@ -90,6 +90,7 @@
       </xsl:copy>
     </dbobject>
   </xsl:template>
+
 
   <!-- The database object, from which other database objects may be
        manipulated.  This is the only template called with a mode of
@@ -267,8 +268,6 @@
       </xsl:copy>
     </dbobject>
   </xsl:template>
-
-
 
 
 </xsl:stylesheet>
