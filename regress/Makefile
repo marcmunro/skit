@@ -25,7 +25,7 @@ REGRESS_LOG = $(REGRESS_DIR)/regress.log
 REGRESSDB_PORT = 54325
 
 PGBIN = $(shell pg_config --bindir)
-PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) 
+PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) -v home=$(top_builddir) 
 
 
 # Check state of regression test database.
@@ -90,6 +90,7 @@ drop_regress_db: rdbstop
 
 regression_test1: 
 	@echo Running regression test 1...
+	@mkdir regress/scratch 2>/dev/null || true
 	@echo ...creating initial database definitions...
 	@echo ==== BUILDING DB FROM regression1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1

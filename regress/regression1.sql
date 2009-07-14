@@ -1,4 +1,5 @@
-psql -d postgres <<'CLUSTEREOF'
+
+psql -d postgres -v home=`pwd` <<'CLUSTEREOF'
 create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
 alter role "regress" valid until 'infinity';
@@ -6,9 +7,9 @@ alter role "regress" noinherit;
 alter role "regress" with superuser;
 alter role "regress" set client_min_messages = 'warning';
 
-
+\set tbs3dir '''':home'/regress/REGRESSDB/tbs/tbs3'''
 create tablespace "tbs3" owner "regress"
-  location '/home/marc/proj/skit2/regress/REGRESSDB/tbs/tbs3';
+  location :tbs3dir;
 
 create database "regressdb" with
  owner "regress"
@@ -41,8 +42,10 @@ set session authorization 'keep';
 grant "keep" to "lose" with admin option;
 reset session authorization;
 
+\set tbs2dir '''':home'/regress/REGRESSDB/tbs/tbs2'''
 create tablespace "tbs2" owner "regress"
-  location '/home/marc/proj/skit2/regress/REGRESSDB/tbs/tbs2';
+  location :tbs2dir;
+
 create role "keep2" with login;
 alter role "keep2" password 'md5dd9b387fa54744451a97dc9674f6aba2';
 alter role "keep2" noinherit;
@@ -85,8 +88,9 @@ alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "wibble" valid until '2007-03-01 00:00:00-08';
 alter role "wibble" noinherit;
 
+\set tbs4dir '''':home'/regress/REGRESSDB/tbs/tbs4'''
 create tablespace "tbs4" owner "wibble"
-  location '/home/marc/proj/skit2/regress/REGRESSDB/tbs/tbs4';
+  location :tbs4dir;
 
 set session authorization 'keep2';
 grant "keep2" to "wibble";
