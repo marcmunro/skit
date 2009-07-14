@@ -11,12 +11,16 @@
       <skit:attr name="location"/>
       <!-- <skit:exec expr="(debug 'TUPLE: ' tuple)"/> -->
 
+      <!-- Removed after deciding that privs from and to the same user
+          make no sense and should not be recorded.
+   
       <skit:if test="(not (select tuple 'privs'))">
 	<grant with_grant="yes" priv="create">
 	  <skit:attr name="from" field="owner"/>
 	  <skit:attr name="to" field="owner"/>
 	</grant>
       </skit:if>
+      -->
 
       <skit:exec_function name="grants_from_privs"
 			  privileges="(select tuple 'privs')"/>

@@ -17,31 +17,35 @@
 # "Recursive make considered harmful" for a rationale).
 
 .PHONY: regress regress_db rdb_is_up rdbstart wait_for_rdb \
-	wait_while_proc rdbstop drop_regress_db
+	wait_while_proc rdbstop drop_regress_db regress_capability
 
 
 REGRESS_DIR = regress
-REGRESS_LOG = $(REGRESS_DIR)/regress_log
+REGRESS_LOG = $(REGRESS_DIR)/regress.log
 REGRESSDB_PORT = 54325
 
 PGBIN = $(shell pg_config --bindir)
 PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) 
 
 
+# Check state of regression test database.
 rdb_is_up:
 	@$(PGBIN)/psql -p $(REGRESSDB_PORT) -d postgres \
 		-c "select 'o' || 'k'" 2>&1 | grep ok >/dev/null
 
+# Wait 10 seconds for regression test database to be available
 wait_for_rdb:
 	@count=10; while [ $${count} -gt 0 ]; do \
 		if $(MAKE) rdb_is_up >/dev/null 2>&1; then exit 0; fi; \
 		count=`expr $${count} - 1`; sleep 1; done; exit 1
 
+# Wait for a process $(PROC) to finish
 wait_while_proc:
 	@count=10; while [ $${count} -gt 0 ]; do \
 		if ps -fp $(PROC) >/dev/null 2>&1; then true; else exit 0; fi; \
 		count=`expr $${count} - 1`; sleep 1; done; exit 1
 
+# Start up the regression test database
 rdbstart:
 	@echo ...Starting postmaster...
 	@$(PGBIN)/postmaster -D $(REGRESS_DIR)/REGRESSDB -p $(REGRESSDB_PORT)\
@@ -51,6 +55,7 @@ rdbstart:
 		(cat $(REGRESS_DIR)/postgresql.log; exit 1)
 	@echo "Regression test database started"
 
+# Stop the regression test database
 rdbstop:
 	@if $(MAKE) --no-print-directory rdb_is_up; then \
 	  echo ...Stopping postmaster...; \
@@ -65,13 +70,14 @@ rdbstop:
 	    echo "Regression test database stopped"; fi; \
         else echo "database is already down"; fi
 
+
 # Regression test targets.
-regress_db: 
+regress_db: regress_capability
 	@if [ -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    echo Error: database files already exist.; exit 1; fi
 	@echo Creating new cluster for regression tests...
 	@echo ...building database...
-	$(PGBIN)/initdb --pgdata $(REGRESS_DIR)/REGRESSDB 2>&1 >$(REGRESS_LOG)
+	@$(PGBIN)/initdb --pgdata $(REGRESS_DIR)/REGRESSDB 2>&1 >$(REGRESS_LOG)
 	@echo ...Creating tablespace dirs...
 	@mkdir -p $(REGRESS_DIR)/REGRESSDB/tbs/tbs2 \
 		  $(REGRESS_DIR)/REGRESSDB/tbs/tbs3 \
@@ -82,21 +88,76 @@ drop_regress_db: rdbstop
 	@rm -rf $(REGRESS_DIR)/REGRESSDB
 	@echo "Regression test database removed"
 
-regression_test1: skit regress_db
+regression_test1: 
 	@echo Running regression test 1...
 	@echo ...creating initial database definitions...
-	$(PSQL) <$(REGRESS_DIR)/regression1.sql >>$(REGRESS_LOG) 2>&1
+	@echo ==== BUILDING DB FROM regression1.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@export PGPORT=$(REGRESSDB_PORT); \
+	    sh $(REGRESS_DIR)/regression1.sql 2>&1 | \
+	    regress/errcheck.sh >>$(REGRESS_LOG)
+	@echo ==== FINISHED BUILD FROM regression1.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@echo ...running skit extract...
+	@./skit --extract \
+	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
+	    >$(REGRESS_DIR)/scratch/regressdb_dump1.xml
+	@echo ...running skit generate...
+	@echo ......drop...
+	@./skit --generate --drop $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
+	    >$(REGRESS_DIR)/scratch/regressdb_drop1.sql
+	@echo ......build...
+	@./skit --generate --build $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
+	    >$(REGRESS_DIR)/scratch/regressdb_build1.sql
+	@echo ......both...
+	@./skit --generate --build --drop \
+	    $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
+	    >$(REGRESS_DIR)/scratch/regressdb_both1.sql
+	@echo ...editing drop script to allow dangerous drop statements...
+	@sed -e  "/\"`whoami`\"/! s/^-- //" \
+	    $(REGRESS_DIR)/scratch/regressdb_drop1.sql > \
+	    $(REGRESS_DIR)/scratch/regressdb_drop1a.sql
+	@echo ...executing drop script...
+	@echo ==== RUNNING DROP SCRIPT regressdb_drop1a.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@export PGPORT=$(REGRESSDB_PORT); \
+	    sh $(REGRESS_DIR)/scratch/regressdb_drop1a.sql 2>&1 | \
+	    regress/errcheck.sh >>$(REGRESS_LOG)
+	@echo ...checking success of drop script...
+	@pg_dumpall -p $(REGRESSDB_PORT) | grep ^CREATE | wc -l | \
+            grep ^1$ >/dev/null
+	@echo ==== FINISHED DROP SCRIPT regressdb_drop1a.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@echo ...executing build script...
+	@echo ==== RUNNING BUILD SCRIPT regressdb_build1.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@export PGPORT=$(REGRESSDB_PORT); \
+	    sh $(REGRESS_DIR)/scratch/regressdb_build1.sql 2>&1 | \
+	    regress/errcheck.sh >>$(REGRESS_LOG) 
+	@echo ...checking success of build script...
+	@echo "......running skit extract (again)..."
+	@./skit --extract \
+	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
+		>$(REGRESS_DIR)/scratch/regressdb_dump2.xml
+	@regress/diffcheck.sh $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
+	    $(REGRESS_DIR)/scratch/regressdb_dump2.xml
+	@echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== \
+	    >>$(REGRESS_LOG) 2>&1
+	@echo ...regression test 1 complete
 
 
 regress: skit regress_db regression_test1
+	@$(MAKE) --no-print-directory drop_regress_db
 	@echo Regression tests completed successfully
 
 regress_clean: drop_regress_db
 	@echo Cleaning regress...
-	@rm -rf REGRESSDB $(REGRESS_LOG)
+	@rm -rf REGRESSDB $(REGRESS_LOG)/regressdb_*.sql \
+	    $(REGRESS_LOG)/regressdb_*.xml
 
 regress_distclean: regress_clean
 
 # Describe what this makefile can build
 regress_help:
 	@echo "regress      - Run regression test suite"
+	@echo "drop_regress_db - Drop regression test database"

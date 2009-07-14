@@ -10,7 +10,7 @@
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
           <xsl:value-of select="@from"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
@@ -26,7 +26,7 @@
 	</xsl:if>
         <xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
       </print>
@@ -47,7 +47,7 @@
         <xsl:value-of select="@to"/>
         <xsl:text>&quot;;&#x0A;</xsl:text>
 
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
       </print>
@@ -60,7 +60,7 @@
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization </xsl:text>
 	  <xsl:value-of select="@from"/>
 	  <xsl:text>;&#x0A;</xsl:text>
@@ -80,7 +80,7 @@
 	</xsl:if>
 	<xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
       </print>
@@ -90,7 +90,7 @@
     <xsl:if test="../@action='drop'">
       <print>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
           <xsl:value-of select="@from"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
@@ -105,7 +105,7 @@
 	<xsl:text> from &quot;</xsl:text>
 	<xsl:value-of select="@to"/>
 	<xsl:text>&quot;;&#x0A;</xsl:text>
-	<xsl:if test="@from != //@user">
+	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
       </print>

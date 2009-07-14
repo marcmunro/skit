@@ -13,6 +13,8 @@
      <skit:let>
        <skit:if test="(not (select dbinfo 'privs'))">
 	 <!-- Define default privileges -->
+	 <!-- Grants below removed as they were from and to the same
+	      user
 	 <grant with_grant="yes" priv="create">
 	   <skit:attr name="from" field="owner"/>
 	   <skit:attr name="to" field="owner"/>
@@ -21,7 +23,11 @@
 	   <skit:attr name="from" field="owner"/>
 	   <skit:attr name="to" field="owner"/>
 	 </grant>
+	 -->
 	 <grant with_grant="no" priv="temporary" to="public">
+	   <skit:attr name="from" field="owner"/>
+	 </grant>
+	 <grant with_grant="no" priv="connect" to="public">
 	   <skit:attr name="from" field="owner"/>
 	 </grant>
 	 <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->

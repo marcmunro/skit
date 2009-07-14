@@ -56,16 +56,22 @@
 		<skit:if test="(not (string= this_priv '*'))">
 		  <skit:exec expr="(setq privname 
 				   (select privnames this_priv))"/>
+		  <skit:if test="(not (string= from to))">
 		  <grant>	
 		    <skit:attr name="priv" expr="privname"/>
 		    <skit:attr name="from" expr="from"/>
 		    <skit:attr name="to" expr="to"/>
+		    <!-- Code from before the check 5 lines up 
+			 TODO: Lose this once we are convinced it's
+			 really not needed
 		    <skit:if test="(string= from to)">
 		      <skit:exec expr="(setq with_grant_or_admin 'yes')"/>
 		    </skit:if>
+		    -->
 		    <skit:attr name="with_grant" expr="with_grant_or_admin"/>
 		  </grant>
 		  <skit:exec expr="(setq with_grant_or_admin 'no')"/>
+		</skit:if>
 		</skit:if>
 	      </skit:foreach>
 	    </skit:let>
