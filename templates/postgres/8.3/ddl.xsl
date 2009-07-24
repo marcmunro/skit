@@ -21,10 +21,10 @@
   <xsl:include href="skitfile:ddl/tablespace.xsl"/>
   <xsl:include href="skitfile:ddl/roles.xsl"/>
   <xsl:include href="skitfile:ddl/grants.xsl"/>
+  <xsl:include href="skitfile:ddl/languages.xsl"/>
+  <xsl:include href="skitfile:ddl/schemata.xsl"/>
 <!--
 
-  <skituls:include file="ddl/schemata.xsl"/>
-  <skituls:include file="ddl/languages.xsl"/>
   <skituls:include file="ddl/casts.xsl"/>
   <skituls:include file="ddl/domains.xsl"/>
   <skituls:include file="ddl/types.xsl"/>

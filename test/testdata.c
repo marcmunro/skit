@@ -26,6 +26,7 @@
 #include "domain.sql"
 #include "constraint.sql"
 #include "schema.sql"
+#include "language.sql"
 
 static String *last_key = NULL;
 
@@ -72,6 +73,7 @@ initQueries()
     addQuery(hash, (Cons *) objectFromStr(DOMAIN_QRY));
     addQuery(hash, (Cons *) objectFromStr(CONSTRAINT_QRY));
     addQuery(hash, (Cons *) objectFromStr(SCHEMA_QRY));
+    addQuery(hash, (Cons *) objectFromStr(LANGUAGE_QRY));
 
     return hash;
 }

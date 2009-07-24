@@ -1,4 +1,5 @@
 #! /bin/sh
+# Check for differences between two xml schema dumps.
 
 # Put attributes of elements into a consistent order. 
 sort_attributes()

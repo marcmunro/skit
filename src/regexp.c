@@ -185,7 +185,7 @@ regexpReplace(String *src, Regexp *regexp, String *replacement)
     return final;
 }
 
-/* TODO: DESCRIBE THIS */
+/* Return a string containing only the replaced part of the regex */
 String *
 regexpReplaceOnly(String *src, Regexp *regexp, String *replacement)
 {

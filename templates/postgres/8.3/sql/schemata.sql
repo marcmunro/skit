@@ -9,4 +9,5 @@ from   pg_catalog.pg_namespace n
 where  n.nspname NOT IN ('pg_catalog', 'pg_toast', 
 			 'information_schema')
 and    n.nspname !~ '^pg_temp_'
+and    n.nspname !~ '^pg_toast_'
 order by s.rolname;

@@ -10,6 +10,7 @@
     "where  n.nspname NOT IN ('pg_catalog', 'pg_toast', "		\
     "			 'information_schema')"				\
     "and    n.nspname !~ '^pg_temp_'"					\
+    "and    n.nspname !~ '^pg_toast_'"					\
     "order by s.rolname;\""						\
     "[ 'name' 'owner' 'privs' 'comment']"				\
     "[[ 'pg_toast_temp_1' 'marc' nil nil]"				\

@@ -26,6 +26,7 @@ REGRESSDB_PORT = 54325
 
 PGBIN = $(shell pg_config --bindir)
 PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) -v home=$(top_builddir) 
+PG_DUMP = $(PGBIN)/pg_dump -p $(REGRESSDB_PORT)
 
 
 # Check state of regression test database.
@@ -99,6 +100,8 @@ regression_test1:
 	    regress/errcheck.sh >>$(REGRESS_LOG)
 	@echo ==== FINISHED BUILD FROM regression1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1
+	@echo ...taking initial pg_dump snapshot...
+	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1a.dmp
 	@echo ...running skit extract...
 	@./skit --extract \
 	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
@@ -142,6 +145,11 @@ regression_test1:
 		>$(REGRESS_DIR)/scratch/regressdb_dump2.xml
 	@regress/diffcheck.sh $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
 	    $(REGRESS_DIR)/scratch/regressdb_dump2.xml
+	@echo ...taking final pg_dump snapshot...
+	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1b.dmp
+	@echo ...checking results of pg_dump snapshots...
+	@regress/diffdump.sh $(REGRESS_DIR)/scratch/regressdb_test1a.dmp \
+	    $(REGRESS_DIR)/scratch/regressdb_test1b.dmp
 	@echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1
 	@echo ...regression test 1 complete
@@ -153,6 +161,7 @@ regress: skit regress_db regression_test1
 
 regress_clean: drop_regress_db
 	@echo Cleaning regress...
+	@rm -rf $(REGRESS_LOG)/scratch/*
 	@rm -rf REGRESSDB $(REGRESS_LOG)/regressdb_*.sql \
 	    $(REGRESS_LOG)/regressdb_*.xml
 

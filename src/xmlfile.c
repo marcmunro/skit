@@ -263,6 +263,8 @@ skitfileOpen(const char *URI)
 
     //fprintf(stderr, "Opening %s\n", URI);
     if (!path) {
+	RAISE(FILEPATH_ERROR,
+	      newstr("Unable to find file: %s", URI));
 	return NULL;
     }
 
@@ -321,7 +323,7 @@ skitfileRead(void *context, char *buffer, int len)
 }
 
 
-static
+static void
 setup_input_readers()
 {
     static done = FALSE;
@@ -336,6 +338,7 @@ setup_input_readers()
 	done = TRUE;
     }
 }
+
 
 static boolean
 is_options_node(Document *doc)
@@ -559,10 +562,13 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
 	stylesheet->stylesheet = xsltParseStylesheetDoc(stylesheet->doc);
 	stylesheet->doc = NULL;
     }
-    result = xsltApplyStylesheet(stylesheet->stylesheet, 
-				 src->doc, params);
-
-    return documentNew(result, NULL);
+    if (result = xsltApplyStylesheet(stylesheet->stylesheet, 
+				     src->doc, params)) {
+	return documentNew(result, NULL);
+    }
+    else {
+	return NULL;
+    }
 }
 
 static Hash *skit_processors = NULL;
@@ -1150,6 +1156,11 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	//dbgSexp(source_doc);
 	//dbgSexp(stylesheet);
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
+	if (!result_doc) {
+	    RAISE(XML_PROCESSING_ERROR,
+		  newstr("Failed to process stylesheet: %s", 
+			 stylesheet_name->value));
+	}
     }
     EXCEPTION(ex);
     FINALLY {

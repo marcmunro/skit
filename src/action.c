@@ -714,7 +714,15 @@ executeConnect(Object *params)
 {
     String *arg = (String *) symbolGetValue("arg");
     Symbol *connect = symbolNew("connect");
-    symSet(connect, (Object *) stringNew(arg->value));
+    Connection *ignore;
+    if (arg) {
+	symSet(connect, (Object *) stringNew(arg->value));
+    }
+    else {
+	symSet(connect, (Object *) stringNew(""));
+    }
+
+    ignore = sqlConnect();
     return NULL;
 }
 

@@ -115,18 +115,11 @@ doAddNode(Hash *hash, Node *node, DagNodeBuildType build_type)
 
     dagnode->build_type = build_type;
 
-    BEGIN {
-	if (old = hashAdd(hash, (Object *) key, (Object *) dagnode)) {
-	    objectFree(old, TRUE);
-	    RAISE(GENERAL_ERROR, 
-		  newstr("doAddNode: duplicate node \"%s\"", key->value));
-	}
+    if (old = hashAdd(hash, (Object *) key, (Object *) dagnode)) {
+	objectFree(old, TRUE);
+	RAISE(GENERAL_ERROR, 
+	      newstr("doAddNode: duplicate node \"%s\"", key->value));
     }
-    EXCEPTION(ex) {
-	objectFree((Object *) dagnode, FALSE);
-	objectFree((Object *) key, TRUE);
-    }
-    END;
 }
 
 static boolean do_build = FALSE;

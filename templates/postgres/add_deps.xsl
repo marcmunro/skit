@@ -269,6 +269,40 @@
     </dbobject>
   </xsl:template>
 
+  <!-- Languages -->
+  <xsl:template match="language">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="tbs_fqn" select="concat('language.', 
+					  $parent_core, '.', @name)"/>
+    <dbobject type="language" name="{@name}" qname='"{@name}"'
+	      fqn="{$tbs_fqn}">
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core"
+			  select="concat($parent_core, '.', @name)"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+  <!-- Schemata -->
+  <xsl:template match="schema">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="tbs_fqn" select="concat('language.', 
+					  $parent_core, '.', @name)"/>
+    <dbobject type="schema" name="{@name}" qname='"{@name}"'
+	      fqn="{$tbs_fqn}">
+      <xsl:copy select=".">
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core"
+			  select="concat($parent_core, '.', @name)"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
 
 </xsl:stylesheet>
 

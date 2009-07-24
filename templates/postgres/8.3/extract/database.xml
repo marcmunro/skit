@@ -36,8 +36,8 @@
        <skit:exec_function name="grants_from_privs"
 			   privileges="(select dbinfo 'privs')"/>
      </skit:let>	
-<!--     <xi:include href="skitfile:extract/schema.xml"/> -->
-<!--     <xi:include href="skitfile:extract/languages.xml"/>  -->
+     <xi:include href="skitfile:extract/languages.xml"/>
+     <xi:include href="skitfile:extract/schema.xml"/>
 <!--     <xi:include href="skitfile:extract/casts.xml"/> -->
 
    </database>

@@ -640,6 +640,7 @@ START_TEST(connect)
     char *tmp;
     initBuiltInSymbols();
     initTemplatePath(".");
+    registerTestSQL();
 
     BEGIN {
 	process_args2(4, args);
@@ -658,6 +659,63 @@ START_TEST(connect)
 }
 END_TEST
 
+START_TEST(connect2)
+{
+    char *args[] = {"./skit", "--connect", "--dbtype=postgres", 
+		    "dbname='skittest' port = '5432'"};
+    Symbol *sym;
+    char *tmp;
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+
+    BEGIN {
+	process_args2(4, args);
+	sym = symbolGet("connect");
+	dbgSexp(sym->svalue);
+	fail_unless(sym && sym->svalue,
+		    tmp = newstr("connect: connect variable is not defined"));
+	skfree(tmp);
+    }
+    EXCEPTION(ex); 
+    WHEN_OTHERS {
+	fail(newstr("connect: exception - %s", ex->text));
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+typedef struct fileinfo_t {
+    fpos_t pos;
+    int fd;
+} fileinfo_t;    
+
+
+static fileinfo_t *
+redirect(char *destination)
+{
+    fileinfo_t *fileinfo = skalloc(sizeof(fileinfo_t));
+    memset(fileinfo, 0, sizeof(fileinfo_t));
+    fgetpos(stdout, &(fileinfo->pos));
+    fileinfo->fd = dup(fileno(stdout));
+    freopen(destination, "w", stdout);
+    return fileinfo;
+}
+
+static void
+resetdirect(fileinfo_t *fileinfo)
+{
+    fflush(stdout);
+    dup2(fileinfo->fd, fileno(stdout));
+    close(fileinfo->fd);
+    clearerr(stdout);
+    fsetpos(stdout, &(fileinfo->pos));
+    skfree(fileinfo);
+}
+
+
 START_TEST(extract)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
@@ -665,6 +723,86 @@ START_TEST(extract)
 		    "--connect", 
 		    "dbname = 'skittest' port = '54329'",
                     "--print", "--full"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+    fileinfo_t *fi;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(1986);
+
+    BEGIN {
+	fi = redirect("/dev/null");
+	process_args2(8, args);
+	resetdirect(fi);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(extract2)
+{
+    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
+		    "--connect", 
+		    "dbname = 'regressdb' port = '5432'",
+                    "--print", "--full"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+    fileinfo_t *fi;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(1986);
+
+    BEGIN {
+	//fi = redirect("/dev/null");
+	process_args2(8, args);
+	//resetdirect(fi);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(generate2)
+{
+    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
+		    "--connect", 
+		    "dbname = 'regressdb' port = '5432'",
+                    "--generate", "--build"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -704,6 +842,7 @@ START_TEST(generate)
                     "--generate", "--drop", "--build", "--print", "--full"};
     Document *doc;
     char *bt;
+    fileinfo_t *fi;
 
     initBuiltInSymbols();
     initTemplatePath(".");
@@ -712,7 +851,9 @@ START_TEST(generate)
     //showMalloc(1986);
 
     BEGIN {
+	fi = redirect("/dev/null");
 	process_args2(8, args);
+	resetdirect(fi);
 	//doc = (Document *) actionStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -753,6 +894,8 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
     ADD_TEST(tc_core, extract);
     ADD_TEST(tc_core, generate);
+    //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
+    //ADD_TEST(tc_core, generate2); // during development of new db objects
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
