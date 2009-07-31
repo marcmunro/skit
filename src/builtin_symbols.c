@@ -68,6 +68,15 @@ raiseIfNotString(char *fn_name, String *str)
 }
 
 static void
+raiseIfNotHash(char *fn_name, Hash *hash)
+{
+    if (!(hash && (hash->type == OBJ_HASH))) {
+	raiseMsg("%s: invalid arg (expecting hash): %s", 
+		 fn_name, (Object *) hash);
+    }
+}
+
+static void
 raiseIfNotRegexp(char *fn_name, Regexp *regex)
 {
     if (!(regex && (regex->type == OBJ_REGEXP))) {
@@ -130,6 +139,29 @@ fnSetq(Object *obj)
 // delimiters.
 static Object *
 fnSplit(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    String *source;
+    String *split;
+    raiseIfNotList("split", obj);
+
+    evalCar(cons);
+    source = (String *) dereference(cons->car);
+    raiseIfNotString("split", source);
+
+    cons = (Cons *) cons->cdr;
+    raiseIfNotList("split", (Object *) cons);
+
+    evalCar(cons);
+    split = (String *) dereference(cons->car);
+    raiseIfNotString("split", split);
+    raiseIfMoreArgs("split", cons->cdr);
+
+    return (Object *) stringSplit(source, split);
+}
+
+static Object *
+fnSplit2(Object *obj)
 {
     Cons *cons = (Cons *) obj;
     String *source;
@@ -307,13 +339,17 @@ fnSelect(Object *obj)
 	actual = dereference(container);
 	if (!actual) {
 	    objectFree(container, TRUE);
-	    RAISE(LIST_ERROR, newstr("select: no container found"));
+	    return NULL;
 	}
 	evalCar(cons);
 	key = cons->car;
+	if (!key) {
+	    objectFree(container, TRUE);
+	    return NULL;
+	}
 	old = container;
 	BEGIN {
-	    container = objSelect(container, key);
+	    container = objSelect(actual, dereference(key));
 	}
 	EXCEPTION(ex);
 	FINALLY {
@@ -322,6 +358,11 @@ fnSelect(Object *obj)
 	    }
 	}
 	END;
+    }
+    actual = dereference(container);
+    if (!actual) {
+	objectFree(container, TRUE);
+	return NULL;
     }
     return container;
 }
@@ -453,6 +494,137 @@ fnOr(Object *obj)
 }
 
 static void
+appendStr(String *str1, String *str2)
+{
+    char *str1val = str1->value;
+    str1->value = newstr("%s%s", str1->value, str2->value);
+    skfree(str1val);
+}
+
+static Object *
+fnConcat(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *item;
+    String *itemstr;
+    String *result = stringNew("");
+
+    BEGIN {
+	raiseIfNotList("concat", obj);
+
+	while (cons) {
+	    evalCar(cons);
+	    item = dereference(cons->car);
+	    if (item->type == OBJ_STRING) {
+		appendStr(result, (String *) item);
+	    }
+	    else {
+		/* Convert item to string */
+		itemstr = stringNewByRef(objectSexp(item));
+		appendStr(result, itemstr);
+		objectFree((Object *) itemstr, TRUE);
+	    }
+	    cons = (Cons *) cons->cdr;
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) result, TRUE);
+    }
+    END;
+    return (Object *) result;
+}
+
+static Object *
+fnCons(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *car = NULL;
+    Object *cdr = NULL;
+    Cons *result;
+    BEGIN {
+	raiseIfNotList("cons", obj);
+	car = objectEval(cons->car);
+	cons = (Cons *) cons->cdr;
+	cdr = cons ? objectEval(cons->car): NULL;
+	result = consNew(car, cdr);
+    }
+    EXCEPTION(ex) {
+	objectFree(car, TRUE);
+	objectFree(cdr, TRUE);
+    }
+    END;
+    return (Object *) result;
+}
+
+static Object *
+fnPlus(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *item;
+    Int4 *result = int4New(0);
+
+    BEGIN {
+	raiseIfNotList("+", obj);
+
+	while (cons) {
+	    evalCar(cons);
+	    item = dereference(cons->car);
+	    if (item->type != OBJ_INT4) {
+		RAISE(LIST_ERROR, 
+		      newstr("\"+\": can only add integers"));
+	    }
+	    result->value += ((Int4 *) item)->value;
+	    cons = (Cons *) cons->cdr;
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) result, TRUE);
+    }
+    END;
+    return (Object *) result;
+}
+
+static Object *
+fnHashAdd(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Hash *hash;
+    Object *key = NULL;
+    Object *value = NULL;
+    Object *ref;
+    Object *old;
+
+    BEGIN {
+	raiseIfNotList("hashadd", obj);
+	ref = objectEval(cons->car);
+	hash = (Hash *) dereference(ref);
+	objectFree(ref, TRUE);
+	raiseIfNotHash("hashadd", hash);
+	cons = (Cons *) cons->cdr;
+	ref = cons? objectEval(cons->car): NULL;
+	if (!ref) {
+	    RAISE(LIST_ERROR, newstr("hashAdd: no key found"));
+	}
+	key = objectCopy(dereference(ref));
+	objectFree(ref, TRUE);
+	cons = (Cons *) cons->cdr;
+	ref = cons? objectEval(cons->car): NULL;
+	if (!ref) {
+	    RAISE(LIST_ERROR, newstr("hashAdd: no value found"));
+	}
+	value = objectCopy(dereference(ref));
+	old = hashAdd(hash, key, value);
+	objectFree(old, TRUE);
+    }
+    EXCEPTION(ex) {
+	objectFree(key, TRUE);
+	objectFree(value, TRUE);
+    }
+    END;
+    return ref;
+}
+
+static void
 evalStr(char *str)
 {
     char *tmp = newstr(str);
@@ -472,6 +644,7 @@ initBaseSymbols()
     (void) symbolCopy(&symbol_t);
     symbolCreate("setq", &fnSetq, NULL);
     symbolCreate("split", &fnSplit, NULL);
+    symbolCreate("split2", &fnSplit2, NULL);
     symbolCreate("try-to-int", &fnInt4Promote, NULL);
     symbolCreate("map", &fnMap, NULL);
     symbolCreate("version", &fnVersion, NULL);
@@ -487,13 +660,17 @@ initBaseSymbols()
     symbolCreate("not", &fnNot, NULL);
     symbolCreate("and", &fnAnd, NULL);
     symbolCreate("or", &fnOr, NULL);
+    symbolCreate("concat", &fnConcat, NULL);
+    symbolCreate("cons", &fnCons, NULL);
+    symbolCreate("+", &fnPlus, NULL);
+    symbolCreate("hashadd", &fnHashAdd, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
 
     evalStr("(setq dbtype 'postgres')");
     evalStr("(setq dbver nil)");
     evalStr("(setq templates-dir 'templates')");
 
-    registerPGSQL();
+    registerPGSQL();	// TODO: Move this call to somewhere more sensible
 }
 
 void

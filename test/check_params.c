@@ -732,7 +732,7 @@ START_TEST(extract)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(1986);
+    //showMalloc(307);
 
     BEGIN {
 	fi = redirect("/dev/null");
@@ -772,7 +772,7 @@ START_TEST(extract2)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(1986);
+    //showMalloc(307);
 
     BEGIN {
 	//fi = redirect("/dev/null");
@@ -786,8 +786,9 @@ START_TEST(extract2)
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
+	//resetdirect(fi);
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
+	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
 	//RAISE();
 	//fail("extract fails with exception");
     }
@@ -892,8 +893,8 @@ params_suite(void)
     ADD_TEST(tc_core, no_alias_name);
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
-    ADD_TEST(tc_core, extract);
-    ADD_TEST(tc_core, generate);
+    //ADD_TEST(tc_core, extract);
+    //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate2); // during development of new db objects
     ADD_TEST(tc_core, dbtype);

@@ -124,18 +124,18 @@ comment on language "plpgsql" is
 
 \echo updating schema "public";
 
--- create or replace function "public"."addint4"(
---     in "pg_catalog"."int4",
---     in "pg_catalog"."int4")
---   returns "pg_catalog"."int4"
--- as 
--- $_$
--- begin
---   return _state + _next;
--- end;
--- $_$
--- language plpgsql stable;
--- 
+create or replace function "public"."addint4"(
+    in "pg_catalog"."int4",
+    in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable;
+
 -- create aggregate "public"."mysum" (
 --   basetype = "pg_catalog"."int4",
 --   sfunc = "addint4",
@@ -149,7 +149,7 @@ comment on language "plpgsql" is
 --   returns "public"."mychar"
 -- as 'charin'
 -- language internal immutable strict;
--- 
+--  
 -- create or replace function "public"."mycharout"(
 --     in "public"."mychar")
 --   returns "pg_catalog"."cstring"

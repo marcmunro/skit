@@ -210,6 +210,7 @@ checkChunk(void *chunk)
 	}
 	else {
 	    fprintf(stderr, "Chunk %p is not known to mem.c\n", chunk);
+	    memdebug("Attempt to free unalloc'd memory");
 	}
     }
 }

@@ -168,7 +168,7 @@ stringSplit(String *instr, String *split)
 {
     Cons *cons;
     Cons *prev = NULL;
-    Cons *head;
+    Cons *head = NULL;
     char *mycopy;
     char *placeholder = NULL;
     String *entry;

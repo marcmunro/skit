@@ -425,3 +425,4 @@ vectorFromHash(Hash *hash)
     hashEach(hash, &addElemToVector, (Object *) vector);
     return vector;
 }
+

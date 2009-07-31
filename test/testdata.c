@@ -363,6 +363,8 @@ registerTestSQL()
 	&testFieldByName,
 	&testTupleStr,
 	&testCursorStr,
+	NULL,
+	NULL,
 	&testFreeCursor,
 	&testCleanup
     };

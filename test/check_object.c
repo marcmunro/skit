@@ -831,6 +831,30 @@ START_TEST(vectorsort)
 }
 END_TEST
 
+START_TEST(concat)
+{
+    char *sexpstr = newstr("(concat 1 2 '.3')");
+    char *tmp;
+    String *result;
+
+    initBuiltInSymbols();
+    result = (String *) evalSexp(sexpstr);
+    fail_unless(result->type == OBJ_STRING,
+		tmp = newstr("concat: incorrect result type: %d", 
+			     result->type));
+    skfree(tmp);
+
+    fail_unless(streq(result->value, "12.3"),
+		tmp = newstr("concat: incorrect concatenation result: %s", 
+			     result->value));
+    skfree(tmp);
+    objectFree((Object *) result, TRUE);
+    skfree(sexpstr);
+    
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 Suite *
 objects_suite(void)
 {
@@ -883,6 +907,7 @@ objects_suite(void)
     ADD_TEST(tc_core, regexp_object);
     ADD_TEST(tc_core, vectorremove);
     ADD_TEST(tc_core, vectorsort);
+    ADD_TEST(tc_core, concat);
     suite_add_tcase(s, tc_core);
 
     return s;

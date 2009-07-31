@@ -117,6 +117,15 @@ addAttribute(xmlNodePtr node,
     }
 }
 
+static void
+addText(xmlNodePtr node, String *value)
+{
+    xmlNodePtr text;
+
+    text = xmlNewText((xmlChar *) value->value);
+    xmlAddChild(node, text);
+}
+
 static int
 skitfileMatch(const char * URI) 
 {
@@ -615,13 +624,23 @@ static boolean
 hasExpr(xmlNode *node, Object **p_result)
 {
     String *expr;
-    Object *value;
+    Object *value = NULL;
     if (expr = nodeAttribute(node, "expr")) {
 	BEGIN {
 	    value = evalSexp(expr->value);
 	}
-	EXCEPTION(ex);
-	//fprintf(stderr, "EXCEPTION HASEXPR \n");
+	EXCEPTION(ex) /* Adding the following clause causes memory
+	    errors.  Evidently there is a problem with the exception
+	    handling macros in combination of WHEN clauses and FINALLY
+	    */
+	{
+	    WHEN(LIST_ERROR) {
+		char *newtext = newstr("%s in expr:\n%s", 
+				       ex->text, expr->value);
+		objectFree((Object *) expr, TRUE);
+		RAISE(LIST_ERROR, newtext);
+	    } 
+	}
 	FINALLY {
 	    objectFree((Object *) expr, TRUE);
 	}
@@ -641,6 +660,63 @@ getExpr(xmlNode *node)
     return value;
 }
 
+static String *
+fieldValueForTemplate(xmlNode *template_node)
+{
+    String *field = NULL;
+    Object *value = NULL;
+    Object *actual;
+    String *strvalue = NULL;
+
+    if (hasExpr(template_node, &value)) {
+	if (value) {
+	    /* If value is a String then we return it.  If it is not
+	     * then we use objectSexp.  If it is a string reference we
+	     * must make a copy. */
+
+	    actual = dereference(value);
+	    if (actual->type != OBJ_STRING) {
+		strvalue = stringNewByRef(objectSexp(actual));
+		objectFree(value, TRUE);
+	    }
+	    else if (value->type == OBJ_OBJ_REFERENCE) {
+		strvalue = (String *) objectCopy(dereference(value));
+		objectFree(value, TRUE);
+	    }
+	    else {
+		strvalue = (String *) value;
+	    }
+	}
+    }
+    else {
+	/* Get string from the current tuple's field as named in 
+	   the name or field attribute. */
+	field = nodeAttribute(template_node, "name");
+	if (!field) {
+	    field = nodeAttribute(template_node, "field");
+	}
+	
+	BEGIN {
+	    strvalue = (String *) objSelect(curTuple(), (Object *) field);
+	}
+	EXCEPTION(ex);
+	WHEN(NOT_IMPLEMENTED_ERROR) {
+	    char *exstr;
+	    char *tmp = objectSexp((Object *) field);
+	    objectFree((Object *) field, TRUE);
+	    exstr = newstr("Unable to select %s from current foreach record",
+			   tmp);
+	    skfree(tmp);
+
+	    RAISE(XML_PROCESSING_ERROR, exstr);
+	}
+	END;
+    }
+
+    objectFree((Object *) field, TRUE);
+    return strvalue;
+}
+
 /* Handle a skit:attr or akit:attribute element.  The context node,
  * containing the node being processed by our parent, will be modified
  * to contain a new attribute with its value set as defined by this
@@ -653,60 +729,34 @@ static xmlNode *
 attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *name = nodeAttribute(template_node, "name");
-    Object *field = NULL;
-    Object *value;
-    Object *container;
-    String *strvalue = NULL;
+    String *str = NULL;
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR,
 	      newstr("No name field provided for skit_attr"));
     }
-    if (hasExpr(template_node, &value)) {
-	if (value) {
-	    if (value->type != OBJ_STRING) {
-		if (value->type != OBJ_OBJ_REFERENCE) {
-		    strvalue = stringNewByRef(objectSexp(value));
-		}
-		else {
-		    strvalue = (String *) objectCopy(dereference(value));
-		}
-		objectFree(value, TRUE);
-	    }
-	    else {
-		strvalue = (String *) value;
-	    }
-	}
+    BEGIN {
+	str = fieldValueForTemplate(template_node);
+	addAttribute(parent_node, name, str);
     }
-    else {
-	if (!(field = (Object *) nodeAttribute(template_node, "field"))) {
-	    field = objectCopy((Object *) name);
-	}
-	container = curTuple();
-	
-	BEGIN {
-	    strvalue = (String *) objSelect(container, field);
-	}
-	EXCEPTION(ex);
-	//fprintf(stderr, "EXCEPTION ATTRIBUTEFN\n");
-	WHEN(NOT_IMPLEMENTED_ERROR) {
-	    char *exstr;
-	    char *tmp = objectSexp(field);
-	    objectFree((Object *) name, TRUE);
-	    objectFree((Object *) field, TRUE);
-	    exstr = newstr("Unable to select %s from current foreach record",
-			   tmp);
-	    skfree(tmp);
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) name, TRUE);
+	objectFree((Object *) str, TRUE);
+    }
+    END;
+    return NULL;
+}
 
-	    RAISE(XML_PROCESSING_ERROR, exstr);
-	}
-	END;
-	// TODO: Make sure strvalue is really a string
+static xmlNode *
+textFn(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *str = NULL;
+
+    if (str = fieldValueForTemplate(template_node)) {
+	addText(parent_node, str);
+	objectFree((Object *) str, TRUE);
     }
-    addAttribute(parent_node, name, strvalue);
-    objectFree((Object *) strvalue, TRUE);
-    objectFree((Object *) name, TRUE);
-    objectFree((Object *) field, TRUE);
     return NULL;
 }
 
@@ -815,6 +865,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *filename = nodeAttribute(template_node, "file");
     String *varname = nodeAttribute(template_node, "to");
+    String *hashkey = nodeAttribute(template_node, "hash");
     String *filetext = NULL;
     Cursor *cursor = NULL;
     String *sqltext = NULL;
@@ -841,6 +892,9 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    sym = symbolNew(varname->value);
+	    if (hashkey) {
+		cursorIndex(cursor, hashkey);
+	    } 
 	    symbolSet(varname->value, (Object *) cursor);
 	}
 	else {
@@ -848,8 +902,10 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 			    template_node, parent_node, depth);
 	}
     }
-    EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION RUNSQL\n");
+    EXCEPTION(ex) {
+	objectFree((Object *) cursor, TRUE);
+	cursor = NULL;
+    }
     FINALLY {
 	if (!varname) {
 	    /* If a variable was defined, the cursor will be freed when
@@ -858,6 +914,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
 	objectFree((Object *) filename, TRUE);
 	objectFree((Object *) varname, TRUE);
+	objectFree((Object *) hashkey, TRUE);
 	objectFree((Object *) sqltext, TRUE);
 	objectFree((Object *) filetext, TRUE);
     }
@@ -1378,6 +1435,7 @@ initSkitProcessors()
 	addProcessor("exec_func", &execExecuteFunction);
 	addProcessor("xslproc", &execXSLproc);
 	addProcessor("gensort", &execGensort);
+	addProcessor("text", &textFn);
     }
 }
 

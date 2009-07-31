@@ -126,7 +126,8 @@
 #define MEMORY_ERROR            54
 #define ASSERTION_FAILURE       55
 #define XPATH_EXCEPTION         56
-#define UNKNOWN_EXCEPTION       57
+#define INDEX_ERROR             57
+#define UNKNOWN_EXCEPTION       58
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block
@@ -169,9 +170,14 @@
             if (!(exceptionCurHandler()->caught)) {	\
 	        exceptionCurHandler()->caught = TRUE;
 
+/* FINALLY performs code that must be performed before exitting the 
+ * exception block, regardless of whether it has handled an exception or
+ * not.   Note that this does not currently handle the case where an 
+ * exception is raised within the exception block - in this case the 
+ * finally clause will not be executed. */
 #define FINALLY }}{{
 
-/* End an exception block, re-raisning any unhandled exceptions. */
+/* End an exception block, re-raising any unhandled exceptions. */
 #define END }						\
         }						\
         if (exception_raised_jgjlksljksch) {		\

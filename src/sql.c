@@ -246,3 +246,32 @@ cursorStr(Cursor *cursor)
     }
     return functions->cursorstr(cursor);
 }
+
+Tuple *
+cursorGet(Cursor *cursor, Object *key)
+{
+    Connection *connection;
+    SqlFuncs *functions;
+    connection = cursor->connection;
+    functions = (SqlFuncs *) connection->sqlfuncs;
+    if (!functions->cursorget) {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("Db cursorget function is not registered"));
+    }
+    return functions->cursorget(cursor, key);
+
+}
+
+void *
+cursorIndex(Cursor *cursor, String *fieldname)
+{
+    Connection *connection;
+    SqlFuncs *functions;
+    connection = cursor->connection;
+    functions = (SqlFuncs *) connection->sqlfuncs;
+    if (!functions->cursorindex) {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("Db cursorindex function is not registered"));
+    }
+    functions->cursorindex(cursor, fieldname);
+}

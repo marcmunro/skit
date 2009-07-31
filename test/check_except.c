@@ -524,6 +524,72 @@ START_TEST(exceptions_7)
 }
 END_TEST
 
+// Test use of FINALLY with a WHEN clause raising an exception
+START_TEST(exceptions_when_finally)
+{
+    int a = 0;
+    String *str = stringNew("TEST_STR");
+
+    BEGIN {
+	BEGIN {
+	    a = raiser1(LIST_ERROR);
+	}
+	EXCEPTION(ex) {
+	    WHEN(LIST_ERROR) {
+		a = raiser1(TYPE_MISMATCH);
+	    }
+	}
+	FINALLY {
+	    objectFree((Object *) str, TRUE);
+	}
+	END;
+    }
+    EXCEPTION(ex) {
+	WHEN_OTHERS {
+	    a = 98;
+	}
+    }
+    END;
+
+    fail_unless(a == 98, "Function result 98 expected, got %d\n", a);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+// Test use of FINALLY with a WHEN clause handling an exception
+START_TEST(exceptions_when_finally2)
+{
+    int a = 0;
+    String *str = stringNew("TEST_STR");
+
+    BEGIN {
+	BEGIN {
+	    a = raiser1(LIST_ERROR);
+	}
+	EXCEPTION(ex) {
+	    WHEN(LIST_ERROR) {
+		//dbgSexp(ex);
+	    }
+	}
+	FINALLY {
+	    objectFree((Object *) str, TRUE);
+	}
+	END;
+    }
+    EXCEPTION(ex) {
+	WHEN_OTHERS {
+	    a = 98;
+	}
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+
+
 Suite *
 exceptions_suite(void)
 {
@@ -549,6 +615,8 @@ exceptions_suite(void)
     ADD_TEST(tc_core, exceptions_new9);
     ADD_TEST(tc_core, exceptions_new10);
     ADD_TEST(tc_core, exceptions_new11);
+    //ADD_TEST(tc_core, exceptions_when_finally);
+    ADD_TEST(tc_core, exceptions_when_finally2);
     // TODO: The following two tests require stderr to be captured.  
     //ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_new12, SIGTERM);
     //ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_new13, SIGTERM);

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="function" from="functions" 
+		filter="(string= (select function 'schema')
+			         (select schema 'name'))">
+    <function>
+      <skit:let>
+      	<!-- To deal with the pathalogical case of a name containing a
+      	     comma, we convert separating commas (those not in quotes) to
+      	     newlines and then split on the newline.  If a name contains a
+      	     newline or a quote we will be hosed.  -->
+	<skit:var name="argnames"
+		  expr="(split
+      		          (replace  
+      			    (or (select tuple 'all_argnames') '')
+      			    '((&quot;[^&quot;]*&quot;)|([^&quot;,]*)),' 
+      			    '\1&#x0A;') '&#x0A;'))"/>
+      	<skit:var name="argnum" expr="0"/>
+	<skit:var name="argtuple"/>
+      	<skit:var name="argtypes" 
+		  expr="(split (select tuple 'argtype_oids') ',')"/>
+      	<skit:var name="argmodes" 
+		  expr="(split (or (select tuple 'all_argmodes') '') ',')"/>
+      	<skit:var name="otherfn"/> 
+
+      	<skit:attr name="name"/>
+      	<skit:attr name="schema"/>
+      	<skit:attr name="owner"/>
+      	<skit:attr name="language"/>
+      	<skit:attr name="is_strict"/>
+      	<skit:attr name="returns_set"/>
+      	<skit:attr name="volatility"/>
+      	<skit:attr name="security_definer"/>
+      	<skit:attr name="bin"/>
+      	<skit:attr name="privs"/>
+      	<skit:attr name="comment"/>
+      	<result>
+      	  <skit:exec expr="(setq argtuple
+      			         (select alltypes 
+			                 (select tuple 'result_type_oid')))"/>
+      	  <skit:attr name="type" expr="(select argtuple 'name')"/>
+      	  <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+      	</result>
+      	<skit:if test="(select argtypes 0)">
+      	  <params>
+      	    <skit:foreach from="argtypes" var="arg">
+      	      <param>
+      		<skit:exec expr="(setq argtuple (select alltypes arg))"/>
+      		<skit:attr name="type" expr="(select argtuple 'name')"/>
+      		<skit:attr name="schema" expr="(select argtuple 'schema')"/>
+      		<skit:attr name="name" expr="(select argnames argnum)"/>
+      		<skit:attr name="mode" expr="(select argmodes argnum)"/>
+      		<skit:exec expr="(setq argnum (+ 1 argnum))"/>
+      		<skit:attr name="position" expr="argnum"/>
+      	      </param>
+      	    </skit:foreach>
+      	  </params>
+      	</skit:if>
+      	<skit:attr name="signature" 
+      			 expr="(select function_sigs (select tuple 'oid'))"/>
+	<!-- Type_handler function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_handler_oid')))"/>
+	<skit:attr name="type_handler_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_handler_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_handler_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_handler_oid'))"/>
+
+	<!-- Type_input function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_input_oid')))"/>
+	<skit:attr name="type_input_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_input_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_input_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_input_oid'))"/>
+
+	<!-- Type_output function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_outeput_oid')))"/>
+	<skit:attr name="type_output_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_output_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_output_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_output_oid'))"/>
+
+	<!-- Type_send function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_send_oid')))"/>
+	<skit:attr name="type_send_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_send_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_send_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_send_oid'))"/>
+
+	<!-- Type_receive function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_receive_oid')))"/>
+	<skit:attr name="type_receive_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_receive_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_receive_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_receive_oid'))"/>
+
+	<!-- Type_analyze function -->
+	<skit:exec expr="(setq otherfn 
+			       (select functions 
+			               (select tuple 'type_analyze_oid')))"/>
+	<skit:attr name="type_analyze_schema"
+		   expr="(select otherfn 'schema')"/>
+	<skit:attr name="type_analyze_name"
+		   expr="(select otherfn 'name')"/>
+	<skit:attr name="type_analyze_signature"
+      		   expr="(select function_sigs 
+			         (select tuple 'type_analyze_oid'))"/>
+
+
+      	<skit:attr name="type_input_oid"/>
+      	<skit:attr name="type_output_oid"/>
+      	<skit:attr name="type_receive_oid"/>
+      	<skit:attr name="type_send_oid"/>
+      	<skit:attr name="type_analyze_oid"/>
+      	<source>
+      	  <skit:text name="source"/>
+      	</source>
+      </skit:let>
+    </function>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

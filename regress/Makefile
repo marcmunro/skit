@@ -16,8 +16,8 @@
 # possibly misguided, attempt to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
 
-.PHONY: regress regress_db rdb_is_up rdbstart wait_for_rdb \
-	wait_while_proc rdbstop drop_regress_db regress_capability
+.PHONY: regress regress_cluster cluster_is_up rdbstart wait_for_rdb \
+	wait_while_proc rdbstop drop_regress_cluster 
 
 
 REGRESS_DIR = regress
@@ -29,15 +29,15 @@ PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) -v home=$(top_builddir)
 PG_DUMP = $(PGBIN)/pg_dump -p $(REGRESSDB_PORT)
 
 
-# Check state of regression test database.
-rdb_is_up:
+# Check state of regression test database cluster.
+cluster_is_up:
 	@$(PGBIN)/psql -p $(REGRESSDB_PORT) -d postgres \
 		-c "select 'o' || 'k'" 2>&1 | grep ok >/dev/null
 
 # Wait 10 seconds for regression test database to be available
 wait_for_rdb:
 	@count=10; while [ $${count} -gt 0 ]; do \
-		if $(MAKE) rdb_is_up >/dev/null 2>&1; then exit 0; fi; \
+		if $(MAKE) cluster_is_up >/dev/null 2>&1; then exit 0; fi; \
 		count=`expr $${count} - 1`; sleep 1; done; exit 1
 
 # Wait for a process $(PROC) to finish
@@ -58,7 +58,7 @@ rdbstart:
 
 # Stop the regression test database
 rdbstop:
-	@if $(MAKE) --no-print-directory rdb_is_up; then \
+	@if $(MAKE) --no-print-directory cluster_is_up; then \
 	  echo ...Stopping postmaster...; \
 	  pid=`head -1 $(REGRESS_DIR)/REGRESSDB/postmaster.pid`; \
 	  kill -SIGTERM $${pid}; \
@@ -73,11 +73,11 @@ rdbstop:
 
 
 # Regression test targets.
-regress_db: regress_capability
+regress_cluster: 
 	@if [ -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    echo Error: database files already exist.; exit 1; fi
 	@echo Creating new cluster for regression tests...
-	@echo ...building database...
+	@echo ...building cluster...
 	@$(PGBIN)/initdb --pgdata $(REGRESS_DIR)/REGRESSDB 2>&1 >$(REGRESS_LOG)
 	@echo ...Creating tablespace dirs...
 	@mkdir -p $(REGRESS_DIR)/REGRESSDB/tbs/tbs2 \
@@ -85,11 +85,19 @@ regress_db: regress_capability
 		  $(REGRESS_DIR)/REGRESSDB/tbs/tbs4
 	@$(MAKE) --no-print-directory rdbstart
 
-drop_regress_db: rdbstop
+
+drop_regress_cluster: rdbstop
 	@rm -rf $(REGRESS_DIR)/REGRESSDB
 	@echo "Regression test database removed"
 
-regression_test1: 
+drop_regress_db: 
+	@echo Dropping any existing regression test database...
+	@$(PSQL) -d postgres -c "drop database regressdb" \
+		>/dev/null 2>&1 || true
+	@$(PSQL) -d postgres -f $(REGRESS_DIR)/drop_cluster_objects.sql \
+		>/dev/null 2>&1 || true
+
+regression_test1: drop_regress_db
 	@echo Running regression test 1...
 	@mkdir regress/scratch 2>/dev/null || true
 	@echo ...creating initial database definitions...
@@ -155,11 +163,11 @@ regression_test1:
 	@echo ...regression test 1 complete
 
 
-regress: skit regress_db regression_test1
-	@$(MAKE) --no-print-directory drop_regress_db
+regress: skit regress_cluster regression_test1
+	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 
-regress_clean: drop_regress_db
+regress_clean: drop_regress_cluster
 	@echo Cleaning regress...
 	@rm -rf $(REGRESS_LOG)/scratch/*
 	@rm -rf REGRESSDB $(REGRESS_LOG)/regressdb_*.sql \
@@ -170,4 +178,4 @@ regress_distclean: regress_clean
 # Describe what this makefile can build
 regress_help:
 	@echo "regress      - Run regression test suite"
-	@echo "drop_regress_db - Drop regression test database"
+	@echo "drop_regress_cluster - Drop regression test database cluster"

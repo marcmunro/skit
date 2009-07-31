@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <!-- This creates a hash of function oids to function signatures. -->
+
+  <skit:exec expr="(setq function_sigs &lt;&gt;)"/>
+  <skit:foreach var="function" from="functions">
+    <skit:let>
+      <skit:var name="typetuple"/>
+      <skit:var name="sigargtypes"
+                expr="(split (select tuple 'sigargtypes') ',')"/>
+      <skit:var name="signature"
+		expr="(concat (select tuple 'schema') '.' 
+			      (select tuple 'name') '('))"/>
+      <skit:var name="comma" expr="''"/>
+      <skit:foreach from="sigargtypes" var="arg">
+	<skit:exec expr="(setq typetuple (select alltypes arg))"/>
+	<skit:exec expr="(setq signature 
+			       (concat signature comma
+			               (select typetuple 'schema') '.'
+			               (select typetuple 'name')))"/>
+	<skit:exec expr="(setq comma ',')"/>
+      </skit:foreach>
+      <skit:exec expr="(setq signature (concat signature ')'))"/>
+      <skit:exec expr="(hashadd function_sigs 
+		                (select tuple 'oid') signature))"/>
+    </skit:let>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

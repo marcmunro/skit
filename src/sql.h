@@ -20,6 +20,8 @@ typedef Object *(FieldByIdxFn)(Tuple *, int);
 typedef Object *(FieldByNameFn)(Tuple *, String *);
 typedef char *(TupleStrFn)(Tuple *);
 typedef char *(CursorStrFn)(Cursor *);
+typedef void (CursorIndexFn)(Cursor *, String *);
+typedef Tuple *(CursorGetFn)(Cursor *, Object *);
 typedef void (CloseCursorFn)(Cursor *);
 typedef void (CloseConnectionFn)(Connection *);
 
@@ -33,6 +35,8 @@ typedef struct SqlFuncs {
     FieldByNameFn *fieldbyname;
     TupleStrFn    *tuplestr;
     CursorStrFn   *cursorstr;
+    CursorIndexFn *cursorindex;
+    CursorGetFn   *cursorget;
     CloseCursorFn *closecursor;
     CloseConnectionFn *cleanup;
 } SqlFuncs;

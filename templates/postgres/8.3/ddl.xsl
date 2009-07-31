@@ -23,12 +23,12 @@
   <xsl:include href="skitfile:ddl/grants.xsl"/>
   <xsl:include href="skitfile:ddl/languages.xsl"/>
   <xsl:include href="skitfile:ddl/schemata.xsl"/>
+  <xsl:include href="skitfile:ddl/domains.xsl"/>
+  <xsl:include href="skitfile:ddl/types.xsl"/>
+  <xsl:include href="skitfile:ddl/functions.xsl"/>
 <!--
 
   <skituls:include file="ddl/casts.xsl"/>
-  <skituls:include file="ddl/domains.xsl"/>
-  <skituls:include file="ddl/types.xsl"/>
-  <skituls:include file="ddl/functions.xsl"/>
   <skituls:include file="ddl/operators.xsl"/>
   <skituls:include file="ddl/operator_classes.xsl"/>
   <skituls:include file="ddl/aggregate.xsl"/>

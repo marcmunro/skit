@@ -237,6 +237,7 @@ pgsqlExecQry(Connection *connection,
 		curs->tuple.cursor = curs;
 		curs->connection = connection;
 		curs->querystr = stringNew(qry->value);
+		curs->index = NULL;
 		return curs;
 	}
 	RAISE(SQL_ERROR, 
@@ -376,9 +377,10 @@ cursorAllRows(Cursor *cursor)
 			result = rowstr;
 		}
 	}
-	tmp = result;
-	result = newstr("[%s]", tmp);
-	skfree(tmp);
+	if (tmp = result) {
+		result = newstr("[%s]", tmp);
+		skfree(tmp);
+	}
 	return result;
 }
 
@@ -394,7 +396,9 @@ cursorContents(Cursor *cursor)
 						  tmp3 = cursorAllRows(cursor));
 	skfree(tmp);
 	skfree(tmp2);
-	skfree(tmp3);
+	if (tmp3) {
+		skfree(tmp3);
+	}
 	return result;
 }
 
@@ -448,6 +452,7 @@ pgsqlFreeCursor(Cursor *cursor)
 		PQclear(cursor->cursor);
 		cursor->cursor = NULL;
 	}
+	objectFree((Object *) cursor->index, TRUE);
 	objectFree((Object *) cursor->fields, TRUE);
 	objectFree((Object *) cursor->querystr, TRUE);
     skfree((void *) cursor);
@@ -463,6 +468,66 @@ pgsqlNextRow(Cursor *cursor)
 	return NULL;
 }
 
+static Tuple *
+pgsqlCursorGet(Cursor *cursor, Object *key)
+{
+	int index;
+	Int4 *rownum;
+	if (key->type == OBJ_INT4) {
+		index = ((Int4 *) key)->value;
+		if ((index < 0) || (index >= cursor->rows)) {
+			return NULL;
+		}
+
+		cursor->rownum = index;
+		return &(cursor->tuple);
+	}
+	else {
+		if (!cursor->index) {
+			RAISE(GENERAL_ERROR,
+				  newstr("Cannot select by string from this cursor - "
+						 "it has not been indexed"));
+		}
+		if (rownum = (Int4 *) hashGet(cursor->index, key)) {
+			cursor->rownum = rownum->value;
+			return &(cursor->tuple);
+		}
+	}
+	return NULL;
+}
+
+static void
+pgsqlIndexCursor(Cursor *cursor, String *fieldname)
+{
+	Int4 *col;
+	Int4 *rowobj;
+	Object *field;
+
+	if (cursor->index) {
+		objectFree((Object *) cursor->index, TRUE);
+		cursor->index = NULL;
+	}
+
+	/* Ensure columns are indexed by name */
+	if (!cursor->fields) {
+		initTupleFields(&(cursor->tuple));
+	}
+
+	/* Figure out which column we are interested in */
+	col = (Int4 *) hashGet(cursor->fields, (Object *) fieldname);
+	if (!col) {
+		return NULL;
+	}
+
+	cursor->index = hashNew(TRUE);
+	for (cursor->rownum = 1; cursor->rownum <= cursor->rows; cursor->rownum++) {
+		if (field = (Object *) pgsqlFieldByIdx(&(cursor->tuple), col->value)) {
+			rowobj = int4New(cursor->rownum);
+			hashAdd(cursor->index, field, (Object *) rowobj);
+		}
+	}
+}
+
 void
 registerPGSQL()
 {
@@ -475,6 +540,8 @@ registerPGSQL()
 		&pgsqlFieldByName,
 		&pgTupleStr,
 		&pgCursorStr,
+		&pgsqlIndexCursor,
+		&pgsqlCursorGet,
 		&pgsqlFreeCursor,
 		&pgsqlCleanup
 	};

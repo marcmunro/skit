@@ -6,6 +6,12 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <!-- Coding standard for postgres DDL generated from skit:
+       Each object action is preceded by a blank line and
+       followed by a blank line.  This means that there will be 2 lines
+       between the creation of each different object.
+    -->
+
   <xsl:template match="dbobject/cluster">
     <xsl:if test="../@action='build'">
       <print>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</print>

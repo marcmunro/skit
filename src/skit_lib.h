@@ -177,6 +177,7 @@ typedef struct Cursor {
     int      cols;
     int      rownum;
     void    *cursor;
+    Hash    *index;
     Hash    *fields;
     Tuple    tuple;
     String  *querystr;
@@ -472,6 +473,8 @@ extern String *tupleGet(Tuple *tuple, Object *key);
 extern Object *cursorNext(Cursor *cursor, Object **p_placeholder);
 extern char *cursorStr(Cursor *cursor);
 extern boolean checkDbtypeIsRegistered(String *dbtype);
+extern Tuple *cursorGet(Cursor *cursor, Object *key);
+extern void *cursorIndex(Cursor *cursor, String *fieldname);
 
 
 // pgsql.c

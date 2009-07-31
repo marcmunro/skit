@@ -220,7 +220,7 @@ makePqnHash(Document *doc)
 static boolean
 xmlnodeMatch(xmlNode *node, char *name)
 {
-    return (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
+    return node && (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
 }
 
 static xmlNode *
@@ -239,9 +239,11 @@ static xmlNode *
 findNextSibling(xmlNode *start, char *name)
 {
     xmlNode *result = start;
-    while (result = (xmlNode *) result->next) {
-	if (xmlnodeMatch(result, name)) {
-	    return result;
+    if (result) {
+	while (result = (xmlNode *) result->next) {
+	    if (xmlnodeMatch(result, name)) {
+		return result;
+	    }
 	}
     }
     return NULL;
@@ -802,8 +804,7 @@ buildInContext(String *context_fqn, Hash *buildlist,
     int i;
     String *child_context_fqn;
 
-    //fprintf(stderr, "BEGIN\n");
-    while (to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn),
+    while ((to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn)) &&
 	   to_build->elems) {
 	reverseSortBuildVector(to_build);
 	//printSexp(stderr, "CONTEXT: ", context_fqn);

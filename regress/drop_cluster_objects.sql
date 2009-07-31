@@ -1,0 +1,10 @@
+drop tablespace tbs3;
+drop tablespace tbs2;
+drop tablespace tbs4;
+drop role regress;
+drop role bark;
+drop role lose;
+drop role keep;
+drop role keep2;
+drop role marco;
+drop role wibble;

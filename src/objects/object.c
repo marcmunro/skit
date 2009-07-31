@@ -550,9 +550,23 @@ objectSexp(Object *obj)
 Cons *
 consDup(Cons *cons)
 {
+    Object *carcopy = NULL;
+    Object *cdrcopy = NULL;
+    Cons *result;
+
     assert(cons && (cons->type == OBJ_CONS), "consDup arg is not a cons cell");
 
-    return consNew(objectCopy(cons->car), objectCopy(cons->cdr));
+    BEGIN {
+	carcopy = objectCopy(cons->car);
+	cdrcopy = objectCopy(cons->cdr);
+	result = consNew(carcopy, cdrcopy);
+    }
+    EXCEPTION(ex) {
+	objectFree(carcopy, TRUE);
+	objectFree(cdrcopy, TRUE);
+    }
+    END;
+    return result;
 }
 
 
@@ -683,6 +697,7 @@ objSelect(Object *collection, Object *key)
     case OBJ_CONS: result = consGet((Cons *) collection, key); break;
     case OBJ_VECTOR: result = vectorGet((Vector *) collection, key); break;
     case OBJ_TUPLE: return (Object *) tupleGet((Tuple *) collection, key);
+    case OBJ_CURSOR: return (Object *) cursorGet((Cursor *) collection, key);
     default: 
 	RAISE(NOT_IMPLEMENTED_ERROR, 
 	      newstr("objSelect: no method for selecting from %s",
