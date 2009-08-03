@@ -22,11 +22,11 @@
     </xsl:if>	
 
     <xsl:if test="../@action='depart'">
-      <print>&#x0A;CLUSTEREOF&#x0A;&#x0A;</print>
+      <print>CLUSTEREOF&#x0A;&#x0A;</print>
     </xsl:if>	
 
     <xsl:if test="../@action='drop'">
-      <print>&#x0A;CLUSTEREOF&#x0A;&#x0A;</print>
+      <print>CLUSTEREOF&#x0A;&#x0A;</print>
     </xsl:if>	
   </xsl:template>
 

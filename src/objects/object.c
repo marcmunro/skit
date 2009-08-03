@@ -394,6 +394,7 @@ endFree(Object *obj)
 DagNode *
 dagnodeNew(Node *node, DagNodeBuildType build_type)
 {
+    // TODO: Ensure source_fqn is provided and raise an exception if not.
     DagNode *new = skalloc(sizeof(DagNode));
     String *source_fqn = nodeAttribute(node->node, "fqn");
     String *actual_fqn = stringNewByRef(newstr("%s.%s", 

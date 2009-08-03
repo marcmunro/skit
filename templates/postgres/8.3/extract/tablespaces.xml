@@ -9,6 +9,11 @@
       <skit:attr name="name"/>
       <skit:attr name="owner"/>
       <skit:attr name="location"/>
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
       <!-- <skit:exec expr="(debug 'TUPLE: ' tuple)"/> -->
 
       <!-- Removed after deciding that privs from and to the same user

@@ -5,7 +5,7 @@ select d.datname as name,
        pg_catalog.pg_encoding_to_char(d.encoding) as encoding,
        t.spcname as tablespace,
        d.datconnlimit as connections,
-       quote_literal(obj_description(d.oid, 'pg_database')) as comment,
+       quote_literal(shobj_description(d.oid, 'pg_database')) as comment,
        -- Discard the leading and trailing braces in the acl:
        regexp_replace(d.datacl::text, '.(.*).', E'\\1') as privs
 from   pg_catalog.pg_database d

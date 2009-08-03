@@ -14,6 +14,20 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- Template for dealing with comments.  This is invoked simply by
+       using xsl:apply-templates from within the template for the 
+       current dbobject -->
+  
+  <xsl:template match="comment">
+    <xsl:text>&#x0A;comment on </xsl:text>
+    <xsl:value-of select="name(..)"/>
+    <xsl:text> </xsl:text>
+    <xsl:value-of select="../../@qname"/>
+    <xsl:text> is&#x0A;</xsl:text>
+    <xsl:value-of select="text()"/>
+    <xsl:text>;&#x0A;</xsl:text>
+  </xsl:template>
+
   <!-- handle cluster and dbincluster-->
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
 

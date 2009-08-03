@@ -13,15 +13,8 @@
         <xsl:text>&#x0A;create language </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;</xsl:text>
-
-	<xsl:if test="@comment">
-	  <xsl:text>&#x0A;comment on language </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is&#x0A;</xsl:text>
-	  <xsl:text></xsl:text>
-	  <xsl:value-of select="@comment"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:apply-templates/>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

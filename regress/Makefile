@@ -102,7 +102,7 @@ regression_test1: drop_regress_db
 	@mkdir regress/scratch 2>/dev/null || true
 	@echo ...creating initial database definitions...
 	@echo ==== BUILDING DB FROM regression1.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
+	    >$(REGRESS_LOG) 2>&1
 	@export PGPORT=$(REGRESSDB_PORT); \
 	    sh $(REGRESS_DIR)/regression1.sql 2>&1 | \
 	    regress/errcheck.sh >>$(REGRESS_LOG)
@@ -143,8 +143,12 @@ regression_test1: drop_regress_db
 	@echo ...executing build script...
 	@echo ==== RUNNING BUILD SCRIPT regressdb_build1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1
+	@echo ...editing build script to not create role `whoami`...
+	@sed -e  "/create role \"`whoami`\"/ s/^/-- /" \
+	    $(REGRESS_DIR)/scratch/regressdb_build1.sql > \
+	    $(REGRESS_DIR)/scratch/regressdb_build1a.sql
 	@export PGPORT=$(REGRESSDB_PORT); \
-	    sh $(REGRESS_DIR)/scratch/regressdb_build1.sql 2>&1 | \
+	    sh $(REGRESS_DIR)/scratch/regressdb_build1a.sql 2>&1 | \
 	    regress/errcheck.sh >>$(REGRESS_LOG) 
 	@echo ...checking success of build script...
 	@echo "......running skit extract (again)..."

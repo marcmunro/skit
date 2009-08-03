@@ -9,7 +9,6 @@
   <xsl:template match="dbobject[@subtype='role']/grant">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
           <xsl:value-of select="@from"/>
@@ -29,12 +28,12 @@
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
   
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@from != //@user">
           <xsl:text>set session authorization &apos;</xsl:text>
           <xsl:value-of select="@from"/>
@@ -50,6 +49,7 @@
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
     
@@ -59,7 +59,6 @@
   <xsl:template match="dbobject[@subtype!='role']/grant">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization </xsl:text>
 	  <xsl:value-of select="@from"/>
@@ -83,13 +82,13 @@
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
     
   
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
           <xsl:value-of select="@from"/>
@@ -108,6 +107,7 @@
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
     

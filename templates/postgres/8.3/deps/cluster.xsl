@@ -48,6 +48,7 @@
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
+	<xsl:copy-of select="comment"/>
       </xsl:copy>
     </dbobject>
   </xsl:template>

@@ -10,7 +10,7 @@
 
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>create role </xsl:text>
+        <xsl:text>&#x0A;create role </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:choose>
 	  <xsl:when test="@login = 'y'">

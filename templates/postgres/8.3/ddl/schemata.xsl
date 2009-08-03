@@ -24,17 +24,8 @@
 	  </xsl:otherwise>
 	</xsl:choose>
         <xsl:text>&quot;;&#x0A;</xsl:text>
-	<xsl:if test="@comment">
-	  <xsl:text>&#x0A;comment on </xsl:text>
-	  <xsl:value-of select="../@type"/>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is&#x0A;</xsl:text>
-	  <xsl:text></xsl:text>
-	  <xsl:value-of select="@comment"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:if>
-
+	<xsl:apply-templates/>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

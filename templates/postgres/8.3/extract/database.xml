@@ -9,21 +9,13 @@
      <skit:attr name="encoding"/>
      <skit:attr name="tablespace"/>
      <skit:attr name="connections"/>
-     <skit:attr name="comment"/>
+     <skit:if test="(select dbinfo 'comment')">
+       <comment>
+	 <skit:text expr="(select dbinfo 'comment')"/>
+       </comment>
+     </skit:if>
      <skit:let>
        <skit:if test="(not (select dbinfo 'privs'))">
-	 <!-- Define default privileges -->
-	 <!-- Grants below removed as they were from and to the same
-	      user
-	 <grant with_grant="yes" priv="create">
-	   <skit:attr name="from" field="owner"/>
-	   <skit:attr name="to" field="owner"/>
-	 </grant>
-	 <grant with_grant="yes" priv="temporary">
-	   <skit:attr name="from" field="owner"/>
-	   <skit:attr name="to" field="owner"/>
-	 </grant>
-	 -->
 	 <grant with_grant="no" priv="temporary" to="public">
 	   <skit:attr name="from" field="owner"/>
 	 </grant>

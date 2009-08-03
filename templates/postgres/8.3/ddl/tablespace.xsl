@@ -17,6 +17,8 @@
         <xsl:text>&#x0A;  location &apos;</xsl:text>
         <xsl:value-of select="@location"/>
         <xsl:text>&apos;;&#x0A;</xsl:text>
+	<xsl:apply-templates/>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

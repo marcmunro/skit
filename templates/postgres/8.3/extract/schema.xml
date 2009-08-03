@@ -17,7 +17,11 @@
       <schema>
         <skit:attr name="name"/>
         <skit:attr name="owner"/>
-        <skit:attr name="comment"/>
+	<skit:if test="(select tuple 'comment')">
+	  <comment>
+	    <skit:text expr="(select tuple 'comment')"/>
+	  </comment>
+	</skit:if>
 
         <skit:if test="(not (select tuple 'privs'))">
     	<grant with_grant="yes" priv="create">

@@ -46,6 +46,8 @@ reset session authorization;
 create tablespace "tbs2" owner "regress"
   location :tbs2dir;
 
+comment on tablespace tbs2 is 'This is the second tablespace';
+
 create role "keep2" with login;
 alter role "keep2" password 'md5dd9b387fa54744451a97dc9674f6aba2';
 alter role "keep2" noinherit;
@@ -106,11 +108,11 @@ grant create on tablespace "tbs3" to "wibble";
 reset session authorization;
 
 CLUSTEREOF
-
+ 
 psql -d regressdb <<'DBEOF'
-
+ 
 alter schema "public" owner to "regress";
-
+ 
 comment on schema "public" is
 'old public schema';
 
@@ -124,18 +126,18 @@ comment on language "plpgsql" is
 
 \echo updating schema "public";
 
-create or replace function "public"."addint4"(
-    in "pg_catalog"."int4",
-    in "pg_catalog"."int4")
-  returns "pg_catalog"."int4"
-as 
-$_$
-begin
-  return _state + _next;
-end;
-$_$
-language plpgsql stable;
-
+-- create or replace function "public"."addint4"(
+--     in "pg_catalog"."int4",
+--     in "pg_catalog"."int4")
+--   returns "pg_catalog"."int4"
+-- as 
+-- $_$
+-- begin
+--   return _state + _next;
+-- end;
+-- $_$
+-- language plpgsql stable;
+-- 
 -- create aggregate "public"."mysum" (
 --   basetype = "pg_catalog"."int4",
 --   sfunc = "addint4",
@@ -716,62 +718,62 @@ language plpgsql stable;
 -- \echo Done with schema "public";
 -- 
 -- 
-create schema "schema1" authorization "regress";
+-- create schema "schema1" authorization "regress";
+-- -- 
+-- -- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema1" to "keep";
+-- reset session authorization;
+-- \echo Done with schema "schema1";
 -- 
 -- 
-set session authorization 'regress';
-grant usage on schema "schema1" to "keep";
-reset session authorization;
-\echo Done with schema "schema1";
-
-
-create schema "schema2" authorization "regress";
-
-comment on schema "schema2" is
-'wibble';
-
-
-set session authorization 'regress';
-grant usage on schema "schema2" to "keep2";
-reset session authorization;
-
-set session authorization 'regress';
-grant create on schema "schema2" to "keep2";
-reset session authorization;
-
-set session authorization 'regress';
-grant usage on schema "schema2" to "wibble" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant create on schema "schema2" to "wibble" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant usage on schema "schema2" to "keep";
-reset session authorization;
-
-set session authorization 'regress';
-grant usage on schema "schema2" to "keep2" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant usage on schema "schema2" to "public";
-reset session authorization;
-\echo Done with schema "schema2";
-
-
-create schema "schema3" authorization "regress";
-
-
-set session authorization 'regress';
-grant usage on schema "schema3" to "keep2";
-reset session authorization;
-
-set session authorization 'regress';
-grant create on schema "schema3" to "keep2";
-reset session authorization;
-\echo Done with schema "schema3";
+-- create schema "schema2" authorization "regress";
+-- 
+-- comment on schema "schema2" is
+-- 'wibble';
+-- 
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema2" to "keep2";
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant create on schema "schema2" to "keep2";
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema2" to "wibble" with grant option;
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant create on schema "schema2" to "wibble" with grant option;
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema2" to "keep";
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema2" to "keep2" with grant option;
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema2" to "public";
+-- reset session authorization;
+-- \echo Done with schema "schema2";
+-- 
+-- 
+-- create schema "schema3" authorization "regress";
+-- 
+-- 
+-- set session authorization 'regress';
+-- grant usage on schema "schema3" to "keep2";
+-- reset session authorization;
+-- 
+-- set session authorization 'regress';
+-- grant create on schema "schema3" to "keep2";
+-- reset session authorization;
+-- \echo Done with schema "schema3";
 -- 
 -- 
 -- \echo updating schema "public";
