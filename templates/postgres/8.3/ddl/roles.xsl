@@ -64,6 +64,7 @@
           <xsl:value-of select="@value"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:for-each>
+	<xsl:apply-templates/>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>

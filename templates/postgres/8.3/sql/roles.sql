@@ -9,6 +9,7 @@ select a.rolname as name,
        a.rolconnlimit as max_connections,
        a.rolpassword as password,
        a.rolvaliduntil as expires,
-       a.rolconfig as config
+       a.rolconfig as config,
+       quote_literal(shobj_description(a.oid, 'pg_authid')) as comment
 from   pg_catalog.pg_authid a
 order by a.rolname;

@@ -15,6 +15,11 @@
 	<skit:attr name="password"/>
 	<skit:attr name="expires"/>
 	<skit:attr name="max_connections"/>
+	<skit:if test="(select role 'comment')">
+	  <comment>
+	    <skit:text expr="(select role 'comment')"/>
+	  </comment>
+	</skit:if>
 	<skit:if test="(string= 'y' (select tuple 'superuser'))">
 	  <privilege>
 	    <skit:attr name="priv" expr="'superuser'"/>

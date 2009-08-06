@@ -29,6 +29,8 @@ alter role "bark" with createdb;
 alter role "bark" with createrole;
 alter role "bark" set client_min_messages = 'error';
 
+comment on role "bark" is 'woof';
+
 create role "lose" with login;
 alter role "lose" password 'md5c62bc3e38bac4209132682f13509ba96';
 alter role "lose" noinherit;
