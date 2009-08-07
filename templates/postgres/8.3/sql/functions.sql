@@ -43,7 +43,6 @@ from   pg_catalog.pg_proc p
            or t.typanalyze = p.oid)
        and t.typtype = 'b'
 where  not p.proisagg
-and    n.nspname != 'pg_catalog'
-and    n.nspname != 'information_schema'
+and    n.nspname not in ('pg_catalog', 'information_schema')
 order by n.nspname, p.proname;
 

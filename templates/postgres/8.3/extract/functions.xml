@@ -37,7 +37,11 @@
       	<skit:attr name="security_definer"/>
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
-      	<skit:attr name="comment"/>
+	<skit:if test="(select function 'comment')">
+	  <comment>
+	    <skit:text expr="(select function 'comment')"/>
+	  </comment>
+	</skit:if>
       	<result>
       	  <skit:exec expr="(setq argtuple
       			         (select alltypes 
@@ -62,6 +66,8 @@
       	</skit:if>
       	<skit:attr name="signature" 
       			 expr="(select function_sigs (select tuple 'oid'))"/>
+      	<skit:attr name="qname" 
+      			 expr="(select function_qnames (select tuple 'oid'))"/>
 	<!-- Type_handler function -->
 	<skit:exec expr="(setq otherfn 
 			       (select functions 
@@ -144,6 +150,24 @@
       	  <skit:text name="source"/>
       	</source>
       </skit:let>
+
+      <!-- The stuff below breaks the regression tests.  I'm not 
+	   entirely sure that it should be just removed so I'm leaving
+	   it commented out for now.
+      <skit:if test="(not (select tuple 'privs'))">
+        - No privileges defined for this function, so create
+      	     grants for the implicit privs -
+        <grant with_grant="yes" priv="execute">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" field="owner"/>
+        </grant>
+        <grant priv="execute">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" expr="'public'"/>
+        </grant>
+      </skit:if> -->
+      <skit:exec_function name="grants_from_privs"
+    			  privileges="(select tuple 'privs')"/>
     </function>
   </skit:foreach>
 </skit:inclusion>  

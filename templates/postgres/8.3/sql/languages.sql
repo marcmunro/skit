@@ -6,8 +6,12 @@ select l.lanname as name,
        hv.nspname as validator_schema,
        v.proname as validator_function,
        l.lanacl as privs,
+       o.rolname as owner,
        quote_literal(obj_description(l.oid, 'pg_language')) as comment
 from   pg_catalog.pg_language l 
+       inner join
+          pg_catalog.pg_authid o
+       on (o.oid = l.lanowner)
        inner join 
           (pg_catalog.pg_proc h 
            inner join 

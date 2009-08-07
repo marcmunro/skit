@@ -51,11 +51,11 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@from"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
+          <xsl:value-of select="@owner"/>
+          <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:text>&#x0A;create or replace&#x0A;function </xsl:text>
+	<xsl:text>create or replace&#x0A;function </xsl:text>
 	<xsl:call-template name="function_header"/>
 	<xsl:text>&#x0A;  returns </xsl:text>
 	<xsl:if test="@returns_set">
@@ -98,21 +98,11 @@
 	  <xsl:text> security definer</xsl:text>
 	</xsl:if>
 	<xsl:text>;&#x0A;</xsl:text>
-
-	<xsl:if test="@comment">
-	  <xsl:text>&#x0A;comment on </xsl:text>
-	  <xsl:value-of select="../@type"/>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is&#x0A;</xsl:text>
-	  <xsl:text></xsl:text>
-	  <xsl:value-of select="@comment"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:if>
-
+	<xsl:apply-templates/>
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -121,7 +111,7 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@from"/>
+          <xsl:value-of select="@owner"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 
@@ -132,6 +122,7 @@
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

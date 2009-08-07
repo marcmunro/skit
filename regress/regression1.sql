@@ -23,7 +23,7 @@ comment on database "regressdb" is
 \connect postgres
 
 create role "bark" with login;
-alter role "bark" password 'md5c62bc3e38bac4209132682f13509ba96';
+alter role "bark" password 'woofgrr';
 alter role "bark" with superuser;
 alter role "bark" with createdb;
 alter role "bark" with createrole;
@@ -111,7 +111,7 @@ reset session authorization;
 
 CLUSTEREOF
  
-psql -d regressdb <<'DBEOF'
+psql -d regressdb -U bark <<'DBEOF'
  
 alter schema "public" owner to "regress";
  
@@ -128,18 +128,18 @@ comment on language "plpgsql" is
 
 \echo updating schema "public";
 
--- create or replace function "public"."addint4"(
---     in "pg_catalog"."int4",
---     in "pg_catalog"."int4")
---   returns "pg_catalog"."int4"
--- as 
--- $_$
--- begin
---   return _state + _next;
--- end;
--- $_$
--- language plpgsql stable;
--- 
+create or replace function "public"."addint4"(
+    in "pg_catalog"."int4",
+    in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable;
+
 -- create aggregate "public"."mysum" (
 --   basetype = "pg_catalog"."int4",
 --   sfunc = "addint4",
@@ -315,40 +315,40 @@ comment on language "plpgsql" is
 -- as 'charout'
 -- language internal immutable strict;
 -- 
--- create or replace function "public"."plpgsql1"(
---     _x in "pg_catalog"."int4",
---     _y in "pg_catalog"."int4")
---   returns "pg_catalog"."int4"
--- as 
--- $_$
--- begin
---   return _x + _y;
--- end;
--- $_$
--- language plpgsql stable strict;
--- 
--- comment on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") is
--- 'function';
--- 
--- set session authorization 'regress';
--- grant execute on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") to "public";
--- reset session authorization;
--- 
--- create or replace function "public"."plpgsql2"(
---     _z in "pg_catalog"."int4",
---     _y in "pg_catalog"."int4")
---   returns "pg_catalog"."int4"
--- as 
--- $_$
--- begin
---   return _z + _y;
--- end;
--- $_$
--- language plpgsql stable strict;
--- 
--- comment on function "public"."plpgsql2"("pg_catalog"."int4", "pg_catalog"."int4") is
--- 'function 2';
--- 
+create or replace function "public"."plpgsql1"(
+    _x in "pg_catalog"."int4",
+    _y in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _x + _y;
+end;
+$_$
+language plpgsql stable strict;
+
+comment on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") is
+'function';
+
+set session authorization 'regress';
+grant execute on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") to "public";
+reset session authorization;
+
+create or replace function "public"."plpgsql2"(
+    _z in "pg_catalog"."int4",
+    _y in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _z + _y;
+end;
+$_$
+language plpgsql stable strict;
+
+comment on function "public"."plpgsql2"("pg_catalog"."int4", "pg_catalog"."int4") is
+'function 2';
+
 -- -- You will need to have installed the contrib package 'seg' for the next part
 -- create or replace function "public"."seg_in"(
 --     in "pg_catalog"."cstring")

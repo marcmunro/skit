@@ -6,6 +6,7 @@
   <skit:runsql var="languages" file="sql/languages.sql">
     <language>
      <skit:attr name="name"/>
+     <skit:attr name="owner"/>
      <skit:attr name="handler_schema"/>
      <skit:attr name="handler_function"/>
      <skit:attr name="validator_schema"/>

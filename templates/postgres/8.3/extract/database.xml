@@ -17,7 +17,7 @@
      <skit:let>
        <skit:if test="(not (select dbinfo 'privs'))">
 	 <grant with_grant="no" priv="temporary" to="public">
-	   <skit:attr name="from" field="owner"/>
+	   <skit:attr name="from" expr="(select tuple 'owner')"/>
 	 </grant>
 	 <grant with_grant="no" priv="connect" to="public">
 	   <skit:attr name="from" field="owner"/>

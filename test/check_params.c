@@ -835,6 +835,41 @@ START_TEST(generate2)
 }
 END_TEST
 
+START_TEST(generate3)
+{
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    "regress/scratch/regressdb_dump1.xml"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(2986);
+    //showMalloc(1986);
+
+    BEGIN {
+	process_args2(4, args);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--extract", "--dbtype=pgtest", 
@@ -897,6 +932,7 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     ADD_TEST(tc_core, generate2); // during development of new db objects
+    //ADD_TEST(tc_core, generate3);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

@@ -23,6 +23,11 @@
         <xsl:text>&#x0A;drop language </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;</xsl:text>
+	<xsl:if test="../@name = 'plpgsql'">
+          <xsl:text>&#x0A;drop function plpgsql_validator(oid);&#x0A;</xsl:text>
+          <xsl:text>&#x0A;drop function plpgsql_call_handler();&#x0A;</xsl:text>
+	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
     <xsl:apply-templates/>

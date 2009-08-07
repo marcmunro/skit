@@ -8,6 +8,7 @@
   <!-- This creates a hash of function oids to function signatures. -->
 
   <skit:exec expr="(setq function_sigs &lt;&gt;)"/>
+  <skit:exec expr="(setq function_qnames &lt;&gt;)"/>
   <skit:foreach var="function" from="functions">
     <skit:let>
       <skit:var name="typetuple"/>
@@ -16,6 +17,9 @@
       <skit:var name="signature"
 		expr="(concat (select tuple 'schema') '.' 
 			      (select tuple 'name') '('))"/>
+      <skit:var name="qname"
+		expr="(concat '&quot;' (select tuple 'schema') '&quot;.&quot;' 
+			      (select tuple 'name') '&quot;('))"/>
       <skit:var name="comma" expr="''"/>
       <skit:foreach from="sigargtypes" var="arg">
 	<skit:exec expr="(setq typetuple (select alltypes arg))"/>
@@ -23,11 +27,20 @@
 			       (concat signature comma
 			               (select typetuple 'schema') '.'
 			               (select typetuple 'name')))"/>
+	<skit:exec expr="(setq qname
+			       (concat qname comma '&quot;'
+			               (select typetuple 'schema') 
+				       '&quot;.&quot;'
+			               (select typetuple 'name')
+				       '&quot;'))"/>
 	<skit:exec expr="(setq comma ',')"/>
       </skit:foreach>
       <skit:exec expr="(setq signature (concat signature ')'))"/>
+      <skit:exec expr="(setq qname (concat qname ')'))"/>
       <skit:exec expr="(hashadd function_sigs 
 		                (select tuple 'oid') signature))"/>
+      <skit:exec expr="(hashadd function_qnames
+		                (select tuple 'oid') qname))"/>
     </skit:let>
   </skit:foreach>
 </skit:inclusion>  

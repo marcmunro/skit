@@ -691,9 +691,10 @@ fieldValueForTemplate(xmlNode *template_node)
     else {
 	/* Get string from the current tuple's field as named in 
 	   the name or field attribute. */
-	field = nodeAttribute(template_node, "name");
+	field = nodeAttribute(template_node, "field");
+	
 	if (!field) {
-	    field = nodeAttribute(template_node, "field");
+	    field = nodeAttribute(template_node, "name");
 	}
 	
 	BEGIN {
@@ -941,13 +942,14 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
 
 	cursor = symbolGetValue(fromname->value);
-	if ((!cursor) || (!isCollection(cursor))) {
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("from variable %s does not contain a collection", 
-			 fromname->value));
+	if (cursor) {
+	    if (!isCollection(cursor)) {
+		    RAISE(XML_PROCESSING_ERROR, 
+			  newstr("from variable %s does not contain a "
+				 "collection",  fromname->value));
+	    }
+	    child = iterate(cursor, filter, template_node, parent_node, depth);
 	}
-
-	child = iterate(cursor, filter, template_node, parent_node, depth);
     }
     EXCEPTION(ex);
     //fprintf(stderr, "EXCEPTION FOREACH\n");

@@ -865,9 +865,22 @@ gensort(Document *doc)
 	identifyDependencies(doc, dagnodes, pqnhash);
 	//showAllDeps(dagnodes);
 	sorted = tsort(dagnodes);
+	//dbgSexp(sorted);
     }
     EXCEPTION(ex);
     FINALLY {
+	if (hashElems(dagnodes)) {
+	    /* If we get here something bad has happened: there are
+	       unbuilt dagnodes in the dagnodes hash, which means that
+	       for some reason we have been able to find a single build
+	       candidate for the remaining dagnodes.  This means our DAG
+	       is effectively broken (not acyclic).  Rats!  */
+	    showAllDeps(dagnodes);
+	    objectFree((Object *) dagnodes, TRUE);
+	    objectFree((Object *) pqnhash, TRUE);
+	    objectFree((Object *) sorted, TRUE);
+	    RAISE(GENERAL_ERROR, newstr("NO BUILD CANDIDATES!"));
+	}
 	objectFree((Object *) dagnodes, TRUE);
 	objectFree((Object *) pqnhash, TRUE);
     }
