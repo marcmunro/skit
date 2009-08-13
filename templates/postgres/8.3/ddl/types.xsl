@@ -7,7 +7,7 @@
    version="1.0">
 
   <xsl:template match="dbobject/type">
-    <xsl:if test="../@action='build'">
+    <xsl:if test="(../@action='build') and (@is_defined = 't')">
       <print>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@owner != //cluster/@username">

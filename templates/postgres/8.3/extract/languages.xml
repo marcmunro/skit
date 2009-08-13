@@ -19,7 +19,7 @@
      </skit:if>
 
      <skit:exec_function name="grants_from_privs"
-			 privileges="(select dbinfo 'privs')"/>
+			 privileges="(select tuple 'privs')"/>
     </language>
   </skit:runsql>
 </skit:inclusion>

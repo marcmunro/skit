@@ -33,16 +33,16 @@
     </dbobject>
   </xsl:template>
 
-  <!-- Generate dependency for a given type, ignoring built-ins -->
+  <!-- Generate a dependency for a given type, ignoring built-ins -->
   <xsl:template name="TypeDep">
     <xsl:param name="ignore" select="NONE"/>
-    <xsl:param name="type_name" select="@type_name"/>
-    <xsl:param name="type_schema" select="@type_schema"/>
+    <xsl:param name="type_name" select="@type"/>
+    <xsl:param name="type_schema" select="@schema"/>
     <xsl:if test="$type_schema != 'pg_catalog'"> 
       <!-- Ignore builtin types TODO: Make the test below use xsl:if -->
       <xsl:choose>
-	<xsl:when test="($ignore/@type_schema = $type_schema) and
-	  ($ignore/@type_name = $type_name)"/>
+	<xsl:when test="($ignore/@schema = $type_schema) and
+	  ($ignore/@name = $type_name)"/>
 	<xsl:otherwise>
 	  <dependency fqn="{concat('type.', ancestor::database/@name,
 			   '.', $type_schema, '.', $type_name)}"/>

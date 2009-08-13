@@ -982,6 +982,10 @@ execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 		objectFree((Object *) expr_result, TRUE);
 	    }
 	}
+	else {
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("no \"test\" attribute provided for skit:if"));
+	}
     }
     EXCEPTION(ex);
     //fprintf(stderr, "EXCEPTION EXECIF\n");

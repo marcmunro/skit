@@ -174,16 +174,16 @@ create type "public"."mychar"(
 
 comment on type "public"."mychar" is
 'mychar';
--- 
--- 
--- create or replace function "public"."mycharsend"(
---     in "public"."mychar")
---   returns "pg_catalog"."bytea"
--- as 'charsend'
--- language internal immutable strict;
--- \echo Done with schema "public";
--- 
--- 
+
+\echo Done with schema "public";
+
+create or replace function "public"."mycharsend"(
+    in "public"."mychar")
+  returns "pg_catalog"."bytea"
+as 'charsend'
+language internal immutable strict;
+
+
 -- create cast("public"."mychar" as "pg_catalog"."bytea")
 --   with function "public"."mycharsend"("public"."mychar")
 --   as assignment;
@@ -203,17 +203,17 @@ comment on type "public"."mychar" is
 -- 
 -- \echo updating schema "public";
 -- 
--- set session authorization 'regress';
--- grant usage on schema "public" to "public";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant create on schema "public" to "public";
--- reset session authorization;
--- \echo Done with schema "public";
--- 
--- 
--- \echo updating schema "public";
+set session authorization 'regress';
+grant usage on schema "public" to "public";
+reset session authorization;
+
+set session authorization 'regress';
+grant create on schema "public" to "public";
+reset session authorization;
+\echo Done with schema "public";
+
+
+\echo updating schema "public";
 -- 
 -- create table "public"."additional" (
 --   "str1"                text not null,
@@ -248,76 +248,76 @@ comment on type "public"."mychar" is
 -- \echo Done with schema "public";
 -- 
 -- 
--- set session authorization 'marco';
--- grant create on database "regressdb" to "keep";
--- reset session authorization;
--- 
--- grant usage on language "plpgsql" to "keep2" with grant option;
--- 
--- grant usage on language "plpgsql" to "keep";
--- 
--- grant usage on language "plpgsql" to "public";
--- 
--- grant usage on language "plpgsql" to "wibble";
--- 
--- \echo updating schema "public";
--- 
+set session authorization 'marco';
+grant create on database "regressdb" to "keep";
+reset session authorization;
+
+grant usage on language "plpgsql" to "keep2" with grant option;
+
+grant usage on language "plpgsql" to "keep";
+
+grant usage on language "plpgsql" to "public";
+
+grant usage on language "plpgsql" to "wibble";
+
+\echo updating schema "public";
+
 -- grant select on table "public"."additional" to "keep2" with grant option;
 -- 
--- create or replace function "public"."mycharin2"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar2"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharin3"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar3"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharin4"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar4"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharin5"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar5"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharinnnn5"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar5"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharout2"(
---     in "public"."mychar2")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharout3"(
---     in "public"."mychar3")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharout4"(
---     in "public"."mychar4")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
--- create or replace function "public"."mycharout5"(
---     in "public"."mychar5")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
+create or replace function "public"."mycharin2"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar2"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."mycharin3"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar3"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."mycharin4"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar4"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."mycharin5"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar5"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."mycharinnnn5"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar5"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."mycharout2"(
+    in "public"."mychar2")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create or replace function "public"."mycharout3"(
+    in "public"."mychar3")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create or replace function "public"."mycharout4"(
+    in "public"."mychar4")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create or replace function "public"."mycharout5"(
+    in "public"."mychar5")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
 create or replace function "public"."plpgsql1"(
     _x in "pg_catalog"."int4",
     _y in "pg_catalog"."int4")

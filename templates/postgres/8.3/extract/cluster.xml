@@ -61,13 +61,6 @@
 		    <skit:attr name="priv" expr="privname"/>
 		    <skit:attr name="from" expr="from"/>
 		    <skit:attr name="to" expr="to"/>
-		    <!-- Code from before the check 5 lines up 
-			 TODO: Lose this once we are convinced it's
-			 really not needed
-		    <skit:if test="(string= from to)">
-		      <skit:exec expr="(setq with_grant_or_admin 'yes')"/>
-		    </skit:if>
-		    -->
 		    <skit:attr name="with_grant" expr="with_grant_or_admin"/>
 		  </grant>
 		  <skit:exec expr="(setq with_grant_or_admin 'no')"/>
@@ -86,15 +79,16 @@
 	  <skit:let>
 	    <skit:var name="function"/>
 	    <skit:exec expr="(setq function (select functions oid))"/>
-
-	    <handler-function>
-	      <skit:attr name="type" expr="type"/>
-	      <skit:attr name="name" expr="(select function 'name')"/>
-	      <skit:attr name="schema" expr="(select function 'schema')"/>
-	      <skit:attr name="signature" expr="(select function_sigs oid)"/>
-	      <!-- <skit:attr name="qname" 
-		              expr="(select function_qnames oid)"/> -->
-	    </handler-function>
+	    <skit:if test="(select function 'name')">
+	      <handler-function>
+		<skit:attr name="type" expr="type"/>
+		<skit:attr name="name" expr="(select function 'name')"/>
+		<skit:attr name="schema" expr="(select function 'schema')"/>
+		<skit:attr name="signature" expr="(select function_sigs oid)"/>
+		<!-- <skit:attr name="qname" 
+		                expr="(select function_qnames oid)"/> -->
+	      </handler-function>
+	    </skit:if>
 	  </skit:let>
 	</skit:if>
       </skit:function>

@@ -28,8 +28,7 @@ from   pg_catalog.pg_type t
           pg_catalog.pg_authid o
        on (o.oid = t.typowner)
 where  (
-         t.typisdefined
-  and    n.nspname not in ('pg_catalog', 'pg_toast', 'information_schema')
+         n.nspname not in ('pg_catalog', 'pg_toast', 'information_schema')
   and    t.typtype in ('b')
   and    not exists (  -- Eliminate automatically created array types
   	  select 1
