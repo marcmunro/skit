@@ -803,7 +803,7 @@ START_TEST(generate2)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'regressdb' port = '5432'",
-                    "--generate", "--build",  "--print", "--full"};
+                    "--generate", "--drop",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -930,8 +930,8 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
     //ADD_TEST(tc_core, extract);
     //ADD_TEST(tc_core, generate);
-    ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate2); // during development of new db objects
+    //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
+    //ADD_TEST(tc_core, generate2); // during development of new db objects
     //ADD_TEST(tc_core, generate3);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);

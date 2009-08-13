@@ -79,6 +79,26 @@
 	</skit:if>
       </skit:function>
 	
+      <skit:function name="type_handler">
+	<skit:parameter name="oid"/>
+	<skit:parameter name="type"/>
+	<skit:if test="oid">
+	  <skit:let>
+	    <skit:var name="function"/>
+	    <skit:exec expr="(setq function (select functions oid))"/>
+
+	    <handler-function>
+	      <skit:attr name="type" expr="type"/>
+	      <skit:attr name="name" expr="(select function 'name')"/>
+	      <skit:attr name="schema" expr="(select function 'schema')"/>
+	      <skit:attr name="signature" expr="(select function_sigs oid)"/>
+	      <!-- <skit:attr name="qname" 
+		              expr="(select function_qnames oid)"/> -->
+	    </handler-function>
+	  </skit:let>
+	</skit:if>
+      </skit:function>
+		     
       <!-- <skit:exec expr="(debug 'PRIVNAMES' privnames)"/> -->
       <skit:attr name="port" expr="port"/>
       <skit:attr name="version"/>

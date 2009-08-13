@@ -98,7 +98,7 @@
 	  <xsl:text> security definer</xsl:text>
 	</xsl:if>
 	<xsl:text>;&#x0A;</xsl:text>
-	<xsl:apply-templates/>
+	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
@@ -107,23 +107,25 @@
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
-      <print>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@owner"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
-	</xsl:if>
-
-	<xsl:text>&#x0A;drop function </xsl:text>
-	<xsl:call-template name="function_header"/>
-	<xsl:text>;&#x0A;</xsl:text>
-
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
-	<xsl:text>&#x0A;</xsl:text>
-      </print>
+      <xsl:if test="not(handler-for-type)">
+      	<print>
+      	  <xsl:text>&#x0A;</xsl:text>
+      	  <xsl:if test="@owner != //cluster/@username">
+      	    <xsl:text>set session authorization &apos;</xsl:text>
+      	    <xsl:value-of select="@owner"/>
+      	    <xsl:text>&apos;;&#x0A;</xsl:text>
+      	  </xsl:if>
+	  
+      	  <xsl:text>&#x0A;drop function </xsl:text>
+      	  <xsl:call-template name="function_header"/>
+      	  <xsl:text>;&#x0A;</xsl:text>
+	  
+      	  <xsl:if test="@owner != //cluster/@username">
+      	    <xsl:text>reset session authorization;&#x0A;</xsl:text>
+      	  </xsl:if>
+      	  <xsl:text>&#x0A;</xsl:text>
+      	</print>
+      </xsl:if>
     </xsl:if>
 
   </xsl:template>

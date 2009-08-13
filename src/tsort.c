@@ -539,7 +539,7 @@ addCandidateToBuild(Object *node_entry, Object *buildlist)
     Vector *vector;
     String *parent_name;
 
-    assert(node->type == OBJ_DAGNODE, "ARG");
+    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
     if ((node->status == DAGNODE_READY) && (!node->dependencies)) {
 	addToBuildList((Hash *) buildlist, node);
     }
@@ -768,10 +768,9 @@ removeNodeFromDag(DagNode *node, Hash *allnodes, Hash *buildlist)
     obj = hashDel(allnodes, (Object *) node->fqn);
 }
 
-static Object *
-showDeps(Object *node_entry, Object *dagnodes)
+static void
+showNodeDeps(DagNode *node)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
     int i;
     printSexp(stderr, "NODE: ", (Object *) node);
     if (node->dependencies) {
@@ -779,11 +778,26 @@ showDeps(Object *node_entry, Object *dagnodes)
 	    printSexp(stderr, "   --> ", node->dependencies->vector[i]);
 	}
     }
+}
+
+static void
+showAllNodeDeps(DagNode *node)
+{
+    int i;
+ 
+    showNodeDeps(node);
     if (node->dependents) {
 	for (i = 0; i < node->dependents->elems; i++) {
 	    printSexp(stderr, "   <-- ", node->dependents->vector[i]);
 	}
     }
+}
+
+static Object *
+showDeps(Object *node_entry, Object *dagnodes)
+{
+    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    showAllNodeDeps(node);
     return (Object *) node;
 }
 
@@ -843,6 +857,7 @@ tsort(Hash *allnodes)
 
     elems = hashElems(allnodes);
     results = vectorNew(elems);
+    //dbgSexp(allnodes);
     get_build_candidates(allnodes, buildlist);
 
     while (hashElems(buildlist)) {
@@ -851,6 +866,93 @@ tsort(Hash *allnodes)
     }
     objectFree((Object *) buildlist, TRUE);
     return results;
+}
+
+
+/* Reset the DAGNODE status of each DagNode */
+static Object *
+resetDagNodeEntry(Object *node_entry, Object *ignore)
+{
+    DagNode *node;
+    assert(isCons((Cons *) node_entry),
+	   "resetDagNodeEntry: parameter is not a cons cell");
+    node = (DagNode *) ((Cons *) node_entry)->cdr;
+    assert((node->type == OBJ_DAGNODE),
+	   "resetDagNodeEntry: entry is not a dagnode");
+    fprintf(stderr, "RESETTING: %s\n", node->fqn->value);
+    node->status = DAGNODE_READY;
+    return (Object *) node;
+}
+
+
+/* Return any entry from the hash */
+static Object *
+anyEntry(Object *node_entry, Object *p_result)
+{
+    Object *entry;
+    Object **result_ptr = (Object **) p_result;
+
+    assert(isCons((Cons *) node_entry),
+	   "anyEntry: parameter is not a cons cell");
+    entry = ((Cons *) node_entry)->cdr;
+    *result_ptr = entry;
+    return entry;
+}
+
+/* This implements the node traversal of a traditional tsort.  It visits
+ * each dependency in turn setting the status to SORTING.  If it finds 
+ * a node where the status is already SORTING, then a cyclic dependency
+ * has been encountered.  Note that this only deals with fqns for now.
+ * I hope there will be no need to deal properly with pqns for this,
+ * which is only here for better error reporting.
+ */
+static void
+traverse(DagNode *this, DagNode *from)
+{
+    int i;
+    DagNode *next;
+    Cons *cons;
+
+    if (this->status == DAGNODE_SORTING) {
+	RAISE(GENERAL_ERROR, 
+	      newstr("cyclic dependency detected from %s to %s",
+		     from->fqn->value, this->fqn->value));
+    }
+    if (this->status == DAGNODE_READY) {
+	this->status = DAGNODE_SORTING;
+	fprintf(stderr, "TRAVERSED TO NEW NODE\n");
+	showNodeDeps(this);
+	if (this->dependencies) {
+	    for (i = 0; i < this->dependencies->elems; i++) {
+		cons = (Cons *) this->dependencies->vector[i];
+		next = (DagNode *) dereference(cons->car);
+
+		fprintf(stderr, "Traversing to dependency %s\n", 
+			next->fqn->value);
+		dbgSexp(next);
+		traverse(next, this);
+		fprintf(stderr, "back\n");
+	    }
+	}
+	if (this->parent) {
+	    next = (DagNode *) dereference((Object *) this->parent);
+	    fprintf(stderr, "Traversing to parent %s\n", next->fqn->value);
+	    traverse(next, this);
+	    fprintf(stderr, "back\n");
+	}
+	this->status = DAGNODE_SORTED;
+    }
+}
+
+static void
+describeDAGBreakage(Hash *dagnodes)
+{
+    DagNode *start = NULL;
+
+    hashEach(dagnodes, &resetDagNodeEntry, NULL);
+    hashEach(dagnodes, &anyEntry, (Object *) &start);
+    traverse(start, NULL);
+    return;
 }
 
 Vector *
@@ -866,21 +968,22 @@ gensort(Document *doc)
 	//showAllDeps(dagnodes);
 	sorted = tsort(dagnodes);
 	//dbgSexp(sorted);
-    }
-    EXCEPTION(ex);
-    FINALLY {
 	if (hashElems(dagnodes)) {
 	    /* If we get here something bad has happened: there are
 	       unbuilt dagnodes in the dagnodes hash, which means that
 	       for some reason we have been able to find a single build
 	       candidate for the remaining dagnodes.  This means our DAG
-	       is effectively broken (not acyclic).  Rats!  */
-	    showAllDeps(dagnodes);
-	    objectFree((Object *) dagnodes, TRUE);
-	    objectFree((Object *) pqnhash, TRUE);
+	       is effectively broken (not acyclic).  */
 	    objectFree((Object *) sorted, TRUE);
+	    describeDAGBreakage(dagnodes);  /* This will raise an
+					     * exception if it detects
+					     * the problem. */
+					     
 	    RAISE(GENERAL_ERROR, newstr("NO BUILD CANDIDATES!"));
 	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
 	objectFree((Object *) dagnodes, TRUE);
 	objectFree((Object *) pqnhash, TRUE);
     }

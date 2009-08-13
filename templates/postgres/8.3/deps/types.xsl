@@ -39,7 +39,7 @@
     <xsl:param name="type_name" select="@type_name"/>
     <xsl:param name="type_schema" select="@type_schema"/>
     <xsl:if test="$type_schema != 'pg_catalog'"> 
-      <!-- Ignore builtin types -->
+      <!-- Ignore builtin types TODO: Make the test below use xsl:if -->
       <xsl:choose>
 	<xsl:when test="($ignore/@type_schema = $type_schema) and
 	  ($ignore/@type_name = $type_name)"/>
@@ -57,39 +57,13 @@
     <xsl:variable name="type_fqn" select="concat('type.', 
 					    $parent_core, '.', @name)"/>
     <dbobject type="type" name="{@name}"
-	      fqn="{$type_fqn}">
+	      fqn="{$type_fqn}" qname='"{@name}"'>
       <dependencies>
-	<!-- Only have dependencies if this type is defined.  If it is
-	not defined, it only exists as a placemarker and no code will be
-	generated for it -->
-	<xsl:if test="@is_defined != 'f'">
-	  <!-- Dependencies on functions -->
-	  <xsl:if test="@input_sig">
-            <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', @input_sig)}"
-			cascades="yes"/>
-          </xsl:if>
-          <xsl:if test="@output_sig">
-            <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', @output_sig)}"
-			cascades="yes"/>
-          </xsl:if>
-          <xsl:if test="@send_sig">
-            <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', @send_sig)}"
-			cascades="yes"/>
-          </xsl:if>
-          <xsl:if test="@receive_sig">
-            <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', @receive_sig)}"
-			cascades="yes"/>
-          </xsl:if>
-          <xsl:if test="@analyze_sig">
-            <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', @analyze_sig)}"
-			cascades="yes"/>
-          </xsl:if>
-  	</xsl:if>
+	<xsl:for-each select="handler-function">
+	  <dependency fqn="{concat('function.', ancestor::database/@name, 
+			           '.', @signature)}"/>
+	</xsl:for-each>
+
 	<xsl:for-each select="column">
           <xsl:if test="(@type_schema != 'pg_toast') and
 			(@type_schema != 'pg_catalog') and

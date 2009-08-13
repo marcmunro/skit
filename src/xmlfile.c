@@ -1124,19 +1124,19 @@ handleFunctionParams(xmlNode *template_node, xmlNode *function_node)
 
     /* Skip over any leading text, comment, etc nodes */
 
-    while (current && (current->type != XML_ELEMENT_NODE)) {
-	current = current->next;
-    }
-    while (TRUE) {
-	if ((ns = current->ns) && streq(ns->prefix, "skit")) {
-	    nodename = (char *) current->name;
-	    if (streq(nodename, "parameter")) {
-		getParam(template_node, current);
-		current = current->next;
-		continue;
-	    }
+    while (current) {
+	if (current->type != XML_ELEMENT_NODE) {
+	    current = current->next;
 	}
-	break;
+	else if ((ns = current->ns) && 
+		 streq(ns->prefix, "skit") &&
+		 streq((char *) current->name, "parameter")) {
+	    getParam(template_node, current);
+	    current = current->next;
+	}
+	else {
+	    break;
+	}
     }
     return current;
 }

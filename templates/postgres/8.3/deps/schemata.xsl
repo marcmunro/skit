@@ -9,7 +9,7 @@
   <!-- Schemata -->
   <xsl:template match="schema">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="tbs_fqn" select="concat('language.', 
+    <xsl:variable name="tbs_fqn" select="concat('schema.', 
 					  $parent_core, '.', @name)"/>
     <dbobject type="schema" name="{@name}" qname='"{@name}"'
 	      fqn="{$tbs_fqn}">

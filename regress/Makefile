@@ -99,7 +99,7 @@ drop_regress_db:
 	@$(PSQL) -d postgres -f $(REGRESS_DIR)/drop_cluster_objects.sql \
 		>/dev/null 2>&1 || true
 
-regression_test1: drop_regress_db
+regression_test1: skit drop_regress_db
 	@echo Running regression test 1...
 	@mkdir regress/scratch 2>/dev/null || true
 	@echo ...creating initial database definitions...
@@ -145,10 +145,11 @@ regression_test1: drop_regress_db
 	@echo ...executing build script...
 	@echo ==== RUNNING BUILD SCRIPT regressdb_build1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1
-	@echo ...editing build script to not create role `whoami`...
+	@echo ......editing build script to not create role `whoami`...
 	@sed -e  "/create role \"`whoami`\"/ s/^/-- /" \
 	    $(REGRESS_DIR)/scratch/regressdb_build1.sql > \
 	    $(REGRESS_DIR)/scratch/regressdb_build1a.sql
+	@echo ..running script...
 	@export PGPORT=$(REGRESSDB_PORT); \
 	    sh $(REGRESS_DIR)/scratch/regressdb_build1a.sql 2>&1 | \
 	    regress/errcheck.sh >>$(REGRESS_LOG) 

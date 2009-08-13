@@ -58,32 +58,34 @@
   <!-- Object-level grants -->
   <xsl:template match="dbobject[@subtype!='role']/grant">
     <xsl:if test="../@action='build'">
-      <print>
-	<xsl:if test="@from != //cluster/@username">
-          <xsl:text>set session authorization </xsl:text>
-	  <xsl:value-of select="@from"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:if>
+      <xsl:if test="not(@default='yes')">
+      	<print>
+      	  <xsl:if test="@from != //cluster/@username">
+      	    <xsl:text>set session authorization </xsl:text>
+      	    <xsl:value-of select="@from"/>
+      	    <xsl:text>;&#x0A;</xsl:text>
+      	  </xsl:if>
 
-	<xsl:text>grant </xsl:text>
-	<xsl:value-of select="@priv"/>
-	<xsl:text> on </xsl:text>
-	<xsl:value-of select="../@subtype"/>
-	<xsl:text> </xsl:text>
-	<xsl:value-of select="../@on"/>
-	<xsl:text> to &quot;</xsl:text>
-	<xsl:value-of select="@to"/>
-	<xsl:text>&quot;</xsl:text>
-	<xsl:if test="@with_grant = 'yes'">
-	  <xsl:text> with grant option</xsl:text>
-	</xsl:if>
-	<xsl:text>;&#x0A;</xsl:text>
+      	  <xsl:text>grant </xsl:text>
+      	  <xsl:value-of select="@priv"/>
+      	  <xsl:text> on </xsl:text>
+      	  <xsl:value-of select="../@subtype"/>
+      	  <xsl:text> </xsl:text>
+      	  <xsl:value-of select="../@on"/>
+      	  <xsl:text> to &quot;</xsl:text>
+      	  <xsl:value-of select="@to"/>
+      	  <xsl:text>&quot;</xsl:text>
+      	  <xsl:if test="@with_grant = 'yes'">
+      	    <xsl:text> with grant option</xsl:text>
+      	  </xsl:if>
+      	  <xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:if test="@from != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
-        <xsl:text>&#x0A;</xsl:text>
-      </print>
+      	  <xsl:if test="@from != //cluster/@username">
+      	    <xsl:text>reset session authorization;&#x0A;</xsl:text>
+      	  </xsl:if>
+      	  <xsl:text>&#x0A;</xsl:text>
+      	</print>
+      </xsl:if>
     </xsl:if>
     
   

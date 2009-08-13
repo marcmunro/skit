@@ -26,6 +26,7 @@
       	<skit:var name="argmodes" 
 		  expr="(split (or (select tuple 'all_argmodes') '') ',')"/>
       	<skit:var name="otherfn"/> 
+	<skit:var name="typoid" expr="(select tuple 'typoid')"/>
 
       	<skit:attr name="name"/>
       	<skit:attr name="schema"/>
@@ -37,6 +38,14 @@
       	<skit:attr name="security_definer"/>
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
+	<skit:if test="typoid">
+	  <handler-for-type>	
+	    <skit:attr name="name"
+		       expr="(select basetypes typoid 'name')"/>
+	    <skit:attr name="schema"
+		       expr="(select basetypes typoid 'schema')"/>
+	  </handler-for-type>
+	</skit:if>
 	<skit:if test="(select function 'comment')">
 	  <comment>
 	    <skit:text expr="(select function 'comment')"/>
@@ -151,21 +160,18 @@
       	</source>
       </skit:let>
 
-      <!-- The stuff below breaks the regression tests.  I'm not 
-	   entirely sure that it should be just removed so I'm leaving
-	   it commented out for now.
       <skit:if test="(not (select tuple 'privs'))">
-        - No privileges defined for this function, so create
-      	     grants for the implicit privs -
-        <grant with_grant="yes" priv="execute">
+        <!-- No privileges defined for this function, so create
+      	     default grants for the implicit privs -->
+        <grant with_grant="yes" priv="execute" default="yes">
       	  <skit:attr name="from" field="owner"/>
       	  <skit:attr name="to" field="owner"/>
         </grant>
-        <grant priv="execute">
+        <grant priv="execute" default="yes">
       	  <skit:attr name="from" field="owner"/>
       	  <skit:attr name="to" expr="'public'"/>
         </grant>
-      </skit:if> -->
+      </skit:if>
       <skit:exec_function name="grants_from_privs"
     			  privileges="(select tuple 'privs')"/>
     </function>

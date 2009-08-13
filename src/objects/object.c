@@ -539,7 +539,6 @@ objectSexp(Object *obj)
 	return newstr("/%s/", ((Regexp *) obj)->src_str);
     default: 
 	// TODO: improve this string.
-	objectFree(obj, FALSE);
 	return newstr("{BROKEN OBJECT: %x}", obj);
 	
 	fails = newstr("objectSexp: Unhandled type: %d\n", obj->type);

@@ -23,7 +23,8 @@ select p.oid as oid,
        p.proacl as privs,
        quote_literal(obj_description(p.oid, 'pg_proc')) as comment,
        p.prosrc as source,
-       nullif(p.probin, '-') as bin
+       nullif(p.probin, '-') as bin,
+       t.oid as typoid
 from   pg_catalog.pg_proc p
        inner join
           pg_catalog.pg_namespace n

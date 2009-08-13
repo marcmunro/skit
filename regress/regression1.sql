@@ -148,29 +148,32 @@ language plpgsql stable;
 -- );
 -- 
 -- 
--- create or replace function "public"."mycharin"(
---     in "pg_catalog"."cstring")
---   returns "public"."mychar"
--- as 'charin'
--- language internal immutable strict;
---  
--- create or replace function "public"."mycharout"(
---     in "public"."mychar")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
--- create type "public"."mychar"(
---   input = "public"."mycharin",
---   output = "public"."mycharout",
---   passedbyvalue,
---   internallength = 1,
---   alignment = char,
---   storage = plain,
---   delimiter = ',');
--- 
--- comment on type "public"."mychar" is
--- 'mychar';
+create or replace function "public"."mycharin"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar"
+as 'charin'
+language internal immutable strict;
+ 
+grant execute on function "public"."mycharin"(
+    in "pg_catalog"."cstring") to keep;
+
+create or replace function "public"."mycharout"(
+    in "public"."mychar")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create type "public"."mychar"(
+  input = "public"."mycharin",
+  output = "public"."mycharout",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."mychar" is
+'mychar';
 -- 
 -- 
 -- create or replace function "public"."mycharsend"(

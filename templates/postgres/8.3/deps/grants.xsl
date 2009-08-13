@@ -115,6 +115,19 @@
 			     @priv, ':', @from)}"/>
 	  </xsl:otherwise>
 	</xsl:choose>
+
+	<!-- Special case for functions that are type handlers: in this
+	     case, the grant should also be dependent on the type for
+	     which the function is a handler.  This is because the
+	     function can only be dropped by dropping the type with
+	     cascade, so any revokation of grants to the function should
+	     be done before the type is dropped. -->
+	<xsl:if test="parent::function/handler-for-type">
+	  <dependency fqn="{concat('type.', ancestor::database/@name, '.',
+			            parent::function/handler-for-type/@schema,
+				    '.',
+				    parent::function/handler-for-type/@name)}"/>
+	</xsl:if>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

@@ -38,8 +38,6 @@
 
         <xi:include href="skitfile:extract/domains.xml"/>
         <xi:include href="skitfile:extract/basetypes.xml"/>
-        <xi:include href="skitfile:extract/basetypes.xml"/>
-        <xi:include href="skitfile:extract/alltypes.xml"/>
         <xi:include href="skitfile:extract/comptypes.xml"/>
         <xi:include href="skitfile:extract/functions.xml"/>
       </schema>
