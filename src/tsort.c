@@ -690,7 +690,8 @@ dagnodercmp(const void *node1, const void *node2)
 static void
 reverseSortBuildVector(Vector *vector)
 {
-    qsort(vector->vector, vector->elems, sizeof(Object *), &dagnodercmp);
+    qsort(vector->contents->vector, vector->elems, 
+	  sizeof(Object *), &dagnodercmp);
 }
 
 static boolean
@@ -714,7 +715,7 @@ removeDependency(DagNode *from, DagNode *dependency)
 
     if (from->dependencies) {
 	for (i = 0; i < from->dependencies->elems; i++) {
-	    deplist = (Cons *) from->dependencies->vector[i];
+	    deplist = (Cons *) from->dependencies->contents->vector[i];
 	    if (inList(deplist, (Object *) dependency)) {
 		obj = vectorRemove(from->dependencies, i);
 		objectFree(obj, TRUE);
@@ -742,7 +743,7 @@ removeNodeFromDag(DagNode *node, Hash *allnodes, Hash *buildlist)
 	   "Incorrect status for node");
     if (vec) {
 	for (i = vec->elems-1; i >= 0; i--) {
-	    depnode = (DagNode *) dereference(vec->vector[i]);
+	    depnode = (DagNode *) dereference(vec->contents->vector[i]);
 	    assert(depnode->type == OBJ_DAGNODE,
 		   "removeNodeFromDag: Cannot handle non-dagnode depnodes");
 	    if (depnode->dependencies->elems <= 1) {
@@ -775,7 +776,8 @@ showNodeDeps(DagNode *node)
     printSexp(stderr, "NODE: ", (Object *) node);
     if (node->dependencies) {
 	for (i = 0; i < node->dependencies->elems; i++) {
-	    printSexp(stderr, "   --> ", node->dependencies->vector[i]);
+	    printSexp(stderr, "   --> ", 
+		      node->dependencies->contents->vector[i]);
 	}
     }
 }
@@ -788,7 +790,7 @@ showAllNodeDeps(DagNode *node)
     showNodeDeps(node);
     if (node->dependents) {
 	for (i = 0; i < node->dependents->elems; i++) {
-	    printSexp(stderr, "   <-- ", node->dependents->vector[i]);
+	    printSexp(stderr, "   <-- ", node->dependents->contents->vector[i]);
 	}
     }
 }
@@ -924,7 +926,7 @@ traverse(DagNode *this, DagNode *from)
 	showNodeDeps(this);
 	if (this->dependencies) {
 	    for (i = 0; i < this->dependencies->elems; i++) {
-		cons = (Cons *) this->dependencies->vector[i];
+		cons = (Cons *) this->dependencies->contents->vector[i];
 		next = (DagNode *) dereference(cons->car);
 
 		fprintf(stderr, "Traversing to dependency %s\n", 

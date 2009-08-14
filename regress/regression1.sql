@@ -352,156 +352,156 @@ language plpgsql stable strict;
 comment on function "public"."plpgsql2"("pg_catalog"."int4", "pg_catalog"."int4") is
 'function 2';
 
--- -- You will need to have installed the contrib package 'seg' for the next part
--- create or replace function "public"."seg_in"(
---     in "pg_catalog"."cstring")
---   returns "public"."seg"
--- as '$libdir/seg', 'seg_in'
--- language c immutable strict;
--- 
--- create or replace function "public"."seg_out"(
---     in "public"."seg")
---   returns "pg_catalog"."cstring"
--- as '$libdir/seg', 'seg_out'
--- language c immutable strict;
--- 
--- create type "public"."seg"(
---   input = "public"."seg_in",
---   output = "public"."seg_out",
---   internallength = 12,
---   alignment = int4,
---   storage = plain,
---   delimiter = ',');
--- 
--- comment on type "public"."seg" is
--- 'floating point interval ''FLOAT .. FLOAT'', ''.. FLOAT'', ''FLOAT ..'' or ''FLOAT''';
--- 
--- 
--- create or replace function "public"."seg_cmp"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."int4"
--- as '$libdir/seg', 'seg_cmp'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_cmp"("public"."seg","public"."seg") is
--- 'btree comparison function';
--- 
--- create or replace function "public"."seg_different"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_different'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_different"("public"."seg","public"."seg") is
--- 'different';
--- 
--- create or replace function "public"."seg_ge"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_ge'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_ge"("public"."seg","public"."seg") is
--- 'greater than or equal';
--- 
--- create or replace function "public"."seg_gt"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_gt'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_gt"("public"."seg","public"."seg") is
--- 'greater than';
--- 
--- create or replace function "public"."seg_le"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_le'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_le"("public"."seg","public"."seg") is
--- 'less than or equal';
--- 
--- create or replace function "public"."seg_left"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_left'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_left"("public"."seg","public"."seg") is
--- 'is left of';
--- 
--- create or replace function "public"."seg_lt"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_lt'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_lt"("public"."seg","public"."seg") is
--- 'less than';
--- 
--- create or replace function "public"."seg_right"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_right'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_right"("public"."seg","public"."seg") is
--- 'is right of';
--- 
--- create or replace function "public"."seg_same"(
---     in "public"."seg",
---     in "public"."seg")
---   returns "pg_catalog"."bool"
--- as '$libdir/seg', 'seg_same'
--- language c immutable strict;
--- 
--- comment on function "public"."seg_same"("public"."seg","public"."seg") is
--- 'same as';
--- 
--- create or replace function "public"."wib_in"(
---     in "pg_catalog"."cstring")
---   returns "public"."wib"
--- as 'charin'
--- language internal immutable strict;
--- 
--- create or replace function "public"."wib_out"(
---     in "public"."wib")
---   returns "pg_catalog"."cstring"
--- as 'charout'
--- language internal immutable strict;
--- 
--- create type "public"."wib"(
---   input = "public"."wib_in",
---   output = "public"."wib_out",
---   internallength = 12,
---   alignment = int4,
---   storage = plain,
---   delimiter = ',');
--- 
--- 
--- create or replace function "public"."wib_gt"(
---     in "public"."wib",
---     in "public"."wib")
---   returns "pg_catalog"."bool"
--- as 'text_gt'
--- language internal immutable strict;
--- 
--- create or replace function "public"."wib_lt"(
---     in "public"."wib",
---     in "public"."wib")
---   returns "pg_catalog"."bool"
--- as 'text_lt'
--- language internal immutable strict;
--- 
+-- You will need to have installed the contrib package 'seg' for the next part
+create or replace function "public"."seg_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."seg"
+as '$libdir/seg', 'seg_in'
+language c immutable strict;
+
+create or replace function "public"."seg_out"(
+    in "public"."seg")
+  returns "pg_catalog"."cstring"
+as '$libdir/seg', 'seg_out'
+language c immutable strict;
+
+create type "public"."seg"(
+  input = "public"."seg_in",
+  output = "public"."seg_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."seg" is
+'floating point interval ''FLOAT .. FLOAT'', ''.. FLOAT'', ''FLOAT ..'' or ''FLOAT''';
+
+
+create or replace function "public"."seg_cmp"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."int4"
+as '$libdir/seg', 'seg_cmp'
+language c immutable strict;
+
+comment on function "public"."seg_cmp"("public"."seg","public"."seg") is
+'btree comparison function';
+
+create or replace function "public"."seg_different"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_different'
+language c immutable strict;
+
+comment on function "public"."seg_different"("public"."seg","public"."seg") is
+'different';
+
+create or replace function "public"."seg_ge"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_ge'
+language c immutable strict;
+
+comment on function "public"."seg_ge"("public"."seg","public"."seg") is
+'greater than or equal';
+
+create or replace function "public"."seg_gt"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_gt'
+language c immutable strict;
+
+comment on function "public"."seg_gt"("public"."seg","public"."seg") is
+'greater than';
+
+create or replace function "public"."seg_le"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_le'
+language c immutable strict;
+
+comment on function "public"."seg_le"("public"."seg","public"."seg") is
+'less than or equal';
+
+create or replace function "public"."seg_left"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_left'
+language c immutable strict;
+
+comment on function "public"."seg_left"("public"."seg","public"."seg") is
+'is left of';
+
+create or replace function "public"."seg_lt"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_lt'
+language c immutable strict;
+
+comment on function "public"."seg_lt"("public"."seg","public"."seg") is
+'less than';
+
+create or replace function "public"."seg_right"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_right'
+language c immutable strict;
+
+comment on function "public"."seg_right"("public"."seg","public"."seg") is
+'is right of';
+
+create or replace function "public"."seg_same"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_same'
+language c immutable strict;
+
+comment on function "public"."seg_same"("public"."seg","public"."seg") is
+'same as';
+
+create or replace function "public"."wib_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."wib"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."wib_out"(
+    in "public"."wib")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create type "public"."wib"(
+  input = "public"."wib_in",
+  output = "public"."wib_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+
+create or replace function "public"."wib_gt"(
+    in "public"."wib",
+    in "public"."wib")
+  returns "pg_catalog"."bool"
+as 'text_gt'
+language internal immutable strict;
+
+create or replace function "public"."wib_lt"(
+    in "public"."wib",
+    in "public"."wib")
+  returns "pg_catalog"."bool"
+as 'text_lt'
+language internal immutable strict;
+
 -- create table "public"."thing_1" (
 -- ) tablespace tbs3;
 -- 
@@ -783,49 +783,49 @@ comment on function "public"."plpgsql2"("pg_catalog"."int4", "pg_catalog"."int4"
 -- 
 -- \echo updating schema "public";
 -- 
--- create type "public"."mychar2"(
---   input = "public"."mycharin2",
---   output = "public"."mycharout2",
---   passedbyvalue,
---   internallength = 1,
---   alignment = char,
---   storage = plain,
---   delimiter = ',');
--- 
--- comment on type "public"."mychar2" is
--- 'mychar2';
--- 
--- 
--- create type "public"."mychar3"(
---   input = "public"."mycharin3",
---   output = "public"."mycharout3",
---   passedbyvalue,
---   internallength = 1,
---   alignment = char,
---   storage = plain,
---   delimiter = ',');
--- 
--- 
--- create type "public"."mychar4"(
---   input = "public"."mycharin4",
---   output = "public"."mycharout4",
---   passedbyvalue,
---   internallength = 1,
---   alignment = char,
---   storage = plain,
---   delimiter = ',');
--- 
--- 
--- create type "public"."mychar5"(
---   input = "public"."mycharin5",
---   output = "public"."mycharout5",
---   passedbyvalue,
---   internallength = 1,
---   alignment = char,
---   storage = plain,
---   delimiter = ',');
--- 
--- 
+create type "public"."mychar2"(
+  input = "public"."mycharin2",
+  output = "public"."mycharout2",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."mychar2" is
+'mychar2';
+
+
+create type "public"."mychar3"(
+  input = "public"."mycharin3",
+  output = "public"."mycharout3",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+
+create type "public"."mychar4"(
+  input = "public"."mycharin4",
+  output = "public"."mycharout4",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+
+create type "public"."mychar5"(
+  input = "public"."mycharin5",
+  output = "public"."mycharout5",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+
 -- create domain "public"."postal3"
 --   as "public"."mychar"
 --   default 'x'::mychar not null;

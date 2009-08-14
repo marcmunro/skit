@@ -516,7 +516,7 @@ pgsqlIndexCursor(Cursor *cursor, String *fieldname)
 	/* Figure out which column we are interested in */
 	col = (Int4 *) hashGet(cursor->fields, (Object *) fieldname);
 	if (!col) {
-		return NULL;
+		return;
 	}
 
 	cursor->index = hashNew(TRUE);

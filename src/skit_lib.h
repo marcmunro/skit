@@ -48,7 +48,10 @@ typedef enum {
     OBJ_CONS,
     OBJ_EXCEPTION,
     OBJ_VECTOR,
-    OBJ_HASH,
+    OBJ_VARRAY,                 // VARRAY IS THE DYNAMICALLY-SIZED CONTENTS
+                                // OF A VECTOR.  IT IS NOT REALLY AN
+                                // OBJECT IN ITS OWN RIGHT
+    OBJ_HASH,                  
     OBJ_SYMBOL,
     OBJ_OPTIONLIST,
     OBJ_DOCUMENT,
@@ -115,11 +118,16 @@ typedef struct Exception{
     struct Exception *prev;
 } Exception;
 
+typedef struct Varray {
+    ObjType  type;
+    Object  *vector[];
+} Varray;
+
 typedef struct Vector {
     ObjType  type;
     int      elems;  // Number of elems currently in the vector
     int      size;   // Size of vector (how many elems can be stored)
-    Object  *vector[];
+    Varray  *contents;
 } Vector;
 
 typedef struct Hash {
@@ -373,6 +381,7 @@ extern int memchunks_in_use();
 extern void showChunks();
 extern void *skalloc(size_t size);
 extern void skfree(void *ptr);
+extern void *skrealloc(void *p, size_t size);
 extern void memTrace(char *str);
 extern void curFree();
 extern void showFree(int number_to_show);

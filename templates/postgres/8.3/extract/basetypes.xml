@@ -18,8 +18,7 @@
       <skit:attr name="default"/>
       <skit:attr name="storage"/>
       <skit:attr name="element"/>
-      <skit:attr name="passbyval" 
-      		 expr="(and (select tuple 'passbyval') 'yes')"/>
+      <skit:attr name="passbyval"/>
       <skit:attr name="is_defined"/> 
       <!-- TODO: element, typmod_in, typmod_out attributes? -->
       <skit:exec_function name="type_handler"

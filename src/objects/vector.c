@@ -22,7 +22,7 @@
 // Return a suggested size for a Vector based on the number of elems 
 // it is expected to store.  Based on a WAG.
 static int
-sizeForVector(int elems)
+entriesForVector(int elems)
 {
     if (elems < 40) return 64;
     if (elems < 200) return 256;
@@ -30,31 +30,48 @@ sizeForVector(int elems)
     return elems + 1000;
 }
 
+static void
+vectorExpand(Vector *vector)
+{
+    int newentries = entriesForVector(vector->size + 64);
+    size_t newsize = (newentries * sizeof(Object *)) + sizeof(Varray);
+    Varray *newvarray = (Varray *) skrealloc(vector->contents, newsize);
+
+    if (newvarray) {
+	vector->contents = newvarray;
+	vector->size = newentries;
+    }
+    else {
+	RAISE(GENERAL_ERROR, 
+	      newstr("vectorPush: vector space exhausted"));
+    }
+}
+
 Vector *
 vectorNew(int elems)
 {
-    int size = sizeForVector(elems);
-    int objsize = sizeof(Vector) + (sizeof(Object *) * size);
-    Vector *vector = (Vector *) skalloc(objsize);
+    int entries = entriesForVector(elems);
+    int varraysize = sizeof(Varray) + (sizeof(Object *) * entries);
+    Vector *vector = (Vector *) skalloc(sizeof(Vector));
+    Varray *varray = (Varray *) skalloc(varraysize);
+    varray->type = OBJ_VARRAY;
     vector->type = OBJ_VECTOR;
     vector->elems = 0;
-    vector->size = size;
+    vector->size = entries;
+    vector->contents = varray;
     return vector;
 }
 
 Object *
 vectorPush(Vector *vector, Object *obj)
 {
-    if (vector->elems < vector->size) {
-	vector->vector[vector->elems] = obj;
-	vector->elems++;
+    if (vector->elems >= vector->size) {
+	vectorExpand(vector);
     }
-    else {
-	// TODO: Vector resizing
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("vectorPush: vector space exhausted "
-		     "(resizing not yet implemented)"));
-    }
+    
+    vector->contents->vector[vector->elems] = obj;
+    vector->elems++;
+
     return obj;
 }
 
@@ -63,7 +80,7 @@ vectorPop(Vector *vector)
 {
     Object *obj;
     if (vector->elems) {
-	return vector->vector[--vector->elems];
+	return vector->contents->vector[--vector->elems];
     }
     return NULL;
 }
@@ -94,7 +111,7 @@ vectorStr(Vector *vector)
     char *workstr = newstr("");
     int i;
     for (i = 0; i < vector->elems; i++) {
-	objstr = objectSexp(vector->vector[i]);
+	objstr = objectSexp(vector->contents->vector[i]);
 	discard = workstr;
 	workstr = newstr("%s %s", workstr, objstr);
 	skfree(objstr);
@@ -117,11 +134,12 @@ vectorFree(Vector *vector, boolean free_contents)
 	int i;
 	Object *obj;
 	for (i = 0; i < vector->elems; i++) {
-	    if (obj = vector->vector[i]) {
+	    if (obj = vector->contents->vector[i]) {
 		objectFree(obj, free_contents);
 	    }
 	}
     }
+    skfree(vector->contents);
     skfree(vector);
 }
 
@@ -129,7 +147,7 @@ vectorFree(Vector *vector, boolean free_contents)
 void
 vectorStringSort(Vector *vector)
 {
-    qsort((void *) vector->vector,
+    qsort((void *) vector->contents->vector,
 	  vector->elems, sizeof(Object *),
 	  stringCmp4Hash);
 }
@@ -144,7 +162,7 @@ vectorConcat(Vector *vector)
     char *pos;
 
     for (i = 0; i < vector->elems; i++) {
-	elem = vector->vector[i];
+	elem = vector->contents->vector[i];
 	if (elem->type == OBJ_STRING) {
 	    len += strlen(((String *) elem)->value);
 	}
@@ -152,7 +170,7 @@ vectorConcat(Vector *vector)
     result = skalloc(len + 1);
     pos = result;
     for (i = 0; i < vector->elems; i++) {
-	elem = vector->vector[i];
+	elem = vector->contents->vector[i];
 	if (elem->type == OBJ_STRING) {
 	    len = strlen(((String *) elem)->value);
 	    strncpy(pos, ((String *) elem)->value, len);
@@ -169,7 +187,7 @@ vectorNth(Vector *vec, int n)
     if (n > vec->elems) {
 	return NULL;
     }
-    return vec->vector[n];
+    return vec->contents->vector[n];
 }
 
 Object *
@@ -201,10 +219,10 @@ vectorRemove(Vector *vec, int index)
     if (index >= vec->elems) {
 	return NULL;
     }
-    result = vec->vector[index];
+    result = vec->contents->vector[index];
     vec->elems--;
     while (index < vec->elems) {
-	vec->vector[index] = vec->vector[++index];
+	vec->contents->vector[index] = vec->contents->vector[++index];
     }
     
     return result;
@@ -215,7 +233,7 @@ typedef int (basicCmpFn)(const void *, const void *);
 void
 vectorSort(Vector *vec, ComparatorFn *fn)
 {
-    qsort((void *) vec->vector,
+    qsort((void *) vec->contents->vector,
 	  vec->elems, sizeof(Object *),
 	  (basicCmpFn *) fn);
 }
@@ -227,7 +245,7 @@ vectorDel(Vector *vec, Object *obj)
     Object *this;
     int i;
     for (i = 0; i < vec->elems; i++) {
-	this = dereference(vec->vector[i]);
+	this = dereference(vec->contents->vector[i]);
 	if (this == obj) {
 	    return vectorRemove(vec, i);
 	}

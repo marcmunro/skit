@@ -28,7 +28,8 @@ showDeps(Object *node_entry, Object *dagnodes)
     printSexp(stderr, "NODE: ", (Object *) node);
     if (node->dependencies) {
 	for (i = 0; i < node->dependencies->elems; i++) {
-	    printSexp(stderr, "   --> ", node->dependencies->vector[i]);
+	    printSexp(stderr, "   --> ", 
+		      node->dependencies->contents->vector[i]);
 	}
     }
 
@@ -56,7 +57,7 @@ check_build_order(Vector *results, char *list_str)
 	       "check_build_order: list item is not a string");
 
 	while (i < results->elems) {
-	    node = (DagNode *) results->vector[i];
+	    node = (DagNode *) results->contents->vector[i];
 	    if (streq(node->fqn->value, name->value)) {
 		/* We have a match, go on to the next name */
 		break;

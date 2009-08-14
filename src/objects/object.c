@@ -31,6 +31,7 @@ objTypeName(Object *obj)
     case OBJ_STRING: return "OBJ_STRING";
     case OBJ_CONS: return "OBJ_CONS";
     case OBJ_EXCEPTION: return "OBJ_EXCEPTION";
+    case OBJ_VARRAY: return "OBJ_VARRAY";
     case OBJ_VECTOR: return "OBJ_VECTOR";
     case OBJ_HASH: return "OBJ_HASH"; 
     case OBJ_SYMBOL: return "OBJ_SYMBOL";

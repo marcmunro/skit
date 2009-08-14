@@ -261,8 +261,8 @@ testFieldByIdx(Tuple *tuple, int col)
     int row = curs->rownum - 1;
     String *result;
 
-    result_row = (Vector *) rows->vector[row];
-    if (result = (String *) result_row->vector[col]) {
+    result_row = (Vector *) rows->contents->vector[row];
+    if (result = (String *) result_row->contents->vector[col]) {
 	return (Object *) stringNew(result->value);
     }
     return NULL;
@@ -277,7 +277,7 @@ testFieldByName(Tuple *tuple, String *name)
     int col;
 
     for (col = fields->elems - 1; col >= 0; col--) {
-	if (stringCmp(name, (String *) fields->vector[col]) == 0) {
+	if (stringCmp(name, (String *) fields->contents->vector[col]) == 0) {
 	    return testFieldByIdx(tuple, col);
 	}
     }
@@ -317,7 +317,7 @@ testTupleStr(Tuple *tuple)
     char *result = newstr("");
     char *tmp;
     for (col = 0; col < cursor->cols; col++) {
-	name = (String *) fields->vector[col];
+	name = (String *) fields->contents->vector[col];
 	value = (String *) testFieldByIdx(tuple, col);
 	tmp = result;
 	if (value) {

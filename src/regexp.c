@@ -117,7 +117,7 @@ replacementStr(char *buf, regmatch_t *match, Vector *replacements)
 
     /* Start by figuring out how long the replacement string is */
     for (i = 0; i < replacements->elems; i++) {
-	elem = replacements->vector[i];
+	elem = replacements->contents->vector[i];
 	if (elem->type == OBJ_STRING) {
 	    len += strlen(((String *) elem)->value);
 	}
@@ -130,7 +130,7 @@ replacementStr(char *buf, regmatch_t *match, Vector *replacements)
     result = skalloc(len + 1);
     pos = result;
     for (i = 0; i < replacements->elems; i++) {
-	elem = replacements->vector[i];
+	elem = replacements->contents->vector[i];
 	if (elem->type == OBJ_STRING) {
 	    len = strlen(((String *) elem)->value);
 	    strncpy(pos, ((String *) elem)->value, len);

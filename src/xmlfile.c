@@ -1340,7 +1340,7 @@ addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
     BEGIN {
 	navigation = navigationToNode(cur, target);
 	for (i = 0; i < navigation->elems; i++) {
-	    nnode = (DagNode *) navigation->vector[i];
+	    nnode = (DagNode *) navigation->contents->vector[i];
 	    curnode = copyObjectNode(nnode->dbobject);
 	    addAction(curnode, actionName(nnode));
 	    xmlAddChild(parent_node, curnode);
@@ -1362,7 +1362,7 @@ treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
     int i;
 
     for (i = 0; i < sorted_nodes->elems; i++) {
-	dnode = (DagNode *) sorted_nodes->vector[i];
+	dnode = (DagNode *) sorted_nodes->contents->vector[i];
 	addNavigationNodes(parent_node, prev, dnode);
 	curnode = copyObjectNode(dnode->dbobject);
 	addAction(curnode, actionName(dnode));

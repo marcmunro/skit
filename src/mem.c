@@ -378,6 +378,17 @@ skfree(void *ptr)
     free(ptr);
 }
 
+void *
+skrealloc(void *p, size_t size)
+{
+    void *result = realloc(p, size);
+    if (p != result) {
+	delChunk(p);
+	addChunk(result);
+    }
+    return result;
+}
+
 void
 memTrace(char *str)
 {

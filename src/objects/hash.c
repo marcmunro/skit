@@ -275,7 +275,7 @@ hashStr(Hash *hash)
     vectorStringSort(vector);
 
     for (i = 0; i  < vector->elems; i++) {
-	key = (String *) vector->vector[i];
+	key = (String *) vector->contents->vector[i];
 	// contents will be a cons cell containing the key and contents
 	// objects.
 	contents = hashLookup(hash, key->value);

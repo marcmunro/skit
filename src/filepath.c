@@ -146,7 +146,7 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
     int cmp;
     //printSexp(stderr, "VERSION: ", version);
     for (i = 0; i < roots->elems; i++) {
-	root = (String *) roots->vector[i];
+	root = (String *) roots->contents->vector[i];
 
 	if (matches = locateFile(root->value, templatedir->value,
 				 dbdir->value, filename->value)) {
