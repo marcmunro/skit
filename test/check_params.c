@@ -930,9 +930,9 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
     //ADD_TEST(tc_core, extract);
     //ADD_TEST(tc_core, generate);
-    ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate2); // during development of new db objects
-    ADD_TEST(tc_core, generate3);
+    //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
+    //ADD_TEST(tc_core, generate2); // during development of new db objects
+    //ADD_TEST(tc_core, generate3);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
