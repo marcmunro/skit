@@ -147,9 +147,9 @@ else
         pg_inc_dir="/usr/local/psql/include"
     elif test -d /opt/psql/include ; then
         pg_inc_dir="/opt/psql/include"
-    elif test -f /usr/includes/postgres.h ; then
+    elif test -f /usr/includes/libpq-fe.h ; then
         pg_inc_dir="/usr/includes"
-    elif test -f /usr/include/postgres.h ; then
+    elif test -f /usr/include/libpq-fe.h ; then
         pg_inc_dir="/usr/include"
     else
         echo PostgreSQL includes directory not found!
