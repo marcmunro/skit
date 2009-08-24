@@ -107,9 +107,9 @@ AC_MSG_CHECKING([explicitly defined PostgreSQL libraries])
 
 if test "x${with_pglibdir}" != "x" ; then
     dnl pglibdir was provided explicitly, so let's use it
-    PQINCPATH="-I${with_pglibdir}
+    PQINCPATH="-I${with_pglibdir}"
     AC_MSG_RESULT([${PQINCPATH}])
-elif test -x "${with_pgconfigdir}/pg_config
+elif test -x "${with_pgconfigdir}/pg_config" ; then
     dnl pg_config was provided explicitly, so use that to figure out	
     dnl pglibdir
     PQINCPATH=-I`${with_pgconfigdir}/pg_config --libdir`
@@ -130,9 +130,9 @@ fi
 AC_MSG_CHECKING([explicitly defined PostgreSQL headers])
 if test "x${with_pgincludedir}" != "x" ; then
     dnl pgincludedir was provided explicitly, so let's use it
-    pg_inc_dir="${with_pgincludedir}
+    pg_inc_dir="${with_pgincludedir}"
     AC_MSG_RESULT([${pg_inc_dir}])
-elif test -x "${with_pgconfigdir}/pg_config
+elif test -x "${with_pgconfigdir}/pg_config"; then
     dnl pg_config was provided explicitly, so use that to figure out	
     dnl pgincludedir
     pg_inc_dir=`${with_pgconfigdir}/pg_config --libincludedir`

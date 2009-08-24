@@ -5309,10 +5309,10 @@ fi
 echo $ECHO_N "checking explicitly defined PostgreSQL libraries... $ECHO_C" >&6; }
 
 if test "x${with_pglibdir}" != "x" ; then
-        PQINCPATH="-I${with_pglibdir}
+        PQINCPATH="-I${with_pglibdir}"
     { echo "$as_me:$LINENO: result: ${PQINCPATH}" >&5
 echo "${ECHO_T}${PQINCPATH}" >&6; }
-elif test -x "${with_pgconfigdir}/pg_config
+elif test -x "${with_pgconfigdir}/pg_config" ; then
             PQINCPATH=-I`${with_pgconfigdir}/pg_config --libdir`
     { echo "$as_me:$LINENO: result: ${PQINCPATH}" >&5
 echo "${ECHO_T}${PQINCPATH}" >&6; }
@@ -5396,10 +5396,10 @@ fi
 { echo "$as_me:$LINENO: checking explicitly defined PostgreSQL headers" >&5
 echo $ECHO_N "checking explicitly defined PostgreSQL headers... $ECHO_C" >&6; }
 if test "x${with_pgincludedir}" != "x" ; then
-        pg_inc_dir="${with_pgincludedir}
+        pg_inc_dir="${with_pgincludedir}"
     { echo "$as_me:$LINENO: result: ${pg_inc_dir}" >&5
 echo "${ECHO_T}${pg_inc_dir}" >&6; }
-elif test -x "${with_pgconfigdir}/pg_config
+elif test -x "${with_pgconfigdir}/pg_config"; then
             pg_inc_dir=`${with_pgconfigdir}/pg_config --libincludedir`
     { echo "$as_me:$LINENO: result: ${pg_inc_dir}" >&5
 echo "${ECHO_T}${pg_inc_dir}" >&6; }
@@ -5414,9 +5414,9 @@ echo "${ECHO_T}no" >&6; }
         pg_inc_dir="/usr/local/psql/include"
     elif test -d /opt/psql/include ; then
         pg_inc_dir="/opt/psql/include"
-    elif test -f /usr/includes/postgres.h ; then
+    elif test -f /usr/includes/libpq-fe.h ; then
         pg_inc_dir="/usr/includes"
-    elif test -f /usr/include/postgres.h ; then
+    elif test -f /usr/include/libpq-fe.h ; then
         pg_inc_dir="/usr/include"
     else
         echo PostgreSQL includes directory not found!
