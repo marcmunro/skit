@@ -86,6 +86,37 @@
               <xsl:text>&apos;</xsl:text>
 	    </xsl:if>
 	  </xsl:when>
+	  <xsl:when test="@subtype='comptype'">
+            <xsl:text> as (&#x0A;  </xsl:text>
+	    <xsl:for-each select="column">
+	      <xsl:if test="position() != 1">
+		<xsl:text>,&#x0A;  </xsl:text>
+	      </xsl:if>
+	      <xsl:text>&quot;</xsl:text>
+	      <xsl:value-of select="@name"/>
+	      <xsl:text>&quot;    &quot;</xsl:text>
+	      <xsl:value-of select="@type_schema"/>
+	      <xsl:text>&quot;.&quot;</xsl:text>
+	      <xsl:value-of select="@type"/>
+	      <xsl:text>&quot;</xsl:text>
+	      <xsl:if test="@size">
+		<xsl:text>(</xsl:text>
+		<xsl:value-of select="@size"/>
+		<xsl:if test="@precision">
+		  <xsl:text>,</xsl:text>
+		  <xsl:value-of select="@precision"/>
+		</xsl:if>
+		<xsl:text>)</xsl:text>
+	      </xsl:if>
+	      <xsl:if test="@nullable='no'">
+		<xsl:text> not null</xsl:text>
+	      </xsl:if>
+	      <xsl:if test="@default">
+		<xsl:text> default </xsl:text>
+		<xsl:value-of select="@default"/>
+	      </xsl:if>
+	    </xsl:for-each>
+	  </xsl:when>
 	</xsl:choose>
 	<xsl:text>);&#x0A;</xsl:text>
 	<xsl:apply-templates/>

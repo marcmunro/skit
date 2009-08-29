@@ -11,7 +11,32 @@
       <skit:attr name="name"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
+      <skit:attr name="comment"/>
       <skit:attr name="subtype" expr="'comptype'"/>
+      <skit:attr name="is_defined" expr="'t'"/>
+      <skit:runsql var="typcolumn" file="sql/type_columns.sql"
+		   params="(select comptype 'reloid')">
+	<column>
+	  <skit:attr name="id"/>
+	  <skit:attr name="name"/>
+	  <skit:attr name="type"/>
+	  <skit:attr name="type_schema"/>
+	  <skit:attr name="size"/>
+	  <skit:attr name="precision"/>
+	  <skit:attr name="nullable"/>
+	  <skit:attr name="default"/>
+	  <skit:if test="(select typcolumn 'comment')">
+	    <comment>
+	      <skit:text expr="(select typcolumn 'comment')"/>
+	    </comment>
+	  </skit:if>
+	</column>
+      </skit:runsql>
+      <skit:if test="(select comptype 'comment')">
+	<comment>
+	  <skit:text expr="(select comptype 'comment')"/>
+	</comment>
+      </skit:if>
     </type>
   </skit:foreach>
 </skit:inclusion>  

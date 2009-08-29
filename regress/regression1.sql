@@ -826,68 +826,68 @@ create type "public"."mychar5"(
   delimiter = ',');
 
 
--- create domain "public"."postal3"
---   as "public"."mychar"
---   default 'x'::mychar not null;
--- 
--- comment on domain "public"."postal3" is
--- 'wibble';
--- 
--- 
--- create domain "public"."us_postal_code"
---   as "pg_catalog"."text"
---   CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
--- 
--- 
--- create type "public"."veil_variable_t" as (
---   "name"   "pg_catalog"."text",
---   "type"   "pg_catalog"."text",
---   "shared"   "pg_catalog"."bool"
--- );
--- 
--- comment on type "public"."veil_variable_t" is
--- 'veil_variable_t';
--- 
--- 
--- create type "public"."vv2_t" as (
---   "name"   "pg_catalog"."text",
---   "type"   "pg_catalog"."text",
---   "shared"   "pg_catalog"."bool"
--- );
--- 
--- comment on type "public"."vv2_t" is
--- 'vv2_t';
--- 
--- 
--- create type "public"."vv3_t" as (
---   "name"   "pg_catalog"."text",
---   "type"   "pg_catalog"."text",
---   "shared"   "pg_catalog"."bool"
--- );
--- 
--- comment on type "public"."vv3_t" is
--- 'vv3_t';
--- 
--- 
--- create type "public"."vv4_t" as (
---   "name"   "pg_catalog"."text",
---   "type"   "pg_catalog"."text",
---   "shared"   "pg_catalog"."bool"
--- );
--- 
--- comment on type "public"."vv4_t" is
--- 'vv4_t';
--- 
--- 
--- create type "public"."vv5_t" as (
---   "name"   "pg_catalog"."text",
---   "type"   "pg_catalog"."text",
---   "shared"   "pg_catalog"."bool"
--- );
--- 
--- comment on type "public"."vv5_t" is
--- 'vv5_t';
--- 
+create domain "public"."postal3"
+  as "public"."mychar"
+  default 'x'::mychar not null;
+
+comment on domain "public"."postal3" is
+'wibble';
+
+
+create domain "public"."us_postal_code"
+  as "pg_catalog"."text"
+  CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
+
+
+create type "public"."veil_variable_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."veil_variable_t" is
+'veil_variable_t';
+
+
+create type "public"."vv2_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."vv2_t" is
+'vv2_t';
+
+
+create type "public"."vv3_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."vv3_t" is
+'vv3_t';
+
+
+create type "public"."vv4_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."vv4_t" is
+'vv4_t';
+
+
+create type "public"."vv5_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."vv5_t" is
+'vv5_t';
+
 \echo Done with schema "public";
 
 DBEOF

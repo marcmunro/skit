@@ -275,3 +275,71 @@ cursorIndex(Cursor *cursor, String *fieldname)
     }
     functions->cursorindex(cursor, fieldname);
 }
+
+static Object *
+nextParam(Object **params)
+{
+    Object *result = NULL;
+    Object *placeholder = NULL;
+    return NULL;
+    if (params && *params) {
+	dbgSexp(*params);
+	if (isCollection(*params)) {
+	    fprintf(stderr, "YES\n");
+	    result =  objNext(*params, &placeholder);
+	}
+	else {
+	    fprintf(stderr, "NO\n");
+	    result = *params;
+	    *params = NULL;
+	}
+    }
+    return result;
+}
+
+char *
+applyOneParam(char *qrystr, char *pattern, Object *param)
+{
+    String *source = NULL;
+    String *result = NULL;
+    String *replacement = NULL;
+    Regexp *match = NULL;
+    char *raw_result;
+    if (param->type == OBJ_STRING) {
+	replacement = (String *) objectCopy(param);
+    }
+    else {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("applyOneParam cannot yet deal with non-strings"));
+    }
+    BEGIN {
+	source = stringNewByRef(qrystr);
+	match = regexpNew(pattern);
+	result = regexpReplace(source, match, replacement);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) source, FALSE);
+	objectFree((Object *) match, TRUE);
+	objectFree((Object *) replacement, TRUE);
+    }
+    END;
+    raw_result = result->value;
+    objectFree((Object *) result, FALSE);  /* Free the string object but
+					    * not its contents */
+    return raw_result;
+}
+
+char *
+applyParams(char *qrystr, Object *params)
+{
+    if (isCollection(params)) {
+	if (params->type != OBJ_STRING) {
+	    /* Params is some sort of list of parameters */
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		  newstr("applyParams cannot yet deal with collections"));
+	}
+    }
+
+    return applyOneParam(qrystr, ":1", params);
+}

@@ -13,11 +13,11 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@from"/>
+          <xsl:value-of select="@owner"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 	
-        <xsl:text>&#x0A;create domain &quot;</xsl:text>
+        <xsl:text>create domain &quot;</xsl:text>
         <xsl:value-of select="@schema"/>
         <xsl:text>&quot;.&quot;</xsl:text>
         <xsl:value-of select="@name"/>
@@ -28,17 +28,21 @@
         <xsl:text>&quot;</xsl:text>
 	<xsl:for-each select="constraint">
           <xsl:text>&#x0A;  </xsl:text>
-          <xsl:value-of select="@source"/>
+          <xsl:value-of select="source/text()"/>
 	</xsl:for-each>
+	<xsl:if test="@nullable='no'">
+          <xsl:text> not null</xsl:text>
+	</xsl:if>
 	<xsl:if test="@default">
           <xsl:text>&#x0A;  default </xsl:text>
           <xsl:value-of select="@default"/>
 	</xsl:if>
-
         <xsl:text>;&#x0A;</xsl:text>
+	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -48,7 +52,7 @@
         <xsl:value-of select="@schema"/>
         <xsl:text>&quot;.&quot;</xsl:text>
         <xsl:value-of select="@name"/>
-        <xsl:text>&quot;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>&quot;;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

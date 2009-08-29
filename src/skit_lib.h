@@ -492,4 +492,5 @@ extern void registerPGSQL();
 // tsort.c
 extern Vector *gensort(Document *doc);
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
+extern char *applyParams(char *qrystr, Object *params);
 

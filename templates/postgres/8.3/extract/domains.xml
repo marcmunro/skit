@@ -23,10 +23,17 @@
 	  <skit:attr name="name"/>
 	  <skit:attr name="schema"/>
 	  <skit:attr name="constraint_type"/>
-	  <skit:attr name="source"/>
+	  <source>
+	    <skit:text expr="(select constraint 'source')"/>
+	  </source>
 
 	</constraint>
       </skit:foreach>
+      <skit:if test="(select domain 'comment')">
+	<comment>
+	  <skit:text expr="(select domain 'comment')"/>
+	</comment>
+      </skit:if>
     </domain>
   </skit:foreach>
 </skit:inclusion>  

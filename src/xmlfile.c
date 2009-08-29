@@ -621,17 +621,18 @@ ignoreFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 }
 
 static boolean
-hasExpr(xmlNode *node, Object **p_result)
+hasExprAttribute(xmlNode *node, Object **p_result, char *attribute_name)
 {
     String *expr;
     Object *value = NULL;
-    if (expr = nodeAttribute(node, "expr")) {
+    if (expr = nodeAttribute(node, attribute_name)) {
 	BEGIN {
 	    value = evalSexp(expr->value);
 	}
-	EXCEPTION(ex) /* Adding the following clause causes memory
+	EXCEPTION(ex) /* NOTE: Adding the following clause causes memory
 	    errors.  Evidently there is a problem with the exception
 	    handling macros in combination of WHEN clauses and FINALLY
+	    TODO: Investigate this further.
 	    */
 	{
 	    WHEN(LIST_ERROR) {
@@ -650,6 +651,20 @@ hasExpr(xmlNode *node, Object **p_result)
     }
     *p_result = NULL;
     return FALSE;
+}
+
+static Object *
+getExprAttribute(xmlNode *node, char *attribute_name)
+{
+    Object *result = NULL;
+    boolean ignore = hasExprAttribute(node, &result, attribute_name);
+    return result;
+}
+
+static boolean
+hasExpr(xmlNode *node, Object **p_result)
+{
+    return hasExprAttribute(node, p_result, "expr");
 }
 
 static Object *
@@ -874,6 +889,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     Tuple *tuple;
     xmlNode *child = NULL;
     Symbol *sym;
+    Object *params = NULL;
     BEGIN {
 	if (!filename) {
 	    RAISE(XML_PROCESSING_ERROR, 
@@ -888,8 +904,9 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	sqltext =  trimSqlText(filetext);
     
 	conn = sqlConnect();
-
-	cursor = sqlExec(conn, sqltext, NULL);
+	params = getExprAttribute(template_node, "params");
+	cursor = sqlExec(conn, sqltext, params);
+	
 	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    sym = symbolNew(varname->value);
@@ -918,6 +935,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	objectFree((Object *) hashkey, TRUE);
 	objectFree((Object *) sqltext, TRUE);
 	objectFree((Object *) filetext, TRUE);
+	objectFree((Object *) params, TRUE);
     }
     END;
     

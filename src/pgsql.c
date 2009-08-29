@@ -223,7 +223,10 @@ pgsqlExecQry(Connection *connection,
 	char *querystr = qry->value;
 	PGresult *result;
 	Cursor *curs;
-
+	
+	if (params) {
+		querystr = applyParams(querystr, params);
+	}
 	if (result = PQexec(conn, querystr)) {
 		pgResultCheck(result);
 		curs = (Cursor *) skalloc(sizeof(Cursor));
@@ -238,7 +241,13 @@ pgsqlExecQry(Connection *connection,
 		curs->connection = connection;
 		curs->querystr = stringNew(qry->value);
 		curs->index = NULL;
+		if (params) {
+			skfree(querystr);
+		}
 		return curs;
+	}
+	if (params) {
+		skfree(querystr);
 	}
 	RAISE(SQL_ERROR, 
 		  newstr("Fatal postgres error: %s", PQresultErrorMessage(NULL)));
