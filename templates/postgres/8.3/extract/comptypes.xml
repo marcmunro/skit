@@ -23,8 +23,6 @@
 	  <skit:attr name="type_schema"/>
 	  <skit:attr name="size"/>
 	  <skit:attr name="precision"/>
-	  <skit:attr name="nullable"/>
-	  <skit:attr name="default"/>
 	  <skit:if test="(select typcolumn 'comment')">
 	    <comment>
 	      <skit:text expr="(select typcolumn 'comment')"/>

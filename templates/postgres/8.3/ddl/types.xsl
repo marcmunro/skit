@@ -85,6 +85,7 @@
               <xsl:value-of select="@delimiter"/>
               <xsl:text>&apos;</xsl:text>
 	    </xsl:if>
+	    <xsl:text>);&#x0A;</xsl:text>
 	  </xsl:when>
 	  <xsl:when test="@subtype='comptype'">
             <xsl:text> as (&#x0A;  </xsl:text>
@@ -108,17 +109,21 @@
 		</xsl:if>
 		<xsl:text>)</xsl:text>
 	      </xsl:if>
-	      <xsl:if test="@nullable='no'">
-		<xsl:text> not null</xsl:text>
-	      </xsl:if>
-	      <xsl:if test="@default">
-		<xsl:text> default </xsl:text>
-		<xsl:value-of select="@default"/>
-	      </xsl:if>
+	    </xsl:for-each>
+	    <xsl:text>);&#x0A;</xsl:text>
+	    <xsl:for-each select="column/comment">
+	      <xsl:text>&#x0A;comment on column &quot;</xsl:text>
+	      <xsl:value-of select="../../@schema"/>
+	      <xsl:text>&quot;.</xsl:text>
+	      <xsl:value-of select="../../../@qname"/>
+	      <xsl:text>.&quot;</xsl:text>
+	      <xsl:value-of select="../@name"/>
+	      <xsl:text>&quot; is&#x0A;</xsl:text>
+	      <xsl:value-of select="text()"/>
+	      <xsl:text>;&#x0A;</xsl:text>
 	    </xsl:for-each>
 	  </xsl:when>
 	</xsl:choose>
-	<xsl:text>);&#x0A;</xsl:text>
 	<xsl:apply-templates/>
 
 	<xsl:if test="@owner != //cluster/@username">

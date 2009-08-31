@@ -888,6 +888,11 @@ create type "public"."vv5_t" as (
 comment on type "public"."vv5_t" is
 'vv5_t';
 
+comment on column "public"."vv5_t".name is
+'name column';
+
+
+
 \echo Done with schema "public";
 
 DBEOF
