@@ -13,6 +13,7 @@
     <skit:runsql to="enums" file="sql/enums.sql"/>
     <skit:runsql to="constraints" file="sql/constraints.sql"/>
     <skit:runsql to="functions" file="sql/functions.sql" hash="oid"/>
+    <skit:runsql to="aggregates" file="sql/aggregates.sql" hash="oid"/>
     <xi:include href="skitfile:extract/function_sigs.xml"/>
     <skit:runsql var="schema" file="sql/schemata.sql">
       <schema>
@@ -43,6 +44,7 @@
         <xi:include href="skitfile:extract/basetypes.xml"/>
         <xi:include href="skitfile:extract/comptypes.xml"/>
         <xi:include href="skitfile:extract/functions.xml"/>
+        <xi:include href="skitfile:extract/aggregates.xml"/>
       </schema>
     </skit:runsql>
   </skit:let>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="aggregate" from="aggregates" 
+		filter="(string= (select aggregate 'schema')
+			         (select schema 'name'))">
+    <aggregate>
+      <skit:attr name="name"/>
+      <skit:attr name="qname"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="initcond"/>
+      <basetype>
+	<skit:attr name="name" expr="(select aggregate 'basetype_name')"/>
+	<skit:attr name="schema" expr="(select aggregate 'basetype_schema')"/>
+      </basetype>
+      <transtype>
+	<skit:attr name="name" expr="(select aggregate 'trans_type_name')"/>
+	<skit:attr name="schema" expr="(select aggregate 'trans_type_schema')"/>
+      </transtype>
+      <transfunc>
+	<skit:attr name="name" expr="(select aggregate 'trans_func_name')"/>
+	<skit:attr name="schema" expr="(select aggregate 'trans_func_schema')"/>
+      </transfunc>
+      <skit:if test="(select aggregate 'final_func_name')">
+	<finalfunc>
+	  <skit:attr name="name" expr="(select aggregate 'final_func_name')"/>
+	  <skit:attr name="schema" 
+		     expr="(select aggregate 'final_func_schema')"/>
+	</finalfunc>
+      </skit:if>
+      <skit:if test="(select aggregate 'final_func_name')">
+	<sortop>
+	  <skit:attr name="name" expr="(select aggregate sort_op_name')"/>
+	  <skit:attr name="schema" expr="(select aggregate sort_op_schema')"/>
+	</sortop>
+      </skit:if>
+    </aggregate>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

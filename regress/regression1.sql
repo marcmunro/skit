@@ -140,14 +140,14 @@ end;
 $_$
 language plpgsql stable;
 
--- create aggregate "public"."mysum" (
---   basetype = "pg_catalog"."int4",
---   sfunc = "addint4",
---   stype = "pg_catalog"."int4",
---   initcond = '0'
--- );
--- 
--- 
+create aggregate "public"."mysum" (
+  basetype = "pg_catalog"."int4",
+  sfunc = "addint4",
+  stype = "pg_catalog"."int4",
+  initcond = '0'
+);
+
+
 create or replace function "public"."mycharin"(
     in "pg_catalog"."cstring")
   returns "public"."mychar"

@@ -40,6 +40,7 @@
   <xsl:include href="skitfile:ddl/domains.xsl"/>
   <xsl:include href="skitfile:ddl/types.xsl"/>
   <xsl:include href="skitfile:ddl/functions.xsl"/>
+  <xsl:include href="skitfile:ddl/aggregates.xsl"/>
 <!--
 
   <skituls:include file="ddl/casts.xsl"/>
