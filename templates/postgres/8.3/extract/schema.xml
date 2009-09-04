@@ -10,6 +10,7 @@
     <skit:runsql to="basetypes" file="sql/basetypes.sql" hash="oid"/>
     <skit:runsql to="comptypes" file="sql/comptypes.sql"/>
     <skit:runsql to="domains" file="sql/domains.sql"/>
+    <skit:runsql to="enums" file="sql/enums.sql"/>
     <skit:runsql to="constraints" file="sql/constraints.sql"/>
     <skit:runsql to="functions" file="sql/functions.sql" hash="oid"/>
     <xi:include href="skitfile:extract/function_sigs.xml"/>
@@ -17,6 +18,7 @@
       <schema>
         <skit:attr name="name"/>
         <skit:attr name="owner"/>
+        <skit:attr name="privs"/>
 	<skit:if test="(select tuple 'comment')">
 	  <comment>
 	    <skit:text expr="(select tuple 'comment')"/>
@@ -37,6 +39,7 @@
     			  privileges="(select tuple 'privs')"/>
 
         <xi:include href="skitfile:extract/domains.xml"/>
+        <xi:include href="skitfile:extract/enums.xml"/>
         <xi:include href="skitfile:extract/basetypes.xml"/>
         <xi:include href="skitfile:extract/comptypes.xml"/>
         <xi:include href="skitfile:extract/functions.xml"/>

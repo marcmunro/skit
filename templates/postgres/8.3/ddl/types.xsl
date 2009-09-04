@@ -19,6 +19,16 @@
 
         <xsl:value-of select="../@qname"/>
 	<xsl:choose>
+	  <xsl:when test="@subtype='enum'">
+	    <xsl:text> as enum (&#x0A;  </xsl:text>
+	    <xsl:for-each select="label">
+	      <xsl:if test="position() != 1">
+		<xsl:text>,&#x0A;  </xsl:text>
+	      </xsl:if>
+              <xsl:value-of select="@label"/>
+	    </xsl:for-each>
+            <xsl:text>);&#x0A;</xsl:text>
+	  </xsl:when>
 	  <xsl:when test="@subtype='basetype'">
             <xsl:text> (&#x0A;  input = &quot;</xsl:text>
             <xsl:value-of select="*[@type='input']/@schema"/>
@@ -112,9 +122,7 @@
 	    </xsl:for-each>
 	    <xsl:text>);&#x0A;</xsl:text>
 	    <xsl:for-each select="column/comment">
-	      <xsl:text>&#x0A;comment on column &quot;</xsl:text>
-	      <xsl:value-of select="../../@schema"/>
-	      <xsl:text>&quot;.</xsl:text>
+	      <xsl:text>&#x0A;comment on column </xsl:text>
 	      <xsl:value-of select="../../../@qname"/>
 	      <xsl:text>.&quot;</xsl:text>
 	      <xsl:value-of select="../@name"/>

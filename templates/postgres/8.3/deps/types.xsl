@@ -9,10 +9,12 @@
   <!-- Domains -->
   <xsl:template match="domain">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="tbs_fqn" select="concat('language.', 
+    <xsl:variable name="domain_fqn" select="concat('type.', 
 					  $parent_core, '.', @name)"/>
-    <dbobject type="domain" name="{@name}" qname='"{@name}"'
-	      fqn="{$tbs_fqn}">
+    <dbobject type="domain" name="{@name}" 
+	      qname="{concat('&quot;', @schema, '&quot;.&quot;', 
+		            @name, '&quot;')}"
+	      fqn="{$domain_fqn}">
       <xsl:if test="(@basetype_schema != 'pg_toast') and
 		    (@basetype_schema != 'pg_catalog') and
 		    (@basetype_schema != 'information_schema')">
@@ -57,7 +59,9 @@
     <xsl:variable name="type_fqn" select="concat('type.', 
 					    $parent_core, '.', @name)"/>
     <dbobject type="type" name="{@name}"
-	      fqn="{$type_fqn}" qname='"{@name}"'>
+	      fqn="{$type_fqn}"
+	      qname="{concat('&quot;', @schema, '&quot;.&quot;', 
+		            @name, '&quot;')}">
       <dependencies>
 	<xsl:for-each select="handler-function">
 	  <dependency fqn="{concat('function.', ancestor::database/@name, 
@@ -84,7 +88,6 @@
       </xsl:copy>
     </dbobject>
   </xsl:template>
-
 
 </xsl:stylesheet>
 

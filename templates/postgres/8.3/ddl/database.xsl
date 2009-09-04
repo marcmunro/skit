@@ -47,6 +47,8 @@
         <xsl:text>&#x0A;psql -d </xsl:text>
         <xsl:value-of select="../@name"/>
         <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
+	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
+        <xsl:text>set escape_string_warning = off;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 
@@ -61,6 +63,8 @@
         <xsl:text>psql -d </xsl:text>
         <xsl:value-of select="../@name"/>
         <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
+	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
+        <xsl:text>set escape_string_warning = off;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 

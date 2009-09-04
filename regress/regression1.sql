@@ -892,6 +892,16 @@ comment on column "public"."vv5_t".name is
 'name column';
 
 
+create schema schema2;
+
+revoke usage on schema schema2 from public;
+grant usage on schema schema2 to regress;
+comment on schema schema2 is 'this is a comment for schema2';
+
+create type schema2.yesno as enum ('no', 'yes');
+comment on type schema2.yesno is 'boolean-ish';
+
+
 
 \echo Done with schema "public";
 

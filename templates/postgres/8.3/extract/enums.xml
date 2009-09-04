@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="enum" from="enums" 
+		filter="(string= (select enum 'schema')
+			         (select schema 'name'))">
+    <type subtype="enum" is_defined="t">
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="comment"/>
+      <skit:runsql var="enumlabel" file="sql/enum_labels.sql"
+		   params="(select enum 'oid')">
+	<label>
+	  <skit:attr name="label"/>
+	</label>
+      </skit:runsql>
+      <skit:if test="(select enum 'comment')">
+	<comment>
+	  <skit:text expr="(select enum 'comment')"/>
+	</comment>
+      </skit:if>
+    </type>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -8,10 +8,10 @@ select a.attnum as id,
        then n2.nspname else n3.nspname end as type_schema,
        nullif(regexp_replace(
 	  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          '(.*\\(([0-9]*).*)|.*', '\\2'), '') as size,
+          E'(.*\\(([0-9]*).*)|.*', E'\\2'), '') as size,
        nullif(regexp_replace(
 	  pg_catalog.format_type(a.atttypid, a.atttypmod),
-          '(.*\\([0-9]*,([0-9]*).*)|.*', '\\2'), '') as precision,
+          E'(.*\\([0-9]*,([0-9]*).*)|.*', E'\\2'), '') as precision,
        case when a.attnotnull then 'no' else 'yes' end as nullable,
        nullif(a.attndims, 0) as dimensions,
        a.attstorage as storage_policy,
