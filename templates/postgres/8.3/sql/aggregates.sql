@@ -13,51 +13,46 @@ select p.proname as name,
        ttn.nspname as trans_type_schema,
        bt.typname as basetype_name,
        bn.nspname as basetype_schema,
-       n.nspname || '.' || p.proname as qname
+       p.proname || '(' || 
+       case when bt.typname is null then '*'
+       else bn.nspname || '.' || bt.typname end || ')' as signature,
+       '"' || n.nspname || '"."' || p.proname || '"(' || 
+       case when bt.typname is null then '*'
+       else '"' || bn.nspname || '"."' || bt.typname || '"' end || ')' as qname
 from   pg_catalog.pg_aggregate a
-       inner join
-           pg_catalog.pg_proc p
-       on (p.oid = a.aggfnoid)
-       inner join
-          pg_catalog.pg_namespace n
-       on (n.oid = p.pronamespace)
-       inner join
-           pg_catalog.pg_proc pt
-       on (pt.oid = a.aggtransfn)
-       inner join
-          pg_catalog.pg_namespace nt
-       on (nt.oid = pt.pronamespace)
-       inner join
-          pg_catalog.pg_roles r
-       on (r.oid = p.proowner)
-       left outer join
-           (pg_catalog.pg_proc pf
-            inner join
-                pg_catalog.pg_namespace nf
-            on (nf.oid = pf.pronamespace)
-	   )
-       on (pf.oid = a.aggfinalfn)
-       left outer join
-          (
-           pg_catalog.pg_operator op
-           inner join
-              pg_catalog.pg_namespace nop
-           on (nop.oid = op.oprnamespace)
-          )
-       on (op.oid = a.aggsortop)
-       left outer join
-         (    pg_catalog.pg_type tt
-           inner join
-              pg_catalog.pg_namespace ttn
-           on (ttn.oid = tt.typnamespace)
-         )
-         on (tt.oid = a.aggtranstype)
-       inner join
-         (    pg_catalog.pg_type bt
-           inner join
-              pg_catalog.pg_namespace bn
-           on (bn.oid = bt.typnamespace)
-         )
-         on (bt.oid = p.proargtypes[0])
+inner join pg_catalog.pg_proc p
+  on p.oid = a.aggfnoid
+inner join pg_catalog.pg_namespace n
+  on n.oid = p.pronamespace
+inner join pg_catalog.pg_proc pt
+  on pt.oid = a.aggtransfn
+inner join pg_catalog.pg_namespace nt
+  on nt.oid = pt.pronamespace
+inner join pg_catalog.pg_roles r
+  on r.oid = p.proowner
+left outer join
+    (        pg_catalog.pg_proc pf
+    inner join pg_catalog.pg_namespace nf
+      on nf.oid = pf.pronamespace
+    )
+  on pf.oid = a.aggfinalfn
+left outer join
+     (     pg_catalog.pg_operator op
+     inner join pg_catalog.pg_namespace nop
+       on nop.oid = op.oprnamespace
+     )
+  on op.oid = a.aggsortop
+left outer join
+     (    pg_catalog.pg_type tt
+     inner join pg_catalog.pg_namespace ttn
+       on ttn.oid = tt.typnamespace
+     )
+  on tt.oid = a.aggtranstype
+left outer join
+     (    pg_catalog.pg_type bt
+     inner join pg_catalog.pg_namespace bn
+       on bn.oid = bt.typnamespace
+     )
+  on bt.oid = p.proargtypes[0]
 where  n.nspname not in ('pg_catalog', 'information_schema');
 

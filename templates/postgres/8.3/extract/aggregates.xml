@@ -9,6 +9,7 @@
 			         (select schema 'name'))">
     <aggregate>
       <skit:attr name="name"/>
+      <skit:attr name="signature"/>
       <skit:attr name="qname"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
@@ -32,10 +33,10 @@
 		     expr="(select aggregate 'final_func_schema')"/>
 	</finalfunc>
       </skit:if>
-      <skit:if test="(select aggregate 'final_func_name')">
+      <skit:if test="(select aggregate 'sort_op_name')">
 	<sortop>
-	  <skit:attr name="name" expr="(select aggregate sort_op_name')"/>
-	  <skit:attr name="schema" expr="(select aggregate sort_op_schema')"/>
+	  <skit:attr name="name" expr="(select aggregate 'sort_op_name')"/>
+	  <skit:attr name="schema" expr="(select aggregate 'sort_op_schema')"/>
 	</sortop>
       </skit:if>
     </aggregate>

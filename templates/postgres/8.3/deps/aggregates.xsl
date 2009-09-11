@@ -9,7 +9,7 @@
   <xsl:template match="aggregate">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="aggregate_fqn" select="concat('aggregate.', 
-					       $parent_core, '.', @name)"/>
+					       $parent_core, '.', @signature)"/>
     <dbobject type="aggregate" fqn="{$aggregate_fqn}"
 	      name="{@name}" qname="{@qname}">
       <dependencies>

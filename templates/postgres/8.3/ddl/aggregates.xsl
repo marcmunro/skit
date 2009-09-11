@@ -32,11 +32,20 @@ CREATE AGGREGATE mysum(integer) (
         <xsl:value-of select="@schema"/>
 	<xsl:text>&quot;.&quot;</xsl:text>
         <xsl:value-of select="@name"/>
-	<xsl:text>&quot;(&quot;</xsl:text>
-        <xsl:value-of select="basetype/@schema"/>
-	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="basetype/@name"/>
-	<xsl:text>&quot;) (&#x0A;  sfunc = &quot;</xsl:text>
+	<xsl:text>&quot;(</xsl:text>
+	<xsl:choose>
+	  <xsl:when test="basetype/@name">
+	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="basetype/@schema"/>
+	    <xsl:text>&quot;.&quot;</xsl:text>
+            <xsl:value-of select="basetype/@name"/>
+	    <xsl:text>&quot;</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:text>*</xsl:text>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:text>) (&#x0A;  sfunc = &quot;</xsl:text>
         <xsl:value-of select="transfunc/@schema"/>
 	<xsl:text>&quot;.&quot;</xsl:text>
         <xsl:value-of select="transfunc/@name"/>
@@ -86,11 +95,20 @@ CREATE AGGREGATE mysum(integer) (
         <xsl:value-of select="@schema"/>
 	<xsl:text>&quot;.&quot;</xsl:text>
         <xsl:value-of select="@name"/>
-	<xsl:text>&quot;(&quot;</xsl:text>
-        <xsl:value-of select="basetype/@schema"/>
-	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="basetype/@name"/>
-	<xsl:text>&quot;);&#x0A;</xsl:text>
+	<xsl:text>&quot;(</xsl:text>
+	<xsl:choose>
+	  <xsl:when test="basetype/@name">
+	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="basetype/@schema"/>
+	    <xsl:text>&quot;.&quot;</xsl:text>
+            <xsl:value-of select="basetype/@name"/>
+	    <xsl:text>&quot;</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:text>*</xsl:text>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:text>);&#x0A;</xsl:text>
 	  
       	<xsl:if test="@owner != //cluster/@username">
       	  <xsl:text>reset session authorization;&#x0A;</xsl:text>

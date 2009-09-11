@@ -147,6 +147,23 @@ create aggregate "public"."mysum" (
   initcond = '0'
 );
 
+create aggregate "public"."mycount"(*) (
+  sfunc = "pg_catalog"."int8inc",
+  stype = "pg_catalog"."int8",
+  initcond = '0');
+
+
+create aggregate "public"."mycount"("pg_catalog"."any") (
+  sfunc = "pg_catalog"."int8inc_any",
+  stype = "pg_catalog"."int8",
+  initcond = '0');
+
+create aggregate "public"."mymax"("pg_catalog"."int4") (
+  sfunc = "pg_catalog"."int4larger",
+  stype = "pg_catalog"."int4",
+  sortop = "pg_catalog".">");
+
+
 
 create or replace function "public"."mycharin"(
     in "pg_catalog"."cstring")
