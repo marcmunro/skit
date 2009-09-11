@@ -6,17 +6,6 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-
-<!-- 
-WHat we are aiming for
-CREATE AGGREGATE mysum(integer) (
-    SFUNC = addint4,
-    STYPE = integer,
-    INITCOND = '0'
-);
-
--->
-
   <xsl:template match="dbobject/aggregate">
     <xsl:if test="../@action='build'">
       <print>

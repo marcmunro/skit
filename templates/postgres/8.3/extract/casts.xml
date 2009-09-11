@@ -14,13 +14,20 @@
         end
       </skituls:expr>
 	-->
-      <skit:attr name='name'/>
-      <skit:attr name='source_type_schema'/>
-      <skit:attr name='source_type'/>
-      <skit:attr name='target_type_schema'/>
-      <skit:attr name='target_type'/>
-      <skit:attr name='context'/>
-      <skit:attr name='fn_sig'/>
+      <skit:attr name="name"/>
+      <skit:attr name="qname"/>
+      <skit:attr name="context"/>
+      <source>
+	<skit:attr name="type" expr="(select casts 'source_type')"/>
+	<skit:attr name="schema" expr="(select casts 'source_type_schema')"/>
+      </source>
+      <target>
+	<skit:attr name="type" expr="(select casts 'target_type')"/>
+	<skit:attr name="schema" expr="(select casts 'target_type_schema')"/>
+      </target>
+      <skit:exec_function name="type_handler"
+      			  oid="(select casts 'fn_oid')"
+      			  type="'cast'"/>
     </cast>
   </skit:runsql>
 </skit:inclusion>

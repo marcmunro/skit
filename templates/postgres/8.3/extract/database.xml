@@ -28,9 +28,23 @@
        <skit:exec_function name="grants_from_privs"
 			   privileges="(select dbinfo 'privs')"/>
      </skit:let>	
-     <xi:include href="skitfile:extract/languages.xml"/>
-     <xi:include href="skitfile:extract/schema.xml"/>
- <!--    <xi:include href="skitfile:extract/casts.xml"/> -->
+
+     <skit:let>
+       <skit:var name="function_sigs"/>
+       <skit:runsql to="alltypes" file="sql/alltypes.sql" hash="oid"/>
+       <skit:runsql to="basetypes" file="sql/basetypes.sql" hash="oid"/>
+       <skit:runsql to="comptypes" file="sql/comptypes.sql"/>
+       <skit:runsql to="domains" file="sql/domains.sql"/>
+       <skit:runsql to="enums" file="sql/enums.sql"/>
+       <skit:runsql to="constraints" file="sql/constraints.sql"/>
+       <skit:runsql to="functions" file="sql/functions.sql" hash="oid"/>
+       <skit:runsql to="aggregates" file="sql/aggregates.sql"/>
+       <xi:include href="skitfile:extract/function_sigs.xml"/>
+
+       <xi:include href="skitfile:extract/languages.xml"/>
+       <xi:include href="skitfile:extract/schema.xml"/>
+       <xi:include href="skitfile:extract/casts.xml"/>
+     </skit:let>
    </database>
 </skit:inclusion>  
 

@@ -41,9 +41,9 @@
   <xsl:include href="skitfile:ddl/types.xsl"/>
   <xsl:include href="skitfile:ddl/functions.xsl"/>
   <xsl:include href="skitfile:ddl/aggregates.xsl"/>
+  <xsl:include href="skitfile:ddl/casts.xsl"/>
 <!--
 
-  <skituls:include file="ddl/casts.xsl"/>
   <skituls:include file="ddl/operators.xsl"/>
   <skituls:include file="ddl/operator_classes.xsl"/>
   <skituls:include file="ddl/aggregate.xsl"/>

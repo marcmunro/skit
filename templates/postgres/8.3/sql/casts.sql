@@ -1,10 +1,8 @@
 -- List all casts
-select case when sn.nspname = 'pg_catalog' then ''
-       else sn.nspname || '.' end ||
-       st.typname || ':' ||
-       case when tn.nspname = 'pg_catalog' then ''
-       else tn.nspname || '.' end ||
-       tt.typname as name,
+select sn.nspname || '.' || st.typname || '::' ||
+       tn.nspname || '.' || tt.typname as name,
+       '"' || sn.nspname || '"."' || st.typname || '"::"' ||
+       tn.nspname || '"."' || tt.typname || '"' as qname,
        st.typname as source_type,
        sn.nspname as source_type_schema,
        tt.typname as target_type,

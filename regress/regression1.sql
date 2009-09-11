@@ -918,6 +918,23 @@ comment on schema schema2 is 'this is a comment for schema2';
 create type schema2.yesno as enum ('no', 'yes');
 comment on type schema2.yesno is 'boolean-ish';
 
+create domain "public"."postal2"
+  as "public"."mychar";
+
+
+create or replace function "public"."mycharsend"(
+    in "public"."mychar")
+  returns "pg_catalog"."bytea"
+as 'charsend'
+language internal immutable strict;
+
+create cast("public"."mychar" as "pg_catalog"."bytea")
+  with function "public"."mycharsend"("public"."mychar")
+  as assignment;
+
+
+create cast("public"."postal2" as "public"."mychar")
+  without function;
 
 
 \echo Done with schema "public";
