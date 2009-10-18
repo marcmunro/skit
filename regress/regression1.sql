@@ -593,141 +593,141 @@ language internal immutable strict;
 -- \echo updating schema "public";
 -- 
 -- 
--- create operator "public".< (
---   leftarg = "public"."wib",
---   rightarg = "public"."wib",
---   procedure = "public"."wib_lt",
---   commutator = "public".">=",
---   negator = "public".">",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".<< (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_left",
---   commutator = "public".">>",
---   restrict = "pg_catalog"."positionsel",
---   join = "pg_catalog"."positionjoinsel");
--- 
--- 
--- 
--- create operator "public".<= (
---   leftarg = "public"."wib",
---   rightarg = "public"."wib",
---   procedure = "public"."wib_lt",
---   commutator = "public".">",
---   negator = "public".">=",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".<> (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_different",
---   commutator = "public"."<>",
---   negator = "public"."=",
---   restrict = "pg_catalog"."neqsel",
---   join = "pg_catalog"."neqjoinsel");
--- 
--- 
--- 
--- create operator "public".> (
---   leftarg = "public"."wib",
---   rightarg = "public"."wib",
---   procedure = "public"."wib_gt",
---   commutator = "public"."<=",
---   negator = "public"."<",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".>= (
---   leftarg = "public"."wib",
---   rightarg = "public"."wib",
---   procedure = "public"."wib_gt",
---   commutator = "public"."<",
---   negator = "public"."<=",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".>> (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_right",
---   commutator = "public"."<<",
---   restrict = "pg_catalog"."positionsel",
---   join = "pg_catalog"."positionjoinsel");
--- 
--- 
--- 
--- create operator "public".< (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_lt",
---   commutator = "public".">",
---   negator = "public".">=",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".<= (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_le",
---   commutator = "public".">=",
---   negator = "public".">",
---   restrict = "pg_catalog"."scalarltsel",
---   join = "pg_catalog"."scalarltjoinsel");
--- 
--- 
--- 
--- create operator "public".> (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_gt",
---   commutator = "public"."<",
---   negator = "public"."<=",
---   restrict = "pg_catalog"."scalargtsel",
---   join = "pg_catalog"."scalargtjoinsel");
--- 
--- 
--- 
--- create operator "public".>= (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_ge",
---   commutator = "public"."<=",
---   negator = "public"."<",
---   restrict = "pg_catalog"."scalargtsel",
---   join = "pg_catalog"."scalargtjoinsel");
--- 
--- 
--- 
--- create operator "public".= (
---   leftarg = "public"."seg",
---   rightarg = "public"."seg",
---   procedure = "public"."seg_same",
---   commutator = "public"."=",
---   negator = "public"."<>",
---   restrict = "pg_catalog"."eqsel",
---   join = "pg_catalog"."eqjoinsel",
---   merges,
---   sort1 = operator("public".<),
---   sort2 = operator("public".<),
---   ltcmp = operator("public".<),
---   gtcmp = operator("public".>));
--- 
--- 
--- 
+create operator "public".< (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_lt",
+  commutator = "public".">=",
+  negator = "public".">",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".<< (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_left",
+  commutator = "public".">>",
+  restrict = "pg_catalog"."positionsel",
+  join = "pg_catalog"."positionjoinsel");
+
+
+
+create operator "public".<= (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_lt",
+  commutator = "public".">",
+  negator = "public".">=",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".<> (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_different",
+  commutator = "public"."<>",
+  negator = "public"."=",
+  restrict = "pg_catalog"."neqsel",
+  join = "pg_catalog"."neqjoinsel");
+
+
+
+create operator "public".> (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_gt",
+  commutator = "public"."<=",
+  negator = "public"."<",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".>= (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_gt",
+  commutator = "public"."<",
+  negator = "public"."<=",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".>> (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_right",
+  commutator = "public"."<<",
+  restrict = "pg_catalog"."positionsel",
+  join = "pg_catalog"."positionjoinsel");
+
+
+
+create operator "public".< (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_lt",
+  commutator = "public".">",
+  negator = "public".">=",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".<= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_le",
+  commutator = "public".">=",
+  negator = "public".">",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+
+
+create operator "public".> (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_gt",
+  commutator = "public"."<",
+  negator = "public"."<=",
+  restrict = "pg_catalog"."scalargtsel",
+  join = "pg_catalog"."scalargtjoinsel");
+
+
+
+create operator "public".>= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_ge",
+  commutator = "public"."<=",
+  negator = "public"."<",
+  restrict = "pg_catalog"."scalargtsel",
+  join = "pg_catalog"."scalargtjoinsel");
+
+
+
+create operator "public".= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_same",
+  commutator = "public"."=",
+  negator = "public"."<>",
+  restrict = "pg_catalog"."eqsel",
+  join = "pg_catalog"."eqjoinsel",
+  merges,
+  sort1 = operator("public".<),
+  sort2 = operator("public".<),
+  ltcmp = operator("public".<),
+  gtcmp = operator("public".>));
+
+
+
 -- create operator class "public"."seg_ops"
 --   default for type "public"."seg" using btree as
 --     operator 1  "public".<,

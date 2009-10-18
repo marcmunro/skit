@@ -34,6 +34,7 @@
       <xi:include href="skitfile:extract/comptypes.xml"/>
       <xi:include href="skitfile:extract/functions.xml"/>
       <xi:include href="skitfile:extract/aggregates.xml"/>
+      <xi:include href="skitfile:extract/operators.xml"/>
     </schema>
   </skit:runsql>
   <!-- <skit:exec expr="(debug 'TODO: operators, operator classes,
@@ -41,7 +42,7 @@
 </skit:inclusion>
 
 
-  <skit:runsql var="operators" file="sql/operators.sql"/>
+  <!-- These need to be moved into database.xml -->
   <skit:runsql var="operator_classes" file="sql/operator_classes.sql"/>
   <skit:runsql var="opclass_opers" file="sql/opclass_opers.sql"/>
   <skit:runsql var="opclass_funcs" file="sql/opclass_funcs.sql"/>

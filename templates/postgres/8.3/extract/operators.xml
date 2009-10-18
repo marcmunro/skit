@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="operator" from="operators" 
+		filter="(string= (select operator 'schema')
+			         (select schema 'name'))">
+    <operator>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="hashes"/>
+      <skit:attr name="merges"/>
+      <skit:attr name="comment"/>
+      <skit:if test="(select operator 'leftarg_type')">
+	<arg position="left">
+	  <skit:attr name="name"
+      		     expr="(select operator 'leftarg_type')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'leftarg_schema')"/>
+	</arg>
+      </skit:if>
+      <skit:if test="(select operator 'rightarg_type')">
+	<arg position="right">
+	  <skit:attr name="name"
+      		     expr="(select operator 'rightarg_type')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'rightarg_schema')"/>
+	</arg>
+      </skit:if>
+      <result>
+	<skit:attr name="name"
+      		   expr="(select operator 'result_type')"/>
+	<skit:attr name="schema"
+      		   expr="(select operator 'result_schema')"/>
+      </result>
+      <skit:if test="(select operator 'procedure')">
+	<procedure>
+	  <skit:attr name="name"
+      		     expr="(select operator 'procedure')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'procedure_schema')"/>
+	  <skit:attr name="signature"
+      		     expr="(concat (select operator 'procedure_schema')
+			           '.' (select operator 'procedure')
+				   '(' (select operator 'leftarg_schema')
+				   '.' (select operator 'leftarg_type')
+				   ',' (select operator 'rightarg_schema')
+				   '.' (select operator 'rightarg_type')
+				   ')' )"/>
+	</procedure>
+      </skit:if>
+      <skit:if test="(select operator 'commutator')">
+	<commutator>
+	  <skit:attr name="name"
+      		     expr="(select operator 'commutator')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'commutator_schema')"/>
+	</commutator>
+      </skit:if>
+      <skit:if test="(select operator 'negator')">
+	<negator>
+	  <skit:attr name="name"
+      		     expr="(select operator 'negator')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'negator_schema')"/>
+	</negator>
+      </skit:if>
+      <skit:if test="(select operator 'restrict_proc')">
+	<restrict>
+	  <skit:attr name="name"
+      		     expr="(select operator 'restrict_proc')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'restrict_proc_schema')"/>
+	  <skit:attr name="signature"
+      		     expr="(concat (select operator 'restrict_proc_schema')
+			           '.' (select operator 'restrict_proc')
+				   '(pg_catalog.internal,pg_catalog.oid,'
+				   'pg_catalog.internal,pg_catalog.integer)')"/>
+	</restrict>
+      </skit:if>
+      <skit:if test="(select operator 'join_proc')">
+	<join>
+	  <skit:attr name="name"
+      		     expr="(select operator 'join_proc')"/>
+	  <skit:attr name="schema"
+      		     expr="(select operator 'join_proc_schema')"/>
+	  <skit:attr name="signature"
+      		     expr="(concat (select operator 'join_proc_schema')
+		           '.' (select operator 'join_proc')
+			   '(pg_catalog.internal,pg_catalog.oid,'
+			   'pg_catalog.internal,pg_catalog.smallint)')"/>
+	</join>
+      </skit:if>
+    </operator>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

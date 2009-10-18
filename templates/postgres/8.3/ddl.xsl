@@ -42,6 +42,7 @@
   <xsl:include href="skitfile:ddl/functions.xsl"/>
   <xsl:include href="skitfile:ddl/aggregates.xsl"/>
   <xsl:include href="skitfile:ddl/casts.xsl"/>
+  <xsl:include href="skitfile:ddl/operators.xsl"/>
 <!--
 
   <skituls:include file="ddl/operators.xsl"/>

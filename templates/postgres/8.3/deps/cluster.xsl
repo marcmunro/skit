@@ -80,6 +80,7 @@
   <xsl:include href="skitfile:deps/functions.xsl"/>
   <xsl:include href="skitfile:deps/aggregates.xsl"/>
   <xsl:include href="skitfile:deps/casts.xsl"/>
+  <xsl:include href="skitfile:deps/operators.xsl"/>
 
 </xsl:stylesheet>
 

@@ -515,14 +515,16 @@ fnConcat(Object *obj)
 	while (cons) {
 	    evalCar(cons);
 	    item = dereference(cons->car);
-	    if (item->type == OBJ_STRING) {
-		appendStr(result, (String *) item);
-	    }
-	    else {
-		/* Convert item to string */
-		itemstr = stringNewByRef(objectSexp(item));
-		appendStr(result, itemstr);
-		objectFree((Object *) itemstr, TRUE);
+	    if (item) {
+		if (item->type == OBJ_STRING) {
+		    appendStr(result, (String *) item);
+		}
+		else {
+		    /* Convert item to string */
+		    itemstr = stringNewByRef(objectSexp(item));
+		    appendStr(result, itemstr);
+		    objectFree((Object *) itemstr, TRUE);
+		}
 	    }
 	    cons = (Cons *) cons->cdr;
 	}
