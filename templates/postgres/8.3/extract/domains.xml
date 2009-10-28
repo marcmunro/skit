@@ -15,7 +15,6 @@
       <skit:attr name="basetype_schema"/>
       <skit:attr name="default"/>
       <skit:attr name="nullable"/>
-      <skit:attr name="comment"/>
       <skit:foreach var="constraint" from="constraints"	
 		    filter="(string= (select domain 'conoid')
 			             (select constraint 'oid'))">

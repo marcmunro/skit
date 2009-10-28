@@ -804,6 +804,7 @@ iterate(Object *collection, String *filter,
     Object *placeholder = NULL;
     boolean do_it = TRUE;
     String *varname = nodeAttribute(template_node, "var");
+    String *key = nodeAttribute(template_node, "key");
     Symbol *sym = NULL;
     if (varname) {
 	newSymbolScope();
@@ -816,7 +817,6 @@ iterate(Object *collection, String *filter,
     }    
 
     BEGIN {
-	//printSexp(stderr, "COLLECTION: ", collection);
 	while (tuple = objNext(collection, &placeholder), placeholder) {
 	    if (sym) {
 		sym->svalue = tuple;
@@ -870,6 +870,7 @@ iterate(Object *collection, String *filter,
 	    sym->svalue = NULL;
 	    dropSymbolScope();
 	}
+	objectFree((Object *) key, TRUE);
 	objectFree(placeholder, TRUE);
     }
     END;
@@ -956,7 +957,7 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
     BEGIN {
 	if (!fromname) {
 	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("var must be specified for foreach"));
+		  newstr("from must be specified for foreach"));
 	}
 
 	cursor = symbolGetValue(fromname->value);

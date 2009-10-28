@@ -23,6 +23,8 @@ static int chunk_number = 0;
 static int free_number = 0;
 static int show_free_number = 0;
 static int show_malloc_number = 0;
+static int track_malloc_number = 0;
+static void *track_chunk = NULL;
 
 static GHashTable *hash_chunks = NULL;
 static GHashTable *hash_frees = NULL;
@@ -302,9 +304,9 @@ delChunk(void *chunk)
 	      newstr("DelChunk: Chunk %p already freed", chunk));
     }
     if (free_number == show_free_number) {
-	memdebug("FREEING IDENTIFIED CHUNK");
 	fprintf(stderr, "  Freeing chunk %p: freed as %d, malloc'd as %d\n", 
 		chunk, free_number, previous);
+	memdebug("FREEING IDENTIFIED CHUNK");
 	printObj((Object *) chunk);
     }
 }
@@ -350,8 +352,11 @@ memchunks_incr(void *chunk)
     chunk_number++;
     
     if (chunk_number == show_malloc_number) {
-	memdebug("ALLOCATING IDENTIFIED CHUNK");
 	fprintf(stderr, "  Allocating %p, chunk no %d\n", chunk, chunk_number);
+	memdebug("ALLOCATING IDENTIFIED CHUNK");
+    }
+    if (chunk_number == track_malloc_number) {
+	track_chunk = chunk;
     }
     chunks_in_use++;
     addChunk(chunk);
@@ -372,6 +377,12 @@ void
 skfree(void *ptr)
 {
     MEMPRINTF("-");
+    if (ptr && (ptr == track_chunk)) {
+	fprintf(stderr, "About to free chunk %p (malloc no %d)\n", 
+		ptr, show_malloc_number);
+	memdebug("FREEING TRACKED CHUNK");
+	track_chunk = NULL;
+    }
     free_number++;
     chunks_in_use--;
     delChunk(ptr);
@@ -401,16 +412,39 @@ curFree()
     fprintf(stderr, "curFree: %d\n", free_number);
 }
 
+/* A debugging tool.  If you want to figure out when the Nth memory
+ * chunk is freed , call showFree(N) and memdebug() will be called at that
+ * moment.  Set a breakpoint on memdebug and you can figure out what is
+ * going on at the point of that memory de-allocation.  Note that this
+ * is the Nth free, not the free of the Nth allocated chunk.
+ */
 void
 showFree(int number_to_show)
 {
     show_free_number = number_to_show;
 }
 
+/* A debugging tool.  If you want to figure out when memory chunk N
+ * is allocated, call showMalloc(N) and memdebug() will be called at that
+ * moment.  Set a breakpoint on memdebug and you can figure out what is
+ * going on at the point of that memory allocation.
+ */
 void
 showMalloc(int number_to_show)
 {
     show_malloc_number = number_to_show;
+}
+
+/* A debugging tool.  
+ * If you want to figure out when memory chunk N is freed (ie when the
+ * Nth allocated chunk is freed), call showMalloc(N) and memdebug() will
+ * be called at that moment.  Set a breakpoint on memdebug and you can
+ * figure out what is going on at the point of that memory deallocation.
+ */
+void
+trackMalloc(int number_to_show)
+{
+    track_malloc_number = number_to_show;
 }
 
 void

@@ -271,6 +271,7 @@ pgsqlFieldByIdx(Tuple *tuple, int col)
 	}
 
 	row = cursor->rownum - 1;
+
 	if (PQgetisnull(cursor->cursor, row, col)) {
 		return NULL;
 	}
@@ -511,6 +512,7 @@ pgsqlIndexCursor(Cursor *cursor, String *fieldname)
 	Int4 *col;
 	Int4 *rowobj;
 	Object *field;
+	Object *prev;
 
 	if (cursor->index) {
 		objectFree((Object *) cursor->index, TRUE);
@@ -527,12 +529,17 @@ pgsqlIndexCursor(Cursor *cursor, String *fieldname)
 	if (!col) {
 		return;
 	}
-
 	cursor->index = hashNew(TRUE);
 	for (cursor->rownum = 1; cursor->rownum <= cursor->rows; cursor->rownum++) {
 		if (field = (Object *) pgsqlFieldByIdx(&(cursor->tuple), col->value)) {
 			rowobj = int4New(cursor->rownum);
-			hashAdd(cursor->index, field, (Object *) rowobj);
+			prev = hashAdd(cursor->index, field, (Object *) rowobj);
+			if (prev) {
+				objectFree(prev, TRUE);
+				RAISE(INDEX_ERROR,
+					  newstr("Multiple values for hash key in cursor: %s",
+							 cursor->querystr->value));
+			}
 		}
 	}
 }

@@ -194,32 +194,9 @@ comment on type "public"."mychar" is
 
 \echo Done with schema "public";
 
-create or replace function "public"."mycharsend"(
-    in "public"."mychar")
-  returns "pg_catalog"."bytea"
-as 'charsend'
-language internal immutable strict;
 
+\echo updating schema "public";
 
--- create cast("public"."mychar" as "pg_catalog"."bytea")
---   with function "public"."mycharsend"("public"."mychar")
---   as assignment;
--- 
--- 
--- \echo updating schema "public";
--- 
--- create domain "public"."postal2"
---   as "public"."mychar";
--- 
--- \echo Done with schema "public";
--- 
--- 
--- create cast("public"."postal2" as "public"."mychar")
---   without function;
--- 
--- 
--- \echo updating schema "public";
--- 
 set session authorization 'regress';
 grant usage on schema "public" to "public";
 reset session authorization;
@@ -578,17 +555,17 @@ language internal immutable strict;
 -- \echo Done with schema "public";
 -- 
 -- 
--- set session authorization 'marco';
--- grant temporary on database "regressdb" to "keep" with grant option;
--- reset session authorization;
--- 
--- set session authorization 'marco';
--- grant temporary on database "regressdb" to "public";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant temporary on database "regressdb" to "public";
--- reset session authorization;
+set session authorization 'marco';
+grant temporary on database "regressdb" to "keep" with grant option;
+reset session authorization;
+
+set session authorization 'marco';
+grant temporary on database "regressdb" to "public";
+reset session authorization;
+
+set session authorization 'regress';
+grant temporary on database "regressdb" to "public";
+reset session authorization;
 -- 
 -- \echo updating schema "public";
 -- 
@@ -728,15 +705,23 @@ create operator "public".= (
 
 
 
--- create operator class "public"."seg_ops"
---   default for type "public"."seg" using btree as
---     operator 1  "public".<,
---     operator 2  "public".<=,
---     operator 5  "public".>,
---     operator 4  "public".>=,
---     operator 3  "public".=,
---     function 1  "public"."seg_cmp"("public"."seg","public"."seg");
--- 
+create operator class "public"."seg_ops"
+  default for type "public"."seg" using btree as
+    operator 1  "public".<,
+    operator 2  "public".<=,
+    operator 5  "public".>,
+    operator 4  "public".>=,
+    operator 3  "public".=,
+    function 1  "public"."seg_cmp"("public"."seg","public"."seg");
+
+comment on operator class "public"."seg_ops" using btree is
+'operator class for seg_ops';
+
+comment on operator family "public"."seg_ops" using btree is
+'operator family for seg_ops';
+
+
+
 -- \echo Done with schema "public";
 -- 
 -- 

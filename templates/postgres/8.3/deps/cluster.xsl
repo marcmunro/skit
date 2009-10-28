@@ -81,6 +81,8 @@
   <xsl:include href="skitfile:deps/aggregates.xsl"/>
   <xsl:include href="skitfile:deps/casts.xsl"/>
   <xsl:include href="skitfile:deps/operators.xsl"/>
+  <xsl:include href="skitfile:deps/operator_classes.xsl"/>
+  <xsl:include href="skitfile:deps/operator_families.xsl"/>
 
 </xsl:stylesheet>
 

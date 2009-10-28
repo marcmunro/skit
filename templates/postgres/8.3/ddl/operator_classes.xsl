@@ -16,9 +16,7 @@
           <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:text>create operator class &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+	<xsl:text>create operator class </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text>&#x0A;  </xsl:text>
 	<xsl:if test="@is_default = 't'">
@@ -84,7 +82,8 @@
 	</xsl:for-each>
 	<xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:apply-templates/>  <!-- Deal with comments -->
+	<xsl:apply-templates/>
+
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>
@@ -101,9 +100,7 @@
       	  <xsl:text>&apos;;&#x0A;</xsl:text>
       	</xsl:if>
 	  
-	<xsl:text>drop operator class &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+	<xsl:text>drop operator class </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text> using </xsl:text>
         <xsl:value-of select="@method"/>

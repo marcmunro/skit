@@ -13,9 +13,9 @@
       <skit:attr name="owner"/>
       <skit:attr name="method"/>
       <skit:attr name="auto_generated"/>
-      <skit:if test="(select operator_class 'comment')">
+      <skit:if test="(select operator_family 'comment')">
 	<comment>
-	  <skit:text expr="(select operator_class 'comment')"/>
+	  <skit:text expr="(select operator_family 'comment')"/>
 	</comment>
       </skit:if>
 

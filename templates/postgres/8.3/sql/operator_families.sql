@@ -3,7 +3,8 @@ select opf.oid as oid,
        n.nspname as schema,
        r.rolname as owner,
        am.amname as method,
-       d.deptype = 'a' as auto_generated
+       d.deptype = 'a' as auto_generated,
+       quote_literal(obj_description(opf.oid, 'pg_opfamily')) as comment
 from   pg_catalog.pg_opfamily opf
 inner join pg_catalog.pg_namespace n
   on n.oid = opf.opfnamespace

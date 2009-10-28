@@ -15,7 +15,7 @@
 			  @schema, '.', @name, 
 			  '(', @method, ')')"/>
     <dbobject type="operator_family" fqn="{$operator_family_fqn}"
-	      name="{@name}" qname='"{@name}"'>
+	      name="{@name}" qname='"{@schema}"."{@name}"'>
       <dependencies>
 
 	<!-- operators -->

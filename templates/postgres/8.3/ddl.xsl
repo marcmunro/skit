@@ -20,9 +20,22 @@
   
   <xsl:template match="comment">
     <xsl:text>&#x0A;comment on </xsl:text>
-    <xsl:value-of select="name(..)"/>
+    <xsl:choose>
+      <xsl:when test="contains(name(..), '_')">
+	<xsl:value-of select="substring-before(name(..), '_')" />
+	<xsl:text> </xsl:text>
+	<xsl:value-of select="substring-after(name(..), '_')" />
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="name(..)"/>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:text> </xsl:text>
     <xsl:value-of select="../../@qname"/>
+    <xsl:if test="../@method">
+      <xsl:text> using </xsl:text>
+      <xsl:value-of select="../@method"/>
+    </xsl:if>
     <xsl:text> is&#x0A;</xsl:text>
     <xsl:value-of select="text()"/>
     <xsl:text>;&#x0A;</xsl:text>
@@ -43,11 +56,10 @@
   <xsl:include href="skitfile:ddl/aggregates.xsl"/>
   <xsl:include href="skitfile:ddl/casts.xsl"/>
   <xsl:include href="skitfile:ddl/operators.xsl"/>
+  <xsl:include href="skitfile:ddl/operator_classes.xsl"/>
+  <xsl:include href="skitfile:ddl/operator_families.xsl"/>
 <!--
 
-  <skituls:include file="ddl/operators.xsl"/>
-  <skituls:include file="ddl/operator_classes.xsl"/>
-  <skituls:include file="ddl/aggregate.xsl"/>
   <skituls:include file="ddl/sequences.xsl"/>
   <skituls:include file="ddl/tables.xsl"/>
 -->

@@ -8,7 +8,8 @@ select oc.opcname as name,
        am.amname as method, 
        f.opfname as family,
        nf.nspname as family_schema,
-       oc.opcdefault as is_default
+       oc.opcdefault as is_default,
+       quote_literal(obj_description(oc.oid, 'pg_opclass')) as comment
 from   pg_catalog.pg_opclass oc
 inner join pg_catalog.pg_namespace n
   on n.oid = oc.opcnamespace

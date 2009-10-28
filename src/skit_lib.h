@@ -385,6 +385,8 @@ extern void *skrealloc(void *p, size_t size);
 extern void memTrace(char *str);
 extern void curFree();
 extern void showFree(int number_to_show);
+extern void showMalloc(int number_to_show);
+extern void TrackMalloc(int number_to_show);
 extern void memShutdown();
 extern void skitFreeMem();
 extern void checkChunk(void *chunk);

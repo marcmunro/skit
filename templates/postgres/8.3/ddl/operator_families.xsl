@@ -16,9 +16,7 @@
           <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:text>create operator family&quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+	<xsl:text>create operator family </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text>using </xsl:text>
         <xsl:value-of select="@method"/>
@@ -87,9 +85,7 @@
       	  <xsl:text>&apos;;&#x0A;</xsl:text>
       	</xsl:if>
 	  
-	<xsl:text>drop operator family&quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+	<xsl:text>drop operator family </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text>using </xsl:text>
         <xsl:value-of select="@method"/>

@@ -31,7 +31,7 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>&#x0A;drop schema</xsl:text>
+        <xsl:text>&#x0A;drop schema </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;&#x0A;</xsl:text>
       </print>

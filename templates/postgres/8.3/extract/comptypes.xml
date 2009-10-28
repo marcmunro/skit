@@ -11,7 +11,6 @@
       <skit:attr name="name"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
-      <skit:attr name="comment"/>
       <skit:attr name="subtype" expr="'comptype'"/>
       <skit:attr name="is_defined" expr="'t'"/>
       <skit:runsql var="typcolumn" file="sql/type_columns.sql"

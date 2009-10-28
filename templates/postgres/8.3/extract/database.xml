@@ -39,6 +39,12 @@
        <skit:runsql to="constraints" file="sql/constraints.sql"/>
        <skit:runsql to="functions" file="sql/functions.sql" hash="oid"/>
        <skit:runsql to="operators" file="sql/operators.sql" hash="oid"/>
+       <skit:runsql to="operator_families"
+		    file="sql/operator_families.sql" hash="oid"/>
+       <skit:runsql to="operator_classes"
+		    file="sql/operator_classes.sql" hash="oid"/>
+       <skit:runsql to="opclass_opers" file="sql/opclass_opers.sql"/>
+       <skit:runsql to="opclass_funcs" file="sql/opclass_funcs.sql"/>
        <skit:runsql to="aggregates" file="sql/aggregates.sql"/>
        <xi:include href="skitfile:extract/function_sigs.xml"/>
 
