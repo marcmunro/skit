@@ -85,8 +85,6 @@
 		<skit:attr name="name" expr="(select function 'name')"/>
 		<skit:attr name="schema" expr="(select function 'schema')"/>
 		<skit:attr name="signature" expr="(select function_sigs oid)"/>
-		<!-- <skit:attr name="qname" 
-		                expr="(select function_qnames oid)"/> -->
 	      </handler-function>
 	    </skit:if>
 	  </skit:let>

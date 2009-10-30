@@ -128,7 +128,7 @@ regression_test1: skit drop_regress_db
 	    $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
 	    >$(REGRESS_DIR)/scratch/regressdb_both1.sql
 	@echo ...editing drop script to allow dangerous drop statements...
-	@sed -e  "/\"`whoami`\"/! s/^-- //" \
+	@sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
 	    $(REGRESS_DIR)/scratch/regressdb_drop1.sql > \
 	    $(REGRESS_DIR)/scratch/regressdb_drop1a.sql
 	@echo ...executing drop script...

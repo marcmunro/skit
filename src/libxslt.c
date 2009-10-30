@@ -53,13 +53,28 @@ xsltDBQuoteFunctionOld(xmlXPathParserContextPtr ctxt, int nargs){
 void
 xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
     xmlXPathObjectPtr instr;
+    xmlXPathObjectPtr instr2;
     String *result;
     String *str1;
-    char *tmp;
+    String *str2 = NULL;
 
-    if (nargs != 1) {
+    if (nargs == 2) {
+	xmlXPathStringFunction(ctxt, 1);
+
+	if (ctxt->value->type != XPATH_STRING) {
+	    xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+			       "dbquote() : invalid arg expecting a string\n");
+	    ctxt->error = XPATH_INVALID_TYPE;
+	    return;
+	}
+	instr2 = valuePop(ctxt);
+
+	str2 = stringNewByRef(newstr(instr2->stringval));
+    }
+
+    if ((nargs < 1) || (nargs > 2)) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"dbquote() : expects one argument\n");
+		"dbquote() : expects one or two  arguments\n");
 	ctxt->error = XPATH_INVALID_ARITY;
 	return;
     }
@@ -68,7 +83,7 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
 
     if (ctxt->value->type != XPATH_STRING) {
 	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-			   "dbquot() : invalid arg expecting a string\n");
+			   "dbquote() : invalid arg expecting a string\n");
 	ctxt->error = XPATH_INVALID_TYPE;
 	return;
     }
@@ -77,7 +92,7 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
     str1 = stringNewByRef(newstr(instr->stringval));
     xmlXPathFreeObject(instr);
 
-    result = sqlDBQuote(str1, NULL);
+    result = sqlDBQuote(str1, str2);
 
     valuePush(ctxt, xmlXPathNewString((xmlChar *) result->value));
     objectFree((Object *) result, TRUE);

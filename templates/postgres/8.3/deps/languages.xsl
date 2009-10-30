@@ -11,7 +11,7 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="tbs_fqn" select="concat('language.', 
 					  $parent_core, '.', @name)"/>
-    <dbobject type="language" name="{@name}" qname='"{@name}"'
+    <dbobject type="language" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{$tbs_fqn}">
       <dependencies>
 	<xsl:if test="@owner != 'public'">

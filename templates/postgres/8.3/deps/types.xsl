@@ -12,8 +12,7 @@
     <xsl:variable name="domain_fqn" select="concat('type.', 
 					  $parent_core, '.', @name)"/>
     <dbobject type="domain" name="{@name}" 
-	      qname="{concat('&quot;', @schema, '&quot;.&quot;', 
-		            @name, '&quot;')}"
+	      qname="{skit:dbquote(@schema, @name)}"
 	      fqn="{$domain_fqn}">
       <xsl:if test="(@basetype_schema != 'pg_toast') and
 		    (@basetype_schema != 'pg_catalog') and
@@ -60,8 +59,7 @@
 					    $parent_core, '.', @name)"/>
     <dbobject type="type" name="{@name}"
 	      fqn="{$type_fqn}"
-	      qname="{concat('&quot;', @schema, '&quot;.&quot;', 
-		            @name, '&quot;')}">
+	      qname="{skit:dbquote(@schema, @name)}">
       <dependencies>
 	<xsl:for-each select="handler-function">
 	  <dependency fqn="{concat('function.', ancestor::database/@name, 

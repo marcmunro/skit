@@ -10,7 +10,7 @@
   <xsl:template match="role">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
-    <dbobject type="role" name="{@name}" qname='"{@name}"'
+    <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('role.', $role_name)}">
       <dependencies>
 	<dependency fqn="cluster"/>

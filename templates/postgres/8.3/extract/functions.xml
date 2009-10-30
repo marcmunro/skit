@@ -9,7 +9,7 @@
 			         (select schema 'name'))">
     <function>
       <skit:let>
-      	<!-- To deal with the pathalogical case of a name containing a
+      	<!-- To deal with the pathological case of a name containing a
       	     comma, we convert separating commas (those not in quotes) to
       	     newlines and then split on the newline.  If a name contains a
       	     newline or a quote we will be hosed.  -->

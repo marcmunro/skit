@@ -35,7 +35,8 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="fqn" select="concat('dbincluster.', 
 				     $parent_core, '.', @name)"/>
-    <dbobject type="dbincluster" name="{@name}" qname='"{@name}"' fqn="{$fqn}">
+    <dbobject type="dbincluster" name="{@name}" 
+	      qname="{skit:dbquote(@name)}" fqn="{$fqn}">
       <dependencies>
 	<xsl:if test="@tablespace != 'pg_default'">
 	  <dependency fqn="{concat('tablespace.', $parent_core, 
@@ -58,7 +59,8 @@
        manipulated.  This is the only template called with a mode of
        "database" -->
   <xsl:template match="database" mode="database">
-    <dbobject type="database" visit="true" name="{@name}" qname='"{@name}"' 
+    <dbobject type="database" visit="true" name="{@name}" 
+	      qname="{skit:dbquote(@name)}" 
 	      fqn="{concat('database.cluster.', @name)}">
       <dependencies>
 	<dependency fqn="{concat('dbincluster.cluster.', @name)}"/>

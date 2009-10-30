@@ -20,7 +20,6 @@
     <xsl:variable name="grant_name" select="concat($parent_core, '.', @priv)"/>
     <xsl:variable name="grantor" select="@from"/>
     <dbobject type="grant" subtype="role" name="{concat(@priv, ':', @to)}"
-	      qname='"{concat(@priv, ":", @to)}"'
 	      pqn="{concat('grant.', $grant_name)}"
 	      fqn="{concat('grant.', $grant_name, ':', @from)}">
 
@@ -66,7 +65,6 @@
     <dbobject type="grant" 
 	      parent="{concat(name(..), '.', $parent_core)}"
 	      name="{concat(@priv, ':', @to)}"
-	      qname='"{concat(@priv, ":", @to)}"'
 	      pqn="{concat('grant.', $grant_name)}"
 	      fqn="{concat('grant.', $grant_name, ':', @from)}"
 	      owner="{../@owner}">
@@ -86,7 +84,7 @@
 	    <xsl:value-of select="../@qname"/>
 	  </xsl:when>	
 	  <xsl:otherwise>
-	    <xsl:value-of select="concat('&quot;', ../@name, '&quot;')"/>
+	    <xsl:value-of select="skit:dbquote(../@name)"/>
 	  </xsl:otherwise>
 	</xsl:choose>	
       </xsl:attribute>
