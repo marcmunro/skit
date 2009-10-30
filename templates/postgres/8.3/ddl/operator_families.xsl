@@ -87,7 +87,7 @@
 	  
 	<xsl:text>drop operator family </xsl:text>
         <xsl:value-of select="../@qname"/>
-	<xsl:text>using </xsl:text>
+	<xsl:text> using </xsl:text>
         <xsl:value-of select="@method"/>
 	<xsl:text>;&#x0A;</xsl:text>
 

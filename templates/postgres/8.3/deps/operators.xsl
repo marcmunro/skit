@@ -18,7 +18,7 @@
 			  arg[@position='right']/@schema, '.', 
 			  arg[@position='right']/@name, ')')"/>
     <dbobject type="operator" fqn="{$operator_fqn}"
-	      name="{@name}" qname='"{@name}"'>
+	      name="{@name}">
       <dependencies>
 	<xsl:if test="arg[@position='left']/@schema != 'pg_catalog'">
 	  <dependency fqn="{concat('type.', ancestor::database/@name, '.', 

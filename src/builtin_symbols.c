@@ -280,6 +280,26 @@ fnVersion(Object *obj)
 }
 
 static Object *
+fnDBQuote(Object *obj)
+{
+    Cons *cons;
+    String *str1;
+    String *str2 = NULL;
+    raiseIfNotList("dbquote", obj);
+    cons = (Cons *) obj;
+    evalCar(cons);
+    str1 = (String *) cons->car;
+    raiseIfNotString("dbquote", str1);
+    cons->car = NULL;  /* Prevent str1 from being automatically freed */
+    if (cons = (Cons *) cons->cdr) {
+	str2 = (String *) cons->car;
+	cons->car = NULL;  /* Prevent str2 from being automatically freed */
+    }
+    
+    return (Object *) sqlDBQuote(str1, str2);
+}
+
+static Object *
 fnCurTimestamp(Object *obj)
 {
     time_t ts = time(NULL);
@@ -656,6 +676,7 @@ initBaseSymbols()
     symbolCreate("tuple", NULL, NULL);
     symbolCreate("tuplestack", NULL, NULL);
     symbolCreate("quote", &fnQuote, NULL);
+    symbolCreate("dbquote", &fnDBQuote, NULL);
     symbolCreate("string=", &fnStringEq, NULL);
     symbolCreate("select", &fnSelect, NULL);
     symbolCreate("replace", &fnReplace, NULL);

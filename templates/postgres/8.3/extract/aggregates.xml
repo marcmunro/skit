@@ -10,7 +10,6 @@
     <aggregate>
       <skit:attr name="name"/>
       <skit:attr name="signature"/>
-      <skit:attr name="qname"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
       <skit:attr name="initcond"/>

@@ -14,7 +14,7 @@
 			  ancestor::database/@name, '.', 
 			  @schema, '.', @name)"/>
     <dbobject type="operator_class" fqn="{$operator_class_fqn}"
-	      name="{@name}" qname='"{@schema}"."{@name}"'>
+	      name="{@name}" qname="{skit:dbquote(@schema, @name)}">
       <dependencies>
 	<!-- operator family, if not automatically created -->
 	<dependency fqn="{concat('operator_family.', 

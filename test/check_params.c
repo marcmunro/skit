@@ -804,7 +804,7 @@ START_TEST(generate2)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest' port = '5432'",
-                    "--generate", "--build",  "--print", "--full"};
+                    "--generate", "--drop",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;

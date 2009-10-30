@@ -10,8 +10,21 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="aggregate_fqn" select="concat('aggregate.', 
 					       $parent_core, '.', @signature)"/>
+    <xsl:variable name="function_qname">
+      <xsl:value-of select="concat(skit:dbquote(@schema, @name), '(')"/>
+      <xsl:choose>
+	<xsl:when test="basetype/@schema">
+	  <xsl:value-of select="skit:dbquote(basetype/@schema, 
+				             basetype/@name)"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="'*'"/>
+	</xsl:otherwise>
+      </xsl:choose>
+      <xsl:value-of select="')'"/>
+    </xsl:variable>
     <dbobject type="aggregate" fqn="{$aggregate_fqn}"
-	      name="{@name}" qname="{@qname}">
+	      name="{@name}" qname="{$function_qname}">
       <dependencies>
 	<!-- owner -->
 	<xsl:if test="@owner != 'public'">

@@ -1,8 +1,6 @@
 -- List all casts
 select sn.nspname || '.' || st.typname || '::' ||
        tn.nspname || '.' || tt.typname as name,
-       '"' || sn.nspname || '"."' || st.typname || '"::"' ||
-       tn.nspname || '"."' || tt.typname || '"' as qname,
        st.typname as source_type,
        sn.nspname as source_type_schema,
        tt.typname as target_type,

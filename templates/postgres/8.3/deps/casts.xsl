@@ -10,8 +10,7 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="cast_fqn" select="concat('cast.', 
 					       $parent_core, '.', @name)"/>
-    <dbobject type="cast" fqn="{$cast_fqn}"
-	      name="{@name}" qname="{@qname}">
+    <dbobject type="cast" fqn="{$cast_fqn}" name="{@name}">
       <dependencies>
 	<!-- source type -->
 	<xsl:if test="source[@schema != 'pg_catalog']">

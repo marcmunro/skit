@@ -15,10 +15,7 @@ select p.proname as name,
        bn.nspname as basetype_schema,
        p.proname || '(' || 
        case when bt.typname is null then '*'
-       else bn.nspname || '.' || bt.typname end || ')' as signature,
-       '"' || n.nspname || '"."' || p.proname || '"(' || 
-       case when bt.typname is null then '*'
-       else '"' || bn.nspname || '"."' || bt.typname || '"' end || ')' as qname
+       else bn.nspname || '.' || bt.typname end || ')' as signature
 from   pg_catalog.pg_aggregate a
 inner join pg_catalog.pg_proc p
   on p.oid = a.aggfnoid

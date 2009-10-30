@@ -12,8 +12,18 @@
     <xsl:variable name="function_fqn" 
 		  select="concat('function.', 
 			  ancestor::database/@name, '.', @signature)"/>
+    <xsl:variable name="function_qname">
+      <xsl:value-of select="concat(skit:dbquote(@schema, @name), '(')"/>
+      <xsl:for-each select="params/param">
+	<xsl:if test="position() != 1">
+	  <xsl:value-of select="','"/>
+	</xsl:if>
+	<xsl:value-of select="skit:dbquote(@schema, @type)"/>
+      </xsl:for-each>
+      <xsl:value-of select="')'"/>
+    </xsl:variable>
     <dbobject type="function" fqn="{$function_fqn}"
-	      name="{@name}" qname="{@qname}">
+	      name="{@name}" qname="{$function_qname}">
       <dependencies>
 
 	<xsl:if test="(@language != 'c') and (@language != 'internal')

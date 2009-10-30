@@ -15,7 +15,6 @@
       </skituls:expr>
 	-->
       <skit:attr name="name"/>
-      <skit:attr name="qname"/>
       <skit:attr name="context"/>
       <source>
 	<skit:attr name="type" expr="(select casts 'source_type')"/>
