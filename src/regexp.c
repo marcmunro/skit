@@ -218,3 +218,4 @@ regexpReplaceOnly(String *src, Regexp *regexp, String *replacement)
     objectFree((Object *) results, TRUE);
     return final;
 }
+

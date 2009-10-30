@@ -566,13 +566,20 @@ Document *
 applyXSLStylesheet(Document *src, Document *stylesheet)
 {
     xmlDocPtr result = NULL;
+    xsltTransformContextPtr ctxt;
+
     const char *params[1] = {NULL};
     if ((!stylesheet->stylesheet) && stylesheet->doc) {
 	stylesheet->stylesheet = xsltParseStylesheetDoc(stylesheet->doc);
 	stylesheet->doc = NULL;
     }
-    if (result = xsltApplyStylesheet(stylesheet->stylesheet, 
-				     src->doc, params)) {
+
+    ctxt = xsltNewTransformContext(stylesheet->stylesheet, src->doc);
+    registerXSLTFunctions(ctxt);
+
+    if (result = xsltApplyStylesheetUser(stylesheet->stylesheet, 
+					 src->doc, params, NULL, 
+					 NULL, ctxt)) {
 	return documentNew(result, NULL);
     }
     else {

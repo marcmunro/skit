@@ -22,6 +22,7 @@ typedef char *(TupleStrFn)(Tuple *);
 typedef char *(CursorStrFn)(Cursor *);
 typedef void (CursorIndexFn)(Cursor *, String *);
 typedef Tuple *(CursorGetFn)(Cursor *, Object *);
+typedef String *(DBQuoteFn)(String *, String *);
 typedef void (CloseCursorFn)(Cursor *);
 typedef void (CloseConnectionFn)(Connection *);
 
@@ -37,6 +38,7 @@ typedef struct SqlFuncs {
     CursorStrFn   *cursorstr;
     CursorIndexFn *cursorindex;
     CursorGetFn   *cursorget;
+    DBQuoteFn     *dbquote;
     CloseCursorFn *closecursor;
     CloseConnectionFn *cleanup;
 } SqlFuncs;

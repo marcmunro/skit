@@ -245,34 +245,93 @@ fileLen(FILE *fp)
     return result;
 }
 
+FILE *
+openFile(String *filename)
+{
+    String *filepath = findFile(filename);
+    FILE *fp = NULL;
+    if (filepath) {
+	fp = fopen(filepath->value, "r");
+	objectFree((Object *) filepath, TRUE);
+    }
+    return fp;
+}
+
 String *
 readFile(String *filename)
 {
-    String *filepath = findFile(filename);
     String *result = NULL;
     FILE *fp;
     long len;
     char *str;
     char *msg = NULL;
-    if (filepath) {
-	if (fp = fopen(filepath->value, "r")) {
-	    if (str = skalloc((len = fileLen(fp)) + 1)) {
-		fread(str, len, 1, fp);
-		str[len] = '\0';
-		result = stringNewByRef(str);
-	    }
-	    else {
-		msg = newstr("Cannot allocate memory to read file %s",
-			     filepath->value);
-	    }
+
+    if (fp = openFile(filename)) {
+	if (str = skalloc((len = fileLen(fp)) + 1)) {
+	    fread(str, len, 1, fp);
+	    str[len] = '\0';
+	    result = stringNewByRef(str);
 	}
-	fclose(fp);
+	else {
+	    msg = newstr("Cannot allocate memory to read file %s",
+			 filename->value);
+	}
     }
-    objectFree((Object *) filepath, TRUE);
+    fclose(fp);
 
     if (msg) {
 	RAISE(GENERAL_ERROR, msg);
     }
 
     return result;
+}
+
+
+#define iswordchar(c) (isalnum(c) || (c == '_'))
+
+static void
+skipLine(FILE *file)
+{
+    char c;
+    while ((c = fgetc(file)) != EOF) {
+	if (c == '\n') {
+	    return;
+	}
+    }
+}
+
+static void
+skipToWord(FILE *file)
+{
+    char c;
+    while ((c = fgetc(file)) != EOF) {
+	if (iswordchar(c)) {
+	    ungetc(c, file);
+	    return;
+	}
+	if (c == '#') {
+	    skipLine(file);
+	}
+    }
+}
+
+String *
+nextWord(FILE *file)
+{
+    char *buffer = NULL;
+    char c;
+    int i = 0;
+
+    skipToWord(file);
+    if ((c = fgetc(file)) == EOF) {
+	return NULL;
+    }
+    buffer = skalloc(81);
+    while (iswordchar(c) && (i < 80)) {
+	buffer[i++] = c;
+	c = fgetc(file);
+    }
+    buffer[i++] = '\0';
+    buffer = realloc(buffer, i);
+    return stringNewByRef(buffer);
 }

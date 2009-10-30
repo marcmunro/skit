@@ -46,12 +46,10 @@ checkDbtypeIsRegistered(String *dbtype)
     return functions != NULL;
 }
 
-/* Called to establish a connection, or get the current connection. */
-Connection *
-sqlConnect()
+static SqlFuncs *
+getFunctions()
 {
-    static Hash *dbhash = NULL;
-    boolean ignore;
+   static Hash *dbhash = NULL;
     String *dbtype;
     SqlFuncs *functions;
 
@@ -59,15 +57,24 @@ sqlConnect()
 	dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
     }
 
-    if (!cur_connection) {
-	dbtype = (String *) symbolGetValue("dbtype");
-	functions = (SqlFuncs *) dereference(
-	    hashGet(dbhash, (Object *) dbtype));
+    dbtype = (String *) symbolGetValue("dbtype");
+    functions = (SqlFuncs *) dereference(hashGet(dbhash, (Object *) dbtype));
 
-	if (!functions) {
-	    RAISE(NOT_IMPLEMENTED_ERROR,
-		  newstr("No handler for database type %s", dbtype->value));
-	}
+    if (!functions) {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("No handler for database type %s", dbtype->value));
+    }
+    return functions;
+}
+
+/* Called to establish a connection, or get the current connection. */
+Connection *
+sqlConnect()
+{
+    SqlFuncs *functions;
+
+    if (!cur_connection) {
+	functions = getFunctions();
 
 	if (!functions->connect) {
 	    RAISE(NOT_IMPLEMENTED_ERROR,
@@ -342,4 +349,16 @@ applyParams(char *qrystr, Object *params)
     }
 
     return applyOneParam(qrystr, ":1", params);
+}
+
+String *
+sqlDBQuote(String *first, String *second)
+{
+    SqlFuncs *functions = getFunctions();
+
+    if (!functions->cursorstr) {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("Db cursorstr function is not registered"));
+    }
+    return functions->dbquote(first, second);
 }

@@ -365,6 +365,7 @@ registerTestSQL()
 	&testCursorStr,
 	NULL,
 	NULL,
+	NULL,
 	&testFreeCursor,
 	&testCleanup
     };

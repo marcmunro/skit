@@ -3,6 +3,7 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xi="http://www.w3.org/2003/XInclude"
+  extension-element-prefixes="skit"
   version="1.0">
 
   <!-- Anything not matched explicitly will match this and be copied 
@@ -14,6 +15,21 @@
     </xsl:copy>
   </xsl:template>
 
+<!--
+  <xsl:template match="dbobject/cluster">
+    <xsl:if test="../@action='build'">
+      <print>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;
+      <xsl:text>THING&#x0A;</xsl:text>
+      <xsl:value-of select="skit:dbquote('column')"/>
+      </print>
+    </xsl:if>	
+
+    <xsl:if test="../@action='depart'">
+      <print>CLUSTEREOF&#x0A;&#x0A;</print>
+    </xsl:if>	
+
+  </xsl:template>
+-->
   <!-- Template for dealing with comments.  This is invoked simply by
        using xsl:apply-templates from within the template for the 
        current dbobject -->
@@ -43,7 +59,6 @@
 
   <!-- handle cluster and dbincluster-->
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
-
   <xsl:include href="skitfile:ddl/database.xsl"/>
   <xsl:include href="skitfile:ddl/tablespace.xsl"/>
   <xsl:include href="skitfile:ddl/roles.xsl"/>

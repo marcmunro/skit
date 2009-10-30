@@ -433,7 +433,9 @@ extern void initBuiltinSymbols();
 extern char *pathToFile(Vector *roots, String *templatedir, String *dbdir, 
 			Object *version, String *filename);
 extern String *findFile(String *filename);
+extern FILE *openFile(String *filename);
 extern String *readFile(String *filename);
+extern String *nextWord(FILE *file);
 
 // xmlfile.c
 extern Document *docFromFile(String *path);
@@ -486,13 +488,17 @@ extern char *cursorStr(Cursor *cursor);
 extern boolean checkDbtypeIsRegistered(String *dbtype);
 extern Tuple *cursorGet(Cursor *cursor, Object *key);
 extern void *cursorIndex(Cursor *cursor, String *fieldname);
+extern String *sqlDBQuote(String *first, String *second);
 
 
 // pgsql.c
 extern void registerPGSQL();
+extern void pgsqlFreeMem();
 
 // tsort.c
 extern Vector *gensort(Document *doc);
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
 extern char *applyParams(char *qrystr, Object *params);
 
+// libxslt.c
+extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

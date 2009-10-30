@@ -544,6 +544,115 @@ pgsqlIndexCursor(Cursor *cursor, String *fieldname)
 	}
 }
 
+static void
+loadWordList(String *filename, Hash *hash)
+{
+	FILE *file;
+	String *word;
+	Symbol *true = symbolGet("t");
+	if (file = openFile(filename)) {
+		while (word = nextWord(file)) {
+			hashAdd(hash, (Object *) word, (Object *) true);
+		}
+	}
+}
+
+
+static Regexp *quotexpr = NULL;
+static String replacement = {OBJ_STRING, "\\\""};
+static Hash *reserved_words = NULL;
+
+static Hash *
+reservedWords()
+{
+	String *filename;
+	if (!reserved_words) {
+		filename = stringNewByRef(newstr("reserved_words.txt"));
+		reserved_words = hashNew(TRUE);
+		loadWordList(filename, reserved_words);
+		objectFree((Object *) filename, TRUE);
+	}
+	return reserved_words;
+}
+
+static boolean
+isReservedWord(String *word)
+{
+	Hash *reserved = reservedWords();
+	Object *found = hashGet(reserved, (Object *) word);
+	return found != NULL;
+}
+
+static boolean
+nameNeedsQuote(String *name)
+{
+	char *str = name->value;
+	char c;
+	if (isdigit(str[0])) {
+		return TRUE;
+	}
+
+	while (c = *str++) {
+		if (islower(c) || isdigit(c) || c == '_') {
+			continue;
+		}
+		return TRUE;
+	}
+
+	return isReservedWord(name);
+}
+
+Regexp *
+quoteExpr()
+{
+	if (!quotexpr) {
+		quotexpr = regexpNew("\"");
+	}
+	return quotexpr;
+}
+
+static String *
+enquote(String *src)
+{
+	String *escaped = regexpReplace(src, quoteExpr(), &replacement);
+	String *result = stringNewByRef(newstr("\"%s\"", escaped->value));
+	objectFree((Object *) escaped, TRUE);
+	return result;
+}
+
+static String *
+pgsqlQuoteName(String *name)
+{
+	String *result = name;
+	if (nameNeedsQuote(name)) {
+		result = enquote(name);
+		objectFree((Object *) name, TRUE);
+	}
+	return result;
+}
+
+/* Consumes first and second, returning a new quoted string */
+static String *
+pgsqlDBQuote(String *first, String *second)
+{
+	String *tmp1;
+	String *tmp2;
+	String *result;
+
+	if (second) {
+		if (first->value[0] == '\0') {
+			return pgsqlQuoteName(second);
+		}
+		tmp1 = pgsqlQuoteName(first);
+		tmp2 = pgsqlQuoteName(second);
+		result = stringNewByRef(newstr("%s.%s", tmp1->value, tmp2->value));
+		objectFree((Object *) tmp1, TRUE);
+		objectFree((Object *) tmp2, TRUE);
+		return result;
+	}
+	return pgsqlQuoteName(first);
+}
+
 void
 registerPGSQL()
 {
@@ -558,6 +667,7 @@ registerPGSQL()
 		&pgCursorStr,
 		&pgsqlIndexCursor,
 		&pgsqlCursorGet,
+		&pgsqlDBQuote,
 		&pgsqlFreeCursor,
 		&pgsqlCleanup
 	};
@@ -566,4 +676,12 @@ registerPGSQL()
 	Hash *dbhash = (Hash *) symbolGet("dbhandlers")->svalue;
 	String *handlername = stringNew("postgres");
 	(void) hashAdd(dbhash, (Object *) handlername, (Object *) obj);
+}
+
+void pgsqlFreeMem()
+{
+	objectFree((Object *) quotexpr, TRUE);
+	quotexpr = NULL;
+	objectFree((Object *) reserved_words, TRUE);
+	reserved_words = NULL;
 }

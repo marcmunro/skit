@@ -373,8 +373,8 @@ skalloc(size_t size)
     return result;
 }
 
-void 
-skfree(void *ptr)
+static void
+skforget(void *ptr)
 {
     MEMPRINTF("-");
     if (ptr && (ptr == track_chunk)) {
@@ -386,6 +386,12 @@ skfree(void *ptr)
     free_number++;
     chunks_in_use--;
     delChunk(ptr);
+}
+
+void 
+skfree(void *ptr)
+{
+    skforget(ptr);
     free(ptr);
 }
 
@@ -456,6 +462,7 @@ skitFreeMem()
 	objectFree((Object *) arg, TRUE);
     }
 
+    pgsqlFreeMem();
     freeSkitProcessors();
     freeStdTemplates();
     xsltCleanupGlobals();
@@ -476,7 +483,6 @@ memShutdown()
     table = freeTable();
     freeHashTable(table);
     hash_frees = NULL;
-
 }
 
 int
