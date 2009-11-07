@@ -38,6 +38,13 @@
 	  <skit:attr name="schema" expr="(select aggregate 'sort_op_schema')"/>
 	</sortop>
       </skit:if>
+
+      <skit:if test="(select aggregate 'comment')">
+	<comment>
+	  <skit:text expr="(select aggregate 'comment')"/>
+	</comment>
+      </skit:if>
+
     </aggregate>
   </skit:foreach>
 </skit:inclusion>  

@@ -163,6 +163,8 @@ create aggregate "public"."mymax"("pg_catalog"."int4") (
   stype = "pg_catalog"."int4",
   sortop = "pg_catalog".">");
 
+comment on aggregate "public"."mymax"("pg_catalog"."int4") is
+'another comment';
 
 
 create or replace function "public"."mycharin"(
@@ -253,6 +255,8 @@ grant usage on language "plpgsql" to "keep";
 grant usage on language "plpgsql" to "public";
 
 grant usage on language "plpgsql" to "wibble";
+
+comment on language plpgsql is 'this is plpgsql';
 
 \echo updating schema "public";
 
@@ -579,7 +583,8 @@ create operator "public".< (
   restrict = "pg_catalog"."scalarltsel",
   join = "pg_catalog"."scalarltjoinsel");
 
-
+comment on operator public.<(wib,wib) is
+'this is wib < wib';
 
 create operator "public".<< (
   leftarg = "public"."seg",

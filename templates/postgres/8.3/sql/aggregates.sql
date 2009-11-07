@@ -15,7 +15,8 @@ select p.proname as name,
        bn.nspname as basetype_schema,
        p.proname || '(' || 
        case when bt.typname is null then '*'
-       else bn.nspname || '.' || bt.typname end || ')' as signature
+       else bn.nspname || '.' || bt.typname end || ')' as signature,
+       quote_literal(obj_description(a.aggfnoid, 'pg_proc')) as comment
 from   pg_catalog.pg_aggregate a
 inner join pg_catalog.pg_proc p
   on p.oid = a.aggfnoid

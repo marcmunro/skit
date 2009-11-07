@@ -13,7 +13,6 @@
       <skit:attr name="owner"/>
       <skit:attr name="hashes"/>
       <skit:attr name="merges"/>
-      <skit:attr name="comment"/>
       <skit:if test="(select operator 'leftarg_type')">
 	<arg position="left">
 	  <skit:attr name="name"
@@ -94,6 +93,13 @@
 			   'pg_catalog.internal,pg_catalog.smallint)')"/>
 	</join>
       </skit:if>
+
+      <skit:if test="(select operator 'comment')">
+	<comment>
+	  <skit:text expr="(select operator 'comment')"/>
+	</comment>
+      </skit:if>
+
     </operator>
   </skit:foreach>
 </skit:inclusion>  

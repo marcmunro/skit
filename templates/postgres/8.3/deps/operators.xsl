@@ -17,8 +17,14 @@
 			  arg[@position='left']/@name, ',',
 			  arg[@position='right']/@schema, '.', 
 			  arg[@position='right']/@name, ')')"/>
-    <dbobject type="operator" fqn="{$operator_fqn}"
-	      name="{@name}">
+    <dbobject type="operator" fqn="{$operator_fqn}" name="{@name}" 
+	      qname="{concat(skit:dbquote(@schema), '.',
+		             @name, '(', 
+			     skit:dbquote(arg[@position='left']/@schema,
+				          arg[@position='left']/@name), ',',
+			     skit:dbquote(arg[@position='right']/@schema,
+				          arg[@position='right']/@name),
+			     ')')}">
       <dependencies>
 	<xsl:if test="arg[@position='left']/@schema != 'pg_catalog'">
 	  <dependency fqn="{concat('type.', ancestor::database/@name, '.', 

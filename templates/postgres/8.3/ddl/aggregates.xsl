@@ -46,6 +46,7 @@
           <xsl:value-of select="skit:dbquote(sortop/@schema,sortop/@name)"/>
 	</xsl:if>
 	<xsl:text>);&#x0A;</xsl:text>
+
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
