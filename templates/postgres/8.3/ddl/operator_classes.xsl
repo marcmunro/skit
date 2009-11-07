@@ -22,18 +22,13 @@
 	<xsl:if test="@is_default = 't'">
 	  <xsl:text>default </xsl:text>
 	</xsl:if>
-	<xsl:text>for type &quot;</xsl:text>
-        <xsl:value-of select="@intype_schema"/>
-	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="@intype_name"/>
-	<xsl:text>&quot; using </xsl:text>
+	<xsl:text>for type </xsl:text>
+        <xsl:value-of select="skit:dbquote(@intype_schema,@intype_name)"/>
+	<xsl:text> using </xsl:text>
         <xsl:value-of select="@method"/>
 	<xsl:if test="(@name != @family) or (@schema != @family_schema)">
-	  <xsl:text> family &quot;</xsl:text>
-          <xsl:value-of select="@family_schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-          <xsl:value-of select="@family"/>
-	  <xsl:text>&quot;</xsl:text>
+	  <xsl:text> family </xsl:text>
+          <xsl:value-of select="skit:dbquote(@family_schema,@family)"/>
 	</xsl:if >
 	<xsl:text> as</xsl:text>
 	<xsl:for-each select="opclass_operator">
@@ -43,42 +38,40 @@
 	  </xsl:if>
 	  <xsl:text>&#x0A;  operator </xsl:text>
 	  <xsl:value-of select="@strategy"/>
-	  <xsl:text> &quot;</xsl:text>
-	  <xsl:value-of select="@schema"/>
-	  <xsl:text>&quot;.</xsl:text>
+	  <xsl:text> </xsl:text>
+	  <xsl:value-of select="skit:dbquote(@schema)"/>
+	  <xsl:text>.</xsl:text>
 	  <xsl:value-of select="@name"/>
 	  <xsl:if test="(arg[@position='left']/@name != 
                              arg[@position='right']/@name) or
 			(arg[@position='left']/@schema != 
                              arg[@position='right']/@schema)">
-	    <xsl:text>(&quot;</xsl:text>
-	    <xsl:value-of select="arg[@position='left']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-	    <xsl:value-of select="arg[@position='left']/@name"/>
-	    <xsl:text>&quot;,&quot;</xsl:text>
-	    <xsl:value-of select="arg[@position='right']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-	    <xsl:value-of select="arg[@position='right']/@name"/>
-	    <xsl:text>&quot;)</xsl:text>
+	    <xsl:text>(</xsl:text>
+	    <xsl:value-of
+	       select="skit:dbquote(arg[@position='left']/@schema,
+		                    arg[@position='left']/@name)"/>
+	    <xsl:text>,</xsl:text>
+	    <xsl:value-of
+	       select="skit:dbquote(arg[@position='right']/@schema,
+		                    arg[@position='right']/@name)"/>
+	    <xsl:text>)</xsl:text>
 	  </xsl:if>
 	</xsl:for-each>
 	<xsl:for-each select="opclass_function">
 	  <xsl:sort select="@proc_num"/>
 	  <xsl:text>,&#x0A;  function </xsl:text>
 	  <xsl:value-of select="@proc_num"/>
-	  <xsl:text> &quot;</xsl:text>
-	  <xsl:value-of select="@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="@name"/>
-	  <xsl:text>&quot;(&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='1']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='1']/@type"/>
-	  <xsl:text>&quot;,&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='2']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='2']/@type"/>
-	  <xsl:text>&quot;)</xsl:text>
+	  <xsl:text> </xsl:text>
+	  <xsl:value-of select="skit:dbquote(@schema,@name)"/>
+	  <xsl:text>(</xsl:text>
+	  <xsl:value-of 
+	     select="skit:dbquote(params/param[@position='1']/@schema,
+		                  params/param[@position='1']/@type)"/>
+	  <xsl:text>,</xsl:text>
+	  <xsl:value-of 
+	     select="skit:dbquote(params/param[@position='2']/@schema,
+		                  params/param[@position='2']/@type)"/>
+	  <xsl:text>)</xsl:text>
 	</xsl:for-each>
 	<xsl:text>;&#x0A;</xsl:text>
 

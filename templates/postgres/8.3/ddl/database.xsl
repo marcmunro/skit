@@ -12,16 +12,14 @@
 	<xsl:text>&#x0A;create database </xsl:text>
 	<xsl:value-of select="../@qname"/>
 	<xsl:text> with&#x0A;</xsl:text>
-	<xsl:text> owner &quot;</xsl:text>
-	<xsl:value-of select="@owner"/>
-	<xsl:text>&quot;&#x0A;</xsl:text>
-	<xsl:text> encoding &apos;</xsl:text>
+	<xsl:text> owner </xsl:text>
+	<xsl:value-of select="skit:dbquote(@owner)"/>
+	<xsl:text>&#x0A; encoding &apos;</xsl:text>
 	<xsl:value-of select="@encoding"/>
 	<xsl:text>&apos;&#x0A;</xsl:text>
-	<xsl:text> tablespace &quot;</xsl:text>
-	<xsl:value-of select="@tablespace"/>
-	<xsl:text>&quot;&#x0A;</xsl:text>
-	<xsl:text> connection limit = </xsl:text>
+	<xsl:text> tablespace </xsl:text>
+	<xsl:value-of select="skit:dbquote(@tablespace)"/>
+	<xsl:text>&#x0A; connection limit = </xsl:text>
 	<xsl:value-of select="@connections"/>
 	<xsl:text>;&#x0A;</xsl:text>
 	<xsl:apply-templates/>

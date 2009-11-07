@@ -583,6 +583,17 @@ isReservedWord(String *word)
 	return found != NULL;
 }
 
+#if 0
+static boolean
+isOperatorChar(char c)
+{
+	return (c == '+') || (c == '-') || (c == '*') || (c == '/') ||
+		(c == '<') || (c == '>') ||	(c == '=') || (c == '~') ||
+		(c == '!') || (c == '@') ||	(c == '#') || (c == '%') ||
+		(c == '^') || (c == '&') ||	(c == '|') || (c == '`');
+}
+#endif
+
 static boolean
 nameNeedsQuote(String *name)
 {

@@ -30,35 +30,26 @@
             <xsl:text>);&#x0A;</xsl:text>
 	  </xsl:when>
 	  <xsl:when test="@subtype='basetype'">
-            <xsl:text> (&#x0A;  input = &quot;</xsl:text>
-            <xsl:value-of select="*[@type='input']/@schema"/>
-            <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="*[@type='input']/@name"/>
-            <xsl:text>&quot;,&#x0A;  output = &quot;</xsl:text>
-            <xsl:value-of select="*[@type='output']/@schema"/>
-            <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="*[@type='output']/@name"/>
-            <xsl:text>&quot;</xsl:text>
+            <xsl:text> (&#x0A;  input = </xsl:text>
+            <xsl:value-of select="skit:dbquote(*[@type='input']/@schema,
+			                       *[@type='input']/@name)"/>
+            <xsl:text>,&#x0A;  output = </xsl:text>
+            <xsl:value-of select="skit:dbquote(*[@type='output']/@schema,
+				               *[@type='output']/@name)"/>
 	    <xsl:if test="*[@type='send']">
-              <xsl:text>,&#x0A;  send = &quot;</xsl:text>
-              <xsl:value-of select="*[@type='send']/@schema"/>
-              <xsl:text>&quot;.&quot;</xsl:text>
-              <xsl:value-of select="*[@type='send']/@name"/>
-              <xsl:text>&quot;</xsl:text>
+              <xsl:text>,&#x0A;  send = </xsl:text>
+              <xsl:value-of select="skit:dbquote(*[@type='send']/@schema,
+				                 *[@type='send']/@name)"/>
 	    </xsl:if>
 	    <xsl:if test="*[@type='receive']">
-              <xsl:text>,&#x0A;  send = &quot;</xsl:text>
-              <xsl:value-of select="*[@type='receive']/@schema"/>
-              <xsl:text>&quot;.&quot;</xsl:text>
-              <xsl:value-of select="*[@type='receive']/@name"/>
-              <xsl:text>&quot;</xsl:text>
+              <xsl:text>,&#x0A;  receive = </xsl:text>
+              <xsl:value-of select="skit:dbquote(*[@type='receive']/@schema,
+				                 *[@type='receive']/@name)"/>
 	    </xsl:if>
 	    <xsl:if test="*[@type='analyze']">
-              <xsl:text>,&#x0A;  send = &quot;</xsl:text>
-              <xsl:value-of select="*[@type='analyze']/@schema"/>
-              <xsl:text>&quot;.&quot;</xsl:text>
-              <xsl:value-of select="*[@type='analyze']/@name"/>
-              <xsl:text>&quot;</xsl:text>
+              <xsl:text>,&#x0A;  analyze = </xsl:text>
+              <xsl:value-of select="skit:dbquote(*[@type='analyze']/@schema,
+				                 *[@type='analyze']/@name)"/>
 	    </xsl:if>
 	    <xsl:choose>
 	      <xsl:when test="@passbyval='yes'">
@@ -103,13 +94,10 @@
 	      <xsl:if test="position() != 1">
 		<xsl:text>,&#x0A;  </xsl:text>
 	      </xsl:if>
-	      <xsl:text>&quot;</xsl:text>
-	      <xsl:value-of select="@name"/>
-	      <xsl:text>&quot;    &quot;</xsl:text>
-	      <xsl:value-of select="@type_schema"/>
-	      <xsl:text>&quot;.&quot;</xsl:text>
-	      <xsl:value-of select="@type"/>
-	      <xsl:text>&quot;</xsl:text>
+	      <xsl:text></xsl:text>
+	      <xsl:value-of select="skit:dbquote(@name)"/>
+	      <xsl:text>    </xsl:text>
+	      <xsl:value-of select="skit:dbquote(@type_schema,@type)"/>
 	      <xsl:if test="@size">
 		<xsl:text>(</xsl:text>
 		<xsl:value-of select="@size"/>
@@ -124,9 +112,9 @@
 	    <xsl:for-each select="column/comment">
 	      <xsl:text>&#x0A;comment on column </xsl:text>
 	      <xsl:value-of select="../../../@qname"/>
-	      <xsl:text>.&quot;</xsl:text>
-	      <xsl:value-of select="../@name"/>
-	      <xsl:text>&quot; is&#x0A;</xsl:text>
+	      <xsl:text>.</xsl:text>
+	      <xsl:value-of select="skit:dbquote(../@name)"/>
+	      <xsl:text> is&#x0A;</xsl:text>
 	      <xsl:value-of select="text()"/>
 	      <xsl:text>;&#x0A;</xsl:text>
 	    </xsl:for-each>

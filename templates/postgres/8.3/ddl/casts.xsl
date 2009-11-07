@@ -9,26 +9,19 @@
   <xsl:template match="dbobject/cast">
     <xsl:if test="../@action='build'">
       <print>
-      	<xsl:text>create cast(&quot;</xsl:text>
-        <xsl:value-of select="source/@schema"/>
-      	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="source/@type"/>
-      	<xsl:text>&quot; as &quot;</xsl:text>
-        <xsl:value-of select="target/@schema"/>
-      	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="target/@type"/>
-      	<xsl:text>&quot;)&#x0A;  </xsl:text>
+      	<xsl:text>create cast(</xsl:text>
+        <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
+      	<xsl:text> as </xsl:text>
+        <xsl:value-of select="skit:dbquote(target/@schema,target/@type)"/>
+      	<xsl:text>)&#x0A;  </xsl:text>
 	<xsl:choose>
 	  <xsl:when test="handler-function">
-      	    <xsl:text>with function &quot;</xsl:text>
-            <xsl:value-of select="handler-function/@schema"/>
-      	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="handler-function/@name"/>
-      	    <xsl:text>&quot;(&quot;</xsl:text>
-            <xsl:value-of select="source/@schema"/>
-      	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="source/@type"/>
-      	    <xsl:text>&quot;)&#x0A;  </xsl:text>
+      	    <xsl:text>with function </xsl:text>
+            <xsl:value-of select="skit:dbquote(handler-function/@schema,
+				               handler-function/@name)"/>
+      	    <xsl:text>(</xsl:text>
+            <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
+      	    <xsl:text>)&#x0A;  </xsl:text>
 	  </xsl:when>
 	  <xsl:otherwise>
       	    <xsl:text>without function</xsl:text>
@@ -48,15 +41,11 @@
     <xsl:if test="../@action='drop'">
       <print>
       	<xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>drop cast(&quot;</xsl:text>
-        <xsl:value-of select="source/@schema"/>
-      	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="source/@type"/>
-      	<xsl:text>&quot; as &quot;</xsl:text>
-        <xsl:value-of select="target/@schema"/>
-      	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="target/@type"/>
-      	<xsl:text>&quot;);&#x0A;  </xsl:text>
+      	<xsl:text>drop cast(</xsl:text>
+        <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
+      	<xsl:text> as </xsl:text>
+        <xsl:value-of select="skit:dbquote(target/@schema,target/@type)"/>
+      	<xsl:text>);&#x0A;  </xsl:text>
       </print>
     </xsl:if>
 

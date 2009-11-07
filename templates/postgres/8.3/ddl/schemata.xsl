@@ -13,17 +13,16 @@
 	  <xsl:when test="../@name='public'">
             <xsl:text>&#x0A;alter schema </xsl:text>
             <xsl:value-of select="../@qname"/>
-            <xsl:text> owner to &quot;</xsl:text>
-            <xsl:value-of select="@owner"/>
+            <xsl:text> owner to </xsl:text>
 	  </xsl:when>
 	  <xsl:otherwise>
             <xsl:text>&#x0A;create schema </xsl:text>
             <xsl:value-of select="../@qname"/>
-            <xsl:text> authorization &quot;</xsl:text>
-            <xsl:value-of select="@owner"/>
+            <xsl:text> authorization </xsl:text>
 	  </xsl:otherwise>
 	</xsl:choose>
-        <xsl:text>&quot;;&#x0A;</xsl:text>
+        <xsl:value-of select="skit:dbquote(@owner)"/>
+        <xsl:text>;&#x0A;</xsl:text>
 	<xsl:apply-templates/>
         <xsl:text>&#x0A;</xsl:text>
       </print>

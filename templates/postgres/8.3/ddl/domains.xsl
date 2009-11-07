@@ -17,15 +17,10 @@
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 	
-        <xsl:text>create domain &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-        <xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="@name"/>
-        <xsl:text>&quot;&#x0A;  as &quot;</xsl:text>
-        <xsl:value-of select="@basetype_schema"/>
-        <xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="@basetype"/>
-        <xsl:text>&quot;</xsl:text>
+        <xsl:text>create domain </xsl:text>
+        <xsl:value-of select="skit:dbquote(@schema,@name)"/>
+        <xsl:text>&#x0A;  as </xsl:text>
+        <xsl:value-of select="skit:dbquote(@basetype_schema,@basetype)"/>
 	<xsl:for-each select="constraint">
           <xsl:text>&#x0A;  </xsl:text>
           <xsl:value-of select="source/text()"/>
@@ -48,11 +43,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>&#x0A;drop domain &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-        <xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="@name"/>
-        <xsl:text>&quot;;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>&#x0A;drop domain </xsl:text>
+        <xsl:value-of select="skit:dbquote(@schema,@name)"/>
+        <xsl:text>;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

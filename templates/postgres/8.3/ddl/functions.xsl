@@ -7,11 +7,8 @@
    version="1.0">
 
   <xsl:template name="function_header">
-    <xsl:text>&quot;</xsl:text>
-    <xsl:value-of select="@schema"/>
-    <xsl:text>&quot;.&quot;</xsl:text>
-    <xsl:value-of select="@name"/>
-    <xsl:text>&quot;(</xsl:text>
+    <xsl:value-of select="skit:dbquote(@schema,@name)"/>
+    <xsl:text>(</xsl:text>
     
     <xsl:for-each select="params/param">
       <xsl:if test="position() != 1">
@@ -35,11 +32,7 @@
 	  </xsl:otherwise>
 	</xsl:choose>
       </xsl:if>
-      <xsl:text>&quot;</xsl:text>
-      <xsl:value-of select="@schema"/>
-      <xsl:text>&quot;.&quot;</xsl:text>
-      <xsl:value-of select="@type"/>
-      <xsl:text>&quot;</xsl:text>
+      <xsl:value-of select="skit:dbquote(@schema,@type)"/>
     </xsl:for-each>
     <xsl:text>)</xsl:text>
   </xsl:template>
@@ -62,11 +55,8 @@
           <xsl:text>setof </xsl:text>
 	</xsl:if>
 
-	<xsl:text>&quot;</xsl:text>
-        <xsl:value-of select="result/@schema"/>
-	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="result/@type"/>
-	<xsl:text>&quot;&#x0A;as</xsl:text>
+        <xsl:value-of select="skit:dbquote(result/@schema,result/@type)"/>
+	<xsl:text>&#x0A;as</xsl:text>
 
 	<xsl:choose>
 	  <xsl:when test="@language='internal'">

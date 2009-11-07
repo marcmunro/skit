@@ -29,19 +29,16 @@
 	  </xsl:if>
 	  <xsl:text>&#x0A;  operator </xsl:text>
 	  <xsl:value-of select="@strategy"/>
-	  <xsl:text> &quot;</xsl:text>
-	  <xsl:value-of select="@schema"/>
-	  <xsl:text>&quot;.</xsl:text>
+	  <xsl:value-of select="skit:dbquote(@schema)"/>
+	  <xsl:text>.</xsl:text>
 	  <xsl:value-of select="@name"/>
-	  <xsl:text>(&quot;</xsl:text>
-	  <xsl:value-of select="arg[@position='left']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="arg[@position='left']/@name"/>
-	  <xsl:text>&quot;,&quot;</xsl:text>
-	  <xsl:value-of select="arg[@position='right']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="arg[@position='right']/@name"/>
-	  <xsl:text>&quot;)</xsl:text>
+	  <xsl:text>(</xsl:text>
+	  <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
+				             arg[@position='left']/@name)"/>
+	  <xsl:text>,</xsl:text>
+	  <xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
+				             arg[@position='right']/@name)"/>
+	  <xsl:text>)</xsl:text>
 
 	</xsl:for-each>
 
@@ -51,24 +48,22 @@
 	  <xsl:sort select="@proc_num"/>
 	  <xsl:text>,&#x0A;  function </xsl:text>
 	  <xsl:value-of select="@proc_num"/>
-	  <xsl:text> &quot;</xsl:text>
-	  <xsl:value-of select="@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="@name"/>
-	  <xsl:text>&quot;(&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='1']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='1']/@type"/>
-	  <xsl:text>&quot;,&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='2']/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-	  <xsl:value-of select="params/param[@position='2']/@type"/>
-	  <xsl:text>&quot;)</xsl:text>
+	  <xsl:text> </xsl:text>
+	  <xsl:value-of select="skit:dbquote(@schema,@name)"/>
+	  <xsl:text>(</xsl:text>
+	  <xsl:value-of
+	     select="skit:dbquote(params/param[@position='1']/@schema,
+		                  params/param[@position='1']/@type)"/>
+	  <xsl:text>,</xsl:text>
+	  <xsl:value-of
+	     select="skit:dbquote(params/param[@position='2']/@schema,
+		                  params/param[@position='2']/@type)"/>
+	  <xsl:text>)</xsl:text>
 	</xsl:for-each>
 
 	<xsl:text>;&#x0A;</xsl:text>
 
-	<!-- TODO: Deal with comments (also for operator classes) -->
+	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:if test="@owner != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>

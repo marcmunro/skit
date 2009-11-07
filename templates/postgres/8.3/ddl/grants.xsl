@@ -15,11 +15,10 @@
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 
-        <xsl:text>grant &quot;</xsl:text>
-        <xsl:value-of select="@priv"/>
-        <xsl:text>&quot; to &quot;</xsl:text>
-        <xsl:value-of select="@to"/>
-        <xsl:text>&quot;</xsl:text>
+        <xsl:text>grant </xsl:text>
+        <xsl:value-of select="skit:dbquote(@priv)"/>
+        <xsl:text> to </xsl:text>
+        <xsl:value-of select="skit:dbquote(@to)"/>
 	<xsl:if test="@with_admin = 'yes'">
           <xsl:text> with admin option</xsl:text>
 	</xsl:if>
@@ -40,11 +39,11 @@
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 
-        <xsl:text>revoke &quot;</xsl:text>
-        <xsl:value-of select="@priv"/>
-        <xsl:text>&quot; from &quot;</xsl:text>
-        <xsl:value-of select="@to"/>
-        <xsl:text>&quot;;&#x0A;</xsl:text>
+        <xsl:text>revoke </xsl:text>
+        <xsl:value-of select="skit:dbquote(@priv)"/>
+        <xsl:text> from </xsl:text>
+        <xsl:value-of select="skit:dbquote(@to)"/>
+        <xsl:text>;&#x0A;</xsl:text>
 
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
@@ -72,9 +71,8 @@
       	  <xsl:value-of select="../@subtype"/>
       	  <xsl:text> </xsl:text>
       	  <xsl:value-of select="../@on"/>
-      	  <xsl:text> to &quot;</xsl:text>
-      	  <xsl:value-of select="@to"/>
-      	  <xsl:text>&quot;</xsl:text>
+      	  <xsl:text> to </xsl:text>
+      	  <xsl:value-of select="skit:dbquote(@to)"/>
       	  <xsl:if test="@with_grant = 'yes'">
       	    <xsl:text> with grant option</xsl:text>
       	  </xsl:if>
@@ -103,9 +101,9 @@
 	<xsl:value-of select="../@subtype"/>
 	<xsl:text> </xsl:text>
 	<xsl:value-of select="../@on"/>
-	<xsl:text> from &quot;</xsl:text>
-	<xsl:value-of select="@to"/>
-	<xsl:text>&quot;;&#x0A;</xsl:text>
+	<xsl:text> from </xsl:text>
+	<xsl:value-of select="skit:dbquote(@to)"/>
+	<xsl:text>;&#x0A;</xsl:text>
 	<xsl:if test="@from != //cluster/@username">
           <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</xsl:if>

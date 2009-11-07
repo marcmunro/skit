@@ -11,9 +11,8 @@
       <print>
         <xsl:text>&#x0A;create tablespace </xsl:text>
         <xsl:value-of select="../@qname"/>
-        <xsl:text> owner &quot;</xsl:text>
-        <xsl:value-of select="@owner"/>
-        <xsl:text>&quot;</xsl:text>
+        <xsl:text> owner </xsl:text>
+        <xsl:value-of select="skit:dbquote(@owner)"/>
         <xsl:text>&#x0A;  location &apos;</xsl:text>
         <xsl:value-of select="@location"/>
         <xsl:text>&apos;;&#x0A;</xsl:text>

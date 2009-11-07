@@ -16,18 +16,15 @@
           <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:text>create operator &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+	<xsl:text>create operator </xsl:text>
+        <xsl:value-of select="skit:dbquote(@schema)"/>
+        <xsl:text>.</xsl:text>
         <xsl:value-of select="@name"/>
-	<xsl:text>(&#x0A;  leftarg = </xsl:text>
+	<xsl:text> (&#x0A;  leftarg = </xsl:text>
 	<xsl:choose>
 	  <xsl:when test="arg[@position='left']">
-	    <xsl:text>&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='left']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='left']/@name"/>
-	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
+				               arg[@position='left']/@name)"/>
 	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:text>none</xsl:text>
@@ -37,49 +34,37 @@
 	<xsl:text>,&#x0A;  rightarg = </xsl:text>
 	<xsl:choose>
 	  <xsl:when test="arg[@position='right']">
-	    <xsl:text>&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='right']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='right']/@name"/>
-	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
+				               arg[@position='right']/@name)"/>
 	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:text>none</xsl:text>
 	  </xsl:otherwise>
 	</xsl:choose>
 
-	<xsl:text>,&#x0A;  procedure = &quot;</xsl:text>
-        <xsl:value-of select="procedure/@schema"/>
-	<xsl:text>&quot;.&quot;</xsl:text>
-        <xsl:value-of select="procedure/@name"/>
+	<xsl:text>,&#x0A;  procedure = </xsl:text>
+        <xsl:value-of 
+	   select="skit:dbquote(procedure/@schema,procedure/@name)"/>
 	<xsl:if test="commutator">
-	  <xsl:text>&quot;,&#x0A;  commutator = &quot;</xsl:text>
-          <xsl:value-of select="commutator/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-          <xsl:value-of select="commutator/@name"/>
+	  <xsl:text>,&#x0A;  commutator = </xsl:text>
+          <xsl:value-of 
+	     select="skit:dbquote(commutator/@schema,commutator/@name)"/>
 	</xsl:if>
 	<xsl:if test="negator">
-	  <xsl:text>&quot;,&#x0A;  negator = &quot;</xsl:text>
-          <xsl:value-of select="negator/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-          <xsl:value-of select="negator/@name"/>
+	  <xsl:text>,&#x0A;  negator = </xsl:text>
+          <xsl:value-of select="skit:dbquote(negator/@schema,negator/@name)"/>
 	</xsl:if>
 	<xsl:if test="restrict">
-	  <xsl:text>&quot;,&#x0A;  restrict = &quot;</xsl:text>
-          <xsl:value-of select="restrict/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-          <xsl:value-of select="restrict/@name"/>
+	  <xsl:text>,&#x0A;  restrict = </xsl:text>
+          <xsl:value-of select="skit:dbquote(restrict/@schema,restrict/@name)"/>
 	</xsl:if>
 	<xsl:if test="join">
-	  <xsl:text>&quot;,&#x0A;  join = &quot;</xsl:text>
-          <xsl:value-of select="join/@schema"/>
-	  <xsl:text>&quot;.&quot;</xsl:text>
-          <xsl:value-of select="join/@name"/>
+	  <xsl:text>,&#x0A;  join = </xsl:text>
+          <xsl:value-of select="skit:dbquote(join/@schema,join/@name)"/>
 	</xsl:if>
 	<xsl:if test="@hashes">
-	  <xsl:text>&quot;,&#x0A;  hashes</xsl:text>
+	  <xsl:text>,&#x0A;  hashes</xsl:text>
 	</xsl:if>
-	<xsl:text>&quot;</xsl:text>
 	<xsl:if test="@merges">
 	  <xsl:text>,&#x0A;  merges</xsl:text>
 	</xsl:if>
@@ -102,19 +87,16 @@
       	  <xsl:text>&apos;;&#x0A;</xsl:text>
       	</xsl:if>
 	  
-      	<xsl:text>&#x0A;drop operator &quot;</xsl:text>
-        <xsl:value-of select="@schema"/>
-	<xsl:text>&quot;.</xsl:text>
+      	<xsl:text>&#x0A;drop operator </xsl:text>
+        <xsl:value-of select="skit:dbquote(@schema)"/>
+        <xsl:text>.</xsl:text>
         <xsl:value-of select="@name"/>
       	<xsl:text>(</xsl:text>
 
 	<xsl:choose>
 	  <xsl:when test="arg[@position='left']">
-	    <xsl:text>&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='left']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='left']/@name"/>
-	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
+				               arg[@position='left']/@name)"/>
 	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:text>none</xsl:text>
@@ -124,11 +106,8 @@
 	<xsl:text>, </xsl:text>
 	<xsl:choose>
 	  <xsl:when test="arg[@position='right']">
-	    <xsl:text>&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='right']/@schema"/>
-	    <xsl:text>&quot;.&quot;</xsl:text>
-            <xsl:value-of select="arg[@position='right']/@name"/>
-	    <xsl:text>&quot;</xsl:text>
+            <xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
+				               arg[@position='right']/@name)"/>
 	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:text>none</xsl:text>
