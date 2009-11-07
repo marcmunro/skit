@@ -73,6 +73,7 @@
   <xsl:include href="skitfile:ddl/operators.xsl"/>
   <xsl:include href="skitfile:ddl/operator_classes.xsl"/>
   <xsl:include href="skitfile:ddl/operator_families.xsl"/>
+  <xsl:include href="skitfile:ddl/sequences.xsl"/>
 <!--
 
   <skituls:include file="ddl/sequences.xsl"/>

@@ -37,6 +37,7 @@
       <xi:include href="skitfile:extract/operators.xml"/>
       <xi:include href="skitfile:extract/operator_families.xml"/>
       <xi:include href="skitfile:extract/operator_classes.xml"/>
+      <xi:include href="skitfile:extract/sequences.xml"/>
     </schema>
   </skit:runsql>
   <!-- <skit:exec expr="(debug 'TODO: operators, operator classes,
@@ -49,7 +50,6 @@
   <skit:runsql var="opclass_opers" file="sql/opclass_opers.sql"/>
   <skit:runsql var="opclass_funcs" file="sql/opclass_funcs.sql"/>
   <skit:runsql var="aggregates" file="sql/aggregate.sql"/>
-  <skit:runsql var="sequences" file="sql/sequences.sql"/>
   <skit:runsql var="tables" file="sql/tables.sql"/>
 
   <skit:foreach var="schemas">

@@ -507,51 +507,51 @@ language internal immutable strict;
 -- ) tablespace tbs3;
 -- 
 -- 
--- create sequence "public"."thingy_id_seq"
---   start with 1 increment by 1
---   minvalue 1 maxvalue 9223372036854775807
---   cache 1;
--- 
--- comment on sequence "public"."thingy_id_seq" is
--- 'thingy';
--- 
--- 
--- grant select on table "thingy_id_seq" to "keep";
--- 
--- create sequence "public"."wib_seq"
---   start with 1000 increment by 1
---   minvalue 1 maxvalue 9223372036854775807
---   cache 1;
--- 
--- comment on sequence "public"."wib_seq" is
--- 'wib wib wib';
--- 
--- 
--- grant delete on table "wib_seq" to "keep";
--- 
--- grant insert on table "wib_seq" to "keep";
--- 
--- grant references on table "wib_seq" to "keep";
--- 
--- grant rule on table "wib_seq" to "keep";
--- 
--- grant select on table "wib_seq" to "keep";
--- 
--- grant trigger on table "wib_seq" to "keep";
--- 
--- grant update on table "wib_seq" to "keep";
--- 
--- create sequence "public"."wibble_seq"
---   start with 1000 increment by 1
---   minvalue 1 maxvalue 9223372036854775807
---   cache 1;
--- 
--- 
--- create sequence "public"."wubble_seq"
---   start with 1000 increment by 1
---   minvalue 1 maxvalue 9223372036854775807
---   cache 1;
--- 
+create sequence "public"."thingy_id_seq"
+  start with 1 increment by 1
+  minvalue 1 maxvalue 9223372036854775807
+  cache 1;
+
+comment on sequence "public"."thingy_id_seq" is
+'thingy';
+
+
+grant select on table "thingy_id_seq" to "keep";
+
+create sequence "public"."wib_seq"
+  start with 1000 increment by 1
+  minvalue 1 maxvalue 9223372036854775807
+  cache 1;
+
+comment on sequence "public"."wib_seq" is
+'wib wib wib';
+
+
+grant delete on table "wib_seq" to "keep";
+
+grant insert on table "wib_seq" to "keep";
+
+grant references on table "wib_seq" to "keep";
+
+grant rule on table "wib_seq" to "keep";
+
+grant select on table "wib_seq" to "keep";
+
+grant trigger on table "wib_seq" to "keep";
+
+grant update on table "wib_seq" to "keep";
+
+create sequence "public"."wibble_seq"
+  start with 1000 increment by 1
+  minvalue 1 maxvalue 9223372036854775807
+  cache 1;
+
+
+create sequence "public"."wubble_seq"
+  start with 1000 increment by 1
+  minvalue 1 maxvalue 9223372036854775807
+  cache 1;
+
 -- \echo Done with schema "public";
 -- 
 -- 

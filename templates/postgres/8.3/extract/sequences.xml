@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="sequence" from="sequences" 
+		filter="(string= (select sequence 'schema')
+			         (select schema 'name'))">
+    <sequence>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="tablespace"/>
+      <skit:attr name="privs"/>
+
+      <skit:runsql var="seqcolumn" file="sql/sequence_cols.sql"
+		   params="(concat (select sequence 'schema') '.' 
+			           (select sequence 'name'))">
+	<skit:attr name="start_with"/>
+	<skit:attr name="increment_by"/>
+	<skit:attr name="max_value"/>
+	<skit:attr name="min_value"/>
+	<skit:attr name="cache"/>
+	<skit:attr name="is_cycled"/>
+      </skit:runsql>
+
+      <skit:if test="(select sequence 'comment')">
+	<comment>
+	  <skit:text expr="(select sequence 'comment')"/>
+	</comment>
+      </skit:if>
+
+      <skit:if test="(not (select tuple 'privs'))">
+        <!-- No privileges defined for this sequence, so create
+      	     default grants for the implicit privs -->
+        <grant with_grant="yes" priv="select" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" field="owner"/>
+        </grant>
+        <grant priv="select" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" expr="'public'"/>
+        </grant>
+        <grant with_grant="yes" priv="update" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" field="owner"/>
+        </grant>
+        <grant priv="update" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" expr="'public'"/>
+        </grant>
+        <grant with_grant="yes" priv="usage" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" field="owner"/>
+        </grant>
+        <grant priv="usage" default="yes">
+      	  <skit:attr name="from" field="owner"/>
+      	  <skit:attr name="to" expr="'public'"/>
+        </grant>
+      </skit:if>
+
+      <skit:exec_function name="grants_from_privs"
+    			  privileges="(select tuple 'privs')"/>
+
+    </sequence>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
