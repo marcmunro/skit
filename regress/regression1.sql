@@ -922,6 +922,9 @@ create cast("public"."mychar" as "pg_catalog"."bytea")
   with function "public"."mycharsend"("public"."mychar")
   as assignment;
 
+comment on cast("public"."mychar" as "pg_catalog"."bytea")
+is 'cast comment';
+
 
 create cast("public"."postal2" as "public"."mychar")
   without function;

@@ -10,13 +10,9 @@
     <xsl:if test="(../@action='build') and (@is_defined = 't')">
       <print>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@owner"/>
-          <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
-	</xsl:if>
-        <xsl:text>create type </xsl:text>
+	<xsl:call-template name="set_owner"/>
 
+        <xsl:text>create type </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:choose>
 	  <xsl:when test="@subtype='enum'">
@@ -120,11 +116,9 @@
 	    </xsl:for-each>
 	  </xsl:when>
 	</xsl:choose>
-	<xsl:apply-templates/>
 
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:apply-templates/>
+	<xsl:call-template name="reset_owner"/>
 	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>

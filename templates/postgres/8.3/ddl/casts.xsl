@@ -9,6 +9,7 @@
   <xsl:template match="dbobject/cast">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>&#x0A;</xsl:text>
       	<xsl:text>create cast(</xsl:text>
         <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
       	<xsl:text> as </xsl:text>
@@ -34,7 +35,8 @@
       	  <xsl:text>as implicit</xsl:text>
 	</xsl:if>
       	<xsl:text>;&#x0A;</xsl:text>
-
+	<xsl:apply-templates/>  <!-- Deal with comments -->
+        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

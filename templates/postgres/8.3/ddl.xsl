@@ -57,6 +57,21 @@
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
+  <xsl:template name="set_owner">
+    <xsl:if test="@owner != //cluster/@username">
+      <xsl:text>set session authorization &apos;</xsl:text>
+      <xsl:value-of select="@owner"/>
+      <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="reset_owner">
+    <xsl:if test="@owner != //cluster/@username">
+      <xsl:text>reset session authorization;&#x0A;</xsl:text>
+    </xsl:if>
+  </xsl:template>
+
+
   <!-- handle cluster and dbincluster-->
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
   <xsl:include href="skitfile:ddl/database.xsl"/>

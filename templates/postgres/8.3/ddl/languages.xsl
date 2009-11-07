@@ -11,20 +11,14 @@
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@owner"/>
-          <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="set_owner"/>
 
         <xsl:text>create language </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;</xsl:text>
 	<xsl:apply-templates/>
 
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="reset_owner"/>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>

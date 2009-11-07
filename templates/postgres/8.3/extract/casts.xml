@@ -27,6 +27,12 @@
       <skit:exec_function name="type_handler"
       			  oid="(select casts 'fn_oid')"
       			  type="'cast'"/>
+
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
     </cast>
   </skit:runsql>
 </skit:inclusion>

@@ -6,7 +6,8 @@ select sn.nspname || '.' || st.typname || '::' ||
        tt.typname as target_type,
        tn.nspname as target_type_schema,
        c.castfunc::oid as fn_oid,
-       c.castcontext as context
+       c.castcontext as context,
+       quote_literal(obj_description(c.oid, 'pg_cast')) as comment
 from   pg_catalog.pg_cast c
        inner join
           pg_catalog.pg_type st
