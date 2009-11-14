@@ -6,14 +6,14 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Sequences -->
-  <xsl:template match="sequence">
+  <!-- Tables -->
+  <xsl:template match="table">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="sequence_fqn" 
-		  select="concat('sequence.', 
+    <xsl:variable name="table_fqn" 
+		  select="concat('table.', 
 			  ancestor::database/@name, '.', 
 			  ancestor::schema/@name, '.', @name)"/>
-    <dbobject type="sequence" fqn="{$sequence_fqn}" name="{@name}"
+    <dbobject type="table" fqn="{$table_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@schema,@name)}">
       <dependencies>
 	<xsl:if test="@owner != 'public'">
@@ -22,6 +22,20 @@
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
+	<!-- Dependencies on inherited tables -->
+	<xsl:for-each select="inherits">
+	  <dependency fqn="{concat('table.', 
+			           ancestor::database/@name, '.',
+				   @schema, '.', @name)}"/>
+	</xsl:for-each>
+	<!-- Dependencies on types -->
+	<xsl:for-each select="column">
+	  <xsl:if test="@type_schema != 'pg_catalog'">
+	    <dependency fqn="{concat('type.', 
+			             ancestor::database/@name, '.',
+				     @type_schema, '.', @type)}"/>
+	  </xsl:if>
+	</xsl:for-each>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

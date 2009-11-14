@@ -91,6 +91,9 @@
 	    </xsl:for-each>
 	    <xsl:value-of select="')'"/>
 	  </xsl:when>
+	  <xsl:when test="../@schema">
+	    <xsl:value-of select="skit:dbquote(../@schema, ../@name)"/>
+	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:value-of select="skit:dbquote(../@name)"/>
 	  </xsl:otherwise>
@@ -106,6 +109,13 @@
 	  <dependency fqn="{concat('role.cluster.', @from)}"/>
 	</xsl:if>
 
+	<!-- Dependencies on usage of schema. -->
+	<xsl:if test="../@schema">
+	  <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
+		       ../@schema, '.usage:', @from)}"/>
+	  <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
+		       ../@schema, '.usage:public')}"/>
+	</xsl:if>
 	<!-- Dependencies on previous grant. -->
 	<xsl:choose>
 	  <xsl:when test="@from=../@owner">

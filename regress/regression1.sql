@@ -211,39 +211,42 @@ reset session authorization;
 
 \echo updating schema "public";
 -- 
--- create table "public"."additional" (
---   "str1"                text not null,
---   "str2"                varchar(40)
--- ) tablespace tbs3;
--- 
--- comment on column "public"."additional"."str1" is
--- 'str1 column';
--- 
--- comment on column "public"."additional"."str2" is
--- 'str2 column';
--- 
--- \echo Done with schema "public";
--- 
--- 
--- \echo updating schema "public";
--- 
--- set session authorization 'wibble';
--- create table "public"."thing" (
--- ) tablespace tbs3;
--- 
--- comment on table "public"."thing" is
--- 'thing table';
--- reset session authorization;
--- 
--- 
--- create table "public"."thing_2" (
---   "extra"               bool
---                           default 'true'
--- ) inherits ("public"."thing") tablespace tbs3;
--- 
--- \echo Done with schema "public";
--- 
--- 
+
+create table "public"."additional" (
+  "str1"                text not null,
+  "str2"                varchar(40),
+  mystr                 mychar
+) tablespace tbs3;
+
+comment on column "public"."additional"."str1" is
+'str1 column';
+
+comment on column "public"."additional"."str2" is
+'str2 column';
+
+\echo Done with schema "public";
+
+
+\echo updating schema "public";
+
+set session authorization 'wibble';
+create table "public"."thing" (
+  "keycol" int4 not null
+) tablespace tbs3;
+
+comment on table "public"."thing" is
+'thing table';
+reset session authorization;
+
+
+create table "public"."thing_2" (
+  "extra"               bool
+                          default 'true'
+) inherits ("public"."thing") tablespace tbs3;
+
+\echo Done with schema "public";
+
+
 set session authorization 'marco';
 grant create on database "regressdb" to "keep";
 reset session authorization;
@@ -260,8 +263,8 @@ comment on language plpgsql is 'this is plpgsql';
 
 \echo updating schema "public";
 
--- grant select on table "public"."additional" to "keep2" with grant option;
--- 
+grant select on table "public"."additional" to "keep2" with grant option;
+ 
 create or replace function "public"."mycharin2"(
     in "pg_catalog"."cstring")
   returns "public"."mychar2"
@@ -500,17 +503,17 @@ create or replace function "public"."wib_lt"(
 as 'text_lt'
 language internal immutable strict;
 
--- create table "public"."thing_1" (
--- ) tablespace tbs3;
--- 
--- comment on table "public"."thing_1" is
--- 'thing1';
--- 
--- 
--- create table "public"."thing_3" (
--- ) tablespace tbs3;
--- 
--- 
+create table "public"."thing_1" (
+) tablespace tbs3;
+
+comment on table "public"."thing_1" is
+'thing1';
+
+
+create table "public"."thing_3" (
+) tablespace tbs3;
+
+
 create sequence "public"."thingy_id_seq"
   start with 1 increment by 1
   minvalue 1 maxvalue 9223372036854775807
@@ -578,7 +581,7 @@ create operator "public".< (
   leftarg = "public"."wib",
   rightarg = "public"."wib",
   procedure = "public"."wib_lt",
-  commutator = "public".">=",
+  commutator = operator(public.>=),
   negator = "public".">",
   restrict = "pg_catalog"."scalarltsel",
   join = "pg_catalog"."scalarltjoinsel");
@@ -698,8 +701,8 @@ create operator "public".= (
   leftarg = "public"."seg",
   rightarg = "public"."seg",
   procedure = "public"."seg_same",
-  commutator = "public"."=",
-  negator = "public"."<>",
+  commutator = operator(public.=),
+  negator = operator(public.<>),
   restrict = "pg_catalog"."eqsel",
   join = "pg_catalog"."eqjoinsel",
   merges,

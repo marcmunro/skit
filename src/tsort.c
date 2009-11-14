@@ -11,6 +11,23 @@
  * Provides functions for performing a topological sort.
  */
 
+/* Definitions
+ * FQN: dependencies defined with fqn specify a fully qualified name
+ * dependency.  These dependencies must be satisfied by an 
+ * object with the same fqn.
+ * PQN: dependencies specified with a pqn may be satisfied by *any*
+ * object with a matching pqn.  Typically these are for grants, where
+ * the necessary privilege to perform a grant may have been provided
+ * in several ways.  We currently allow pqn definitions to fail to
+ * match an object.  This allows us to have, for example: pqn dependencies
+ * on usage privilege on schema x granted to role y, or to public.  We
+ * do not need to care whether the grant to y, or the grant to public
+ * exists, but if they do (and one of them must), there will be a
+ * dependency on it.  This is a crass simplification and technically
+ * wrong but is probably good enough.  I'll fix it when I discover it
+ * needs to be fixed.
+ */
+
 /* Marc's traversal cost-reduced tsort algorithm
  * (by cost we mean the cost of switching contexts when building
  *  each node.  This algorithm aims to do as much as possible within
@@ -413,8 +430,11 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
     else if (pqn = nodeAttribute(xmlnode, "pqn")) {
 	fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
 	objectFree((Object *) pqn, TRUE);
-	dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
-	addDirectedDependency(node, dagnodelist);
+	/* fqnlist is nil, is the item given by the pqn does not exist. */
+	if (fqnlist) {
+	    dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
+	    addDirectedDependency(node, dagnodelist);
+	}
     }
 }
 
@@ -973,7 +993,7 @@ gensort(Document *doc)
 	if (hashElems(dagnodes)) {
 	    /* If we get here something bad has happened: there are
 	       unbuilt dagnodes in the dagnodes hash, which means that
-	       for some reason we have been able to find a single build
+	       for some reason we have not been able to find a single build
 	       candidate for the remaining dagnodes.  This means our DAG
 	       is effectively broken (not acyclic).  */
 	    objectFree((Object *) sorted, TRUE);

@@ -6,6 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+
  <!-- Tablespaces -->
   <xsl:template match="tablespace">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>

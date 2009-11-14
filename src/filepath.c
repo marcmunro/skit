@@ -276,8 +276,8 @@ readFile(String *filename)
 	    msg = newstr("Cannot allocate memory to read file %s",
 			 filename->value);
 	}
+	fclose(fp);
     }
-    fclose(fp);
 
     if (msg) {
 	RAISE(GENERAL_ERROR, msg);

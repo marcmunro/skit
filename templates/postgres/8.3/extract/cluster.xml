@@ -91,6 +91,7 @@
 	</skit:if>
       </skit:function>
 		     
+      <!-- An example of a skit debug call -->
       <!-- <skit:exec expr="(debug 'PRIVNAMES' privnames)"/> -->
       <skit:attr name="port" expr="port"/>
       <skit:attr name="version"/>

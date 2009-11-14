@@ -38,25 +38,13 @@
       	  <skit:attr name="from" field="owner"/>
       	  <skit:attr name="to" field="owner"/>
         </grant>
-        <grant priv="select" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" expr="'public'"/>
-        </grant>
         <grant with_grant="yes" priv="update" default="yes">
       	  <skit:attr name="from" field="owner"/>
       	  <skit:attr name="to" field="owner"/>
         </grant>
-        <grant priv="update" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" expr="'public'"/>
-        </grant>
         <grant with_grant="yes" priv="usage" default="yes">
       	  <skit:attr name="from" field="owner"/>
       	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant priv="usage" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" expr="'public'"/>
         </grant>
       </skit:if>
 

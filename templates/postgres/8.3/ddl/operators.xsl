@@ -42,13 +42,14 @@
         <xsl:value-of 
 	   select="skit:dbquote(procedure/@schema,procedure/@name)"/>
 	<xsl:if test="commutator">
-	  <xsl:text>,&#x0A;  commutator = </xsl:text>
+	  <xsl:text>,&#x0A;  commutator = operator(</xsl:text>
           <xsl:value-of 
-	     select="skit:dbquote(commutator/@schema,commutator/@name)"/>
+	     select="concat(commutator/@schema, '.', commutator/@name, ')')"/>
 	</xsl:if>
 	<xsl:if test="negator">
-	  <xsl:text>,&#x0A;  negator = </xsl:text>
-          <xsl:value-of select="skit:dbquote(negator/@schema,negator/@name)"/>
+	  <xsl:text>,&#x0A;  negator = operator(</xsl:text>
+          <xsl:value-of 
+	     select="concat(negator/@schema, '.', negator/@name, ')')"/>
 	</xsl:if>
 	<xsl:if test="restrict">
 	  <xsl:text>,&#x0A;  restrict = </xsl:text>
