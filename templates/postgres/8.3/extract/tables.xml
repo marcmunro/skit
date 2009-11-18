@@ -8,6 +8,8 @@
 		filter="(string= (select table 'schema')
 			         (select schema 'name'))">
     <table>
+      <skit:let>
+	<skit:var name="columns" expr="1"/>
       <skit:attr name="name"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
@@ -23,8 +25,9 @@
 	</inherits>
       </skit:runsql>
 
-      <skit:runsql var="columns" file="sql/columns.sql"
-		      params="(select table 'oid')">
+      <skit:runsql to="columns" file="sql/columns.sql"
+		      params="(select table 'oid')"/>
+      <skit:foreach var="column" from="columns">
 	<column>
 	  <skit:attr name="colnum"/>
 	  <skit:attr name="name"/>
@@ -39,12 +42,34 @@
 	  <skit:attr name="is_local"/>
 	  <skit:attr name="default"/>
 	  <skit:attr name="stats_target"/>
-	  <skit:if test="(select tuple 'comment')">
+	  <skit:if test="(select column 'comment')">
 	    <comment>
-	      <skit:text expr="(select tuple 'comment')"/>
+	      <skit:text expr="(select column 'comment')"/>
 	    </comment>
 	  </skit:if>
 	</column>
+      </skit:foreach>
+
+      <skit:runsql var="constraints" file="sql/table_constraints.sql"
+		      params="(select table 'oid')">
+	<CONSTRAINT_XX>
+	  <skit:var name="colnums" expr="(split (select tuple 'columns') ',')"/>
+	  <skit:attr name="name"/>
+	  <skit:attr name="schema"/>
+	  <skit:attr name="constraint_type"/>
+	  <skit:attr name="deferred"/>
+	  <skit:attr name="deferrable"/>
+	  <skit:attr name="source"/>
+
+	  <skit:attr name="columns"/>
+	  <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
+	  <skit:foreach from="colnums" var="colnum">
+	    <column>
+	      <skit:attr name="name" 
+			 expr="(select columns (try-to-int colnum) 'name')"/>
+	    </column>	
+	  </skit:foreach>
+	</CONSTRAINT_XX>
       </skit:runsql>
 
       <skit:if test="(select table 'comment')">
@@ -88,6 +113,7 @@
 
       <skit:exec_function name="grants_from_privs"
     			  privileges="(select tuple 'privs')"/>
+      </skit:let>
     </table>
   </skit:foreach>
 </skit:inclusion>  

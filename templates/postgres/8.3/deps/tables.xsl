@@ -28,13 +28,12 @@
 			           ancestor::database/@name, '.',
 				   @schema, '.', @name)}"/>
 	</xsl:for-each>
-	<!-- Dependencies on types -->
+	<!-- Dependencies on columns -->
 	<xsl:for-each select="column">
-	  <xsl:if test="@type_schema != 'pg_catalog'">
-	    <dependency fqn="{concat('type.', 
-			             ancestor::database/@name, '.',
-				     @type_schema, '.', @type)}"/>
-	  </xsl:if>
+	  <dependency fqn="{concat('column.', 
+			    ancestor::database/@name, '.', 
+			    ancestor::schema/@name, '.', 
+			    ../@name, '.', @name)}"/>
 	</xsl:for-each>
       </dependencies>
       <xsl:copy select=".">
@@ -45,6 +44,17 @@
 	</xsl:apply-templates>
       </xsl:copy>
     </dbobject>
+
+    <!-- Now create separate dbobject definitions for columns.  These
+	 cannot be contained within the table in the normal way as that
+	 would create a dependency on the table.  Instead the table must
+	 be dependent on each of the columns.  -->
+    <xsl:for-each select="column">
+      <xsl:call-template name="table_column">
+	<xsl:with-param name="parent_core" 
+			select="concat($parent_core, '.', @name)"/>
+      </xsl:call-template>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
 

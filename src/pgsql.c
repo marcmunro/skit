@@ -485,7 +485,7 @@ pgsqlCursorGet(Cursor *cursor, Object *key)
 	Int4 *rownum;
 	if (key->type == OBJ_INT4) {
 		index = ((Int4 *) key)->value;
-		if ((index < 0) || (index >= cursor->rows)) {
+		if ((index < 1) || (index > cursor->rows)) {
 			return NULL;
 		}
 

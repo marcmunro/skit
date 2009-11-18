@@ -954,27 +954,35 @@ static xmlNode *
 execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *fromname = nodeAttribute(template_node, "from");
+    String *expr;
     String *filter = nodeAttribute(template_node, "filter");
-    Object *cursor;
+    Object *collection;
     xmlNode *child = NULL;
     boolean doit = TRUE;
     Tuple *tuple;
     Object *result;
 
     BEGIN {
-	if (!fromname) {
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("from must be specified for foreach"));
+	if (fromname) {
+	    collection = symbolGetValue(fromname->value);
 	}
-
-	cursor = symbolGetValue(fromname->value);
-	if (cursor) {
-	    if (!isCollection(cursor)) {
+	else {
+	    expr = nodeAttribute(template_node, "expr");
+	    if (!expr) {
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("from or expr must be specified for foreach"));
+	    }
+	    collection = evalSexp(expr->value);
+	}
+	
+	if (collection) {
+	    if (!isCollection(collection)) {
 		    RAISE(XML_PROCESSING_ERROR, 
 			  newstr("from variable %s does not contain a "
 				 "collection",  fromname->value));
 	    }
-	    child = iterate(cursor, filter, template_node, parent_node, depth);
+	    child = iterate(collection, filter, template_node, 
+			    parent_node, depth);
 	}
     }
     EXCEPTION(ex);
@@ -1053,7 +1061,10 @@ execVar(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     sym = symbolGet(name->value);
     
-    if (!sym) {
+    if (sym) {
+	objectFree(sym->svalue, TRUE);
+    }
+    else {
 	sym = symbolNew(name->value);
     }
     setScopeForSymbol(sym);

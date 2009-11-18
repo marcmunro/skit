@@ -224,6 +224,8 @@ comment on column "public"."additional"."str1" is
 comment on column "public"."additional"."str2" is
 'str2 column';
 
+
+
 \echo Done with schema "public";
 
 
@@ -237,6 +239,9 @@ create table "public"."thing" (
 comment on table "public"."thing" is
 'thing table';
 reset session authorization;
+
+alter table thing add constraint thing__pk primary key (keycol);
+
 
 
 create table "public"."thing_2" (
@@ -931,6 +936,27 @@ is 'cast comment';
 
 create cast("public"."postal2" as "public"."mychar")
   without function;
+
+
+create table schema2.keys_table (
+  key1          int4 not null,
+  key2          int4 not null,
+  key3          int4 not null,
+  key4          int4 not null
+);
+
+alter table schema2.keys_table add constraint thing__pk
+  primary key(key1, key2, key3, key4);
+
+alter table schema2.keys_table add constraint thing__13_uk
+  unique(key1, key3);
+
+alter table schema2.keys_table add constraint thing__14_uk
+  unique(key1, key4);
+
+alter table schema2.keys_table add constraint thing__234_uk
+  unique(key2, key3, key4);
+
 
 
 \echo Done with schema "public";

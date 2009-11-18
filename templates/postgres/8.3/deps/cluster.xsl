@@ -87,6 +87,7 @@
   <xsl:include href="skitfile:deps/operator_families.xsl"/>
   <xsl:include href="skitfile:deps/sequences.xsl"/>
   <xsl:include href="skitfile:deps/tables.xsl"/>
+  <xsl:include href="skitfile:deps/columns.xsl"/>
 
 </xsl:stylesheet>
 

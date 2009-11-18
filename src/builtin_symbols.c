@@ -189,11 +189,11 @@ fnInt4Promote(Object *obj)
 {
     Cons *cons = (Cons *) obj;
     String *str;
-    
+
     raiseIfNotList("try-to-int", obj);
     raiseIfMoreArgs("try-to-int", cons->cdr);
-    str = (String *) cons->car;
-
+    evalCar(cons);
+    str = (String *) dereference(cons->car);
     if (str && (str->type == OBJ_STRING)) {
 	BEGIN {
 	    RETURN((Object *) stringToInt4(str));
