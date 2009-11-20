@@ -4,9 +4,8 @@ select c.oid::oid as oid,
        n.nspname as schema,
        c.relname as name,
        r.rolname as owner,
-       case c.reltablespace
-       when 0 then td.spcname
-       else t.spcname end as tablespace,
+       case t.spcname when 'pg_default' then null 
+       else t.spcname end as tablespace, 
        c.relacl as privs,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
 from   pg_catalog.pg_class c

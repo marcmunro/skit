@@ -948,14 +948,16 @@ create table schema2.keys_table (
 alter table schema2.keys_table add constraint thing__pk
   primary key(key1, key2, key3, key4);
 
-alter table schema2.keys_table add constraint thing__13_uk
-  unique(key1, key3);
+alter table schema2.keys_table add constraint thing__31_uk
+  unique(key3, key1);
 
-alter table schema2.keys_table add constraint thing__14_uk
-  unique(key1, key4);
+alter table schema2.keys_table add constraint thing__41_uk
+  unique(key4, key1);
 
 alter table schema2.keys_table add constraint thing__234_uk
-  unique(key2, key3, key4);
+  unique(key2, key3, key4) 
+with (fillfactor = 90) 
+using index tablespace tbs2;
 
 
 

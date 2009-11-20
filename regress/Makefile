@@ -158,13 +158,14 @@ regression_test1: skit drop_regress_db
 	@./skit --extract \
 	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
 		>$(REGRESS_DIR)/scratch/regressdb_dump2.xml
-	@regress/diffcheck.sh $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
-	    $(REGRESS_DIR)/scratch/regressdb_dump2.xml
 	@echo ...taking final pg_dump snapshot...
 	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1b.dmp
 	@echo ...checking results of pg_dump snapshots...
-	@regress/diffdump.sh $(REGRESS_DIR)/scratch/regressdb_test1a.dmp \
+	regress/diffdump.sh $(REGRESS_DIR)/scratch/regressdb_test1a.dmp \
 	    $(REGRESS_DIR)/scratch/regressdb_test1b.dmp
+	@echo ...checking results of extracts...
+	@regress/diffcheck.sh $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
+	    $(REGRESS_DIR)/scratch/regressdb_dump2.xml
 	@echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== \
 	    >>$(REGRESS_LOG) 2>&1
 	@echo ...regression test 1 complete

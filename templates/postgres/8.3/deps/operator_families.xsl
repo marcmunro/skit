@@ -49,6 +49,7 @@
 	    
 	  </xsl:if>
 	</xsl:for-each>
+
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
@@ -58,6 +59,31 @@
 	</xsl:apply-templates>
       </xsl:copy>
     </dbobject>
+
+    <xsl:if test="@auto_generated='t'">
+      <xsl:if test="comment">
+	<!-- If the operator family was auto-created, we must create the
+	     comment only after the operator class has been created. -->
+	<xsl:variable name="comment_fqn" 
+		      select="concat('comment.', 
+			             ancestor::database/@name, '.', 
+				     @schema, '.', @name, 
+				     '(', @method, ')')"/>
+	<dbobject type="comment" fqn="{$comment_fqn}"
+	          name="{@name}" qname="{skit:dbquote(@schema,@name)}"
+		  nolist="true" method="{@method}">
+	  <dependencies>
+	    <dependency fqn="{concat('operator_class.', $parent_core,
+			      '.', @name)}"/>
+	  </dependencies>
+	  <xsl:for-each select="comment">
+	    <xsl:copy select=".">
+	      <xsl:copy-of select="text()"/>
+	    </xsl:copy>
+	  </xsl:for-each>
+	</dbobject>
+      </xsl:if>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

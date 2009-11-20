@@ -52,16 +52,19 @@
 
       <skit:runsql var="constraints" file="sql/table_constraints.sql"
 		      params="(select table 'oid')">
-	<CONSTRAINT_XX>
+	<constraint>
 	  <skit:var name="colnums" expr="(split (select tuple 'columns') ',')"/>
+	  <skit:attr name="type" field="constraint_type"/>
 	  <skit:attr name="name"/>
 	  <skit:attr name="schema"/>
-	  <skit:attr name="constraint_type"/>
 	  <skit:attr name="deferred"/>
 	  <skit:attr name="deferrable"/>
 	  <skit:attr name="source"/>
+	  <skit:attr name="options"/>
+	  <skit:attr name="tablespace"/>
+	  <skit:attr name="owner"/>
+	  <skit:attr name="access_method"/>
 
-	  <skit:attr name="columns"/>
 	  <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
 	  <skit:foreach from="colnums" var="colnum">
 	    <column>
@@ -69,7 +72,7 @@
 			 expr="(select columns (try-to-int colnum) 'name')"/>
 	    </column>	
 	  </skit:foreach>
-	</CONSTRAINT_XX>
+	</constraint>
       </skit:runsql>
 
       <skit:if test="(select table 'comment')">

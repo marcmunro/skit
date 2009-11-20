@@ -6,15 +6,14 @@ sort_attributes()
 {
     sed -e '/<grant / s/\(.*\)\( from="[^"]*"\)\(.*\)\/>/\1\3\2\/>/' | \
     sed -e '/<grant / s/\(.*\)\( to="[^"]*"\)\(.*\)\/>/\1\3\2\/>/' | \
-    sed -e '/<grant / s/\(.*\)\( with_[a-z]*="[^"]*"\)\(.*\)\/>/\1\3\2\/>/' |
+    sed -e '/<grant / s/\(.*\)\( with_[a-z]*="[^"]*"\)\(.*\)\/>/\1\3\2\/>/' | \
+    sed -e '/^SET / d' | sed -e 's/^--.*//' | grep . | \
     sort
 }
 
 sort_attributes < $1 | sed -e '/dump dbtype/ s/time="[0-9]*"//' >$1.tmp
 sort_attributes < $2 | sed -e '/dump dbtype/ s/time="[0-9]*"//' >$2.tmp
-exit
-sort_attributes $2 | sed -e '/dump dbtype/ s/time="[0-9]*"//' | \
-    diff -b $1.tmp -; status=$?
+diff -b $1.tmp $2.tmp; status=$?
 rm -f $1.tmp
 if [ ${status} -ne 0 ]; then
     echo 1>&2

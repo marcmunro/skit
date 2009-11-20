@@ -17,6 +17,7 @@
       <skit:attr name="family"/>
       <skit:attr name="family_schema"/>
       <skit:attr name="method"/>
+      <skit:attr name="generates_opfamily"/>
       <skit:if test="(select operator_class 'comment')">
 	<comment>
 	  <skit:text expr="(select operator_class 'comment')"/>

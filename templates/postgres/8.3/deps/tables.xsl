@@ -22,18 +22,23 @@
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
+	<xsl:for-each select="constraint[@tablespace]">
+	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	</xsl:for-each>
+	<xsl:for-each select="index[@tablespace]">
+	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	</xsl:for-each>
 	<!-- Dependencies on inherited tables -->
 	<xsl:for-each select="inherits">
 	  <dependency fqn="{concat('table.', 
 			           ancestor::database/@name, '.',
 				   @schema, '.', @name)}"/>
 	</xsl:for-each>
-	<!-- Dependencies on columns -->
-	<xsl:for-each select="column">
-	  <dependency fqn="{concat('column.', 
+	<!-- Dependencies on types for columns -->
+	<xsl:for-each select="column[@type_schema != 'pg_catalog']">
+	  <dependency fqn="{concat('type.', 
 			    ancestor::database/@name, '.', 
-			    ancestor::schema/@name, '.', 
-			    ../@name, '.', @name)}"/>
+			    @type_schema, '.', @type)}"/>
 	</xsl:for-each>
       </dependencies>
       <xsl:copy select=".">
@@ -44,17 +49,6 @@
 	</xsl:apply-templates>
       </xsl:copy>
     </dbobject>
-
-    <!-- Now create separate dbobject definitions for columns.  These
-	 cannot be contained within the table in the normal way as that
-	 would create a dependency on the table.  Instead the table must
-	 be dependent on each of the columns.  -->
-    <xsl:for-each select="column">
-      <xsl:call-template name="table_column">
-	<xsl:with-param name="parent_core" 
-			select="concat($parent_core, '.', @name)"/>
-      </xsl:call-template>
-    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
 

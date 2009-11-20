@@ -16,11 +16,12 @@
     <dbobject type="operator_class" fqn="{$operator_class_fqn}"
 	      name="{@name}" qname="{skit:dbquote(@schema, @name)}">
       <dependencies>
-	<!-- operator family, if not automatically created -->
+	<!-- operator family -->
 	<dependency fqn="{concat('operator_family.', 
-			 ancestor::database/@name, '.', 
-			 @family_schema, '.', @family, '(',
-			 @method, ')')}"/>
+			  ancestor::database/@name, '.', 
+			  @family_schema, '.', @family, '(',
+			  @method, ')')}"/>
+
 	<!-- types will be a dependency of operators, etc -->
 
 	<!-- operators -->

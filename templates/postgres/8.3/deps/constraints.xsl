@@ -6,24 +6,23 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Columns -->
-  <xsl:template match="table/column">
+  <!-- Table (not type) constraints -->
+  <xsl:template match="table/constraint">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-
-    <xsl:variable name="column_fqn" 
-		  select="concat('column.', 
-			  ancestor::database/@name, '.', 
-			  ancestor::schema/@name, '.', 
-			  ancestor::table/@name, '.', @name)"/>
-    <dbobject type="column" fqn="{$column_fqn}" name="{@name}"
-	      qname="{concat(skit:dbquote(../@schema,../@name), '.',
-		             skit:dbquote(@name))}">
-      <xsl:if test="@type_schema != 'pg_catalog'">
-	<dependencies>
-	  <dependency fqn="{concat('type.', ancestor::database/@name, '.',
-				   @type_schema, '.', @type)}"/>
-	</dependencies>
-      </xsl:if>
+    <xsl:variable name="constraint_fqn" 
+		  select="concat('constraint.', $parent_core, '.', @name)"/>
+    <dbobject type="constraint" fqn="{$constraint_fqn}" name="{@name}"
+	      qname="{skit:dbquote(@name)}">
+      <dependencies>
+	<xsl:if test="@tablespace">
+	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	</xsl:if>
+	<xsl:if test="(@type = 'primary key') or (@type = 'unique')">
+	  <xsl:for-each select="column">
+	    <dependency fqn="{concat('column.', $parent_core, '.', @name)}"/>
+	  </xsl:for-each>
+	</xsl:if>
+      </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
@@ -33,12 +32,8 @@
       </xsl:copy>
     </dbobject>
 
-    <!-- Create a second copy of column entry, outside of the dbobject
-         definition and within the table definition.  This second copy
-         will be used in create table ddl, but the first copy is needed
-         for dependency tracking, particularly when processing diffs
-         where constraints may be placed upon new (added) columns in the
-         table. -->
+    <!-- As with columns, we must create two copies of constraints.
+         See columns.xsl for more. -->
 
     <xsl:copy select=".">
       <xsl:copy-of select="@*"/>
