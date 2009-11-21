@@ -85,24 +85,9 @@
 	    <xsl:text>);&#x0A;</xsl:text>
 	  </xsl:when>
 	  <xsl:when test="@subtype='comptype'">
-            <xsl:text> as (&#x0A;  </xsl:text>
+            <xsl:text> as (</xsl:text>
 	    <xsl:for-each select="column">
-	      <xsl:if test="position() != 1">
-		<xsl:text>,&#x0A;  </xsl:text>
-	      </xsl:if>
-	      <xsl:text></xsl:text>
-	      <xsl:value-of select="skit:dbquote(@name)"/>
-	      <xsl:text>    </xsl:text>
-	      <xsl:value-of select="skit:dbquote(@type_schema,@type)"/>
-	      <xsl:if test="@size">
-		<xsl:text>(</xsl:text>
-		<xsl:value-of select="@size"/>
-		<xsl:if test="@precision">
-		  <xsl:text>,</xsl:text>
-		  <xsl:value-of select="@precision"/>
-		</xsl:if>
-		<xsl:text>)</xsl:text>
-	      </xsl:if>
+	      <xsl:call-template name="column"/>
 	    </xsl:for-each>
 	    <xsl:text>);&#x0A;</xsl:text>
 	    <xsl:for-each select="column/comment">

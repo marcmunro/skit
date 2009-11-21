@@ -6,6 +6,36 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="column">
+    <xsl:if test="position() != 1">
+      <xsl:text>,</xsl:text>
+    </xsl:if>
+    <xsl:text>&#x0A;  </xsl:text>
+    <xsl:value-of 
+       select="concat(skit:dbquote(@name),
+	              substring('                              ',
+		      string-length(skit:dbquote(@name))))"/>
+    <xsl:text> </xsl:text>
+    <xsl:value-of select="skit:dbquote(@type_schema, @type)"/>
+    <xsl:if test="@size">
+      <xsl:text>(</xsl:text>
+      <xsl:value-of select="@size"/>
+      <xsl:if test="@precision">
+        <xsl:text>,</xsl:text>
+	<xsl:value-of select="@precision"/>
+      </xsl:if>
+      <xsl:text>)</xsl:text>
+    </xsl:if>
+    <xsl:value-of select="@dimensions"/>
+    <xsl:if test="@nullable='no'">
+      <xsl:text> not null</xsl:text>
+    </xsl:if>
+    <xsl:if test="@default">
+      <xsl:text>&#x0A;                                    default </xsl:text>
+      <xsl:value-of select="@default"/>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:template match="dbobject/table">
     <xsl:if test="../@action='build'">
       <print>
@@ -17,32 +47,7 @@
         <xsl:text> (</xsl:text>
 	<xsl:for-each select="column[@is_local='t']">
 	  <xsl:sort select="@colnum"/>
-	  <xsl:if test="position() != 1">
-            <xsl:text>,</xsl:text>
-	  </xsl:if>
-          <xsl:text>&#x0A;  </xsl:text>
-	  <xsl:value-of 
-	     select="concat(skit:dbquote(@name),
-		            substring('                              ',
-		                      string-length(skit:dbquote(@name))))"/>
-          <xsl:text> </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@type_schema, @type)"/>
-	  <xsl:if test="@size">
-            <xsl:text>(</xsl:text>
-	    <xsl:value-of select="@size"/>
-	    <xsl:if test="@precision">
-              <xsl:text>,</xsl:text>
-	      <xsl:value-of select="@precision"/>
-	    </xsl:if>
-            <xsl:text>)</xsl:text>
-	  </xsl:if>
-	  <xsl:if test="@nullable='no'">
-            <xsl:text> not null</xsl:text>
-	  </xsl:if>
-	  <xsl:if test="@default">
-	    <xsl:text>&#x0A;                                    default </xsl:text>
-	    <xsl:value-of select="@default"/>
-	  </xsl:if>
+	  <xsl:call-template name="column"/>
 	</xsl:for-each>
 	<xsl:text>&#x0A;)</xsl:text>
 	<xsl:if test ="inherits">
@@ -61,6 +66,49 @@
 	  <xsl:value-of select="@tablespace"/>
 	</xsl:if>
 	<xsl:text>;&#x0A;</xsl:text>
+
+	<xsl:if test="column[@stats_target]">
+	  <xsl:text>&#x0A;alter table </xsl:text>
+          <xsl:value-of select="../@qname"/>
+	  <xsl:for-each select="column[@stats_target]">
+	    <xsl:if test="position() != '1'">
+	      <xsl:text>,</xsl:text>
+	    </xsl:if>
+	    <xsl:text>&#x0A;  alter column </xsl:text>
+            <xsl:value-of select="skit:dbquote(@name)"/>
+	    <xsl:text> set statistics </xsl:text>
+            <xsl:value-of select="@stats_target"/>
+	  </xsl:for-each>
+	  <xsl:text>;&#x0A;</xsl:text>
+	</xsl:if>
+
+	<xsl:if test="column[@storage_policy]">
+	  <xsl:text>&#x0A;alter table </xsl:text>
+          <xsl:value-of select="../@qname"/>
+	  <xsl:for-each select="column[@storage_policy]">
+	    <xsl:if test="position() != '1'">
+	      <xsl:text>,</xsl:text>
+	    </xsl:if>
+	    <xsl:text>&#x0A;  alter column </xsl:text>
+            <xsl:value-of select="skit:dbquote(@name)"/>
+	    <xsl:text> set storage </xsl:text>
+	    <xsl:choose>
+	      <xsl:when test="@storage_policy = 'p'">
+		<xsl:text>main</xsl:text>
+	      </xsl:when>
+	      <xsl:when test="@storage_policy = 'e'">
+		<xsl:text>external</xsl:text>
+	      </xsl:when>
+	      <xsl:when test="@storage_policy = 'm'">
+		<xsl:text>main</xsl:text>
+	      </xsl:when>
+	      <xsl:when test="@storage_policy = 'x'">
+		<xsl:text>extended</xsl:text>
+	      </xsl:when>
+	    </xsl:choose>
+	  </xsl:for-each>
+	  <xsl:text>;&#x0A;</xsl:text>
+	</xsl:if>
 
 	<xsl:for-each select="constraint">
 	  <xsl:if test="(@type = 'unique') or (@type = 'primary key')">

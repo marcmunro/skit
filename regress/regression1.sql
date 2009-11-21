@@ -218,6 +218,12 @@ create table "public"."additional" (
   mystr                 mychar
 ) tablespace tbs3;
 
+alter table public.additional
+  alter column str2 set storage main;
+
+alter table public.additional
+  alter column str1 set storage external;
+
 comment on column "public"."additional"."str1" is
 'str1 column';
 
@@ -958,6 +964,16 @@ alter table schema2.keys_table add constraint thing__234_uk
   unique(key2, key3, key4) 
 with (fillfactor = 90) 
 using index tablespace tbs2;
+
+
+create table schema2.arrays (
+  key1          int4 not null,
+  one           int4[] not null,
+  two           numeric(12,2)[][],
+  three         varchar(200)[][][]
+);
+
+alter table schema2.arrays alter column key1 set statistics 200;
 
 
 

@@ -15,7 +15,7 @@
       </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="dbobject">
+  <xsl:template match="dbobject[not(@nolist='true')]">
     <xsl:param name="depth"/>
     <xsl:choose>
       <xsl:when test="/*/params[@grants='true']">
