@@ -10,112 +10,142 @@
     <table>
       <skit:let>
 	<skit:var name="columns" expr="1"/>
-      <skit:attr name="name"/>
-      <skit:attr name="schema"/>
-      <skit:attr name="owner"/>
-      <skit:attr name="tablespace"/>
-      <skit:attr name="privs"/>
+	<skit:attr name="name"/>
+	<skit:attr name="schema"/>
+	<skit:attr name="owner"/>
+	<skit:attr name="tablespace"/>
+	<skit:attr name="privs"/>
 
-      <skit:runsql var="inherits" file="sql/inherits.sql"
-		   params="(select table 'oid')">
-	<inherits>
-	  <skit:attr name="name" field="inherit_table"/>
-	  <skit:attr name="schema" field="inherit_schema"/>
-	  <skit:attr name="inherit_order"/>
-	</inherits>
-      </skit:runsql>
+	<skit:runsql var="inherits" file="sql/inherits.sql"
+		     params="(select table 'oid')">
+	  <inherits>
+	    <skit:attr name="name" field="inherit_table"/>
+	    <skit:attr name="schema" field="inherit_schema"/>
+	    <skit:attr name="inherit_order"/>
+	  </inherits>
+	</skit:runsql>
 
-      <skit:runsql to="columns" file="sql/columns.sql"
-		      params="(select table 'oid')"/>
-      <skit:foreach var="column" from="columns">
-	<column>
-	  <skit:attr name="colnum"/>
-	  <skit:attr name="name"/>
-	  <skit:attr name="type"/>
-	  <skit:attr name="type_schema"/>
-	  <skit:attr name="size"/>
-	  <skit:attr name="precision"/>
-	  <skit:attr name="nullable"/>
-	  <skit:attr name="dimensions"/>
-	  <skit:attr name="typstorage"/>
-	  <skit:attr name="storage_policy"/>
-	  <skit:attr name="is_local"/>
-	  <skit:attr name="default"/>
-	  <skit:attr name="stats_target"/>
-	  <skit:if test="(select column 'comment')">
-	    <comment>
-	      <skit:text expr="(select column 'comment')"/>
-	    </comment>
-	  </skit:if>
-	</column>
-      </skit:foreach>
+	<skit:runsql to="columns" file="sql/columns.sql"
+		     params="(select table 'oid')"/>
+	<skit:foreach var="column" from="columns">
+	  <column>
+	    <skit:attr name="colnum"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="type"/>
+	    <skit:attr name="type_schema"/>
+	    <skit:attr name="size"/>
+	    <skit:attr name="precision"/>
+	    <skit:attr name="nullable"/>
+	    <skit:attr name="dimensions"/>
+	    <skit:attr name="typstorage"/>
+	    <skit:attr name="storage_policy"/>
+	    <skit:attr name="is_local"/>
+	    <skit:attr name="default"/>
+	    <skit:attr name="stats_target"/>
+	    <skit:if test="(select column 'comment')">
+	      <comment>
+		<skit:text expr="(select column 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </column>
+	</skit:foreach>
 
-      <skit:runsql var="constraints" file="sql/table_constraints.sql"
-		      params="(select table 'oid')">
-	<constraint>
-	  <skit:var name="colnums" expr="(split (select tuple 'columns') ',')"/>
-	  <skit:attr name="type" field="constraint_type"/>
-	  <skit:attr name="name"/>
-	  <skit:attr name="schema"/>
-	  <skit:attr name="deferred"/>
-	  <skit:attr name="deferrable"/>
-	  <skit:attr name="source"/>
-	  <skit:attr name="options"/>
-	  <skit:attr name="tablespace"/>
-	  <skit:attr name="owner"/>
-	  <skit:attr name="access_method"/>
+	<skit:runsql var="constraints" file="sql/table_constraints.sql"
+		     params="(select table 'oid')">
+	  <constraint>
+	    <skit:var name="colnums" 
+		      expr="(split (select tuple 'columns') ',')"/>
+	    <skit:attr name="type" field="constraint_type"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="schema"/>
+	    <skit:attr name="deferred"/>
+	    <skit:attr name="deferrable"/>
+	    <skit:attr name="source"/>
+	    <skit:attr name="options"/>
+	    <skit:attr name="tablespace"/>
+	    <skit:attr name="owner"/>
+	    <skit:attr name="access_method"/>
+	    <skit:attr name="reftable"/>
+	    <skit:attr name="refschema"/>
 
-	  <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
-	  <skit:foreach from="colnums" var="colnum">
-	    <column>
-	      <skit:attr name="name" 
-			 expr="(select columns (try-to-int colnum) 'name')"/>
-	    </column>	
-	  </skit:foreach>
-	</constraint>
-      </skit:runsql>
+	    <skit:if test="(select tuple 'refoid')">
+	      <reftable>
+		<skit:var name="refcolnums" 
+			  expr="(split (select tuple 'refcolumns') ',')"/>
+		<skit:attr name="reftable"/>
+		<skit:attr name="refschema"/>
+		<skit:attr name="refconstraintname"/>
+		<skit:attr name="refindexname"/>
+		<skit:attr name="refindexschema"/>
+		<skit:runsql to="refcolumns" file="sql/columns.sql"
+			     params="(select tuple 'refoid')"/>
+		<skit:foreach from="refcolnums" var="refcolnum">
+		  <column>
+		    <skit:attr name="name" 
+			       expr="(select refcolumns (try-to-int refcolnum) 
+				             'name')"/>
+		  </column>
+		</skit:foreach>
+	      </reftable>
+	    </skit:if>
 
-      <skit:if test="(select table 'comment')">
-	<comment>
-	  <skit:text expr="(select table 'comment')"/>
-	</comment>
-      </skit:if>
+	    <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
+	    <skit:foreach from="colnums" var="colnum">
+	      <column>
+		<skit:attr name="name" 
+			   expr="(select columns (try-to-int colnum) 'name')"/>
+	      </column>	
+	    </skit:foreach>
 
-      <skit:if test="(not (select tuple 'privs'))">
-        <!-- No privileges defined for this table, so create
-      	     default grants for the implicit privs -->
-        <grant with_grant="yes" priv="trigger" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="references" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="rule" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="select" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="insert" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="update" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="delete" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-      </skit:if>
+	    <skit:if test="(select tuple 'comment')">
+	      <comment>
+		<skit:text expr="(select tuple 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </constraint>
+	</skit:runsql>
 
-      <skit:exec_function name="grants_from_privs"
-    			  privileges="(select tuple 'privs')"/>
+	<skit:if test="(select table 'comment')">
+	  <comment>
+	    <skit:text expr="(select table 'comment')"/>
+	  </comment>
+	</skit:if>
+
+	<skit:if test="(not (select tuple 'privs'))">
+          <!-- No privileges defined for this table, so create
+      	       default grants for the implicit privs -->
+          <grant with_grant="yes" priv="trigger" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="references" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="rule" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="select" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="insert" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="update" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+          <grant with_grant="yes" priv="delete" default="yes">
+      	    <skit:attr name="from" field="owner"/>
+      	    <skit:attr name="to" field="owner"/>
+          </grant>
+	</skit:if>
+
+	<skit:exec_function name="grants_from_privs"
+    			    privileges="(select tuple 'privs')"/>
       </skit:let>
     </table>
   </skit:foreach>

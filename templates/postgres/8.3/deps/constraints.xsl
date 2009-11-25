@@ -12,16 +12,36 @@
     <xsl:variable name="constraint_fqn" 
 		  select="concat('constraint.', $parent_core, '.', @name)"/>
     <dbobject type="constraint" fqn="{$constraint_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@name)}">
+	      qname="{skit:dbquote(@name)}"
+	      table_qname="{skit:dbquote(../@schema, ../@name)}">
       <dependencies>
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
-	<xsl:if test="(@type = 'primary key') or (@type = 'unique')">
-	  <xsl:for-each select="column">
-	    <dependency fqn="{concat('column.', $parent_core, '.', @name)}"/>
-	  </xsl:for-each>
-	</xsl:if>
+	<xsl:for-each select="column">
+	  <dependency fqn="{concat('column.', $parent_core, '.', @name)}"/>
+	</xsl:for-each>
+	<xsl:for-each select="reftable[@refschema != 'pg_catalog']">
+	  <dependency fqn="{concat('table.', ancestor::database/@name, '.', 
+			           @refschema, '.', @reftable)}"/>
+	  
+	  <xsl:choose>
+	    <xsl:when test="@refconstraintname">
+	      <dependency fqn="{concat('constraint.', 
+			                ancestor::database/@name, '.', 
+			                @refschema, '.', @reftable,
+					'.', @refconstraintname)}"/>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <!-- We have a direct dependency on an index rather than
+		   a constraint -->
+	      <dependency fqn="{concat('index.', 
+			                ancestor::database/@name, '.', 
+			                @refschema, '.', @reftable,
+					'.', @refindexname)}"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:for-each>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

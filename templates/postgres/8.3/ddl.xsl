@@ -47,11 +47,20 @@
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> </xsl:text>
-    <xsl:value-of select="../../@qname"/>
-    <xsl:if test="../@method">
-      <xsl:text> using </xsl:text>
-      <xsl:value-of select="../@method"/>
-    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="name(..) = 'constraint'">
+	<xsl:value-of select="skit:dbquote(../@name)"/>
+	<xsl:text> on </xsl:text>
+	<xsl:value-of select="../../../@qname"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="../../@qname"/>
+	<xsl:if test="../@method">
+	  <xsl:text> using </xsl:text>
+	  <xsl:value-of select="../@method"/>
+	</xsl:if>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:text> is&#x0A;</xsl:text>
     <xsl:value-of select="text()"/>
     <xsl:text>;&#x0A;</xsl:text>
@@ -91,6 +100,7 @@
   <xsl:include href="skitfile:ddl/comments.xsl"/>
   <xsl:include href="skitfile:ddl/sequences.xsl"/>
   <xsl:include href="skitfile:ddl/tables.xsl"/>
+  <xsl:include href="skitfile:ddl/foreign_keys.xsl"/>
 <!--
 
   <skituls:include file="ddl/sequences.xsl"/>

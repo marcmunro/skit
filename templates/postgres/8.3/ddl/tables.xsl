@@ -110,6 +110,8 @@
 	  <xsl:text>;&#x0A;</xsl:text>
 	</xsl:if>
 
+	<xsl:apply-templates/>  <!-- Deal with comments -->
+
 	<xsl:for-each select="constraint">
 	  <xsl:if test="(@type = 'unique') or (@type = 'primary key')">
 	    <xsl:text>&#x0A;alter table only </xsl:text>
@@ -140,11 +142,11 @@
 	      <xsl:text>&#x0A;  using index tablespace </xsl:text>
 	      <xsl:value-of select="skit:dbquote(@tablespace)"/>
 	    </xsl:if>
-	    <xsl:text>;&#x0A;&#x0A;</xsl:text>
+	    <xsl:text>;&#x0A;</xsl:text>
 	  </xsl:if>
-	</xsl:for-each>
 
-	<xsl:apply-templates/>  <!-- Deal with comments -->
+	  <xsl:apply-templates/>  <!-- Deal with comments -->
+	</xsl:for-each>
 
 	<xsl:for-each select="column[@is_local='t']/comment">
 	  <xsl:text>&#x0A;comment on column </xsl:text>

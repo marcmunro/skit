@@ -248,6 +248,8 @@ reset session authorization;
 
 alter table thing add constraint thing__pk primary key (keycol);
 
+comment on constraint thing__pk on public.thing is
+'This is the pk for thing';
 
 
 create table "public"."thing_2" (
@@ -944,6 +946,18 @@ create cast("public"."postal2" as "public"."mychar")
   without function;
 
 
+create table schema2.arrays (
+  key1          int4 not null,
+  one           int4[] not null,
+  two           numeric(12,2)[][],
+  three         varchar(200)[][][]
+);
+
+alter table schema2.arrays alter column key1 set statistics 200;
+
+alter table schema2.arrays add constraint arrays__pk
+  primary key(key1);
+
 create table schema2.keys_table (
   key1          int4 not null,
   key2          int4 not null,
@@ -965,16 +979,8 @@ alter table schema2.keys_table add constraint thing__234_uk
 with (fillfactor = 90) 
 using index tablespace tbs2;
 
-
-create table schema2.arrays (
-  key1          int4 not null,
-  one           int4[] not null,
-  two           numeric(12,2)[][],
-  three         varchar(200)[][][]
-);
-
-alter table schema2.arrays alter column key1 set statistics 200;
-
+alter table schema2.keys_table add constraint keys_table__key1_fk
+  foreign key(key1) references schema2.arrays(key1);
 
 
 \echo Done with schema "public";
