@@ -18,9 +18,6 @@
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
-	<xsl:for-each select="column">
-	  <dependency fqn="{concat('column.', $parent_core, '.', @name)}"/>
-	</xsl:for-each>
 	<xsl:for-each select="reftable[@refschema != 'pg_catalog']">
 	  <dependency fqn="{concat('table.', ancestor::database/@name, '.', 
 			           @refschema, '.', @reftable)}"/>
@@ -52,16 +49,6 @@
       </xsl:copy>
     </dbobject>
 
-    <!-- As with columns, we must create two copies of constraints.
-         See columns.xsl for more. -->
-
-    <xsl:copy select=".">
-      <xsl:copy-of select="@*"/>
-      <xsl:apply-templates>
-	<xsl:with-param name="parent_core" 
-			select="concat($parent_core, '.', @name)"/>
-      </xsl:apply-templates>
-    </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>
 

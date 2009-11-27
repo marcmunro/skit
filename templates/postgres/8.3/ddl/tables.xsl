@@ -112,42 +112,6 @@
 
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 
-	<xsl:for-each select="constraint">
-	  <xsl:if test="(@type = 'unique') or (@type = 'primary key')">
-	    <xsl:text>&#x0A;alter table only </xsl:text>
-            <xsl:value-of select="../../@qname"/>
-	    <xsl:text>&#x0A;  add constraint </xsl:text>
-	    <xsl:value-of select="skit:dbquote(@name)"/>
-	    <xsl:choose>
-	      <xsl:when test="@type = 'unique'">
-		<xsl:text>&#x0A;  unique(</xsl:text>
-	      </xsl:when>
-	      <xsl:otherwise>
-		<xsl:text>&#x0A;  primary key(</xsl:text>
-	      </xsl:otherwise>
-	    </xsl:choose>	
-	    <xsl:for-each select="column">
-	      <xsl:if test="position() != '1'">
-		<xsl:text>, </xsl:text>
-	      </xsl:if>
-	      <xsl:value-of select="skit:dbquote(@name)"/>
-	    </xsl:for-each>
-	    <xsl:text>)</xsl:text>
-	    <xsl:if test="@options">
-	      <xsl:text>&#x0A;  with (</xsl:text>
-	      <xsl:value-of select="@options"/>
-	      <xsl:text>)</xsl:text>
-	    </xsl:if>
-	    <xsl:if test="@tablespace">
-	      <xsl:text>&#x0A;  using index tablespace </xsl:text>
-	      <xsl:value-of select="skit:dbquote(@tablespace)"/>
-	    </xsl:if>
-	    <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:if>
-
-	  <xsl:apply-templates/>  <!-- Deal with comments -->
-	</xsl:for-each>
-
 	<xsl:for-each select="column[@is_local='t']/comment">
 	  <xsl:text>&#x0A;comment on column </xsl:text>
           <xsl:value-of select="concat(../../../@qname, '.',

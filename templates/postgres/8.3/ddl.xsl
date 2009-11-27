@@ -51,7 +51,7 @@
       <xsl:when test="name(..) = 'constraint'">
 	<xsl:value-of select="skit:dbquote(../@name)"/>
 	<xsl:text> on </xsl:text>
-	<xsl:value-of select="../../../@qname"/>
+	<xsl:value-of select="../../@table_qname"/>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:value-of select="../../@qname"/>
@@ -100,7 +100,7 @@
   <xsl:include href="skitfile:ddl/comments.xsl"/>
   <xsl:include href="skitfile:ddl/sequences.xsl"/>
   <xsl:include href="skitfile:ddl/tables.xsl"/>
-  <xsl:include href="skitfile:ddl/foreign_keys.xsl"/>
+  <xsl:include href="skitfile:ddl/constraints.xsl"/>
 <!--
 
   <skituls:include file="ddl/sequences.xsl"/>
