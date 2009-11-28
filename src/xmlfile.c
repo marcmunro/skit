@@ -918,6 +918,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    sym = symbolNew(varname->value);
+	    setScopeForSymbol(sym);
 	    if (hashkey) {
 		cursorIndex(cursor, hashkey);
 	    } 

@@ -67,6 +67,9 @@
 	    <skit:attr name="access_method"/>
 	    <skit:attr name="reftable"/>
 	    <skit:attr name="refschema"/>
+	    <skit:attr name="confmatchtype"/>
+	    <skit:attr name="confupdtype"/>
+	    <skit:attr name="confdeltype"/>
 
 	    <skit:if test="(select tuple 'refoid')">
 	      <reftable>

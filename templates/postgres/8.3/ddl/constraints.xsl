@@ -6,6 +6,29 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="fk_event">
+    <xsl:param name="event"/>
+    <xsl:param name="action_code"/>
+    <xsl:if test="$action_code and ($action_code != 'a')">
+      <xsl:text>&#x0A;  on </xsl:text>
+      <xsl:value-of select="$event"/>
+      <xsl:choose>
+	<xsl:when test="$action_code = 'c'">
+	  <xsl:text> cascade</xsl:text>
+	</xsl:when>
+	<xsl:when test="$action_code = 'd'">
+	  <xsl:text> set default</xsl:text>
+	</xsl:when>
+	<xsl:when test="$action_code = 'n'">
+	  <xsl:text> set null</xsl:text>
+	</xsl:when>
+	<xsl:when test="$action_code = 'r'">
+	  <xsl:text> restrict</xsl:text>
+	</xsl:when>
+      </xsl:choose>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:template match="dbobject/constraint">
     <xsl:if test="../@action='build'">
       <print>
@@ -37,6 +60,31 @@
 	      <xsl:value-of select="skit:dbquote(@name)"/>
 	    </xsl:for-each>
 	    <xsl:text>)</xsl:text>
+	    <xsl:choose>
+	      <xsl:when test="@confmatchtype = 'f'">
+		<xsl:text> match full</xsl:text>
+	      </xsl:when>
+	      <xsl:when test="@confmatchtype = 'p'">
+		<xsl:text> match partial</xsl:text>
+	      </xsl:when>
+	      <xsl:when test="@confmatchtype = 'f'">
+		<xsl:text> match simple</xsl:text>
+	      </xsl:when>
+	    </xsl:choose>
+	    <xsl:call-template name="fk_event">
+	      <xsl:with-param name="event" select="'update'"/>
+	      <xsl:with-param name="action_code" select="@confupdtype"/>
+	    </xsl:call-template>
+	    <xsl:call-template name="fk_event">
+	      <xsl:with-param name="event" select="'delete'"/>
+	      <xsl:with-param name="action_code" select="@confdeltype"/>
+	    </xsl:call-template>
+	    <xsl:if test="@deferrable='t'">
+	      <xsl:text>&#x0A;  deferrable</xsl:text>
+	    </xsl:if>
+	    <xsl:if test="@deferred='t'">
+	      <xsl:text>&#x0A;  initially deferred</xsl:text>
+	    </xsl:if>
 	  </xsl:when>
 	  <xsl:when test="(@type = 'unique') or (@type = 'primary key')">
 	    <xsl:choose>

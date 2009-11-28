@@ -962,7 +962,7 @@ create table schema2.keys_table (
   key1          int4 not null,
   key2          int4 not null,
   key3          int4 not null,
-  key4          int4 not null
+  key4          int4
 );
 
 alter table schema2.keys_table add constraint thing__pk
@@ -981,6 +981,22 @@ using index tablespace tbs2;
 
 alter table schema2.keys_table add constraint keys_table__key1_fk
   foreign key(key1) references schema2.arrays(key1);
+
+
+create table schema2.keys2 (
+  key1          int4 not null,
+  key2          int4 not null,
+  key3          int4 not null,
+  key4          int4,
+  key5          int4
+);
+
+alter table schema2.keys2 add constraint keys2__keys_fk
+  foreign key(key1, key2, key3, key4) 
+  references schema2.keys_table(key1, key2, key3, key4) match full
+  on delete cascade on update set default
+  deferrable initially deferred;
+
 
 
 \echo Done with schema "public";

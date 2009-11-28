@@ -18,6 +18,12 @@ select c.oid as oid,
        idxclass.relname as refindexname,
        idxns.nspname as refindexschema,
        idxcons.conname as refconstraintname,
+       case c.contype when 'f' then c.confmatchtype 
+       else null end as confmatchtype,
+       case c.contype when 'f' then c.confupdtype 
+       else null end as confupdtype,
+       case c.contype when 'f' then c.confdeltype 
+       else null end as confdeltype,
        quote_literal(obj_description(c.oid, 'pg_constraint')) as comment
 from   pg_catalog.pg_constraint c
 inner join  pg_catalog.pg_namespace n   -- Schema of constraint
