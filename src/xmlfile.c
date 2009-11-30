@@ -800,6 +800,63 @@ xmlfiledebug(Object *obj)
     fprintf(stderr, "XMLFILEDEBUG\n");
 }
 
+static Cons *mapvars = NULL;
+
+static void
+newMapSymbol(String *name)
+{
+    Symbol *mapsym = NULL;
+    mapsym = symbolNew(name->value);
+    setScopeForSymbol(mapsym);
+    mapvars = consNew((Object *) mapsym, (Object *) mapvars);
+}
+
+static void
+popMapSymbol()
+{
+    Cons *prev = (Cons *) mapvars->cdr;
+    objectFree((Object *) mapvars, FALSE);
+    mapvars = prev;
+}
+
+static void
+appendToMapVar(Object *obj)
+{
+    Symbol *sym;
+    if (!mapvars) {
+	RAISE(XML_PROCESSING_ERROR,
+	      newstr("No map variable in play for skit:result"));
+    }
+    sym = (Symbol *) mapvars->car;
+    if (sym->svalue) {
+	consAppend((Cons *) sym->svalue, obj);
+    }
+    else {
+	sym->svalue = (Object *) consNew(obj, NULL);
+    }
+}
+
+static xmlNode *
+execResult(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    Object *obj;
+    String *expr = nodeAttribute(template_node, "expr");
+    if (!expr) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("expr must be specified for skit:result"));
+    }
+    BEGIN {
+	obj = evalSexp(expr->value);
+	appendToMapVar(obj);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) expr, TRUE);
+    }
+    END;
+    return NULL;
+}
+
 static xmlNode *
 iterate(Object *collection, String *filter,
 	xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -812,21 +869,37 @@ iterate(Object *collection, String *filter,
     boolean do_it = TRUE;
     String *varname = nodeAttribute(template_node, "var");
     String *key = nodeAttribute(template_node, "key");
-    Symbol *sym = NULL;
-    if (varname) {
+    String *idxname = nodeAttribute(template_node, "index");
+    String *mapname = nodeAttribute(template_node, "map_to");
+    Symbol *varsym = NULL;
+    Symbol *idxsym = NULL;
+    Int4 *idx = NULL;
+
+    if (mapname) {
+	newMapSymbol(mapname);
+    }
+
+    if (varname || idxname) {
 	newSymbolScope();
-	sym = symbolGet(varname->value);
-	if (!sym) {
-	    sym = symbolNew(varname->value);
-	}
-	setScopeForSymbol(sym);
-	objectFree((Object *) varname, TRUE);
-    }    
+    }   
+    if (varname) {
+	varsym = symbolNew(varname->value);
+	setScopeForSymbol(varsym);
+    }
+    if (idxname) {
+	idxsym = symbolNew(idxname->value);
+	setScopeForSymbol(idxsym);
+	idx = int4New(0);
+	idxsym->svalue = (Object *) idx;
+    }
 
     BEGIN {
 	while (tuple = objNext(collection, &placeholder), placeholder) {
-	    if (sym) {
-		sym->svalue = tuple;
+	    if (varsym) {
+		varsym->svalue = tuple;
+	    }
+	    if (idx) {
+		idx->value++;
 	    }
 	    tuplestackPush(tuple);
 	    
@@ -873,14 +946,29 @@ iterate(Object *collection, String *filter,
     EXCEPTION(ex);
     //fprintf(stderr, "EXCEPTION ITERATE(2)\n");
     FINALLY {
-	if (sym) {
-	    sym->svalue = NULL;
+	// TODO: This direct handling of symbol svalues below is dumb.
+	// See if this can be handled better by dropSymbolScope 
+	if (varsym) {
+	    varsym->svalue = NULL;
+	}
+	if (idxsym) {
+	    idxsym->svalue = NULL;
+	}
+	if (varname || idxname) {
 	    dropSymbolScope();
 	}
+	if (mapname) {
+	    popMapSymbol();
+	    objectFree((Object *) mapname, TRUE);
+	}
 	objectFree((Object *) key, TRUE);
+	objectFree((Object *) idxname, TRUE);
+	objectFree((Object *) varname, TRUE);
+	objectFree((Object *) idx, TRUE);
 	objectFree(placeholder, TRUE);
     }
     END;
+
     return first_child;
 }
 
@@ -909,7 +997,7 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    RAISE(FILEPATH_ERROR,
 		  newstr("Unable to find sql file: %s\n", filename->value));
 	}
-	sqltext =  trimSqlText(filetext);
+	sqltext = trimSqlText(filetext);
     
 	conn = sqlConnect();
 	params = getExprAttribute(template_node, "params");
@@ -1473,6 +1561,7 @@ initSkitProcessors()
 	addProcessor("let", &execLet);
 	addProcessor("var", &execVar);
 	addProcessor("foreach", &execForeach);
+	addProcessor("result", &execResult);
 	addProcessor("exception", &execException);
 	addProcessor("function", &execDeclareFunction);
 	addProcessor("exec_function", &execExecuteFunction);

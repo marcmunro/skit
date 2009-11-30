@@ -21,6 +21,9 @@
 static Hash *symbols = NULL;
 static Cons *symbol_scope = NULL;
 
+//TODO: Make setsym save the current contents of a symbol instead of
+//freeing it, and have dropScopeForSymbol do the actual freeing.
+
 static void
 dropScopeForSymbol(Symbol *sym)
 {
@@ -136,6 +139,10 @@ symbolNew(char *name)
 	sym->scope = NULL;
 	(void) hashAdd(symbols, (Object *) hashkey, (Object *) sym);
 	setScopeForSymbol(sym);
+	// TODO: See if we can move setscope out of this conditional
+	// it seems more correct that way and there is an explict call
+	// in runsql to do the setscope that really ought to be 
+	// unnecessary.
     }
     return sym;
 }

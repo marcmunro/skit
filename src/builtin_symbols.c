@@ -114,7 +114,16 @@ evalCar(Cons *cons)
 }
 
 
+// THIS HAS BEEN DEEPRECATED AS A POTENTIAL SOURCE OF MANY ERRORS
+// INSTEAD WE WILL TAKE A MORE FUNCTIONAL APPROACH TO THINGS
+// TODO: Ensure that var definitions cannot overwrite the current
+// values of an in-scope variable.
 /* (setq symbol value) */
+/* This operation is fraught with peril, as overwriting the contents of 
+ * a symbol cause its current contents to be freed.  This can be a
+ * problem as the contents may be the original source for object
+ * references used elsewhere.
+ */
 static Object *
 fnSetq(Object *obj)
 {
@@ -134,34 +143,60 @@ fnSetq(Object *obj)
     return (Object *) objRefNew(new);
 }
 
+static void
+appendStr(String *str1, String *str2)
+{
+    char *str1val = str1->value;
+    str1->value = newstr("%s%s", str1->value, str2->value);
+    skfree(str1val);
+}
+
+// (join LIST SEPARATOR)
+static Object *
+fnJoin(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Cons *list;
+    String *separator = NULL;
+    String *result = NULL;
+    String *item;
+
+    raiseIfNotList("join", obj);
+    evalCar(cons);
+    list = (Cons *) dereference(cons->car);
+    raiseIfNotList("join", (Object *) list);
+    cons = (Cons *) cons->cdr;
+    if (cons) {
+	evalCar(cons);
+	separator = (String *) dereference(cons->car);
+	raiseIfNotString("join", separator);
+    }
+    
+    while (list) {
+	item = (String *) dereference(list->car);
+	raiseIfNotString("join", item);
+	if (result) {
+	    if (separator) {
+		appendStr(result, separator);
+	    }
+	    appendStr(result, item);
+	}
+	else {
+	    result = stringNew(item->value);
+	}
+	list = (Cons *) dereference(list->cdr);
+    }
+    if (!result) {
+	result = stringNew("");
+    }
+    return (Object *) result;
+}
+
 // (split SRC DELIMITERS)
 // Split a string into a list of string tokens using any character from
 // delimiters.
 static Object *
 fnSplit(Object *obj)
-{
-    Cons *cons = (Cons *) obj;
-    String *source;
-    String *split;
-    raiseIfNotList("split", obj);
-
-    evalCar(cons);
-    source = (String *) dereference(cons->car);
-    raiseIfNotString("split", source);
-
-    cons = (Cons *) cons->cdr;
-    raiseIfNotList("split", (Object *) cons);
-
-    evalCar(cons);
-    split = (String *) dereference(cons->car);
-    raiseIfNotString("split", split);
-    raiseIfMoreArgs("split", cons->cdr);
-
-    return (Object *) stringSplit(source, split);
-}
-
-static Object *
-fnSplit2(Object *obj)
 {
     Cons *cons = (Cons *) obj;
     String *source;
@@ -513,14 +548,6 @@ fnOr(Object *obj)
     return NULL;
 }
 
-static void
-appendStr(String *str1, String *str2)
-{
-    char *str1val = str1->value;
-    str1->value = newstr("%s%s", str1->value, str2->value);
-    skfree(str1val);
-}
-
 static Object *
 fnConcat(Object *obj)
 {
@@ -579,6 +606,38 @@ fnCons(Object *obj)
 }
 
 static Object *
+fnCar(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *list = NULL;
+    Object *item = NULL;
+    raiseIfNotList("car", obj);
+
+    evalCar(cons);
+    list = dereference(cons->car);
+    item = ((Cons *) list)->car;
+
+    return (Object *) objRefNew(item);
+}
+
+static Object *
+fnCdr(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *list = NULL;
+    Object *item = NULL;
+    raiseIfNotList("cdr", obj);
+
+    evalCar(cons);
+    list = dereference(cons->car);
+    dbgSexp(list);
+    item = ((Cons *) list)->cdr;
+    dbgSexp(item);
+
+    return (Object *) objRefNew(item);
+}
+
+static Object *
 fnPlus(Object *obj)
 {
     Cons *cons = (Cons *) obj;
@@ -597,6 +656,45 @@ fnPlus(Object *obj)
 	    }
 	    result->value += ((Int4 *) item)->value;
 	    cons = (Cons *) cons->cdr;
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) result, TRUE);
+    }
+    END;
+    return (Object *) result;
+}
+
+/* This operates as a unary minus or as a the subtraction of all other
+ * items from the first item of the list  
+ * ie: (- 2) -> -2 (- 2 1) -> 1
+ */
+static Object *
+fnMinus(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *item;
+    Int4 *result = int4New(0);
+    boolean first = TRUE;
+
+    BEGIN {
+	raiseIfNotList("-", obj);
+
+	while (cons) {
+	    evalCar(cons);
+	    item = dereference(cons->car);
+	    if (item->type != OBJ_INT4) {
+		RAISE(LIST_ERROR, 
+		      newstr("\"-\": can only subtract integers"));
+	    }
+	    if (first && cons->cdr) {
+		result->value = ((Int4 *) item)->value;
+	    }
+	    else {
+		result->value -= ((Int4 *) item)->value;
+	    }
+	    cons = (Cons *) cons->cdr;
+	    first = FALSE;
 	}
     }
     EXCEPTION(ex) {
@@ -655,7 +753,12 @@ evalStr(char *str)
     skfree(tmp);
 }
 
-
+static void
+defineVar(char *name, Object *obj)
+{
+    Symbol *sym = symbolNew(name);
+    symSet(sym, obj);
+}
 
 static void 
 initBaseSymbols()
@@ -665,8 +768,8 @@ initBaseSymbols()
 
     (void) symbolCopy(&symbol_t);
     symbolCreate("setq", &fnSetq, NULL);
+    symbolCreate("join", &fnJoin, NULL);
     symbolCreate("split", &fnSplit, NULL);
-    symbolCreate("split2", &fnSplit2, NULL);
     symbolCreate("try-to-int", &fnInt4Promote, NULL);
     symbolCreate("map", &fnMap, NULL);
     symbolCreate("version", &fnVersion, NULL);
@@ -685,13 +788,20 @@ initBaseSymbols()
     symbolCreate("or", &fnOr, NULL);
     symbolCreate("concat", &fnConcat, NULL);
     symbolCreate("cons", &fnCons, NULL);
+    symbolCreate("car", &fnCar, NULL);
+    symbolCreate("cdr", &fnCdr, NULL);
     symbolCreate("+", &fnPlus, NULL);
+    symbolCreate("-", &fnMinus, NULL);
     symbolCreate("hashadd", &fnHashAdd, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
 
-    evalStr("(setq dbtype 'postgres')");
-    evalStr("(setq dbver nil)");
-    evalStr("(setq templates-dir 'templates')");
+    defineVar("dbtype", (Object *) stringNew("postgres"));
+    defineVar("dbver", NULL);
+    defineVar("templates-dir",  (Object *) stringNew("templates"));
+
+    //evalStr("(setq dbtype 'postgres')");
+    //evalStr("(setq dbver nil)");
+    //evalStr("(setq templates-dir 'templates')");
 
     registerPGSQL();	// TODO: Move this call to somewhere more sensible
 }

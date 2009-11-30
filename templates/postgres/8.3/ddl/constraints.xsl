@@ -112,7 +112,10 @@
 	      <xsl:value-of select="skit:dbquote(@tablespace)"/>
 	    </xsl:if>
 	  </xsl:when>
-
+	  <xsl:when test="@type = 'check'">
+	    <xsl:text>&#x0A;  </xsl:text>
+	    <xsl:value-of select="@source"/>
+	  </xsl:when>
 	  <xsl:otherwise>
 	    <xsl:text>OTHER SORT OF CONSTRAINT</xsl:text>
 	  </xsl:otherwise>

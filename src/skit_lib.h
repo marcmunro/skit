@@ -274,6 +274,7 @@ extern boolean isCons(Cons *obj);
 extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
 extern Object *consNext(Cons *list, Object **p_placeholder);
+extern Object *consAppend(Cons *list, Object *item);
 
 // object.c
 extern char *objTypeName(Object *obj);

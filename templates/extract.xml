@@ -22,9 +22,9 @@
       <skit:attr name="user" expr="username"/> 
       <skit:attr name="time" expr="(current-timestamp)"/>
       <skit:exec expr="(setq dbver (version '7.1.4'))"/>
+      <!-- <skit:exec expr="(debug 'TUPLE' tuple)"/> -->
       <skit:exec expr="(setq dbver (version (select tuple 'version')))"/>
 
-      <!-- <skit:exec expr="(debug 'TUPLE' tuple)"/> -->
       <!-- <skit:exec expr="(debug 'DBVERSION' dbver)"/> -->
 
       <xi:include href="skitfile:extract/cluster.xml"/>

@@ -991,14 +991,28 @@ create table schema2.keys2 (
   key5          int4
 );
 
+alter table schema2.keys2 add constraint keys2__key2_uk
+  unique(key2);
+
 alter table schema2.keys2 add constraint keys2__keys_fk
   foreign key(key1, key2, key3, key4) 
   references schema2.keys_table(key1, key2, key3, key4) match full
   on delete cascade on update set default
   deferrable initially deferred;
 
+alter table schema2.keys2 add constraint keys2__total_chk
+  check (key1 + key2 > key3);
 
+/*
+create unique index keys2__key3_uk on schema2.keys2(key3);
 
+comment on index schema2.keys2__key3_uk is
+'comment for  keys2__key3_uk index';
+
+create index keys2__key24_idx on schema2.keys2(key2,key4)
+where key4 > 0;
+
+*/
 \echo Done with schema "public";
 
 DBEOF

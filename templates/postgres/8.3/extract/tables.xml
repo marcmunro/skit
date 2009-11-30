@@ -108,6 +108,46 @@
 	  </constraint>
 	</skit:runsql>
 
+	<skit:runsql var="indices" file="sql/indices.sql"
+		     params="(select table 'oid')">
+	  <index>
+	    <skit:var name="colnums" 
+		      expr="(split (select tuple 'colnums') ' ')"/>
+	    <skit:var name="opclass"/> 
+	    <skit:var name="opclasses" 
+		      expr="(split (select tuple 'operator_classes') ' ')"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="owner"/>
+	    <skit:attr name="tablespace"/>
+	    <skit:attr name="index_am"/>
+	    <skit:attr name="unique"/>
+	    <skit:attr name="clustered"/>
+	    <skit:attr name="valid"/>
+	    <skit:attr name="indexdef"/>
+
+	    <skit:exec expr="(debug 'OPCLASSES' opclasses)"/>
+	    <!-- TODO: identify functions and opclasses required by this
+		 index, for dependency tracking -->
+	    <skit:foreach from="colnums" var="colnum" index="idx">
+	      <column>
+		<skit:let>
+		  <skit:var name="opclass" expr="(select opclasses idx)"/>
+		  <skit:exec expr="(debug 'OPCLASS' opclass)"/>
+		  <skit:attr name="name" 
+			     expr="(select columns (try-to-int colnum) 
+				                   'name')"/>
+		</skit:let>
+	      </column>	
+	    </skit:foreach>
+
+	    <skit:if test="(select tuple 'comment')">
+	      <comment>
+		<skit:text expr="(select tuple 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </index>
+	</skit:runsql>
+
 	<skit:if test="(select table 'comment')">
 	  <comment>
 	    <skit:text expr="(select table 'comment')"/>
