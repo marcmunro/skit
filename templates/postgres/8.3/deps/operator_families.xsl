@@ -74,7 +74,7 @@
 		  nolist="true" method="{@method}">
 	  <dependencies>
 	    <dependency fqn="{concat('operator_class.', $parent_core,
-			      '.', @name)}"/>
+			      '.', @name, '(', @method, ')')}"/>
 	  </dependencies>
 	  <xsl:for-each select="comment">
 	    <xsl:copy select=".">

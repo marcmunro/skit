@@ -101,6 +101,7 @@
   <xsl:include href="skitfile:ddl/sequences.xsl"/>
   <xsl:include href="skitfile:ddl/tables.xsl"/>
   <xsl:include href="skitfile:ddl/constraints.xsl"/>
+  <xsl:include href="skitfile:ddl/indices.xsl"/>
 <!--
 
   <skituls:include file="ddl/sequences.xsl"/>

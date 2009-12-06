@@ -10,9 +10,11 @@ select c.oid as oid,
        i.indisclustered as clustered,
        i.indisvalid as valid,
        i.indkey as colnums,
-       i.indclass as operator_classes,
+       '1978 86328' as operator_classes, 
+       --i.indclass as operator_classes,
        pg_catalog.pg_get_indexdef(i.indexrelid) as indexdef,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
+       --indpred, indexprs
 from   pg_catalog.pg_index i
 inner join pg_catalog.pg_class c on c.oid = i.indexrelid
 inner join pg_catalog.pg_namespace n on n.oid = c.relnamespace
@@ -37,4 +39,4 @@ left outer join pg_catalog.pg_tablespace t
 where  i.indrelid = :1
 --where  i.indrelid = 88436
 and    d.objid is null                  -- eliminate indexes for constraints
-;
+order by n.nspname, c.relname;

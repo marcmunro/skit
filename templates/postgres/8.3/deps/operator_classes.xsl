@@ -12,7 +12,8 @@
     <xsl:variable name="operator_class_fqn" 
 		  select="concat('operator_class.', 
 			  ancestor::database/@name, '.', 
-			  @schema, '.', @name)"/>
+			  @schema, '.', @name, '(',
+			  @method, ')')"/>
     <dbobject type="operator_class" fqn="{$operator_class_fqn}"
 	      name="{@name}" qname="{skit:dbquote(@schema, @name)}">
       <dependencies>

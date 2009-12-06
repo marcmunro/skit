@@ -337,18 +337,47 @@ applyOneParam(char *qrystr, char *pattern, Object *param)
     return raw_result;
 }
 
+char *applyNthParam(char *qrystr, int n, Object *param)
+{
+    static char *param_str = NULL;
+    if (!param_str) {
+	param_str = malloc(10);
+    }
+    if (param->type != OBJ_STRING) {
+	dbgSexp(param);
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("applyParams cannot deal with non-string objects (%d)",
+		  param->type));
+    }
+    sprintf(param_str, ":%d", n);
+    return applyOneParam(qrystr, param_str, param);
+}
+
 char *
 applyParams(char *qrystr, Object *params)
 {
-    if (isCollection(params)) {
-	if (params->type != OBJ_STRING) {
-	    /* Params is some sort of list of parameters */
-	    RAISE(NOT_IMPLEMENTED_ERROR,
-		  newstr("applyParams cannot yet deal with collections"));
+    char *result;
+    char *prev;
+    Cons *list;
+    int i;
+    char *param_str = NULL;
+    if (params->type == OBJ_CONS) {
+	list = (Cons *) params;
+	i = 1;
+	prev = NULL;
+	result = qrystr;
+	while (list) {
+	    result = applyNthParam(result, i, list->car);
+	    if (prev) {
+		skfree(prev);
+	    }
+	    prev = result;
+	    i++;
+	    list = (Cons *) list->cdr;
 	}
+	return result;
     }
-
-    return applyOneParam(qrystr, ":1", params);
+    return applyNthParam(qrystr, 1, params);
 }
 
 String *

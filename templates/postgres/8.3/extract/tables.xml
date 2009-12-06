@@ -124,21 +124,48 @@
 	    <skit:attr name="clustered"/>
 	    <skit:attr name="valid"/>
 	    <skit:attr name="indexdef"/>
+	    <skit:attr name="indexprs"/>
+	    <skit:attr name="indpred"/>
 
-	    <skit:exec expr="(debug 'OPCLASSES' opclasses)"/>
-	    <!-- TODO: identify functions and opclasses required by this
-		 index, for dependency tracking -->
-	    <skit:foreach from="colnums" var="colnum" index="idx">
+	    <skit:foreach from="colnums" var="colnum" index="idx"
+			  filter="(not (string= colnum '0'))">
 	      <column>
-		<skit:let>
-		  <skit:var name="opclass" expr="(select opclasses idx)"/>
-		  <skit:exec expr="(debug 'OPCLASS' opclass)"/>
-		  <skit:attr name="name" 
-			     expr="(select columns (try-to-int colnum) 
+		<skit:attr name="name" 
+			   expr="(select columns (try-to-int colnum) 
 				                   'name')"/>
-		</skit:let>
 	      </column>	
 	    </skit:foreach>
+
+	    <skit:foreach from="colnums" var="colnum" index="idx">
+	      <skit:let>
+		<skit:var name="opclass" 
+			  expr="(select operator_classes 
+				(select opclasses (- idx 1)))"/>
+		<skit:if test="opclass">
+		  <depends>
+		    <skit:attr name="type" expr="'operator class'"/>
+		    <skit:attr name="name"
+			       expr="(concat
+				       (dbquote (select opclass 'schema')
+				                (select opclass 'name'))
+				       '(' (select opclass 'method') ')')"/>
+		  </depends>
+		</skit:if>
+	      </skit:let>	
+	    </skit:foreach>
+
+	    <!-- TODO: dependencies on casts?? -->
+	    <skit:runsql var="index_function" file="sql/getdeps.sql"
+		         params='(list (select tuple "oid") 
+				         "pg_class" 
+					 "(&apos;pg_proc&apos;)")'>
+	      <depends>
+		<skit:attr name="type" expr="'function'"/>
+		<skit:attr name="name"
+			   expr="(select function_sigs 
+				         (select index_function 'objoid'))"/>
+	      </depends>
+	    </skit:runsql>
 
 	    <skit:if test="(select tuple 'comment')">
 	      <comment>

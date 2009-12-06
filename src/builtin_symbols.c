@@ -327,6 +327,7 @@ fnDBQuote(Object *obj)
     raiseIfNotString("dbquote", str1);
     cons->car = NULL;  /* Prevent str1 from being automatically freed */
     if (cons = (Cons *) cons->cdr) {
+	evalCar(cons);
 	str2 = (String *) cons->car;
 	cons->car = NULL;  /* Prevent str2 from being automatically freed */
     }
@@ -350,6 +351,19 @@ fnQuote(Object *obj)
 {
     raiseIfNotList("quote", obj);
     return objectCopy(((Cons *) obj)->car);
+}
+
+static Object *
+fnList(Object *obj)
+{
+    Cons *head;
+    raiseIfNotList("list", obj);
+    head = (Cons *) obj;
+    while (head) {
+	evalCar(head);
+	head = (Cons *) head->cdr;
+    }
+    return objectCopy(obj);
 }
 
 /* (debug label expr)
@@ -779,6 +793,7 @@ initBaseSymbols()
     symbolCreate("tuple", NULL, NULL);
     symbolCreate("tuplestack", NULL, NULL);
     symbolCreate("quote", &fnQuote, NULL);
+    symbolCreate("list", &fnList, NULL);
     symbolCreate("dbquote", &fnDBQuote, NULL);
     symbolCreate("string=", &fnStringEq, NULL);
     symbolCreate("select", &fnSelect, NULL);

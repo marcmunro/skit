@@ -1003,7 +1003,7 @@ alter table schema2.keys2 add constraint keys2__keys_fk
 alter table schema2.keys2 add constraint keys2__total_chk
   check (key1 + key2 > key3);
 
-/*
+
 create unique index keys2__key3_uk on schema2.keys2(key3);
 
 comment on index schema2.keys2__key3_uk is
@@ -1012,7 +1012,8 @@ comment on index schema2.keys2__key3_uk is
 create index keys2__key24_idx on schema2.keys2(key2,key4)
 where key4 > 0;
 
-*/
+create index key2__key2_fnidx on schema2.keys2((abs(key2)));
+
 \echo Done with schema "public";
 
 DBEOF
