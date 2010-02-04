@@ -50,7 +50,7 @@
 	  </column>
 	</skit:foreach>
 
-	<skit:runsql var="constraints" file="sql/table_constraints.sql"
+	<skit:runsql var="constraint" file="sql/table_constraints.sql"
 		     params="(select table 'oid')">
 	  <constraint>
 	    <skit:var name="colnums" 
@@ -99,6 +99,20 @@
 			   expr="(select columns (try-to-int colnum) 'name')"/>
 	      </column>	
 	    </skit:foreach>
+
+	    <!-- Identify functions/casts on which we depend -->
+	    <skit:runsql var="dependency" file="sql/getdeps.sql"
+		         params='(list (select tuple "oid") 
+				         "pg_constraint" 
+					 "(&apos;pg_proc&apos;)")'>
+	      <depends>
+		<skit:attr name="cast" 
+			   expr="(select cast_sigs (select tuple 'objoid'))"/> 
+		<skit:attr name="function"
+			   expr="(select function_sigs 
+				         (select tuple 'objoid'))"/>
+	      </depends>
+	    </skit:runsql>
 
 	    <skit:if test="(select tuple 'comment')">
 	      <comment>
@@ -154,16 +168,16 @@
 	      </skit:let>	
 	    </skit:foreach>
 
-	    <!-- TODO: dependencies on casts?? -->
-	    <skit:runsql var="index_function" file="sql/getdeps.sql"
+	    <skit:runsql var="dependency" file="sql/getdeps.sql"
 		         params='(list (select tuple "oid") 
 				         "pg_class" 
 					 "(&apos;pg_proc&apos;)")'>
+	      <skit:exec expr="(debug 'DEP' dependency)"/>
 	      <depends>
 		<skit:attr name="type" expr="'function'"/>
 		<skit:attr name="name"
 			   expr="(select function_sigs 
-				         (select index_function 'objoid'))"/>
+				         (select dependency 'objoid'))"/>
 	      </depends>
 	    </skit:runsql>
 

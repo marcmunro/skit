@@ -83,6 +83,8 @@
 	<xsl:if test="@security_definer='yes'">
 	  <xsl:text> security definer</xsl:text>
 	</xsl:if>
+	<xsl:text> cost </xsl:text>
+	<xsl:value-of select="@cost"/>
 	<xsl:text>;&#x0A;</xsl:text>
 
 	<xsl:apply-templates/>  <!-- Deal with comments -->

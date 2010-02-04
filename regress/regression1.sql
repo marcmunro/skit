@@ -138,7 +138,7 @@ begin
   return _state + _next;
 end;
 $_$
-language plpgsql stable;
+language plpgsql stable cost 5;
 
 create aggregate "public"."mysum" (
   basetype = "pg_catalog"."int4",
@@ -247,6 +247,9 @@ comment on table "public"."thing" is
 reset session authorization;
 
 alter table thing add constraint thing__pk primary key (keycol);
+
+alter table thing alter keycol set statistics 1000;
+
 
 comment on constraint thing__pk on public.thing is
 'This is the pk for thing';
@@ -1003,6 +1006,9 @@ alter table schema2.keys2 add constraint keys2__keys_fk
 alter table schema2.keys2 add constraint keys2__total_chk
   check (key1 + key2 > key3);
 
+alter table schema2.keys2 add constraint keys2__strlen_chk
+  check (length(cast(key1 as text) || (cast(key2 as text))) > 5 );
+
 
 create unique index keys2__key3_uk on schema2.keys2(key3);
 
@@ -1013,6 +1019,27 @@ create index keys2__key24_idx on schema2.keys2(key2,key4)
 where key4 > 0;
 
 create index key2__key2_fnidx on schema2.keys2((abs(key2)));
+
+create 
+function seg2int(_in seg) returns integer as
+$$
+begin
+  return 1;
+end;
+$$
+language plpgsql immutable strict;
+
+create cast(seg as integer) with function seg2int(seg) as assignment;
+
+create table casted (
+  mykey    seg
+);
+
+alter table casted add constraint casted__cast_chk
+  check (cast(mykey as integer) < 3);
+
+
+
 
 \echo Done with schema "public";
 

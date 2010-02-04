@@ -15,27 +15,26 @@
 	      qname="{skit:dbquote(@name)}"
 	      table_qname="{skit:dbquote(../@schema, ../@name)}">
       <dependencies>
-	<xsl:if test="@tablespace">
-	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	<!-- Dependencies on other constraints -->
+	<xsl:if test="reftable/@refconstraintname">
+	  <dependency fqn="{concat('constraint.', 
+			           ancestor::database/@name, '.',
+				   reftable/@refschema, '.',
+				   reftable/@reftable, '.',
+				   reftable/@refconstraintname)}"/>
 	</xsl:if>
-	<xsl:for-each select="reftable[@refschema != 'pg_catalog']">
-	  <dependency fqn="{concat('table.', ancestor::database/@name, '.', 
-			           @refschema, '.', @reftable)}"/>
-	  
+	<!-- Add explicitly identified dependencies -->
+	<xsl:for-each select="depends">
 	  <xsl:choose>
-	    <xsl:when test="@refconstraintname">
-	      <dependency fqn="{concat('constraint.', 
-			                ancestor::database/@name, '.', 
-			                @refschema, '.', @reftable,
-					'.', @refconstraintname)}"/>
+	    <xsl:when test="@cast">
+	      <dependency fqn="{concat('cast.', 
+			               ancestor::database/@name, 
+				       '.', @cast)}"/>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <!-- We have a direct dependency on an index rather than
-		   a constraint -->
-	      <dependency fqn="{concat('index.', 
-			                ancestor::database/@name, '.', 
-			                @refschema, '.', @reftable,
-					'.', @refindexname)}"/>
+	      <dependency fqn="{concat('function.', 
+			                ancestor::database/@name, 
+					'.', @function)}"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:for-each>

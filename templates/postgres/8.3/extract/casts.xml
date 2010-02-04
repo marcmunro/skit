@@ -4,6 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
+  <skit:var name="cast_sigs" expr="&lt;&gt;"/>
   <skit:runsql var="casts" file="sql/casts.sql">
     <cast>
       <!-- Old code
@@ -28,6 +29,9 @@
       			  oid="(select casts 'fn_oid')"
       			  type="'cast'"/>
 
+      <skit:exec expr="(hashadd cast_sigs 
+		                (select casts 'fn_oid') 
+				(select casts 'name'))"/>
       <skit:if test="(select tuple 'comment')">
 	<comment>
 	  <skit:text expr="(select tuple 'comment')"/>

@@ -5,6 +5,7 @@ select p.oid as oid,
        o.rolname as owner,
        l.lanname as language,
        p.prorettype as result_type_oid,
+       p.procost as cost,
        regexp_replace(p.proargtypes::varchar, ' ', ',') as sigargtypes,
        case when p.proallargtypes is null then
          regexp_replace(p.proargtypes::varchar, ' ', ',') 
