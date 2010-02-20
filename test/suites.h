@@ -11,6 +11,12 @@
  * Define test suites for skit.
  */
 
+
+// Parameters for database connections
+#define PGPORT "5432"
+#define PGHOST "/var/run/postgresql"
+
+
 // Global required for cleanup of forked processes
 extern SRunner *global_sr;
 

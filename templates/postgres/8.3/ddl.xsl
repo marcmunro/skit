@@ -48,7 +48,7 @@
     </xsl:choose>
     <xsl:text> </xsl:text>
     <xsl:choose>
-      <xsl:when test="name(..) = 'constraint'">
+      <xsl:when test="(name(..) = 'constraint') or (name(..) = 'trigger')">
 	<xsl:value-of select="skit:dbquote(../@name)"/>
 	<xsl:text> on </xsl:text>
 	<xsl:value-of select="../../@table_qname"/>
@@ -102,11 +102,8 @@
   <xsl:include href="skitfile:ddl/tables.xsl"/>
   <xsl:include href="skitfile:ddl/constraints.xsl"/>
   <xsl:include href="skitfile:ddl/indices.xsl"/>
-<!--
-
-  <skituls:include file="ddl/sequences.xsl"/>
-  <skituls:include file="ddl/tables.xsl"/>
--->
+  <xsl:include href="skitfile:ddl/triggers.xsl"/>
+  <xsl:include href="skitfile:ddl/rules.xsl"/>
 </xsl:stylesheet>
 
 <!-- Keep this comment at the end of the file

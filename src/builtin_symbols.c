@@ -164,6 +164,9 @@ fnJoin(Object *obj)
     raiseIfNotList("join", obj);
     evalCar(cons);
     list = (Cons *) dereference(cons->car);
+    if (!list) {
+	return (Object *) stringNew("");
+    }
     raiseIfNotList("join", (Object *) list);
     cons = (Cons *) cons->cdr;
     if (cons) {

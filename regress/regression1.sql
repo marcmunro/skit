@@ -746,69 +746,6 @@ comment on operator family "public"."seg_ops" using btree is
 
 
 
--- \echo Done with schema "public";
--- 
--- 
--- create schema "schema1" authorization "regress";
--- -- 
--- -- 
--- set session authorization 'regress';
--- grant usage on schema "schema1" to "keep";
--- reset session authorization;
--- \echo Done with schema "schema1";
--- 
--- 
--- create schema "schema2" authorization "regress";
--- 
--- comment on schema "schema2" is
--- 'wibble';
--- 
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema2" to "keep2";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant create on schema "schema2" to "keep2";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema2" to "wibble" with grant option;
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant create on schema "schema2" to "wibble" with grant option;
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema2" to "keep";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema2" to "keep2" with grant option;
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema2" to "public";
--- reset session authorization;
--- \echo Done with schema "schema2";
--- 
--- 
--- create schema "schema3" authorization "regress";
--- 
--- 
--- set session authorization 'regress';
--- grant usage on schema "schema3" to "keep2";
--- reset session authorization;
--- 
--- set session authorization 'regress';
--- grant create on schema "schema3" to "keep2";
--- reset session authorization;
--- \echo Done with schema "schema3";
--- 
--- 
--- \echo updating schema "public";
--- 
 create type "public"."mychar2"(
   input = "public"."mycharin2",
   output = "public"."mycharout2",
@@ -1020,6 +957,31 @@ where key4 > 0;
 
 create index key2__key2_fnidx on schema2.keys2((abs(key2)));
 
+/*
+create rule keys_rule1 as on insert to schema2.keys_table
+do also insert into 
+   schema2.keys2(key1, key2, key3, key4, key5)
+   values (new.key1, new.key2, new.key3, new.key4, null);
+
+
+create function schema2.nullxform(x in int4) returns int4 as
+$$
+begin
+    return x;
+end;
+$$
+language plpgsql immutable strict;
+
+create or replace rule keys_rule2 as on insert to schema2.keys2
+where key5 is not null
+do also insert into 
+   schema2.keys2(key1, key2, key3, key4)
+   values (schema2.nullxform(new.key1), new.key2, new.key3, new.key4);
+
+comment on rule keys_rule2 on schema2.keys2 is
+'A comment on keys_rule2';
+*/
+
 create 
 function seg2int(_in seg) returns integer as
 $$
@@ -1038,6 +1000,26 @@ create table casted (
 alter table casted add constraint casted__cast_chk
   check (cast(mykey as integer) < 3);
 
+
+create or replace 
+function "public".trigger1() returns trigger as
+$_$
+begin
+  if new.key1 > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create trigger mytrigger1 
+before insert or update on schema2.keys2
+for each row execute procedure public.trigger1();
+
+comment on trigger mytrigger1 on schema2.keys2 is
+'Trigger comment';
 
 
 

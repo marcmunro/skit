@@ -46,7 +46,9 @@
        <skit:runsql to="opclass_funcs" file="sql/opclass_funcs.sql"/>
        <skit:runsql to="aggregates" file="sql/aggregates.sql"/>
        <skit:runsql to="sequences" file="sql/sequences.sql"/>
-       <skit:runsql to="tables" file="sql/tables.sql"/>
+       <skit:runsql to="tables" file="sql/tables.sql" hash="oid"/>
+       <skit:runsql to="triggers" file="sql/triggers.sql"/>
+       <skit:runsql to="rules" file="sql/rules.sql"/>
 
        <xi:include href="skitfile:extract/function_sigs.xml"/>
        <xi:include href="skitfile:extract/languages.xml"/>

@@ -761,7 +761,7 @@ START_TEST(extract2)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest' port = '5432'",
+		    "dbname = 'skittest' port = " PGPORT "host = " PGHOST,
                     "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -803,7 +803,7 @@ START_TEST(generate2)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest' port = '5432'",
+		    "dbname = 'skittest' port = " PGPORT "host = " PGHOST,
                     "--generate", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;

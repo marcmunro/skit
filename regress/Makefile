@@ -23,16 +23,16 @@
 REGRESS_DIR = regress
 REGRESS_LOG = $(REGRESS_DIR)/regress.log
 REGRESSDB_PORT = 54325
+REGRESSDB_HOST = /var/run/postgresql
 
 PGBIN = $(shell pg_config --bindir)
-PSQL = $(PGBIN)/psql -p $(REGRESSDB_PORT) -v home=$(top_builddir) 
-PG_DUMP = $(PGBIN)/pg_dump -p $(REGRESSDB_PORT)
+PSQL = psql -p $(REGRESSDB_PORT) -h $(REGRESSDB_HOST) -v home=$(top_builddir) 
+PG_DUMP = pg_dump -p $(REGRESSDB_PORT)
 
 
 # Check state of regression test database cluster.
 cluster_is_up:
-	@$(PGBIN)/psql -p $(REGRESSDB_PORT) -d postgres \
-		-c "select 'o' || 'k'" 2>&1 | grep ok >/dev/null
+	@$(PSQL) -d postgres -c "select 'o' || 'k'" 2>&1 | grep ok >/dev/null
 
 # Wait 10 seconds for regression test database to be available
 wait_for_rdb:
@@ -114,7 +114,7 @@ regression_test1: skit drop_regress_db
 	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1a.dmp
 	@echo ...running skit extract...
 	@./skit --extract \
-	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
+	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT) host=$(REGRESSDB_HOST)" \
 	    >$(REGRESS_DIR)/scratch/regressdb_dump1.xml
 	@echo ...running skit generate...
 	@echo ......drop...
@@ -156,7 +156,7 @@ regression_test1: skit drop_regress_db
 	@echo ...checking success of build script...
 	@echo "......running skit extract (again)..."
 	@./skit --extract \
-	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT)" \
+	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT) host=$(REGRESSDB_HOST)" \
 		>$(REGRESS_DIR)/scratch/regressdb_dump2.xml
 	@echo ...taking final pg_dump snapshot...
 	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1b.dmp

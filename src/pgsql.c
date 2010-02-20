@@ -30,9 +30,17 @@ static String replace3 = {OBJ_STRING, "\\3"};
 static void
 pgsqlConnectionCheck(PGconn *conn)
 {
+	char *supplemental;
 	if (PQstatus(conn) != CONNECTION_OK) { 
+		if (conn) {
+			supplemental = PQerrorMessage(conn);
+		}
+		else {
+			supplemental = "DOH!";
+		}
 		RAISE(SQL_ERROR, 
-			  newstr("libpq error: PQstatus = %d", PQstatus(conn)));
+			  newstr("libpq error: PQstatus = %d, msg = \"%s\"", 
+					 PQstatus(conn), supplemental));
 	}
 }
 
@@ -163,7 +171,8 @@ pgsqlConnect(Object *sqlfuncs)
 		WHEN(SQL_ERROR) {
 			RAISE(SQL_ERROR,
 				  newstr("Cannot connect to database type \"postgres\""
-						 " with \"%s\"\n  %s", connect->value, ex->text));
+						 " with \"%s\"\n  %s", connect->
+						 value, ex->text));
 		}
 		END;
 		sym = symbolNew("dbconnection");

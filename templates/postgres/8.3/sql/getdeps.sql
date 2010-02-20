@@ -1,5 +1,5 @@
 -- Identify dependencies
-select cproc.relname as reltype, d.refobjid as objoid
+select distinct cproc.relname as reltype, d.refobjid as objoid
 from   pg_catalog.pg_depend d
 inner join pg_catalog.pg_class cclass   -- source relation
   on  cclass.relname = ':2'

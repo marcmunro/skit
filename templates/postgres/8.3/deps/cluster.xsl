@@ -89,6 +89,8 @@
   <xsl:include href="skitfile:deps/tables.xsl"/>
   <xsl:include href="skitfile:deps/constraints.xsl"/>
   <xsl:include href="skitfile:deps/indices.xsl"/>
+  <xsl:include href="skitfile:deps/triggers.xsl"/>
+  <xsl:include href="skitfile:deps/rules.xsl"/>
 
 </xsl:stylesheet>
 

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+  <skit:foreach var="rule" from="rules" 
+		filter="(and (string= (select rule 'schema')
+			               (select schema 'name'))
+			     (string= (select rule 'table')
+			              (select table 'name')))">
+    <rule>
+      <skit:let>
+	<skit:attr name="name"/>
+	<skit:attr name="table"/>
+	<skit:attr name="schema"/>
+
+	<source>
+	  <skit:text expr="(select rule 'definition')"/>
+	</source>
+
+	<!-- Identify functions/casts on which we depend -->
+	<skit:runsql var="dependency" file="sql/getdeps.sql"
+		     params='(list (select rule "oid") 
+			     "pg_rewrite" 
+			     "(&apos;pg_proc&apos;)")'>
+	  <depends>
+	    <skit:attr name="cast" 
+		       expr="(select cast_sigs (select tuple 'objoid'))"/> 
+	    <skit:attr name="function"
+		       expr="(select function_sigs 
+			     (select tuple 'objoid'))"/>
+	  </depends>
+	</skit:runsql>
+
+	<!-- Identify other tables on which we depend -->
+	<skit:runsql var="dependency" file="sql/getdeps.sql"
+		     params='(list (select rule "oid") 
+			     "pg_rewrite" 
+			     "(&apos;pg_class&apos;)")'>
+	  <depends>
+	    <skit:exec expr="(debug 'select' (select tables (select
+	    tuple 'objoid')))"/>
+<!--
+	    <skit:var name="table" 
+		      expr="(select tables (select tuple 'objoid'))"/>
+	    <skit:attr name="schema" expr="(select table 'schema')"/>
+	    <skit:attr name="table" expr="(select table 'name')"/>
+-->
+	  </depends>
+	</skit:runsql>
+
+	<skit:if test="(select rule 'comment')">
+	  <comment>
+	    <skit:text expr="(select rule 'comment')"/>
+	  </comment>
+	</skit:if>
+      </skit:let>
+    </rule>
+  </skit:foreach>
+</skit:inclusion>  
+
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
