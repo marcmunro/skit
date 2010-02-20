@@ -772,8 +772,8 @@ START_TEST(extract2)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(59776);
-    //trackMalloc(59776);
+    //showMalloc(138807);
+    //trackMalloc(138807);
 
     BEGIN {
 	//fi = redirect("/dev/null");

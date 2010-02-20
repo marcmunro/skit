@@ -50,6 +50,17 @@ objTypeName(Object *obj)
     return "UNKNOWN_OBJECT_TYPE";
 }
 
+Tuple *
+tupleNew(Cursor *cursor)
+{
+    Tuple *tuple = (Tuple *) skalloc(sizeof(Tuple));
+    tuple->type = OBJ_TUPLE;
+    tuple->cursor = cursor;
+    tuple->dynamic = TRUE;
+    tuple->rownum = 0;
+    return tuple;
+}
+
 Regexp *
 regexpNew(char *str)
 {
@@ -465,8 +476,9 @@ objectFree(Object *obj, boolean free_contents)
 	case OBJ_DAGNODE:
 	    dagnodeFree((DagNode *) obj); break;
 	case OBJ_TUPLE:
-	    /* Nothing to be done - it will be freed when the cursor
-	       that contains it is freed */
+	    if (((Tuple *) obj)->dynamic) {
+		skfree(obj);
+	    }
 	    break;
 	default: 
 	    checkChunk(obj);

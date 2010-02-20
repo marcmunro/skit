@@ -231,12 +231,13 @@ testExecQry(Connection *connection,
 	rows = (Vector *) ((Cons *) results->cdr)->car;
 	curs->rows = rows->elems;
 	curs->cols = fields->elems;
-	curs->rownum = 0;
 	curs->fields = NULL;
-	curs->tuple.type = OBJ_TUPLE;
-	curs->tuple.cursor = curs;
 	curs->cursor = results;
 	curs->connection = connection;
+	curs->tuple.type = OBJ_TUPLE;
+	curs->tuple.cursor = curs;
+	curs->tuple.dynamic = FALSE;
+	curs->tuple.rownum = 0;
 	curs->querystr = stringNew(qry->value);
     }
     else {
@@ -258,7 +259,7 @@ testFieldByIdx(Tuple *tuple, int col)
     Cons *results = (Cons *) curs->cursor;
     Vector *rows = (Vector *) ((Cons *) results->cdr)->car;
     Vector *result_row;
-    int row = curs->rownum - 1;
+    int row = tuple->rownum - 1;
     String *result;
 
     result_row = (Vector *) rows->contents->vector[row];
@@ -287,8 +288,8 @@ testFieldByName(Tuple *tuple, String *name)
 static Tuple *
 testNextRow(Cursor *cursor)
 {
-    if (cursor->rownum < cursor->rows) {
-	cursor->rownum++;
+    if (cursor->tuple.rownum < cursor->rows) {
+	cursor->tuple.rownum++;
 	return &(cursor->tuple);
     }
     return NULL;

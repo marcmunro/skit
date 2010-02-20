@@ -38,14 +38,12 @@
 			     "pg_rewrite" 
 			     "(&apos;pg_class&apos;)")'>
 	  <depends>
-	    <skit:exec expr="(debug 'select' (select tables (select
-	    tuple 'objoid')))"/>
-<!--
+	    <!-- <skit:exec expr="(debug 'select' (select tables (select
+	    tuple 'objoid')))"/> -->
 	    <skit:var name="table" 
 		      expr="(select tables (select tuple 'objoid'))"/>
 	    <skit:attr name="schema" expr="(select table 'schema')"/>
 	    <skit:attr name="table" expr="(select table 'name')"/>
--->
 	  </depends>
 	</skit:runsql>
 

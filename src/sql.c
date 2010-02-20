@@ -204,7 +204,7 @@ sqlResetCursor(Cursor *cursor)
     cursor = (Cursor *) dereference((Object *) cursor);
     // TODO: Assert that this is a cursor
 
-    cursor->rownum = 0;
+    cursor->tuple.rownum = 0;
 }
 
 Object *

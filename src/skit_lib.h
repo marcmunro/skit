@@ -176,6 +176,8 @@ typedef struct Connection {
 
 typedef struct Tuple {
     ObjType  type;
+    int      rownum;
+    boolean  dynamic;
     void    *cursor;
 } Tuple;
 
@@ -183,7 +185,6 @@ typedef struct Cursor {
     ObjType  type;
     int      rows;
     int      cols;
-    int      rownum;
     void    *cursor;
     Hash    *index;
     Hash    *fields;
@@ -277,6 +278,7 @@ extern Object *consNext(Cons *list, Object **p_placeholder);
 extern Object *consAppend(Cons *list, Object *item);
 
 // object.c
+extern Tuple *tupleNew(Cursor *cursor);
 extern char *objTypeName(Object *obj);
 extern Int4 *int4New(int value);
 extern int int4Cmp(Int4 *p1, Int4 *p2);

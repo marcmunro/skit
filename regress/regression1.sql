@@ -957,7 +957,6 @@ where key4 > 0;
 
 create index key2__key2_fnidx on schema2.keys2((abs(key2)));
 
-/*
 create rule keys_rule1 as on insert to schema2.keys_table
 do also insert into 
    schema2.keys2(key1, key2, key3, key4, key5)
@@ -980,7 +979,6 @@ do also insert into
 
 comment on rule keys_rule2 on schema2.keys2 is
 'A comment on keys_rule2';
-*/
 
 create 
 function seg2int(_in seg) returns integer as
