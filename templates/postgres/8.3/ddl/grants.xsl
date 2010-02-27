@@ -72,7 +72,14 @@
       	  <xsl:text>grant </xsl:text>
       	  <xsl:value-of select="@priv"/>
       	  <xsl:text> on </xsl:text>
-      	  <xsl:value-of select="../@subtype"/>
+	  <xsl:choose>
+	    <xsl:when test="../@subtype = 'view'">
+      	      <xsl:text>table</xsl:text>
+	    </xsl:when>
+	    <xsl:otherwise>
+      	      <xsl:value-of select="../@subtype"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
       	  <xsl:text> </xsl:text>
       	  <xsl:value-of select="../@on"/>
       	  <xsl:text> to </xsl:text>
@@ -96,7 +103,14 @@
 	<xsl:text>revoke </xsl:text>
 	<xsl:value-of select="@priv"/>
 	<xsl:text> on </xsl:text>
-	<xsl:value-of select="../@subtype"/>
+	<xsl:choose>
+	  <xsl:when test="../@subtype = 'view'">
+      	    <xsl:text>table</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+      	    <xsl:value-of select="../@subtype"/>
+	  </xsl:otherwise>
+	</xsl:choose>
 	<xsl:text> </xsl:text>
 	<xsl:value-of select="../@on"/>
 	<xsl:text> from </xsl:text>

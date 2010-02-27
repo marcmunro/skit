@@ -91,6 +91,7 @@
   <xsl:include href="skitfile:deps/indices.xsl"/>
   <xsl:include href="skitfile:deps/triggers.xsl"/>
   <xsl:include href="skitfile:deps/rules.xsl"/>
+  <xsl:include href="skitfile:deps/views.xsl"/>
 
 </xsl:stylesheet>
 

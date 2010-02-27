@@ -1019,9 +1019,20 @@ for each row execute procedure public.trigger1();
 comment on trigger mytrigger1 on schema2.keys2 is
 'Trigger comment';
 
+create view schema2.keys_view as
+select k1.key1, k1.key2, k1.key3, 
+       k1.key4, cast(k2.mykey as integer) as wibble
+from   schema2.keys2 k1
+cross join casted k2
+where k1.key1 < 99;
+
+comment on view schema2.keys_view is
+'A view.';
+
+grant all on table schema2.keys_view to keep2 with grant option;
+grant select on table schema2.keys_view to keep;
 
 
-\echo Done with schema "public";
 
 DBEOF
 

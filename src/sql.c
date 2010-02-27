@@ -343,14 +343,14 @@ char *applyNthParam(char *qrystr, int n, Object *param)
     if (!param_str) {
 	param_str = malloc(10);
     }
-    if (param->type != OBJ_STRING) {
-	dbgSexp(param);
-	RAISE(NOT_IMPLEMENTED_ERROR,
-	      newstr("applyParams cannot deal with non-string objects (%d)",
-		  param->type));
+    if (param && param->type == OBJ_STRING) {
+	sprintf(param_str, ":%d", n);
+	return applyOneParam(qrystr, param_str, param);
     }
-    sprintf(param_str, ":%d", n);
-    return applyOneParam(qrystr, param_str, param);
+    dbgSexp(param);
+    RAISE(NOT_IMPLEMENTED_ERROR,
+	  newstr("applyParams cannot deal with non-string objects (%d)",
+		 param? param->type: 0));
 }
 
 char *

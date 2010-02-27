@@ -49,6 +49,7 @@
        <skit:runsql to="tables" file="sql/tables.sql" hash="oid"/>
        <skit:runsql to="triggers" file="sql/triggers.sql"/>
        <skit:runsql to="rules" file="sql/rules.sql"/>
+       <skit:runsql to="views" file="sql/views.sql"/>
 
        <xi:include href="skitfile:extract/function_sigs.xml"/>
        <xi:include href="skitfile:extract/languages.xml"/>

@@ -36,32 +36,20 @@
 	</skit:runsql>
       </skit:function>
 
-      <skit:function name="grant">
-	<skit:parameter name="with_grant"/>
-	<skit:if test="(not (string= from to))">	
-	  <skit:let>
-	    <skit:var name="privname" expr="(select privnames this_priv)"/>
-	    <grant>	
-	      <skit:attr name="priv" expr="privname"/>
-	      <skit:attr name="from" expr="from"/>
-	      <skit:attr name="to" expr="to"/>
-	      <skit:attr name="with_grant" expr="with_grant"/>
-	    </grant>
-	  </skit:let>
-	</skit:if>
-      </skit:function>
-
       <skit:function name="grants_from_privs">
 	<skit:parameter name="privileges"/>
 	<skit:if test="privileges">
 	  <!-- The first regexp below removes the braces around the
 	       privileges string.  The second one reverses the order of
-	       characters followed by asterisks so that the asterisk
-	       precedes the character it previously followed -->
+	       characters followed by asterisks and adds a space so that
+	       the asterisk precedes the character it previously
+	       followed, and the expression becomes splittable around
+	       space characters.
+	    -->
 	  <skit:var name="privs_list"
 		    expr="(split (replace 
 			            (replace privileges /\\{(.*)\\}/ '\1') 
-				    /(.)\\*/ '*\1')
+				    /(.)\\*/ '*\1 ')
 		                  ',')"/>
 	  <skit:foreach from="privs_list" var="privs_str">
 	    <skit:let>
@@ -71,15 +59,29 @@
 					          'public')
 					    tofield)"/>
 	      <skit:var name="privs" 
-			expr="(split (select privinfo 1) '\\*')"/>
+			expr="(split (select privinfo 1) ' ')"/>
 	      <skit:var name="from" expr="(select privinfo 2)"/>
-	      <skit:var name="privs_no_grant" expr="(select privs 0)"/>
-	      <skit:var name="privs_with_grant" expr="(select privs 1)"/>
-	      <skit:foreach from="privs_no_grant" var="this_priv">
-		<skit:exec_function name="grant" with_grant="'no'"/>
-	      </skit:foreach>
-	      <skit:foreach from="privs_with_grant" var="this_priv">
-		<skit:exec_function name="grant" with_grant="'yes'"/>
+	      <skit:foreach from="privs" var="these_privs">
+		<skit:let>
+		  <skit:var name="with_grant" expr="'no'"/>
+		  <skit:var name="privname"/>
+		  <skit:foreach from="these_privs" var="this_priv">
+		    <skit:if test="(string= this_priv '*')">
+		      <skit:exec expr="(setq with_grant 'yes')"/>
+		      <RABBLE/>
+		    </skit:if>
+		    <skit:if test="(not (string= this_priv '*'))">
+		      <grant>
+			<skit:exec expr="(setq privname 
+					   (select privnames this_priv))"/>
+			<skit:attr name="from" expr="from"/>
+			<skit:attr name="to" expr="to"/>
+			<skit:attr name="with_grant" expr="with_grant"/>
+			<skit:attr name="priv" expr="privname"/>
+		      </grant>
+		    </skit:if>
+		  </skit:foreach>
+		</skit:let>
 	      </skit:foreach>
 	    </skit:let>
 	  </skit:foreach>
