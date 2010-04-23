@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?processing_instruction x="y"?>
+
+
+
+<?processing_instruction z="42"?>
+
+
+<!-- Created:                       => $(current-timestamp)$ 
+     Modified: $(current-timestamp)=>$
+     $Id: dial.c,v 1.6 2003/04/21 23:56:46 al-guest Exp $
+ -->
+<!-- Some comment text -->
+<dump/>
+
+<!-- Some final 
+comments -->
+
+<!-- Some more final 
+comments -->
+
