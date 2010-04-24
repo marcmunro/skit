@@ -129,13 +129,26 @@ comment on language "plpgsql" is
 \echo updating schema "public";
 
 create or replace function "public"."addint4"(
-    in "pg_catalog"."int4",
-    in "pg_catalog"."int4")
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4")
   returns "pg_catalog"."int4"
 as 
 $_$
 begin
   return _state + _next;
+end;
+$_$
+language plpgsql stable cost 5;
+
+create or replace function "public"."addint4"(
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4",
+    _other in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next + _other;
 end;
 $_$
 language plpgsql stable cost 5;
@@ -1031,6 +1044,29 @@ comment on view schema2.keys_view is
 
 grant all on table schema2.keys_view to keep2 with grant option;
 grant select on table schema2.keys_view to keep;
+
+create view schema2.view_on_view as
+select * 
+from   schema2.keys_view
+where  key1 < 90;
+
+create rule keys_vrule1 as on insert to schema2.keys_view
+do instead insert into 
+   schema2.keys2(key1, key2, key3, key4, key5)
+   values (new.key1, new.key2, new.key3, new.key4, new.wibble);
+
+create 
+function schema2.myconv(integer, integer, cstring, internal, integer)
+  returns void as '$libdir/ascii_and_mic', 'ascii_to_mic' language c;
+
+comment on 
+  function schema2.myconv(integer, integer, cstring, internal, integer) is
+'This is a conversion function.';
+
+create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
+
+comment on conversion myconv is
+'conversion comment';
 
 
 

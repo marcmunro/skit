@@ -24,6 +24,7 @@ static String template_str = {OBJ_STRING, "template"};
 static String sources_str = {OBJ_STRING, "sources"};
 static String value_str = {OBJ_STRING, "value"};
 static String type_str = {OBJ_STRING, "type"};
+static String required_str = {OBJ_STRING, "required"};
 static String default_str = {OBJ_STRING, "default"};
 static String add_deps_str= {OBJ_STRING, "add_deps"};  // TODO: deprecate
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
@@ -147,7 +148,19 @@ void
 loadInFile(String *filename)
 {
     Document *doc = docFromFile(filename);
-
+    if (!doc) {
+	RAISE(PARAMETER_ERROR, 
+	      newstr("Failed to load xml document %s", filename->value));
+    }
+    BEGIN {
+	docGatherContents(doc, filename);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) doc, TRUE);
+	RAISE();
+    }
+    END;
     actionStackPush((Object *) doc);
 }
 
@@ -269,6 +282,35 @@ addDefaults(Hash *params, Cons *optionlist)
     hashEach(hash_from_list, addUnprovidedValue, (Object *) params);
 }
 
+static Object *
+checkUnprovidedValue(Object *obj, Object *params)
+{
+    Object *key = ((Cons *) obj)->car;
+    Cons *alist = (Cons *) ((Cons *) obj)->cdr;
+    Object *required = alistGet(alist, (Object *) &required_str);
+    Object *value;
+    if (required) {
+	/* This arg is required, so check that it is provided in params */
+	value = hashGet((Hash *) params, (Object *) key);
+	if (!value) {
+	    RAISE(PARAMETER_ERROR, 
+		  newstr("getOptionlistArgs: required arg "
+			 "\"%s\" not provided", ((String *) key)->value));
+	}
+    }
+    return (Object *) alist;  /* Return the notional contents of the hash
+			       * entry */
+}
+
+
+static void
+checkRequired(Hash *params, Cons *optionlist)
+{
+    Hash *hash_from_list = (Hash *) consNth(optionlist, 2);
+    
+    hashEach(hash_from_list, checkUnprovidedValue, (Object *) params);
+}
+
 /* Read command line args based upon the optionlist parameter, returning
  * a hash of the args.
  */
@@ -342,6 +384,7 @@ getOptionlistArgs(Cons *optionlist)
     END;
 
     addDefaults(params, optionlist);
+    checkRequired(params, optionlist);
     return params;
 }
 
@@ -430,6 +473,12 @@ static Object *
 parseExtract(Object *obj)
 {
     return execParseTemplate("extract.xml");
+}
+
+static Object *
+parseScatter(Object *obj)
+{
+    return execParseTemplate("scatter.xml");
 }
 
 static Object *
@@ -546,6 +595,7 @@ defineActionParsers()
 	defineActionSymbol("parse_adddeps", &parseAdddeps);
 	defineActionSymbol("parse_dbtype", &parseDbtype);
 	defineActionSymbol("parse_list", &parseList);
+	defineActionSymbol("parse_scatter", &parseScatter);
     }
     done = TRUE;
 }
@@ -740,6 +790,7 @@ defineActionExecutors()
 	defineActionSymbol("execute_connect", &executeConnect);
 	defineActionSymbol("execute_list", &executeTemplate);
 	defineActionSymbol("execute_generate", &executeTemplate);
+	defineActionSymbol("execute_scatter", &executeTemplate);
     }
     done = TRUE;
 }

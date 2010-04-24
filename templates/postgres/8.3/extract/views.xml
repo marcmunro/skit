@@ -36,14 +36,29 @@
 		     params='(list (select view "rewrite_oid") 
 			     "pg_rewrite" 
 			     "(&apos;pg_class&apos;)")'>
-	  <depends>
-	    <!-- <skit:exec expr="(debug 'select' (select tables (select
-	    tuple 'objoid')))"/> -->
-	    <skit:var name="table" 
-		      expr="(select tables (select tuple 'objoid'))"/>
-	    <skit:attr name="schema" expr="(select table 'schema')"/>
-	    <skit:attr name="table" expr="(select table 'name')"/>
-	  </depends>
+	  <skit:if test="(string= 'pg_class' (select tuple 'reltype'))">
+	    <!-- Dependency is on a view or table -->
+	    <skit:if test="(not (string= (select view 'oid')
+			                 (select tuple 'objoid')))">
+	      <!-- Dependency is not on ourself -->
+	      <skit:var name="table" 
+			expr="(select tables (select tuple 'objoid'))"/>
+	      <skit:var name="depview" 
+			expr="(select views (select tuple 'objoid'))"/>
+	      
+	      <depends>
+		<skit:if test="depview">
+		  <skit:attr name="schema" expr="(select depview 'schema')"/>
+		  <skit:attr name="view" expr="(select depview 'name')"/>
+		</skit:if>
+		<skit:if test="table">
+		  <skit:attr name="schema" expr="(select table 'schema')"/>
+		  <skit:attr name="table" expr="(select table 'name')"/>
+		</skit:if>	
+	      </depends>
+	    </skit:if>
+	  </skit:if>
+
 	</skit:runsql>
 
 	<skit:if test="(select view 'comment')">
@@ -88,25 +103,8 @@
 	<skit:exec_function name="grants_from_privs"
     			    privileges="(select tuple 'privs')"/>
       </skit:let>
+      <xi:include href="skitfile:extract/rules.xml"/>
     </view>
   </skit:foreach>
 </skit:inclusion>  
 
-
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->

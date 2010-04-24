@@ -34,6 +34,10 @@
 	  <dependency fqn="{concat('table.', ancestor::database/@name, 
 			   '.', @schema, '.', @table)}"/>
 	</xsl:for-each>
+	<xsl:for-each select="depends[@view]">
+	  <dependency fqn="{concat('view.', ancestor::database/@name, 
+			   '.', @schema, '.', @view)}"/>
+	</xsl:for-each>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
@@ -51,20 +55,3 @@
   </xsl:template>
 </xsl:stylesheet>
 
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->

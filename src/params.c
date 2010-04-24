@@ -138,7 +138,7 @@ usage_abort(char *errmsg)
 {
     fprintf(stderr, "%s\n\n", errmsg);
     fprintf(stderr, usage_msg());
-    raise(SIGABRT);
+    exit(1);
 }
 
 static Hash *option_hash;
@@ -229,7 +229,7 @@ validateParamValue(String *type, String *value)
     String *myvalue;
     if (!(value && value->value)) {
 	RAISE(MISSING_VALUE_ERROR,
-	      newstr("castParamValue: no value provided"));
+	      newstr("castParamValue: no value provided for %s", type->value));
     }
 
     mytype = stringLower(type);

@@ -17,7 +17,8 @@
 # "Recursive make considered harmful" for a rationale).
 
 .PHONY: regress regress_cluster cluster_is_up rdbstart wait_for_rdb \
-	wait_while_proc rdbstop drop_regress_cluster 
+	wait_while_proc rdbstop drop_regress_cluster regression_test1 \
+	regression_test2
 
 
 REGRESS_DIR = regress
@@ -100,84 +101,33 @@ drop_regress_db:
 		>/dev/null 2>&1 || true
 
 regression_test1: skit drop_regress_db
-	@echo Running regression test 1...
-	@mkdir regress/scratch 2>/dev/null || true
-	@echo ...creating initial database definitions...
-	@echo ==== BUILDING DB FROM regression1.sql ==== \
-	    >$(REGRESS_LOG) 2>&1
-	@export PGPORT=$(REGRESSDB_PORT); \
-	    sh $(REGRESS_DIR)/regression1.sql 2>&1 | \
-	    regress/errcheck.sh >>$(REGRESS_LOG)
-	@echo ==== FINISHED BUILD FROM regression1.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
-	@echo ...taking initial pg_dump snapshot...
-	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1a.dmp
-	@echo ...running skit extract...
-	@./skit --extract \
-	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT) host=$(REGRESSDB_HOST)" \
-	    >$(REGRESS_DIR)/scratch/regressdb_dump1.xml
-	@echo ...running skit generate...
-	@echo ......drop...
-	@./skit --generate --drop $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
-	    >$(REGRESS_DIR)/scratch/regressdb_drop1.sql
-	@echo ......build...
-	@./skit --generate --build $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
-	    >$(REGRESS_DIR)/scratch/regressdb_build1.sql
-	@echo ......both...
-	@./skit --generate --build --drop \
-	    $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
-	    >$(REGRESS_DIR)/scratch/regressdb_both1.sql
-	@echo ...editing drop script to allow dangerous drop statements...
-	@sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
-	    $(REGRESS_DIR)/scratch/regressdb_drop1.sql > \
-	    $(REGRESS_DIR)/scratch/regressdb_drop1a.sql
-	@echo ...executing drop script...
-	@echo ==== RUNNING DROP SCRIPT regressdb_drop1a.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
-	@export PGPORT=$(REGRESSDB_PORT); \
-	    sh $(REGRESS_DIR)/scratch/regressdb_drop1a.sql 2>&1 | \
-	    regress/errcheck.sh >>$(REGRESS_LOG)
-	@echo ...checking success of drop script...
-	@pg_dumpall -p $(REGRESSDB_PORT) | grep ^CREATE | wc -l | \
-            grep ^1$ >/dev/null
-	@echo ==== FINISHED DROP SCRIPT regressdb_drop1a.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
-	@echo ...executing build script...
-	@echo ==== RUNNING BUILD SCRIPT regressdb_build1.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
-	@echo ......editing build script to not create role `whoami`...
-	@sed -e  "/create role \"`whoami`\"/ s/^/-- /" \
-	    $(REGRESS_DIR)/scratch/regressdb_build1.sql > \
-	    $(REGRESS_DIR)/scratch/regressdb_build1a.sql
-	@echo ..running script...
-	@export PGPORT=$(REGRESSDB_PORT); \
-	    sh $(REGRESS_DIR)/scratch/regressdb_build1a.sql 2>&1 | \
-	    regress/errcheck.sh >>$(REGRESS_LOG) 
-	@echo ...checking success of build script...
-	@echo "......running skit extract (again)..."
-	@./skit --extract \
-	    --connect "dbname='regressdb' port=$(REGRESSDB_PORT) host=$(REGRESSDB_HOST)" \
-		>$(REGRESS_DIR)/scratch/regressdb_dump2.xml
-	@echo ...taking final pg_dump snapshot...
-	@$(PG_DUMP) regressdb >$(REGRESS_DIR)/scratch/regressdb_test1b.dmp
-	@echo ...checking results of pg_dump snapshots...
-	@regress/diffdump.sh $(REGRESS_DIR)/scratch/regressdb_test1a.dmp \
-	    $(REGRESS_DIR)/scratch/regressdb_test1b.dmp
-	@echo ...checking results of extracts...
-	@regress/diffcheck.sh $(REGRESS_DIR)/scratch/regressdb_dump1.xml \
-	    $(REGRESS_DIR)/scratch/regressdb_dump2.xml
-	@echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== \
-	    >>$(REGRESS_LOG) 2>&1
-	@echo ...regression test 1 complete
+	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP="$(PG_DUMP)"; \
+	 regress/regress_run.sh 1
+
+regression_test2: skit drop_regress_db \
+		$(REGRESS_DIR)/scratch/regressdb_both1.sql
+	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP="$(PG_DUMP)"; \
+	 regress/regress_run.sh 2
 
 
-regress: skit regress_cluster regression_test1
+regress: skit regress_cluster regression_test1 regression_test2
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 
 regress_clean: drop_regress_cluster
 	@echo Cleaning regress...
 	@rm -rf $(REGRESS_LOG)/scratch/*
+	@rm -rf $(REGRESS_LOG)/dbdumo/*
 	@rm -rf REGRESSDB $(REGRESS_LOG)/regressdb_*.sql \
 	    $(REGRESS_LOG)/regressdb_*.xml
 
@@ -186,4 +136,5 @@ regress_distclean: regress_clean
 # Describe what this makefile can build
 regress_help:
 	@echo "regress      - Run regression test suite"
+	@echo "regress_cluster      - Create regression test database cluster"
 	@echo "drop_regress_cluster - Drop regression test database cluster"

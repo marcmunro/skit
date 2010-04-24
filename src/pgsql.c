@@ -568,6 +568,7 @@ loadWordList(String *filename, Hash *hash)
 		while (word = nextWord(file)) {
 			hashAdd(hash, (Object *) word, (Object *) true);
 		}
+		fclose(file);
 	}
 }
 
@@ -666,6 +667,7 @@ pgsqlDBQuote(String *first, String *second)
 
 	if (second) {
 		if (first->value[0] == '\0') {
+			objectFree((Object *) first, TRUE);
 			return pgsqlQuoteName(second);
 		}
 		tmp1 = pgsqlQuoteName(first);

@@ -381,6 +381,8 @@ consAppend(Cons *list, Object *item)
     Cons *prev = list;
     Cons *next;
     Cons *new = consNew(item, NULL);
-    while (next = (Cons *) prev->cdr) ;
+    while (next = (Cons *) prev->cdr) {
+	prev = next;
+    }
     prev->cdr = (Object *) new;
 }

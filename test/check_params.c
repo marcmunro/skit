@@ -732,7 +732,7 @@ START_TEST(extract)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(307);
+    //showMalloc(4635);
 
     BEGIN {
 	fi = redirect("/dev/null");
@@ -757,6 +757,126 @@ START_TEST(extract)
 }
 END_TEST
 
+START_TEST(print2)
+{
+    char *args[] = {"./skit", "--print", "--full", 
+		    "xx"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+    fileinfo_t *fi;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(306010);
+    //trackMalloc(138807);
+
+    BEGIN {
+	//fi = redirect("/dev/null");
+	process_args2(4, args);
+	//resetdirect(fi);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//resetdirect(fi);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(gather)
+{
+    char *args[] = {"./skit", "--list", 
+		    "./dbdump/cluster.xml"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+    fileinfo_t *fi;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(1691);
+    //trackMalloc(4635);
+
+    BEGIN {
+	//fi = redirect("/dev/null");
+	process_args2(3, args);
+	//resetdirect(fi);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//resetdirect(fi);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(scatter)
+{
+    char *args[] = {"./skit", "-t", "scatter.xml", 
+		    "xx", "--path", "./dbdump", "--checkonly"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+    fileinfo_t *fi;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(10583);
+    //trackMalloc(4635);
+
+    BEGIN {
+	//fi = redirect("/dev/null");
+	process_args2(7, args);
+	//resetdirect(fi);
+	//process_args2(10, args);
+	//doc = (Document *) actionStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//resetdirect(fi);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(extract2)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
@@ -772,7 +892,7 @@ START_TEST(extract2)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(138807);
+    //showMalloc(4635);
     //trackMalloc(138807);
 
     BEGIN {
@@ -933,6 +1053,9 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     ADD_TEST(tc_core, generate2); // during development of new db objects
+    ADD_TEST(tc_core, scatter);
+    ADD_TEST(tc_core, gather);
+    ADD_TEST(tc_core, print2);
     //ADD_TEST(tc_core, generate3);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);

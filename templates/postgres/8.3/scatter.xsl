@@ -6,77 +6,291 @@
   extension-element-prefixes="skit"
   version="1.0">
 
-  <xsl:template match="/">
-    <scatter>
-      <xsl:copy select=".">
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates/>
-      </xsl:copy>
-    </scatter>
+  <!-- These keys are used for grouping like-named objects together.
+       They allow us to identify, for a given element, whether it
+       is the first such named element or not.
+    -->
+  <xsl:key name="functions" match="dbobject[@type='function']" 
+	   use="concat(function/@schema, '.', function/@name)"/>
+
+  <xsl:key name="aggregates" match="dbobject[@type='aggregate']" 
+	   use="concat(aggregate/@schema, '.', aggregate/@name)"/>
+
+  <xsl:key name="operators" match="dbobject[@type='operator']" 
+	   use="concat(operator/@schema, '.', operator/@name)"/>
+
+  <xsl:template match="*" mode="fullcopy">
+    <xsl:copy select=".">
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates mode="fullcopy"/>
+    </xsl:copy>
   </xsl:template>
 
-  <!-- Templates for copying the contents of dbobjects -->
-  <xsl:template match="dependencies" mode="copy_dbobject"/>
-
-  <xsl:template match="dbobject" mode="copy_dbobject">
-    <xsl:apply-templates select="."/>
+  <xsl:template match="/*">
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates/>
+      <xsl:for-each select="//dbobject">
+	<xsl:choose>
+	  <xsl:when test="function">
+	    <xsl:if test="generate-id(.) = 
+			  generate-id(key('functions', 
+			                  concat(function/@schema, '.',
+		                                 function/@name))[1])">
+	      <xsl:call-template name="groupobject">
+		<xsl:with-param name="object_type" select="'function'"/>
+		<xsl:with-param name="object_type_plural" 
+				select="'functions'"/>
+	      </xsl:call-template>
+	    </xsl:if>
+	  </xsl:when>
+	  <xsl:when test="aggregate">
+	    <xsl:if test="generate-id(.) = 
+			  generate-id(key('aggregates', 
+			                  concat(aggregate/@schema, '.',
+		                                 aggregate/@name))[1])">
+	      <xsl:call-template name="groupobject">
+		<xsl:with-param name="object_type" select="'aggregate'"/>
+		<xsl:with-param name="object_type_plural"
+				select="'aggregates'"/>
+	      </xsl:call-template>
+	    </xsl:if>
+	  </xsl:when>
+	  <xsl:when test="operator">
+	    <xsl:if test="generate-id(.) = 
+			  generate-id(key('operators', 
+			                  concat(operator/@schema, '.',
+		                                 operator/@name))[1])">
+	      <xsl:call-template name="groupobject">
+		<xsl:with-param name="object_type" select="'operator'"/>
+		<xsl:with-param name="object_type_plural" select="'operators'"/>
+	      </xsl:call-template>
+	    </xsl:if>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:call-template name="dbobject"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:for-each>
+    </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="*" mode="copy_dbobject">
-    <scatter>
-      <xsl:copy select=".">
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates mode="copy_dbobject"/>
-      </xsl:copy>
-    </scatter>
+  <xsl:template match="/*/params">
+    <!-- Copy the outermost params object.
+      -->
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template name="groupobject">
+    <xsl:param name="object_type"/>
+    <xsl:param name="object_type_plural"/>
+    <!-- Template for dealing with grouped objects.  This is used for
+	 functions, aggregates and operators, and allows all objects 
+	 with the same schema and name to be considered to be a single
+	 database object for the purpose of scatter.  This reduces the
+	 number of files, allows us to keep filenames simple, and groups
+	 related objects into a single file.
+      -->
+    <xsl:variable name="groupname" select="*[name()=$object_type]/@name"/>
+    <xsl:variable name="groupschema" select="*[name()=$object_type]/@schema"/>
+    <xsl:element name="skit:scatter">
+      <xsl:attribute name="path">
+	<xsl:value-of select="concat('cluster/databases/', 
+			      ../../../@name, '/schemata/', 
+			      ../../@name, '/', $object_type_plural, '/')"/>
+      </xsl:attribute>
+      <xsl:attribute name="name">
+	<xsl:value-of select="concat(@name, '.xml')"/>
+      </xsl:attribute>
+      <xsl:variable name="here" select="."/>
+
+      <xsl:for-each select="/*">
+	<!-- Create a copy of the root element for each dbobject -->
+	<xsl:copy>
+	  <xsl:copy-of select="@*"/>
+	  <!-- Copy each object -->
+	  <xsl:for-each select="//dbobject[@type=$object_type and 
+				*[name()=$object_type]/@name = $groupname and
+				*[name()=$object_type]/@schema = $groupschema]">
+	    <xsl:apply-templates mode="copy_topobject"/>
+	  </xsl:for-each>
+	</xsl:copy>
+      </xsl:for-each>
+    </xsl:element>
+  </xsl:template>
+
+  <xsl:template name="dbobject">
+    <!-- Replace the dbobject element with a skit:scatter element.  This
+	 provides a directive to skit to write a single file for the
+	 given database object.  
+      -->
+    <xsl:if test="@type!='comment'">
+      <!-- The only comments which are dbobjects are for operator
+	   families (for reasons of dependency handling).  As those
+	   comments also appear in the operator family definition,
+	   there is no need to process such elements. -->
+      <xsl:element name="skit:scatter">
+	<xsl:attribute name="path">
+	  <xsl:choose>
+	    <xsl:when test="@type='cluster'">
+	      <xsl:value-of select="''"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='database'">
+	      <xsl:value-of select="'cluster/databases/'"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='role'">
+	      <xsl:value-of select="'cluster/roles/'"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='tablespace'">
+	      <xsl:value-of select="'cluster/tablespaces/'"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='language'">
+	      <xsl:value-of select="concat('cluster/databases/', ../@name, 
+				           '/languages/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='cast'">
+	      <xsl:value-of select="concat('cluster/databases/', ../@name, '/casts/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='schema'">
+	      <xsl:value-of select="concat('cluster/databases/', ../@name, 
+				           '/schemata/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='type'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/types/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='domain'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/domains/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='operator_class'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/operator_classes/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='operator_family'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+  				           '/schemata/', ../@name, 
+					   '/operator_families/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='conversion'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/conversions/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='sequence'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/sequences/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='view'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/views/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='table'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
+				           '/schemata/', ../@name, 
+					   '/tables/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='constraint'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
+				           '/schemata/', ../../../../@name, 
+					   '/tables/', ../@name, 
+					   '/constraints/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='index'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
+				           '/schemata/', ../../../../@name, 
+					   '/tables/', ../@name, '/indices/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='trigger'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
+				           '/schemata/', ../../../../@name, 
+					   '/tables/', ../@name, 
+					   '/triggers/')"/>
+	    </xsl:when>	
+	    <xsl:when test="@type='rule'">
+	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
+				           '/schemata/', ../../../../@name, 
+					   '/', name(..), 's/',
+					   ../@name, '/rules/')"/>
+	    </xsl:when>	
+	    <xsl:otherwise>
+	      <xsl:value-of select="'UNHANDLED/'"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:attribute>
+	
+	<xsl:attribute name="name">
+	  <xsl:choose>
+	    <xsl:when test="@type='cluster'">
+	      <xsl:value-of select="'cluster.xml'"/>
+	    </xsl:when>	
+	    <xsl:otherwise>
+	      <xsl:value-of select="concat(@name, '.xml')"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:attribute>
+	
+	<xsl:variable name="here" select="."/>
+	<xsl:for-each select="/*">
+	  <!-- Create a copy of the root element for each dbobject -->
+	  <xsl:copy>
+	    <xsl:copy-of select="@*"/>
+	    
+	    <!-- And copy the contents of the dbobject into the root copy -->
+	    <xsl:for-each select="$here">
+	      <xsl:apply-templates mode="copy_topobject"/>
+	    </xsl:for-each>
+	  </xsl:copy>
+	</xsl:for-each>
+      </xsl:element>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="dbobject">
-    <xsl:if test="@type!='dbincluster'">
-      <xsl:copy select=".">
-	<xsl:copy-of select="@*"/>
-	<contents>
-	  <xsl:attribute name="path">
-	    <xsl:choose>
-	      <xsl:when test="@type='cluster'">
-		<xsl:value-of select="'cluster/'"/>
-	      </xsl:when>	
-	      <xsl:when test="@type='database'">
-		<xsl:value-of select="'cluster/database/'"/>
-	      </xsl:when>	
-	      <xsl:when test="@type='grant'">
-		<xsl:value-of select="'cluster/grants/'"/>
-	      </xsl:when>	
-	      <xsl:when test="@type='role'">
-		<xsl:value-of select="'cluster/roles/'"/>
-	      </xsl:when>	
-	      <xsl:when test="@type='tablespace'">
-		<xsl:value-of select="'cluster/tablespaces/'"/>
-	      </xsl:when>	
-	      <xsl:when test="@type='schema'">
-		<xsl:value-of select="concat('cluster/database/',
-				      ../../@name,
-				      '/schemata/')"/>
-	      </xsl:when>	
-	      <xsl:otherwise>
-		<xsl:value-of select="'cluster/UNHANDLED/'"/>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:attribute>
-	  <xsl:attribute name="name">
-	    <xsl:choose>
-	      <xsl:when test="@type='cluster'">
-		<xsl:value-of select="'cluster.skt'"/>
-	      </xsl:when>	
-	      <xsl:otherwise>
-		<xsl:value-of select="concat(@name, '.skt')"/>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:attribute>
-	  <xsl:apply-templates mode="copy_dbobject"/>
-	</contents>
-      </xsl:copy>
-    </xsl:if>
+    <!-- This prevents dbobjects being copied by apply-templates from
+	 the root element.
+      -->
+  </xsl:template>
+
+  <xsl:template match="dbobject" mode="copy_dbobject">
+    <!-- This prevents dbobjects being copied recursively, thereby
+	 allowing the dboject tree to be flattened by the for-each 
+	 call in the root element.
+      -->
+  </xsl:template>
+
+  <xsl:template match="dbobject/dependencies" mode="copy_dbobject">
+    <!-- This prevents dbobject dependency information being copied.
+	 After all, it is not very interesting.
+      -->
+  </xsl:template>
+
+  <xsl:template match="*" mode="copy_topobject">
+    <!-- This copies the contents of the top element in a dbobject,
+	 calls another template to copy its contents, and adds a 
+	 skit:gather element.
+      -->
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates mode="copy_dbobject"/>
+      <xsl:element name="skit:gather"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template match="*" mode="copy_dbobject">
+    <!-- This recursively copies the contents of a dbobject element.
+      -->
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates mode="copy_dbobject"/>
+    </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>
 

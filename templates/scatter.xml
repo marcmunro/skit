@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 
+
 <skit:stylesheet
-  xmlns:xi="http://www.w3.org/2003/XInclude"
-  xmlns:skit="http://www.bloodnok.com/xml/skit">
+   xmlns:xi="http://www.w3.org/2003/XInclude"
+   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
     <option name='sources' type='integer' value='1'/>
-    <option name='p*ath' type='string' required='true'/>
+    <option name='p*ath' type='string' default="."/>
+    <option name='default_template' type='string' value="templates/template.xml"/>
+    <option name='t*emplate' type='string'/>
+    <option name='v*erbose' type='flag'/>
+    <option name='ch*eckonly' type='flag'/>
+    <option name='si*lent' type='flag'/>
+    <alias value='q*uiet' for='silent'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
   </skit:options>
 
   <dump>
-    <skit:attr name="dbtype" expr="dbtype"/>
-    <skit:attr name="dbname" expr="dbname"/>
-    <skit:attr name="user" expr="username"/> 
-    <skit:attr name="time" expr="(current-timestamp)"/>
-    <skit:xslproc stylesheet="scatter.xsl" input="pop">
-      <dump dbtype="postgres" dbname="skittest" time="20100305154610">
-	<params template_name="./templates/scatter.xml" action="template" sources="1" add_deps="true"/>
-	<dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
-	  <cluster type="postgres" port="5432" version="8.3.9" host="/var/run/postgresql" username="marc"/>
-	</dbobject>
-      </dump>
-    </skit:xslproc>
+    <printable/>
+    <skit:process>
+      <skit:xslproc stylesheet="scatter.xsl">
+	<skit:xslproc stylesheet="prescatter.xsl" input="pop"/>
+      </skit:xslproc>
+    </skit:process>
   </dump>
 </skit:stylesheet>
 

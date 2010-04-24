@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Operator classes -->
+  <!-- Operator families -->
   <xsl:template match="operator_family">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="operator_family_fqn" 
@@ -30,7 +30,6 @@
 			     arg[@position='left']/@name, ',',
 			     arg[@position='right']/@schema, '.',
 			     arg[@position='right']/@name, ')')}"/>
-	    
 	  </xsl:if>
 	</xsl:for-each>
 
@@ -46,7 +45,6 @@
 			     params/param[@position='1']/@type, ',',
 			     params/param[@position='2']/@schema, '.',
 			     params/param[@position='2']/@type, ')')}"/>
-	    
 	  </xsl:if>
 	</xsl:for-each>
 
@@ -87,20 +85,3 @@
   </xsl:template>
 </xsl:stylesheet>
 
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->

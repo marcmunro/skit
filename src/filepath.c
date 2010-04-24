@@ -13,10 +13,14 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 #include <glob.h>
+#include <errno.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 static glob_t glob_buf;
@@ -286,7 +290,6 @@ readFile(String *filename)
     return result;
 }
 
-
 #define iswordchar(c) (isalnum(c) || (c == '_'))
 
 static void
@@ -335,3 +338,31 @@ nextWord(FILE *file)
     buffer = realloc(buffer, i);
     return stringNewByRef(buffer);
 }
+
+/* Ensure directories exist for every element in path.  Note that path
+   is temporarily modified by this function.  */
+void
+makePath(char *path)
+{
+    char *pos = path;
+    char *slash = NULL;
+    char old;
+    struct stat statbuf;
+    
+    while (slash = strchr(pos, '/')) {
+	slash++;
+	old = *slash;
+	pos = slash;
+	*slash = '\0';
+
+	if (stat(path, &statbuf) != 0) {
+	    if (mkdir(path, 0777) != 0) {
+		RAISE(GENERAL_ERROR, 
+		      newstr("Failed to create directory \"%s\" (%d)\n", 
+			     path, errno));
+	    }
+	}
+	*slash = old;
+    }
+}
+

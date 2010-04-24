@@ -88,22 +88,5 @@
   <xsl:include href="skitfile:ddl/triggers.xsl"/>
   <xsl:include href="skitfile:ddl/rules.xsl"/>
   <xsl:include href="skitfile:ddl/views.xsl"/>
+  <xsl:include href="skitfile:ddl/conversions.xsl"/>
 </xsl:stylesheet>
-
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->

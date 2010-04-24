@@ -24,6 +24,8 @@
 
 typedef unsigned char boolean;
 
+typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME} DiffType;
+
 typedef enum {
     TOKEN_OPEN_PAREN = 0,
     TOKEN_CLOSE_PAREN,
@@ -439,15 +441,19 @@ extern String *findFile(String *filename);
 extern FILE *openFile(String *filename);
 extern String *readFile(String *filename);
 extern String *nextWord(FILE *file);
+extern Document *docFromFile(String *path);
+extern Document *simpleDocFromFile(String *path);
+extern void makePath(char *path);
+extern Document *scatterTemplate(String *path);
+extern void documentFreeMem();
 
 // xmlfile.c
-extern Document *docFromFile(String *path);
 extern void parseXSLStylesheet(Document *doc);
 extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
 extern void addParamsNode(Document *doc, Object *params);
 extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
-
+extern void docGatherContents(Document *doc, String *filename);
 
 // document.c
 extern Node *nodeNew(xmlNode *node);

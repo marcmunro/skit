@@ -22,35 +22,6 @@
 static char URI[] ="http://www.bloodnok.com/xml/skit";
 
 void
-xsltDBQuoteFunctionOld(xmlXPathParserContextPtr ctxt, int nargs){
-    xmlXPathObjectPtr instr;
-    char *tmp;
-
-    if (nargs != 1) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"dbquote() : expects one argument\n");
-	ctxt->error = XPATH_INVALID_ARITY;
-	return;
-    }
-
-    xmlXPathStringFunction(ctxt, 1);
-
-    if (ctxt->value->type != XPATH_STRING) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-			   "dbquot() : invalid arg expecting a string\n");
-	ctxt->error = XPATH_INVALID_TYPE;
-	return;
-    }
-
-    /* Now just return the parameter */
-    instr = valuePop(ctxt);
-    tmp = newstr(instr->stringval);
-    valuePush(ctxt, xmlXPathNewString((xmlChar *) tmp));
-    skfree(tmp);
-    xmlXPathFreeObject(instr);
-}
-
-void
 xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
     xmlXPathObjectPtr instr;
     xmlXPathObjectPtr instr2;

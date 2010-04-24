@@ -462,6 +462,7 @@ skitFreeMem()
 	objectFree((Object *) arg, TRUE);
     }
 
+    documentFreeMem();
     pgsqlFreeMem();
     freeSkitProcessors();
     freeStdTemplates();

@@ -6,9 +6,9 @@ select p.oid as oid,
        l.lanname as language,
        p.prorettype as result_type_oid,
        p.procost as cost,
-       regexp_replace(p.proargtypes::varchar, ' ', ',') as sigargtypes,
+       regexp_replace(p.proargtypes::varchar, ' ', ',', 'g') as sigargtypes,
        case when p.proallargtypes is null then
-         regexp_replace(p.proargtypes::varchar, ' ', ',') 
+         regexp_replace(p.proargtypes::varchar, ' ', ',', 'g') 
        else
          regexp_replace(p.proallargtypes::varchar, E'{\(.*\)}', E'\\1') 
        end as argtype_oids,

@@ -14,6 +14,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <glob.h>
+#include <libgen.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 #include <libxml/xmlreader.h>
@@ -25,6 +27,7 @@
 
 
 static String empty_str = {OBJ_STRING, ""};
+static String boolean_str = {OBJ_STRING, "boolean"};
 static Document *cur_template;
 
 
@@ -67,43 +70,12 @@ curTuple()
     return symbolGetValue("tuple");
 }
 
-static String *
-filenameFromUri(const char *URI)
-{
-    String *filename;
-    String *path;
-
-    if ((URI == NULL) || (strncmp(URI, "skitfile:", 9))) {
-        return NULL;
-    }
-    filename = stringNewByRef(newstr(URI + 9));
-    path = findFile(filename);
-    objectFree((Object *) filename, TRUE);
-    return path;
-}
-
-
 static char *
 nodeName(xmlNode *node)
 {
     if (node) return (char *) node->name;
     return "nil";
 }
-
-static String *
-getAttribute(xmlTextReaderPtr reader,
-	     const xmlChar *name)
-{
-    String *result;
-    xmlChar *value;
-    if (value = xmlTextReaderGetAttribute(reader, name)) {
-	result = stringNew((char *) value);
-	xmlFree(value);
-	return result;
-    }
-    return NULL;
-}
-
 
 static void
 addAttribute(xmlNodePtr node, 
@@ -126,449 +98,17 @@ addText(xmlNodePtr node, String *value)
     xmlAddChild(node, text);
 }
 
-static int
-skitfileMatch(const char * URI) 
-{
-    if ((URI != NULL) && (!strncmp(URI, "skitfile:", 9))) {
-        return 1;
-    }
-    return 0;
-}
-
-#define MAX_READAHEAD 255
-typedef struct file_context {
-    FILE *fp;
-    char  buf[MAX_READAHEAD];
-    int   buflen;
-    int   bufpos;
-    int   buflines;
-    int   readlines;
-    char  cur_str;
-    String *URI;
-    boolean  skipping;
-} file_context;
-
-static file_context *
-new_file_context()
-{
-    file_context *fc = (file_context *) skalloc(sizeof(file_context));
-    fc->fp = NULL;
-    fc->buflen = 0;
-    fc->bufpos = 0;
-    fc->cur_str = 0;
-    fc->buflines = 0;
-    fc->readlines = 0;
-    fc->URI = NULL;
-    fc->skipping = TRUE;
-}
-
-static boolean
-isquote(char c)
-{
-    return (c == '\'') || (c == '"');
-}
-
-/* Read up to MAXREADAHEAD characters into buf, returning complete
- * elements if possible.
- */
-static void
-read_item(file_context *context)
-{
-    int i = 0;
-    char c;
-    if (!context->fp) {
-	/* File has been closed, so nothing to do */
-	return;
-    }
-    context->readlines += context->buflines;
-    context->buflines = 0;
-    while (i < MAX_READAHEAD) {
-	c = getc(context->fp);
-	if (c == '\n') {
-	    /* Count each newline */
-	    context->buflines++;
-	}
-	if (c == EOF) {
-	    /* If at EOF */
-	    fclose(context->fp);
-	    context->fp = NULL;
-	    break;
-	}
-	if (isquote(c)) {
-	    if (context->cur_str) {
-		if (c == context->cur_str) {
-		    /* Matching quote found */
-		    context->cur_str = 0;
-		}
-	    }
-	    else {
-		/* Open quote found */
-		context->cur_str  = c;
-	    }
-	}
-	if ((c == '<') && (context->cur_str == 0) && (i != 0)) {
-	    /* Looks like the start of an element, and we are not
-	     * at the start of buf */
-	    ungetc(c, context->fp);
-	    break;
-	}
-	context->buf[i++] = c;
-
-	if ((c == '>') && (context->cur_str == 0)) {
-	    /* Looks like the end of an element */
-	    break;
-	}
-    }
-    context->buf[i] = '\0';
-    context->bufpos = 0;
-    context->buflen = i;
-}
-
-/* This code is slightly dangerous.  If the context->buf contains only
- * part of the skit_inclusion element, things are likely to go awry */
-static char
-next_char(file_context *context)
-{
-    while ((context->bufpos >= context->buflen) && (context->fp)) {
-	read_item(context);
-	if (context->skipping) {
-	    /* We skip everything outside the <skit:inclusion> element */
-	    if ((strncmp(context->buf, "<skit:inclusion", 15) == 0)||
-		(strncmp(context->buf, "<xsl:stylesheet", 15) == 0)) {
-		/* We have reached the start of the 'real' inclusion.
-		 * Record the number of lines we have skipped up to now.
-		 */
-		recordCurDocumentSkippedLines(context->URI, 
-					      context->readlines);
-		context->skipping = FALSE;
-	    }
-	    else {
-		/* Make it look like we've read this entry */
-		context->buflen = 0;
-	    }
-	}
-	else {
-	    if ((strncmp(context->buf, "</skit:inclusion", 16) == 0) ||
-		(strncmp(context->buf, "</xsl:stylesheet", 16) == 0)) {
-		/* We are done!  No need to read any more */
-		fclose(context->fp);
-		context->fp = NULL;
-	    }
-	}
-    }
-
-    if (context->bufpos < context->buflen) {
-	return context->buf[context->bufpos++];
-    }
-    return EOF;
-}
-
-static void *
-skitfileOpen(const char *URI) 
-{
-    file_context *fc;
-    String *path = filenameFromUri(URI);
-    String *my_uri;
-
-    //fprintf(stderr, "Opening %s\n", URI);
-    if (!path) {
-	RAISE(FILEPATH_ERROR,
-	      newstr("Unable to find file: %s", URI));
-	return NULL;
-    }
-
-    my_uri = stringNew(URI);
-    fc = new_file_context();
-    fc->fp = fopen(path->value, "r");
-    fc->URI = my_uri;
-
-    recordCurDocumentSource(fc->URI, path);
-    objectFree((Object *) path, TRUE);
-    return (void *) fc;
-}
-
-
-static int
-skitfileClose(void * context) 
-{
-    file_context *fc = (file_context *) context;
-
-    if (context == NULL) {
-	return -1;
-    }
-    if (fc->URI) {
-	objectFree((Object *) fc->URI, TRUE);
-    }
-    if (fc->fp) {
-	fclose(fc->fp);
-    }
-    skfree(fc);
-    return 0;
-}
-
-
-
-
-static int
-skitfileRead(void *context, char *buffer, int len) 
-{
-    file_context *fc = (file_context *) context;
-    FILE *fp = fc->fp;
-    int   count = 0;
-    char c;
-
-    if ((context == NULL) || (buffer == NULL) || (len < 0)) {
-	return -1;
-    }
-
-    while (count < len) {
-	c = next_char(fc);
-	if (c == EOF) {
-	    break;
-	}
-	buffer[count++] = c;
-    }
-    return(count);
-}
-
-
-static void
-setup_input_readers()
-{
-    static done = FALSE;
-    if (!done) {
-	xmlRegisterDefaultInputCallbacks();
-
-	if (xmlRegisterInputCallbacks(skitfileMatch, skitfileOpen, 
-				      skitfileRead, skitfileClose) < 0) {
-	    fprintf(stderr, "failed to register skitfile handler\n");
-	    exit(1);
-	}
-	done = TRUE;
-    }
-}
-
-
-static boolean
-is_options_node(Document *doc)
-{
-    xmlChar *name;
-    int type;
-    boolean result = FALSE;
-    if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
-	name = xmlTextReaderName(doc->reader);
-	result = streq(name, "skit:options");
-	xmlFree(name);
-    }
-    return result;
-}
-
-static Document *
-create_document(String *path)
-{
-    xmlTextReaderPtr reader;
-    setup_input_readers();
-    reader = xmlReaderForFile(path->value, NULL, 0);
-    if (reader == NULL) {
-	return NULL;
-    }
-    return documentNew(NULL, reader);
-}
-
-static void
-process_option_node(Document *doc)
-{
-    String *name = NULL;
-    String *dflt = NULL;
-    String *value = NULL;
-    String *type = NULL;
-    Object *validated_value = NULL;
-
-    BEGIN {
-	name = getAttribute(doc->reader, "name");
-	dflt = getAttribute(doc->reader, "default");
-	value = getAttribute(doc->reader, "value");
-	type = getAttribute(doc->reader, "type");
-	if (name) {
-	    if (!type) {
-		type = stringNew("flag");
-	    }
-
-	    if (value) {
-		if (dflt) {
-		    RAISE(PARAMETER_ERROR, 
-			  newstr("Must provide value *or* default, not both"));
-		}
-		validated_value = validateParamValue(type, value);
-		optionlistAdd(doc->options, stringDup(name), 
-			      stringNew("value"), validated_value);
-		objectFree((Object *) value, TRUE);
-		value = NULL;
-	    }
-
-	    if (dflt) {
-		validated_value = validateParamValue(type, dflt);
-		optionlistAdd(doc->options, stringDup(name), 
-			      stringNew("default"), validated_value);
-		objectFree((Object *) dflt, TRUE);
-		dflt = NULL;
-	    }
-
-	    optionlistAdd(doc->options, name, stringNew("type"), 
-			  (Object *) type);
-	}
-	else {
-	    RAISE(PARAMETER_ERROR, newstr("Option has no name"));
-	}
-    }
-    EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION OPTION NODE\n");
-    WHEN_OTHERS {
-	objectFree((Object *) name, TRUE);
-	objectFree((Object *) dflt, TRUE);
-	objectFree((Object *) value, TRUE);
-	objectFree((Object *) type, TRUE);
-	RAISE();
-    }
-    END;
-}
-
-static void
-process_alias_node(Document *doc)
-{
-    String *name = getAttribute(doc->reader, "for");
-    String *alias = getAttribute(doc->reader, "value");
-    BEGIN {
-	if (name) {
-	    if (alias) {
-		optionlistAddAlias(doc->options, alias, name);
-		alias = NULL;
-		name = NULL;
-	    }
-	    else {
-		RAISE(PARAMETER_ERROR,
-		      newstr("Alias %s has no value.", name->value));
-	    }
-	}
-	else {
-	    RAISE(PARAMETER_ERROR, newstr("Alias has no name"));
-	}
-    }
-    EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION ALIAS NODE\n");
-    WHEN_OTHERS {
-	objectFree((Object *) name, TRUE);
-	objectFree((Object *) alias, TRUE);
-	RAISE();
-    }
-    END;
-}
-
-static char *
-errorContext(Document *doc)
-{
-    const xmlChar *uri = xmlTextReaderConstBaseUri(doc->reader);
-    xmlNodePtr node = xmlTextReaderCurrentNode(doc->reader);
-    return newstr("%s:%d in %s element", uri, node->line, node->name);
-}
-
-static void
-process_possible_option(Document *doc)
-{
-    xmlChar *name;
-
-    BEGIN {
-	if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
-	    name = xmlTextReaderName(doc->reader);
-	    if (streq(name, "option")) {
-		process_option_node(doc);
-	    }
-	    else if (streq(name, "alias")) {
-		process_alias_node(doc);
-	    }
-	    xmlFree(name);
-	}
-    }
-    EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION PROCESS POSSIBLE OPTION\n");
-    WHEN_OTHERS {
-	char *context = errorContext(doc);
-	char *newmsg = newstr("%s\n  AT %s", ex->text, context);
-	skfree(context);
-	xmlFree(name);
-	RAISE(ex->signal, newmsg);
-    }
-    END;
-}
-
-/* Loads an xml document from a file, recording any options present in
- * the Document's options field.  Note that the document is not
- * complete: a call must be made to finishDocument to cause all include
- * directives to be processed.
- */
-Document *
-docFromFile(String *path)
-{
-    Document *doc = NULL;
-    int ret;
-    enum state_t {EXPECTING_OPTIONS, PROCESSING_OPTIONS, DONE} state;
-    boolean reading_options = FALSE;
-    boolean options_complete = FALSE;
-    int     option_node_depth;
-
-    state = EXPECTING_OPTIONS;
-    BEGIN {
-	doc = create_document(path);
-	if (!doc) {
-	    RAISE(PARAMETER_ERROR,
-		  newstr("Cannot find file %s.", path->value));
-	}
-	ret = xmlTextReaderRead(doc->reader);
-	while (ret == 1) {
-	    switch (state) {
-	    case EXPECTING_OPTIONS:
-		if (is_options_node(doc)) {
-		    doc->options = optionlistNew();
-		    option_node_depth = xmlTextReaderDepth(doc->reader);
-		    state = PROCESSING_OPTIONS;
-		}
-		break;
-	    case PROCESSING_OPTIONS:
-		if (xmlTextReaderDepth(doc->reader) == option_node_depth) {
-		    state = DONE;
-		}
-		else {
-		    process_possible_option(doc);
-		}
-	    }
-	    xmlTextReaderPreserve(doc->reader);
-	    ret = xmlTextReaderRead(doc->reader);
-	}
-    }
-    EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION DOC FROM FILE\n");
-    WHEN_OTHERS {
-	objectFree((Object *) doc, TRUE);
-	RAISE();
-    }
-    END;
-    if (ret != 0) {
-	objectFree((Object *) doc, TRUE);
-	return NULL;
-    }
-
-    doc->doc = xmlTextReaderCurrentDoc(doc->reader);
-
-    return doc;
-}
-
 Document *
 applyXSLStylesheet(Document *src, Document *stylesheet)
 {
     xmlDocPtr result = NULL;
+    Document *doc;
     xsltTransformContextPtr ctxt;
-
     const char *params[1] = {NULL};
+
+    //dbgSexp(stylesheet);
+    //dbgSexp(src);
+    //fprintf(stderr, "===============DONE==============\n");
     if ((!stylesheet->stylesheet) && stylesheet->doc) {
 	stylesheet->stylesheet = xsltParseStylesheetDoc(stylesheet->doc);
 	stylesheet->doc = NULL;
@@ -580,11 +120,12 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
     if (result = xsltApplyStylesheetUser(stylesheet->stylesheet, 
 					 src->doc, params, NULL, 
 					 NULL, ctxt)) {
-	return documentNew(result, NULL);
+	xsltFreeTransformContext(ctxt);
+	doc = documentNew(result, NULL);
+	//dbgSexp(doc);
+	return doc;
     }
-    else {
-	return NULL;
-    }
+    return NULL;
 }
 
 static Hash *skit_processors = NULL;
@@ -608,14 +149,68 @@ firstElement(xmlNode *start)
     return result;
 }
 
+static Document *
+docForNode(xmlNode *node) {
+    xmlNode *root_node;
+    xmlDocPtr doc;
+    
+    if (node) {
+	if (node->doc) {
+	    return node->doc->_private;
+	}
+	/* This node is not currently part of a document.  Let's create a
+	 * document for it. */
+	root_node = node;
+	while (root_node->parent) {
+	    root_node = root_node->parent;
+	}
+	doc = xmlNewDoc((const xmlChar *) "1.0");
+	xmlDocSetRootElement(doc, root_node);
+
+	return documentNew(doc, NULL);
+    }
+    return NULL;
+}
+
 
 /* Handle a skit:stylesheet element */
 static xmlNode *
 stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    xmlNode *first_child;
-    first_child = processChildren(template_node, parent_node, 1);
-    return first_child;
+    xmlNode *node = NULL;
+    String *result_attr = nodeAttribute(template_node, "result");
+    Object *result_reqd;
+    Document *doc = NULL;
+
+    if (result_attr) {
+	result_reqd  = validateParamValue(&boolean_str, result_attr);
+    }
+
+    BEGIN {
+	node = processChildren(template_node, parent_node, 1);
+
+	if (result_attr) {
+	    if (!result_reqd) {
+		/* This is a rather inefficient way of freeing a node,
+		   but it ensures that everything associated with the
+		   node is actually freed. */
+		if (doc = docForNode(node)) {
+		    objectFree((Object *) doc, TRUE);
+		}
+		else {
+		    xmlUnlinkNode(node);
+		    xmlFree(node);
+		}
+		node = NULL;
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) result_attr, TRUE);
+    }
+    END;
+    return node;
 }
 
 /* Handle a skit:xxxx element that is to be ignored 
@@ -1308,13 +903,14 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
-static Document *
-docForNode(xmlNode *node) {
-    if (node && node->doc) {
-	return node->doc->_private;
-    }
-    return NULL;
+static xmlNode *
+unlinkNode(xmlNode * node)
+{
+    xmlNode *result = xmlCopyNode(node, 1);
+    xmlUnlinkNode(node);
+    return result;
 }
+
 
 static xmlNode *
 execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -1324,6 +920,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *stylesheet = NULL;
     Document *source_doc = NULL;
     Document *result_doc = NULL;
+    xmlNode *scratch;
     xmlNode *result;
     xmlNode *root_node;
 
@@ -1337,18 +934,22 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = (Document *) actionStackPop();
+	    if (!source_doc) {
+		RAISE(PARAMETER_ERROR,
+		      newstr("Failed to pop document for xsl processing"));
+	    }
 	}
 	else {
-	    root_node = processChildren(template_node, parent_node, depth + 1);
+	    root_node = processChildren(template_node, NULL, depth + 1);
 	    source_doc = docForNode(root_node);
 	}
 	//dbgSexp(source_doc);
 	//dbgSexp(stylesheet);
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	if (!result_doc) {
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("Failed to process stylesheet: %s", 
-			 stylesheet_name->value));
+	       RAISE(XML_PROCESSING_ERROR,
+	      newstr("Failed to process stylesheet: %s", 
+	    	 stylesheet_name->value));
 	}
     }
     EXCEPTION(ex);
@@ -1360,8 +961,11 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     END;
 
-    result = xmlDocGetRootElement(result_doc->doc);
-    objectFree((Object *) result_doc, FALSE);
+    scratch = xmlDocGetRootElement(result_doc->doc);
+    result = xmlCopyNode(scratch, 1);  // Adding this seems to make it
+				      // safe.  WTF?
+    //xmlUnlinkNode(result);          // This should be enough but is not!
+    objectFree((Object *) result_doc, TRUE);
     return result;
 }
 
@@ -1544,6 +1148,735 @@ addProcessor(char *name, xmlFn *processor)
     }
 }
 
+static boolean trees_match(xmlNode *node1, xmlNode *node2);
+
+list_length(xmlAttr *node)
+{
+    int len = 0;
+    while(node) {
+	node = node->next;
+	len++;
+    }
+    return len;
+}
+
+static boolean
+attribute_eq(xmlNode *node1, xmlNode *node2, const xmlChar *name)
+{
+    xmlChar *text1 = xmlGetProp(node1, name);
+    xmlChar *text2 = xmlGetProp(node2, name);
+    int eq;
+    if (text1 && text2) {
+	eq = streq(text1, text2);
+    }
+    else {
+	eq = FALSE;
+    }
+    if (text1) {
+	xmlFree(text1);
+    }
+    if (text2) {
+	xmlFree(text2);
+    }
+    return eq;
+}
+
+static boolean
+all_node_attributes_match(xmlNode *node1, xmlNode *node2)
+{
+    xmlAttr *attr1 = node1->properties;
+
+    if (list_length(attr1) != list_length(node2->properties)) {
+	return FALSE;
+    }
+    while (attr1) {
+	if (!attribute_eq(node1, node2, attr1->name)) {
+	    return FALSE;
+	}
+	attr1 = attr1->next;
+    }
+    return TRUE;   /* No differences found */
+}
+
+static boolean
+nodes_match(xmlNode *node1, xmlNode *node2)
+{
+    xmlChar *text1;
+    xmlChar *text2;
+    int eq;
+
+    /* Check element types are the same. */
+    if (node1->type != node2->type) {
+	return FALSE;
+    }
+    switch (node1->type) {
+    case XML_ELEMENT_NODE:
+	/* Check element names are the same. */
+	if (!streq(node1->name, node2->name)) {
+	    return FALSE;
+	}
+	if (!all_node_attributes_match(node1, node2)) {
+	    return FALSE;
+	}
+	break;
+    case XML_TEXT_NODE:
+	/* Check element text is the same. */
+	text1 = xmlNodeGetContent(node1);
+	text2 = xmlNodeGetContent(node2);
+	eq = streq(text1, text2);
+	xmlFree(text1);
+	xmlFree(text2);
+	if (!eq) {
+	    return FALSE;
+	}
+    }
+    return trees_match(node1->children, node2->children);
+}
+
+static boolean
+is_empty_text_node(xmlNode *node)
+{
+    xmlChar *text;
+    char *c;
+    if (node->type == XML_TEXT_NODE) {
+	text = xmlNodeGetContent(node);
+	for (c = text; *c != '\0'; c++) {
+	    if (!isspace(*c)) {
+		xmlFree(text);
+		return FALSE;
+	    }
+	}
+	xmlFree(text);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+static xmlNode *
+skip_empty_nodes(xmlNode *node)
+{
+    while (node && is_empty_text_node(node)) {
+	node = node->next;
+    }
+    return node;
+}
+
+static boolean
+trees_match(xmlNode *node1, xmlNode *node2)
+{
+    boolean matched = TRUE;
+    while ((node1 = skip_empty_nodes(node1)) && 
+	   (node2 = skip_empty_nodes(node2)) && matched)
+    {
+	if (matched = nodes_match(node1, node2)) {
+	    node1 = node1->next;
+	    node2 = node2->next;
+	}
+    }
+    return node1 == node2;  /* Nodes match here only if they are both null */
+}
+
+static char *
+evalText(char *in)
+{
+    char *expr;
+    Object *expr_result;
+    Object *actual;
+    char *tmp;
+    char *tmp2;
+    char *expr_start = NULL;
+    char *expr_end = NULL;
+    int len;
+    boolean retain_original = FALSE;
+    char *pos = in;
+    char *remaining = in;
+    char *start = newstr("");
+    char *result;
+    /* We don't use regexps for this as we do not have the necessary
+       functions defined in regexp.c and this is a simple task that
+       regexps may be overkill for. */
+
+    while (*pos) {
+	switch (*pos++) {
+	case '\\':
+	    /* We are at an escape character - skip the next character
+	     * unless it is the end of the string */
+	    if (*pos) {
+		pos++;
+	    }
+	    break;
+	case '=':
+	    if (expr_start) {
+		if (*pos == '>') {
+		    retain_original = TRUE;
+		    expr_end = pos;
+		    pos++;
+		}
+	    }
+	    break;
+	case '$':
+	    if (expr_start) {
+		if (!expr_end) {
+		    expr_end = pos;
+		}
+		expr = newstr(expr_start);
+		len = expr_end - expr_start - 1;
+		expr[len] = '\0';
+		expr_result = evalSexp(expr);
+		
+		tmp = newstr(remaining);
+		len = expr_start - remaining - 1;
+		tmp[len] = '\0';
+		tmp2 = newstr("%s%s", start, tmp);
+		skfree(start);
+		skfree(tmp);
+		start = tmp2;
+		actual = dereference(expr_result);
+		if (actual) {
+		    if (actual->type == OBJ_STRING) {
+			tmp = newstr(((String *) actual)->value);
+		    }
+		    else {
+			tmp = objectSexp(expr_result);
+		    }
+		    if (retain_original) {
+			result = newstr("%s$%s => %s$", start, expr, tmp);
+		    }
+		    else {
+			result = newstr("%s%s", start, tmp);
+		    }
+		    skfree(start);
+		    start = result;
+		    remaining = pos;
+
+		    skfree(tmp);
+		}
+		skfree(expr);
+		objectFree(expr_result, TRUE);
+		expr_start = NULL;
+		expr_end = NULL;
+		retain_original = FALSE;
+	    }
+	    else {
+		expr_start = pos;
+	    }
+	    break;
+	}
+    }
+    result = newstr("%s%s", start, remaining);
+    skfree(start);
+    return result;
+}
+
+static xmlNode *
+copyWithEval(xmlNode *node)
+{
+    xmlNode *new;
+    char *text;
+    if (node->type == XML_COMMENT_NODE) {
+	text = evalText(node->content);
+	new = xmlNewComment((xmlChar *) text);
+	skfree(text);
+    }
+    else {
+	new = xmlCopyNode(node, 0);
+    }
+    return new;
+}
+
+static xmlNode *
+get_header_node (xmlNode *root)
+{
+    xmlNode *node = root;
+    xmlChar *text = NULL;
+    while (node->prev) {
+	node = node->prev;
+    }
+    if (node->type != XML_ELEMENT_NODE) {
+	return node;
+    }	
+    return NULL;
+}
+
+static void
+add_header(xmlNode *root, xmlNode *header_node)
+{
+    xmlNode *node = header_node;
+    xmlNode *new;
+    while (header_node && (header_node->type != XML_ELEMENT_NODE)) {
+	new = copyWithEval(header_node);
+	(void) xmlAddPrevSibling(root, new);
+	header_node = header_node->next;
+    }
+}
+
+static xmlNode *
+get_footer_node (xmlNode *root)
+{
+    return root->next;
+}
+
+static void
+add_footer(xmlNode *prev, xmlNode *footer_node)
+{
+    xmlNode *node = footer_node;
+    xmlNode *new;
+    while (footer_node && (footer_node->type != XML_ELEMENT_NODE)) {
+	new = copyWithEval(footer_node);
+	(void) xmlAddNextSibling(prev, new);
+	prev = new;
+	footer_node = footer_node->next;
+    }
+}
+
+static xmlNode *
+writeScatterFile(String *path, String *name, xmlNode *node,
+		 Document *template)
+{
+    String *pathroot = (String *) symbolGetValue("path");
+    char *dirpath = newstr("%s/%s", pathroot->value, path->value);
+    String *fullpath = stringNewByRef(newstr("%s/%s", dirpath, name->value));
+    Document *prev_doc = NULL;
+    xmlNode *scatter_root;
+    xmlNode *scatter_start;
+    xmlNode *prev_root;
+    xmlNode *prev_start;
+    xmlNode *textnode;
+    DiffType diff;
+    xmlNode *new_root; 
+    Document *new_doc = NULL;
+    xmlNode *header_node = NULL;
+    xmlNode *footer_node = NULL;
+    String *header = NULL;
+    String *footer = NULL;
+    FILE *scatterfile;
+    xmlNode *result = NULL;
+    char *result_text = NULL;
+    char *result_prefix = NULL;
+    Object *verbose = symbolGetValue("verbose");
+    Object *checkonly = symbolGetValue("checkonly");
+    Object *silent = symbolGetValue("silent");
+
+    BEGIN {
+	prev_doc = simpleDocFromFile(fullpath);
+	scatter_root = firstElement(node->children);
+	if (prev_doc) {
+	    /* Find the first node below the dump node in both versions
+	     * of the document */
+	    prev_root = xmlDocGetRootElement(prev_doc->doc);
+	    prev_start = firstElement(prev_root->children);
+	    scatter_start = firstElement(scatter_root->children);
+	    if (trees_match(prev_start, scatter_start)) {
+		diff = IS_SAME;
+		result_prefix = "UNCHANGED";
+		header = footer = NULL;
+	    }
+	    else {
+		diff = IS_DIFF;
+		result_prefix = "MODIFIED";
+		header_node = get_header_node(prev_root);
+		footer_node = get_footer_node(prev_root);
+	    }
+	}
+	else {
+	    diff = IS_NEW;
+	    result_prefix = "NEW";
+	    makePath(dirpath); /* Ensure the parent dirs exist */
+
+	    if (template) {
+		prev_root = xmlDocGetRootElement(template->doc);
+		header_node = get_header_node(prev_root);
+		footer_node = get_footer_node(prev_root);
+	    }
+	}
+
+	if (diff != IS_SAME) {
+	    new_root = xmlCopyNode(scatter_root, 1);
+	    new_doc = docForNode(new_root);
+	    if (header_node) {
+		add_header(new_root, header_node);
+	    }
+	    if (footer_node) {
+		add_footer(new_root, footer_node);
+	    }
+	    if (!checkonly) {
+		scatterfile = fopen(fullpath->value, "w");
+		documentPrintXML(scatterfile, new_doc);
+		fclose(scatterfile);
+	    }
+	}
+	
+	if (verbose || (diff != IS_SAME)) {
+	    /* Only print the difference info for unchanged entries if
+	     * the verbose flag has been provided. */
+	    
+	    if (!silent) {
+		/* If the silent flag was provided, do not print
+		   anything. */
+		result = xmlNewNode(NULL, (xmlChar *) "print");
+		result_text = newstr("%s: %s\n", result_prefix, 
+				     fullpath->value);
+		(void) xmlNodeAddContent(result, (xmlChar *) result_text);
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	skfree(dirpath);
+	objectFree((Object *) prev_doc, TRUE);
+	objectFree((Object *) fullpath, TRUE);
+	objectFree((Object *) new_doc, TRUE);
+	objectFree((Object *) header, TRUE);
+	objectFree((Object *) footer, TRUE);
+	if (result_text) {
+	    skfree(result_text);
+	}
+    }
+    END;
+    
+    return result;
+}
+
+static xmlNode *
+scatterFn(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *path = nodeAttribute(template_node, "path");
+    String *name;
+    Document *template = NULL;
+    xmlNode *result = NULL;
+
+    if (path) {
+	//result = processChildren(template_node, parent_node, 1);
+	name = nodeAttribute(template_node, "name");
+	if (!name) {
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("name attribute must be provided for scatter"));
+	}
+	BEGIN {
+	    template = scatterTemplate(path);
+	    result = writeScatterFile(path, name, template_node, template);
+	}
+	EXCEPTION(ex);
+	FINALLY {
+	    objectFree((Object *) name, TRUE);
+	    objectFree((Object *) path, TRUE);
+	}
+	END;
+    }
+
+    //xmlUnlinkNode(parent_node);
+    //xmlFree(parent_node);
+    
+    return result;
+}
+
+static void
+copyNodesOld(xmlNode *target, xmlNode *from)
+{
+    xmlNode *copy;
+    xmlNode *text;
+    xmlUnlinkNode(from);  /* Unlink and copy seems like overkill, but it
+			   * is safe and eliminates undue copying of
+			   * namespace definitions */
+    copy = xmlCopyNode(from, 1);
+    xmlFree(from);
+    (void) xmlAddNextSibling(target, copy);
+    text = xmlNewText((xmlChar *) "\n");
+    (void) xmlAddNextSibling(target, text);
+}
+
+/* This is tricky because of the use of the skit namespace.  Attempts to 
+ * do this without making a full copy and without xmlDOMWrapCloneNode
+ * were completely unsuccessful */
+static void
+copyNodes(xmlNode *target, xmlNode *from)
+{
+    int	res;
+    xmlNodePtr newptr;
+    xmlNode *text;
+    res = xmlDOMWrapCloneNode(NULL, NULL, from, &newptr,
+			      target->doc, target->parent,
+			      1, 0);
+    if (res) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("xmlDOMWrapCloneNode has failed: %d\n", res));
+    }
+    (void) xmlAddNextSibling(target, newptr);
+    text = xmlNewText((xmlChar *) "\n");
+    (void) xmlAddNextSibling(target, text);
+}
+
+static xmlNode *
+getElement(xmlNode *node)
+{
+    while (node && (node->type != XML_ELEMENT_NODE)) {
+	node = node->next;
+    }
+    return node;
+}
+
+static boolean
+processGatherNodes(xmlNode *node, char *filename);
+
+static void
+gatherDirIntoNode(xmlNode *node, char *dirname)
+{
+    char *globpath = newstr("%s/*.xml", dirname);
+    glob_t globbuf;
+    String *path;
+    Document *gatherdoc;
+    xmlNode *root;
+    xmlNode *source;
+    xmlNode *copy;
+    int i;
+
+    BEGIN {
+	glob(globpath, 0, NULL, &globbuf);
+
+	if (globbuf.gl_pathc) {
+	    /* Some .xml files have been found.  Load each one in turn. */
+	    for (i = 0; i < globbuf.gl_pathc; i++) {
+		path = stringNewByRef(globbuf.gl_pathv[i]);
+		gatherdoc = NULL;
+		BEGIN {
+		    gatherdoc = simpleDocFromFile(path);
+		
+		    root = xmlDocGetRootElement(gatherdoc->doc);
+		    source = firstElement(root->children);
+		    while (source) {
+			copyNodes(node, source);
+			/* Identify the new node created above */
+			node = getElement(node->next);  
+			/* RECURSE HERE! */
+			(void) processGatherNodes(node, path->value);
+			source = getElement(source->next);  
+		    }
+		}
+		EXCEPTION(ex2);
+		FINALLY {
+		    objectFree((Object *) gatherdoc, TRUE);
+		    objectFree((Object *) path, FALSE);
+		}
+		END;
+	    }
+	}
+	else {
+	    /* There were no xml files, so maybe this is a directory of
+	     * directories.  Do another glob without the .xml extension */
+	    i = strlen(globpath);
+	    globpath[i - 4] = '\0';
+	    glob(globpath, 0, NULL, &globbuf);
+	    for (i = 0; i < globbuf.gl_pathc; i++) {
+		gatherDirIntoNode(node, globbuf.gl_pathv[i]);
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	skfree(globpath);
+	globfree(&globbuf);
+    }
+    END;
+}
+
+static void
+gatherDocsIntoNode(xmlNode *node, char *filename)
+{
+    char *dirname = newstr("%s", filename);
+    int len = strlen(dirname);
+
+    if ((len > 4) && streq(dirname+len-4, ".xml")) {
+	dirname[len-4] = '\0';
+    }
+    else {
+	RAISE(PARAMETER_ERROR,
+	      newstr("gather: filename (%s) must have a \".xml\" suffix", 
+		     filename));
+    }
+
+    BEGIN {
+	gatherDirIntoNode(node, dirname);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	skfree(dirname);
+    }
+    END;
+}
+
+static boolean
+processGatherNodes(xmlNode *node, char *filename)
+{
+    xmlNode *cur_node = node;
+    xmlNode *text_node = NULL;
+    xmlNs *ns;
+    while (cur_node) {
+	if ((cur_node->type == XML_ELEMENT_NODE) &&
+	    (ns = cur_node->ns) && 
+	    streq(ns->prefix, "skit") &&
+	    streq(cur_node->name, "gather")) 
+	{
+	    gatherDocsIntoNode(cur_node, filename);
+	    /* Now we remove the gather node, and any preceding text node. */
+	    if (text_node = cur_node->prev) {
+		if (text_node->type == XML_TEXT_NODE) {
+		    xmlUnlinkNode(text_node);
+		    xmlFree(text_node);
+		}
+	    }
+	    xmlUnlinkNode(cur_node);
+	    xmlFree(cur_node);
+	    return TRUE; /* We have found the single gather node in this
+			    file - no need to look any further. */
+	}
+	if (processGatherNodes(cur_node->children, filename)) {
+	    return TRUE;
+	}
+	cur_node = cur_node->next;
+    }
+    return FALSE;
+}
+
+static int
+getNodeIndent(xmlNode *node, boolean prev)
+{
+    xmlNode *text;
+    xmlChar *str;
+    xmlChar c;
+    int indent = 0;
+    if (node) {
+	text = prev? node->prev: node->next;
+	if (text && (text->type == XML_TEXT_NODE)) {
+	    str = text->content;
+	    while (c = *str++) {
+		if (c == ' ') {
+		    indent++;
+		}
+		else {
+		    indent = 0;
+		}
+	    }
+	}
+    }
+    return indent;
+}
+
+static void
+addIndent(int len, 
+	  xmlNode *node,
+	  boolean prev)
+{
+    char *spaces = skalloc(len + 1);
+    xmlNode *text;
+    spaces[len] = '\0';
+    while (--len>= 0) {
+	spaces[len] = ' ';
+    }
+    text = xmlNewText((xmlChar *) spaces);
+    skfree(spaces);
+    if (prev) {
+	(void) xmlAddPrevSibling(node, text);
+    }
+    else {
+	if (node->next) {
+	    (void) xmlAddNextSibling(node->next, text);
+	}
+    }
+}
+
+static xmlNode *
+reIndentNode(xmlNode *node, int target_indent)
+{
+    int len;
+    xmlNode *text;
+    xmlNode *last_sibling = NULL;
+    xmlNode *last_child;
+    char *spaces;
+    while (node) {
+	last_sibling = node;
+	len = target_indent - getNodeIndent(node, TRUE);;
+	/* Assume we only need to increase and not decrease the amount
+	 * of indentation. */
+	if (len > 0) {
+	    addIndent(len, node, TRUE);
+	}
+	if (last_child  = reIndentNode(getElement(node->children), 
+				       target_indent + 2)) {
+	    len = target_indent - getNodeIndent(last_child, FALSE);
+	    if (len > 0) {
+		addIndent(len, last_child, FALSE);
+	    }
+	}
+	node = getElement(node->next);
+    }
+    return last_sibling;
+}
+
+static void
+reIndentDoc(Document *doc)
+{
+    xmlNode *node = xmlDocGetRootElement(doc->doc);
+    /* Assume the outermost element is properly indented, and that it is
+       the only element at this level of indentation. */
+    reIndentNode(getElement(node->children), 2);
+}
+
+void
+docGatherContents(Document *doc, String *filename)
+{
+    xmlNode *node = xmlDocGetRootElement(doc->doc);
+    (void) processGatherNodes(node, filename->value);
+    reIndentDoc(doc);
+}
+
+static xmlNode *
+gatherFn(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    xmlNode *result = processChildren(template_node, parent_node, 1);
+    return result;
+}
+
+
+static xmlNode *
+execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *input = nodeAttribute(template_node, "input");
+    Document *source_doc = NULL;
+    Document *result_doc = NULL;
+    xmlNode *result;
+    xmlNode *root_node;
+
+    BEGIN {
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = (Document *) actionStackPop();
+	    if (!source_doc) {
+		RAISE(PARAMETER_ERROR,
+		      newstr("Failed to pop document for skit:process"));
+	    }
+	}
+	else {
+	    root_node = processChildren(template_node, NULL, depth + 1);
+	    source_doc = docForNode(root_node);
+	}
+
+	if (!source_doc) {
+	       RAISE(XML_PROCESSING_ERROR,
+		     newstr("Failed to get contents for skit:process"));
+	}
+	root_node = xmlDocGetRootElement(source_doc->doc);
+	result = processChildren(root_node, parent_node, depth + 1);
+	result_doc = docForNode(root_node);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) source_doc, TRUE);
+	objectFree((Object *) input, TRUE);
+    }
+    END;
+
+    return result;
+}
+
 static void
 initSkitProcessors()
 {
@@ -1569,8 +1902,62 @@ initSkitProcessors()
 	addProcessor("xslproc", &execXSLproc);
 	addProcessor("gensort", &execGensort);
 	addProcessor("text", &textFn);
+	addProcessor("process", &execProcess);
+	addProcessor("scatter", &scatterFn);
+	addProcessor("gather", &gatherFn);
     }
 }
+
+static xmlNode *
+exec(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *stylesheet_name = nodeAttribute(template_node, "stylesheet");
+    String *input = nodeAttribute(template_node, "input");
+    Document *stylesheet = NULL;
+    Document *source_doc = NULL;
+    Document *result_doc = NULL;
+    xmlNode *result;
+    xmlNode *root_node;
+
+    BEGIN {
+	if (!stylesheet_name) {
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("stylesheet attribute must be provided for xslproc"));
+	}
+
+	stylesheet = findDoc(stylesheet_name);
+
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = (Document *) actionStackPop();
+	}
+	else {
+	    root_node = processChildren(template_node, NULL, depth + 1);
+	    source_doc = docForNode(root_node);
+	}
+	//dbgSexp(source_doc);
+	//dbgSexp(stylesheet);
+	result_doc = applyXSLStylesheet(source_doc, stylesheet);
+	if (!result_doc) {
+	    RAISE(XML_PROCESSING_ERROR,
+		  newstr("Failed to process stylesheet: %s", 
+			 stylesheet_name->value));
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) source_doc, TRUE);
+	objectFree((Object *) stylesheet, TRUE);
+	objectFree((Object *) stylesheet_name, TRUE);
+	objectFree((Object *) input, TRUE);
+    }
+    END;
+
+    result = xmlDocGetRootElement(result_doc->doc);
+    //xmlUnlinkNode(result);  /* Remove the result node from result_doc. */
+    objectFree((Object *) result_doc, FALSE);
+    return result;
+}
+
 
 void
 freeSkitProcessors()
@@ -1772,6 +2159,15 @@ processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 		    xmlAddChild(parent_node, child);
 		}
 		else {
+		    while (next_node && (next_node->type == XML_TEXT_NODE)) {
+			next_node = next_node->next;
+		    }
+		    if (next_node) {
+			RAISE(XML_PROCESSING_ERROR, 
+			      newstr("No parent provided for multiple "
+				     "children elements.  Next element "
+				     "is %s", nodeName(next_node)));
+		    }
 		    return child;
 		}
 	    }
@@ -1787,24 +2183,25 @@ processChildren(xmlNode *template_node, xmlNode *parent_node, int depth)
     return processRemaining(template_node->children, parent_node, depth);
 }
 
+/* This is the entry point for processing a template file. */
 Document *
 processTemplate(Document *template)
 {
     xmlNode *root;
     xmlDocPtr doc; 
     xmlNode *newroot;
-    Document *result;
+    Document *result = NULL;
+
     cur_template = template;
     root = xmlDocGetRootElement(template->doc);
-    newroot = processNode(root, NULL, 1);
-    doc = newroot->doc;
-    if (!doc) {
-	doc = xmlNewDoc("1.0");
-	xmlDocSetRootElement(doc, newroot);
+    if (newroot = processNode(root, NULL, 1)) {
+	doc = newroot->doc;
+	if (!doc) {
+	    doc = xmlNewDoc("1.0");
+	    xmlDocSetRootElement(doc, newroot);
+	}
+	result = documentNew(doc, NULL);
     }
-
-    result = documentNew(doc, NULL);
-
     return result;
 }
 

@@ -68,7 +68,6 @@
 		  <skit:foreach from="these_privs" var="this_priv">
 		    <skit:if test="(string= this_priv '*')">
 		      <skit:exec expr="(setq with_grant 'yes')"/>
-		      <RABBLE/>
 		    </skit:if>
 		    <skit:if test="(not (string= this_priv '*'))">
 		      <grant>
@@ -122,21 +121,3 @@
   </cluster>
 </skit:inclusion>  
 
-
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->
