@@ -127,7 +127,9 @@
 #define ASSERTION_FAILURE       55
 #define XPATH_EXCEPTION         56
 #define INDEX_ERROR             57
-#define UNKNOWN_EXCEPTION       58
+#define TSORT_ERROR             58
+#define TSORT_CYCLIC_DEPENDENCY 59
+#define UNKNOWN_EXCEPTION       60
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block

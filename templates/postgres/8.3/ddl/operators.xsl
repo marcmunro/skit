@@ -10,6 +10,11 @@
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>&#x0A;</xsl:text>
+	<xsl:if test="skit:eval('echoes') = 't'">
+          <xsl:text>\echo operator </xsl:text>
+          <xsl:value-of select="../@qname"/>
+          <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
 	<xsl:call-template name="set_owner"/>
 
 	<xsl:text>create operator </xsl:text>
@@ -82,7 +87,7 @@
       	  <xsl:text>&apos;;&#x0A;</xsl:text>
       	</xsl:if>
 	  
-      	<xsl:text>&#x0A;drop operator </xsl:text>
+      	<xsl:text>drop operator </xsl:text>
         <xsl:value-of select="skit:dbquote(@schema)"/>
         <xsl:text>.</xsl:text>
         <xsl:value-of select="@name"/>

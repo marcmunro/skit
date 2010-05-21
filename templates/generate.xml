@@ -14,6 +14,7 @@
     <option name='sources' type='integer' value='1'/>
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
+    <option name='ec*hoes' type='flag' default='true'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
   </skit:options>

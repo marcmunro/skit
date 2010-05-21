@@ -181,6 +181,17 @@ vectorConcat(Vector *vector)
     return stringNewByRef(result);
 }
 
+void
+vectorAppend(Vector *vector1, Vector *vector2)
+{
+    int i;
+
+    for (i = 0; i < vector2->elems; i++) {
+	vectorPush(vector1, vector2->contents->vector[i]);
+    }
+}
+
+
 static Object *
 vectorNth(Vector *vec, int n)
 {
@@ -252,3 +263,44 @@ vectorDel(Vector *vec, Object *obj)
     }
     return NULL;
 }
+
+/* Search within vector for an object that has the same string
+ * representation as obj.
+ */
+boolean
+vectorSearch(Vector *vector, Object *obj, int *p_index)
+{
+    int i;
+    char *objstr = objectSexp(obj);
+    char *vecstr;
+    for (i = 0; i < vector->elems; i++) {
+	vecstr = objectSexp(vector->contents->vector[i]);
+	if (streq(vecstr, objstr)) {
+	    skfree(vecstr);
+	    skfree(objstr);
+	    if (p_index) {
+		*p_index = i;
+	    }
+	    return TRUE;
+	}
+	skfree(vecstr);
+    }
+    skfree(objstr);
+    return FALSE;
+}
+
+
+/* Like vectorPush, but only push the object onto the vector if there is
+ * not already an equivalent object in place
+ */
+Object *
+setPush(Vector *vector, Object *obj)
+{
+    if (vectorSearch(vector, obj, NULL)) {
+	return NULL;
+    }
+
+    return vectorPush(vector, obj);
+}
+
+

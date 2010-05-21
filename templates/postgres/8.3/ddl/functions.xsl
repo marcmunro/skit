@@ -41,6 +41,11 @@
   <xsl:template match="dbobject/function">
     <xsl:if test="../@action='build'">
       <print>
+	<xsl:if test="skit:eval('echoes') = 't'">
+          <xsl:text>\echo function </xsl:text>
+          <xsl:value-of select="../@qname"/>
+          <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 

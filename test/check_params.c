@@ -923,7 +923,7 @@ START_TEST(generate2)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest' port = " PGPORT "host = " PGHOST,
+		    "dbname = 'regressdb' port = " PGPORT "host = " PGHOST,
                     "--generate", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -933,7 +933,7 @@ START_TEST(generate2)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(1986);
+    //showMalloc(299978);
 
     BEGIN {
 	process_args2(8, args);

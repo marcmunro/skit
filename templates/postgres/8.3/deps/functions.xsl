@@ -44,12 +44,26 @@
 	  </xsl:call-template>
 	</xsl:for-each>
 
-	<xsl:for-each select="handler_for[@following]">
-	  <xsl:call-template name="FuncDep">
-	    <xsl:with-param name="fqn" select="@following"/>
-	    <xsl:with-param name="schema" select="@following_schema"/>
-	  </xsl:call-template>
-	</xsl:for-each>
+	<xsl:if test="handler-for-type[@type_input_signature]">
+	  <dependency fqn="{concat('function.', 
+			           ancestor::database/@name, '.',
+				   handler-for-type/@type_input_signature)}"/>
+	</xsl:if>
+	<xsl:if test="handler-for-type[@type_output_signature]">
+	  <dependency fqn="{concat('function.', 
+			           ancestor::database/@name, '.',
+				   handler-for-type/@type_output_signature)}"/>
+	</xsl:if>
+	<xsl:if test="handler-for-type[@type_send_signature]">
+	  <dependency fqn="{concat('function.', 
+			           ancestor::database/@name, '.',
+				   handler-for-type/@type_send_signature)}"/>
+	</xsl:if>
+	<xsl:if test="handler-for-type[@type_receive_signature]">
+	  <dependency fqn="{concat('function.', 
+			           ancestor::database/@name, '.',
+				   handler-for-type/@type_receive_signature)}"/>
+	</xsl:if>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>

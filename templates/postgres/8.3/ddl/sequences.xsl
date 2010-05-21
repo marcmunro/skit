@@ -12,6 +12,11 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
+	<xsl:if test="skit:eval('echoes') = 't'">
+          <xsl:text>\echo sequence </xsl:text>
+          <xsl:value-of select="../@qname"/>
+          <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
         <xsl:text>create sequence </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text>&#x0A;  start with </xsl:text>

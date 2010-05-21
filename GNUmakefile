@@ -16,7 +16,7 @@ top_builddir = $(shell pwd)
 garbage := \\\#*  .\\\#*  *~  *.orig  *.rej  core 
 
 DEFAULT: help
-.PHONEY: DEFAULT all clean list help
+.PHONEY: DEFAULT all clean list help extract
 
 # Connection information for postgres connections
 #DB_PORT = -p 5435
@@ -48,6 +48,10 @@ DB_CONNECT = $(DB_PORT) $(DB_HOST) $(DB_CLUSTER) $(DB_VERSION) $(DB_USER)
 include $(top_builddir)/Makefile.global
 SUBDIRS = src test dbscript regress
 include $(SUBDIRS:%=%/Makefile)
+
+scatter:	skit
+	rm -rf regress/scratch/dbdump/
+	./skit -t extract.xml --dbtype=postgres --connect "dbname = 'regressdb' port = 5432 host = /var/run/postgresql" --scatter --path regress/scratch/dbdump
 
 
 tryf:	skit

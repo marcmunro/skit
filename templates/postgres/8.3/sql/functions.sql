@@ -25,7 +25,11 @@ select p.oid as oid,
        quote_literal(obj_description(p.oid, 'pg_proc')) as comment,
        p.prosrc as source,
        nullif(p.probin, '-') as bin,
-       t.oid as typoid
+       t.oid::oid as typoid,
+       t.typinput::oid as type_input_oid,
+       t.typoutput::oid as type_output_oid,
+       t.typreceive::oid as type_receive_oid,
+       t.typsend::oid as type_send_oid
 from   pg_catalog.pg_proc p
        inner join
           pg_catalog.pg_namespace n

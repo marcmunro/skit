@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "skit_lib.h"
+#include "exceptions.h"
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 #include<libxslt/extensions.h>
@@ -22,7 +23,8 @@
 static char URI[] ="http://www.bloodnok.com/xml/skit";
 
 void
-xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
+xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
+{
     xmlXPathObjectPtr instr;
     xmlXPathObjectPtr instr2;
     String *result;
@@ -70,10 +72,49 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs){
 }
 
 void
+xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs)
+{
+    xmlXPathObjectPtr instr;
+    String *expr;
+    Object *value = NULL;
+    char *result;
+
+    if (nargs != 1) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+		"eval() : expects only one argument\n");
+	ctxt->error = XPATH_INVALID_ARITY;
+	return;
+    }
+    xmlXPathStringFunction(ctxt, 1);
+
+    if (ctxt->value->type != XPATH_STRING) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+			   "dbquote() : invalid arg expecting a string\n");
+	ctxt->error = XPATH_INVALID_TYPE;
+	return;
+    }
+
+    instr = valuePop(ctxt);
+    expr = stringNewByRef(newstr(instr->stringval));
+    xmlXPathFreeObject(instr);
+
+    value = evalSexp(expr->value);
+    objectFree((Object *) expr, TRUE);
+
+    result = objectSexp(value);
+    objectFree((Object *) value, TRUE);
+
+    valuePush(ctxt, xmlXPathNewString((xmlChar *) result));
+    skfree(result);
+}
+
+void
 registerXSLTFunctions(xsltTransformContextPtr ctxt)
 {
     xsltRegisterExtFunction(ctxt, (const xmlChar *) "dbquote",
 			    (const xmlChar *) URI, xsltDBQuoteFunction);
+    xsltRegisterExtFunction(ctxt, (const xmlChar *) "eval",
+			    (const xmlChar *) URI, xsltEvalFunction);
 }
 
 

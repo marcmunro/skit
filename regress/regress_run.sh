@@ -79,6 +79,7 @@ execdrop()
     echo ...executing drop script... 1>&2
     echo ==== RUNNING DROP SCRIPT $1 ==== 
     sh ${REGRESS_DIR}/$1 2>&1 | errcheck
+    errexit
     echo ...checking that database is empty... 1>&2
     pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | wc -l | \
             grep ^1$ >/dev/null
@@ -91,6 +92,7 @@ execbuild()
     echo ...executing build script... 1>&2
     echo ==== RUNNING BUILD SCRIPT $1 ==== 
     sh ${REGRESS_DIR}/$1 2>&1 | errcheck
+    errexit
 }
 
 errexit()
@@ -123,22 +125,22 @@ regression_test1()
     dump_db regressdb scratch/regressdb_test1a.dmp ...
 
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
-	    scratch/regressdb_dump1.xml ...
+	    scratch/regressdb_dump1a.xml ...
 
     echo ...running skit generate... 1>&2
-    gendrop scratch/regressdb_dump1.xml scratch/regressdb_drop1.sql
-    genbuild scratch/regressdb_dump1.xml scratch/regressdb_build1.sql
-    genboth scratch/regressdb_dump1.xml scratch/regressdb_both1.sql
+    gendrop scratch/regressdb_dump1a.xml scratch/regressdb_drop1.sql
+    genbuild scratch/regressdb_dump1a.xml scratch/regressdb_build1.sql
+    genboth scratch/regressdb_dump1a.xml scratch/regressdb_both1.sql
 
     execdrop scratch/regressdb_drop1.sql
     execbuild scratch/regressdb_build1.sql
 
     echo ...checking success of build script... 1>&2
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
-	    scratch/regressdb_dump2.xml ......
+	    scratch/regressdb_dump1b.xml ......
     dump_db regressdb scratch/regressdb_test1b.dmp ......
     diffdump scratch/regressdb_test1a.dmp scratch/regressdb_test1b.dmp
-    diffextract scratch/regressdb_dump1.xml scratch/regressdb_dump2.xml
+    diffextract scratch/regressdb_dump1a.xml scratch/regressdb_dump1b.xml
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== 
@@ -148,19 +150,26 @@ regression_test1()
 regression_test2()
 {
     echo "Running regression test 2 (scatter and gather)..." 1>&2
+    rm -rf scratch/dbdump/*
     build_db regression1.sql
+    dump_db regressdb scratch/regressdb_test2a.dmp ...
+
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/dbdump
     
     echo ...running skit generate from scatterfiles... 1>&2
     gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql
     genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql
-
     execdrop scratch/regressdb_drop2.sql
+    execbuild scratch/regressdb_build2.sql
+    dump_db regressdb scratch/regressdb_test2b.dmp ......
+    diffdump scratch/regressdb_test2a.dmp scratch/regressdb_test2b.dmp
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 2 complete 1>&2
 }
+
+export MYPID=$$
 
 if [ "x$1" = "" ]; then
     regression_test1 >${REGRESS_LOG}

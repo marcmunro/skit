@@ -39,12 +39,52 @@
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
       	<skit:attr name="cost"/>
+
+      	<skit:attr name="signature" 
+      			 expr="(select function_sigs (select tuple 'oid'))"/>
+
 	<skit:if test="typoid">
 	  <handler-for-type>	
 	    <skit:attr name="name"
 		       expr="(select basetypes typoid 'name')"/>
 	    <skit:attr name="schema"
 		       expr="(select basetypes typoid 'schema')"/>
+	    <!-- We provide the signatures only of functions that must be
+		 defined before the current type handler function -->
+	    
+	    <skit:if test="(not (string= (select tuple 'oid') 
+			                 (select tuple 'type_input_oid')))">
+	      <!-- Type_input function -->
+	      <skit:attr name="type_input_signature"
+      			 expr="(select function_sigs 
+			         (select tuple 'type_input_oid'))"/>
+	      
+	      <skit:if test="(not (string= (select tuple 'oid') 
+			                   (select tuple 'type_output_oid')))">
+		<!-- Type_output function -->
+		<skit:attr name="type_output_signature"
+      			   expr="(select function_sigs 
+				   (select tuple 'type_output_oid'))"/>
+
+		<skit:if test="(not (string= (select tuple 'oid') 
+			                     (select tuple 'type_send_oid')))">
+		  <!-- Type_send function -->
+		  <skit:attr name="type_send_signature"
+      			     expr="(select function_sigs 
+				     (select tuple 'type_send_oid'))"/>
+
+		  <skit:if test="(not (string= 
+				        (select tuple 'oid') 
+			                (select tuple 'type_receive_oid')))">
+		    <!-- Type_receive function -->
+		    <skit:attr name="type_receive_signature"
+      			       expr="(select function_sigs 
+				       (select tuple 'type_receive_oid'))"/>
+
+		  </skit:if>
+		</skit:if>
+	      </skit:if>
+	    </skit:if>
 	  </handler-for-type>
 	</skit:if>
 	<skit:if test="(select function 'comment')">
@@ -77,80 +117,6 @@
       	    </skit:foreach>
       	  </params>
       	</skit:if>
-      	<skit:attr name="signature" 
-      			 expr="(select function_sigs (select tuple 'oid'))"/>
-	<!-- Type_handler function -->
-	<skit:var name="otherfn"
-		  expr="(select functions (select tuple 'type_handler_oid'))"/>
-	<skit:attr name="type_handler_schema"
-		   expr="(select otherfn 'schema')"/>
-	<skit:attr name="type_handler_name"
-		   expr="(select otherfn 'name')"/>
-	<skit:attr name="type_handler_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_handler_oid'))"/>
-
-	<!-- Type_input function -->
-	<skit:var name="infn" expr="(select functions 
-			               (select tuple 'type_input_oid')))"/>
-	<skit:attr name="type_input_schema"
-		   expr="(select infn 'schema')"/>
-	<skit:attr name="type_input_name"
-		   expr="(select infn 'name')"/>
-	<skit:attr name="type_input_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_input_oid'))"/>
-
-	<!-- Type_output function -->
-	<skit:var name="outfn" expr="(select functions 
-			               (select tuple 'type_output_oid'))"/>
-	<skit:attr name="type_output_schema"
-		   expr="(select outfn 'schema')"/>
-	<skit:attr name="type_output_name"
-		   expr="(select outfn 'name')"/>
-	<skit:attr name="type_output_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_output_oid'))"/>
-
-	<!-- Type_send function -->
-	<skit:var name="sendfn" expr="(select functions 
-			               (select tuple 'type_send_oid'))"/>
-	<skit:attr name="type_send_schema"
-		   expr="(select sendfn 'schema')"/>
-	<skit:attr name="type_send_name"
-		   expr="(select sendfn 'name')"/>
-	<skit:attr name="type_send_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_send_oid'))"/>
-
-	<!-- Type_receive function -->
-	<skit:var name="recfn" expr="(select functions 
-			               (select tuple 'type_receive_oid'))"/>
-	<skit:attr name="type_receive_schema"
-		   expr="(select recfn 'schema')"/>
-	<skit:attr name="type_receive_name"
-		   expr="(select recfn 'name')"/>
-	<skit:attr name="type_receive_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_receive_oid'))"/>
-
-	<!-- Type_analyze function -->
-	<skit:var name="analfn" expr="(select functions 
-			               (select tuple 'type_analyze_oid'))"/>
-	<skit:attr name="type_analyze_schema"
-		   expr="(select analfn 'schema')"/>
-	<skit:attr name="type_analyze_name"
-		   expr="(select analfn 'name')"/>
-	<skit:attr name="type_analyze_signature"
-      		   expr="(select function_sigs 
-			         (select tuple 'type_analyze_oid'))"/>
-
-
-      	<skit:attr name="type_input_oid"/>
-      	<skit:attr name="type_output_oid"/>
-      	<skit:attr name="type_receive_oid"/>
-      	<skit:attr name="type_send_oid"/>
-      	<skit:attr name="type_analyze_oid"/>
       	<source>
       	  <skit:text name="source"/>
       	</source>

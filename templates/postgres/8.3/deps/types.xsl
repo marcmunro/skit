@@ -14,15 +14,19 @@
     <dbobject type="domain" name="{@name}" 
 	      qname="{skit:dbquote(@schema, @name)}"
 	      fqn="{$domain_fqn}">
-      <xsl:if test="(@basetype_schema != 'pg_toast') and
-		    (@basetype_schema != 'pg_catalog') and
-		    (@basetype_schema != 'information_schema')">
-	<dependencies>
+      <dependencies>
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	</xsl:if>
+
+	<xsl:if test="(@basetype_schema != 'pg_toast') and
+		      (@basetype_schema != 'pg_catalog') and
+		      (@basetype_schema != 'information_schema')">
           <dependency fqn="{concat('type.', 
 			   ancestor::database/@name, '.',
 			   @basetype_schema, '.', @basetype)}"/>
-	</dependencies>
-      </xsl:if>
+	</xsl:if>
+      </dependencies>
 
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
@@ -61,6 +65,9 @@
 	      fqn="{$type_fqn}"
 	      qname="{skit:dbquote(@schema, @name)}">
       <dependencies>
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	</xsl:if>
 	<xsl:for-each select="handler-function">
 	  <dependency fqn="{concat('function.', ancestor::database/@name, 
 			           '.', @signature)}"/>

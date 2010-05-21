@@ -1,127 +1,22 @@
 /**
  * @file   tsort.c
  * \code
- *     Copyright (c) 2009 Marc Munro
+ *     Copyright (c) 2010 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
  *
  * \endcode
  * @brief  
- * Provides functions for performing a topological sort.
- */
-
-/* Definitions
- * FQN: dependencies defined with fqn specify a fully qualified name
- * dependency.  These dependencies must be satisfied by an 
- * object with the same fqn.
- * PQN: dependencies specified with a pqn may be satisfied by *any*
- * object with a matching pqn.  Typically these are for grants, where
- * the necessary privilege to perform a grant may have been provided
- * in several ways.  We currently allow pqn definitions to fail to
- * match an object.  This allows us to have, for example: pqn dependencies
- * on usage privilege on schema x granted to role y, or to public.  We
- * do not need to care whether the grant to y, or the grant to public
- * exists, but if they do (and one of them must), there will be a
- * dependency on it.  This is a crass simplification and technically
- * wrong but is probably good enough.  I'll fix it when I discover it
- * needs to be fixed.
- */
-
-/* Marc's traversal cost-reduced tsort algorithm
- * (by cost we mean the cost of switching contexts when building
- *  each node.  This algorithm aims to do as much as possible within
- *  one context before switching to another.  The context for the
- *  building of a node, is actually the parent node of that being
- *  built.  Keeping switches of build context down means that we switch
- *  from one database to another or one schema to another less
- *  frequently.  This makes the resulting script easier to understand
- *  and edit, and also reduces the number of context changing statements 
- *  that have to be issued - especially for changing databases):
- * A DagNode is a record containing a reference to an xml dbobject
- * element that represents a node in a DAG (Directed Acyclic Graph).
- * Each DagNode contains a list of dependencies and dependents (TODO:
- * CHECK THE VERACITY OF PREVIOUS STATEMENT)
- * The sort runs in a number of passes.  Each pass runs for 
- * given starting node (null for the first pass).
- * pass(current_node, nodelist)
- *   generate a list of nodes that have no dependencies
- *     (these are candidates for being bult)
- *   remove those nodes from nodelist
- *   sort the candidate list by parent, type and name
- *     (parent == current node sorts first)
- *   count = 0
- *   repeat
- *     kids = 0
- *     for each node in the list
- *       append node to results
- *       count++
- *       kids += pass(node, nodelist)
- *     end
- *     count += kids
- *   until kids = 0
- *   return count
- * end   
- *
- *
- * get_candidates(nodelist, buildlist)
- *   for node = each entry in nodelist
- *     if node has no dependencies
- *       parent = get parent for node
- *       append node name to buildlist[parent]
- *     end
- *   end
- * end 
- *
- * get_context_node(cur_context_node, buildlist)
- *   if buildlist[cur_context_node] is not empty
- *     return cur_context_node
- *   else
- *     get first non-empty buildlist key, sorting keys as follows:
- *       descendants of cur_context_node (deepest levels first)
- *         by name and type
- *       deepest nodes first, by name and type
- *   end
- * end 
- *
- * tsort(nodelist)
- *   resultlist = []
- *   buildlist = new hash
- *   context_node = NULL
- *   get_candidates(nodelist, buildlist)
- *   while buildlist is not empty
- *     context_node = get_context_node(context_node, buildlist)
- *     for node in sort nodes in buildlist by type, then name
- *       remove dependencies from and to node
- *       add node to resultlist
- *     end
- *     get_candidates(nodelist, buildlist)
- *   end
- *   if any nodes in nodelist still have dependencies
- *     raise a cyclic dependency error
- *   end
- * end
- *
+ * Provides functions for performing topological sorts.
  */
 
 #include <string.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 
-static String *
-getPrefixedAttribute(xmlNodePtr node, 
-		     char *prefix,
-		     const xmlChar *name)
-{
-    String *result;
-    xmlChar *value  = xmlGetProp(node, name);
-    if (value) {
-	result = stringNewByRef(newstr("%s.%s", prefix, (char *) value));
-	xmlFree(value);
-	return result;
-    }
-    return NULL;
-}
+static boolean do_build = FALSE;
+static boolean do_drop = FALSE;
 
 static void
 doAddNode(Hash *hash, Node *node, DagNodeBuildType build_type)
@@ -139,15 +34,12 @@ doAddNode(Hash *hash, Node *node, DagNodeBuildType build_type)
     }
 }
 
-static boolean do_build = FALSE;
-static boolean do_drop = FALSE;
-
 static Object *
 addDagNodeToHash(Object *node, Object *hash)
 {
-    // If this dbobject describes a diff, we will use that to figure out
-    // what DagNodes to create, otherwise we figure it out from do_build
-    // and do_drop.
+    /* If this dbobject describes a diff, we will use that to figure out
+     * what DagNodes to create, otherwise we figure it out from do_build
+     * and do_drop. */
 
     if (do_build) {
 	doAddNode((Hash *) hash, (Node *) node, BUILD_NODE);
@@ -160,12 +52,11 @@ addDagNodeToHash(Object *node, Object *hash)
     return hash;
 }
 
-
 /* Build a hash of dagnodes from the provided document.  The hash
  * may contain one build node and one drop node per database object,
  * depending on which build and drop options have been selected.
  */
-Hash *
+static Hash *
 dagnodesFromDoc(Document *doc)
 {
     Hash *daghash = hashNew(TRUE);
@@ -275,6 +166,21 @@ findFirstChild(xmlNode *parent, char *name)
     return findNextSibling(parent->children, name);
 }
 
+static String *
+getPrefixedAttribute(xmlNodePtr node, 
+		     char *prefix,
+		     const xmlChar *name)
+{
+    String *result;
+    xmlChar *value  = xmlGetProp(node, name);
+    if (value) {
+	result = stringNewByRef(newstr("%s.%s", prefix, (char *) value));
+	xmlFree(value);
+	return result;
+    }
+    return NULL;
+}
+
 static Object *
 addParentForNode(Object *node_entry, Object *dagnodes)
 {
@@ -308,11 +214,24 @@ addParentForNode(Object *node_entry, Object *dagnodes)
     return (Object *) node;
 }
 
+static Cons *
+consNode(DagNode *node)
+{
+    ObjReference *ref = objRefNew(dereference((Object *) node));
+    Cons *result = consNew((Object *) ref, NULL);
+    return result;
+}
+
+static void
+freeConsNode(Cons *node)
+{
+    objectFree(node->car, FALSE);
+    objectFree((Object *) node, FALSE);
+}
+
 static void
 addDependent(DagNode *node, DagNode *dep)
 {
-    ObjReference *refnode = objRefNew(dereference((Object *) node));
-
     assert(node->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode nodes");
     assert(dep->type == OBJ_DAGNODE,
@@ -321,7 +240,7 @@ addDependent(DagNode *node, DagNode *dep)
     if (!(dep->dependents)) {
 	dep->dependents = vectorNew(10);
     }
-    vectorPush(dep->dependents, (Object *) refnode);
+    setPush(dep->dependents, (Object *) node);
 }
 
 static void
@@ -332,7 +251,14 @@ addDependency(DagNode *node, Cons *deps)
     if (!(node->dependencies)) {
 	node->dependencies = vectorNew(10);
     }
-    vectorPush(node->dependencies, (Object *) deps);
+    if (! setPush(node->dependencies, (Object *) deps)) {
+	/* The dependency was already present, so just free up the cons
+	 * we were passed. */
+	freeConsNode(deps);
+	return;
+    }
+    //dbgSexp(node->dependencies);
+    //dbgSexp(deps);
 
     while (deps) {
 	addDependent(node, (DagNode *) dereference(deps->car));
@@ -340,13 +266,6 @@ addDependency(DagNode *node, Cons *deps)
     }
 }
 
-static Cons *
-consNode(DagNode *node)
-{
-    ObjReference *ref = objRefNew(dereference((Object *) node));
-    Cons *result = consNew((Object *) ref, NULL);
-    return result;
-}
 
 /* Like addDependency but handles dependencies in the opposite direction
  * (eg for drops) */
@@ -513,7 +432,7 @@ addDepsForNode(Object *node_entry, Object *hashes)
     return (Object *) node;
 }
 
-void
+static void
 identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 {
     Cons *hashes = consNew((Object *) dagnodes, (Object *) pqnlist);
@@ -526,267 +445,6 @@ identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 	objectFree((Object *) hashes, FALSE);
     }
     END;
-}
-
-static String root_name = {OBJ_STRING, ".."};
-
-static void
-addToBuildList(Hash *buildlist, DagNode *node)
-{
-    Vector *vector;
-    String *parent_name;
-    if (node->parent) {
-	parent_name = node->parent->fqn;
-    }
-    else {
-	parent_name = &root_name;
-    }
-    
-    vector = (Vector *) hashGet(buildlist, (Object *) parent_name);
-    if (!vector) {
-	vector = vectorNew(20);
-	(void) hashAdd(buildlist, (Object *) stringDup(parent_name),
-		       (Object *) vector);
-    }
-    vectorPush(vector, (Object *) objRefNew((Object *) node));
-    node->status = DAGNODE_SORTING;
-}
-
-static Object *
-addCandidateToBuild(Object *node_entry, Object *buildlist)
-{
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
-    Vector *vector;
-    String *parent_name;
-
-    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
-    if ((node->status == DAGNODE_READY) && (!node->dependencies)) {
-	addToBuildList((Hash *) buildlist, node);
-    }
-    return (Object *) node;
-}
-
-static void
-get_build_candidates(Hash *nodelist, Hash *buildlist)
-{
-    hashEach(nodelist, &addCandidateToBuild, (Object *) buildlist);
-    return;
-}
-
-static int
-fqncmp(String *fqn1, String *fqn2)
-{
-    char *str1 = fqn1->value;
-    char *str2 = fqn2->value;
-
-    while (str1 && str2) {
-	str1 = strchr(str1+1, '.');
-	str2 = strchr(str2+1, '.');
-    }
-    if (str2) {
-	/* str1 has fewer dot characters, so it is the smaller */
-	return -1;
-    }
-    if (str1) {
-	return 1;
-    }
-    return strcmp(fqn1->value, fqn2->value);
-}
-
-/* Return the heridity part of the fqn.  FQNs have the form:
- * action.type.ancestor_heridity.name or action.type in the case of the
- * cluster. */
-static char *
-fqnHeridity(char *fqn)
-{
-    char *notype = strchr(fqn, '.');
-    char *result;
-    if (notype) {
-	notype++;
-	if (result = strchr(notype, '.')) {
-	    return result + 1;
-	}
-    }
-    return notype;
-}
-
-static boolean
-isDescendant(String *fqn, String *child_fqn)
-{
-    /* Eliminate the type prefix from both fqns */
-    char *parent = fqnHeridity(fqn->value);
-    char *child = fqnHeridity(child_fqn->value);
-
-    /* dname is a descendant iff, all characters match up to length
-     * of the parent fqn */
-
-    assert(parent, "isDescendant: Oops, parent is not defined");
-    assert(child, "isDescendant: Oops, child is not defined");
-
-    while ((*parent != '\0') && (*parent == *child)) {
-	parent++;
-	child++;
-    }
-    return *parent == '\0';
-}
-
-static Object *
-getPreferredContext(Object *node_entry, Object *cons)
-{
-    String *fqn = (String *) ((Cons *) node_entry)->car;
-    Object *result = ((Cons *) node_entry)->cdr;
-    String *prev = (String *) ((Cons *)cons)->cdr;
-    String *context = (String *) ((Cons *)cons)->car;
-
-    if (context) {
-	if (!isDescendant(context, fqn)) {
-	    return result;
-	}
-    }
-
-    if (!prev) {
-	((Cons *)cons)->cdr = (Object *) fqn;
-    }
-    else {
-	if (fqncmp(fqn, prev) < 0) {
-	    ((Cons *)cons)->cdr = (Object *) fqn;
-	}
-    }
-    return result;
-}
-
-/* Get the most appropriate context_node for the set of nodes to be
- * built next.  We sort on number of dots in fqn and then fqn
- */
-static String *
-get_context_node(Hash *buildlist)
-{
-    Cons cons = {OBJ_CONS, NULL, NULL};
-    hashEach(buildlist, &getPreferredContext, (Object *) &cons);
-    return (String *) cons.cdr;
-}
-
-
-/* Find the most appropriate context_node from buildlist that is a child
- * of the current context_node.
- */
-static String *
-get_child_context_node(DagNode *cur_node, Hash *buildlist)
-{
-    Cons cons = {OBJ_CONS, (Object *) cur_node->fqn, NULL};
-    hashEach(buildlist, &getPreferredContext, (Object *) &cons);
-    return (String *) cons.cdr;
-}
-
-/* Compare two DagNodes with the result providing a reverse ordering */
-static int
-dagnodercmp(const void *node1, const void *node2)
-{
-    Object *obj1 = (Object *) (*(void **) node1);
-    Object *obj2 = (Object *) (*(void **) node2);
-    DagNode *dnode1;
-    DagNode *dnode2;
-    int result;
-
-    assert(obj1->type == OBJ_OBJ_REFERENCE, 
-	   newstr("cmpBuildNodes: invalid obj1 type(%d) %p", 
-		  obj1->type, obj1));
-    assert(obj2->type == OBJ_OBJ_REFERENCE, 
-	   newstr("cmpBuildNodes: invalid obj2 type(%d) %p", 
-		  obj2->type, obj2));
-    dnode1 = (DagNode *) dereference(obj1);
-    dnode2 = (DagNode *) dereference(obj2);
-    assert(dnode1->type == OBJ_DAGNODE, 
-	   newstr("cmpBuildNodes: invalid dnode1 type(%d) %p", 
-		  dnode1->type, dnode1));
-    assert(dnode2->type == OBJ_DAGNODE, 
-	   newstr("cmpBuildNodes: invalid dnode2 type(%d) %p", 
-		  dnode2->type, dnode2));
-
-    return strcmp(dnode2->fqn->value, dnode1->fqn->value);
-}
-
-
-static void
-reverseSortBuildVector(Vector *vector)
-{
-    qsort(vector->contents->vector, vector->elems, 
-	  sizeof(Object *), &dagnodercmp);
-}
-
-static boolean
-inList(Cons *list, Object *obj)
-{
-    while (list) {
-	if (dereference(list->car) == obj) {
-	    return TRUE;
-	}
-	list = (Cons *) list->cdr;
-    }
-    return FALSE;
-}
-
-static void
-removeDependency(DagNode *from, DagNode *dependency)
-{
-    int i;
-    Cons *deplist;
-    Object *obj;
-
-    if (from->dependencies) {
-	for (i = 0; i < from->dependencies->elems; i++) {
-	    deplist = (Cons *) from->dependencies->contents->vector[i];
-	    if (inList(deplist, (Object *) dependency)) {
-		obj = vectorRemove(from->dependencies, i);
-		objectFree(obj, TRUE);
-	    }
-	}
-	if (!from->dependencies->elems) {
-	    objectFree((Object *) from->dependencies, TRUE);
-	    from->dependencies = NULL;
-	}
-    }
-}
-
-/* Remove dependencies to and from node, prior to adding node to the
- * results list.  If this results in nodes having no dependencies, they
- * will be added to buildlist.  */
-static void
-removeNodeFromDag(DagNode *node, Hash *allnodes, Hash *buildlist)
-{
-    Vector *vec = node->dependents;
-    DagNode *depnode;
-    Object *obj;
-    int i;
-
-    assert(node->status == DAGNODE_SORTING,
-	   "Incorrect status for node");
-    if (vec) {
-	for (i = vec->elems-1; i >= 0; i--) {
-	    depnode = (DagNode *) dereference(vec->contents->vector[i]);
-	    assert(depnode->type == OBJ_DAGNODE,
-		   "removeNodeFromDag: Cannot handle non-dagnode depnodes");
-	    if (depnode->dependencies->elems <= 1) {
-		objectFree((Object *) depnode->dependencies, TRUE);
-		depnode->dependencies = NULL;
-		addToBuildList(buildlist, depnode);
-	    }
-	    else {
-		removeDependency(depnode, node);
-	    }
-	    node->status = DAGNODE_SORTED;
-	}
-    }
-    /* All dependencies have been removed, now we free the dependents
-     * vector */
-    objectFree((Object *) vec, TRUE);
-    node->dependents = NULL;
-
-    /* And since nothing now references node, we can remove it from the
-     * allnodes hash.  Note that we don't free the object as it will
-     * be in the results vector and will be freed from there. */
-
-    obj = hashDel(allnodes, (Object *) node->fqn);
 }
 
 static void
@@ -824,157 +482,166 @@ showDeps(Object *node_entry, Object *dagnodes)
 }
 
 static void
-showAllDeps(Hash *buildlist)
+showAllDeps(Hash *nodes)
 {
-    hashEach(buildlist, &showDeps, (Object *) buildlist);
+    hashEach(nodes, &showDeps, (Object *) nodes);
 }
 
-static void
-buildInContext(String *context_fqn, Hash *buildlist,
-	       Hash *allnodes, Vector *results)
-{
-    Vector *to_build;
-    Object *ref;
-    Object *entry;
-    DagNode *node;
-    int i;
-    String *child_context_fqn;
-
-    while ((to_build = (Vector *) hashGet(buildlist, (Object *) context_fqn)) &&
-	   to_build->elems) {
-	reverseSortBuildVector(to_build);
-	//printSexp(stderr, "CONTEXT: ", context_fqn);
-	//printSexp(stderr, "BUILDLIST: ", buildlist);
-	ref = vectorPop(to_build);
-	node = (DagNode *) dereference(ref);
-	//printSexp(stderr, "BUILDING: ", node);
-	objectFree((Object *) ref, FALSE);
-	removeNodeFromDag(node, allnodes, buildlist);
-	//showAllDeps(allnodes);
-	vectorPush(results, (Object *) node);
-
-	/* Building this node has established a new build context.
-	 * Try building under that context. */
-	get_build_candidates(allnodes, buildlist);
-	while (child_context_fqn = get_child_context_node(node, buildlist)) {
-	    buildInContext(child_context_fqn, buildlist, allnodes, results);
-	}
-    }
-    /* Now remove this context from the buildlist */
-
-    //printSexp(stderr, "CONTEXT: ", context_fqn);
-    //printSexp(stderr, "BUILDLIST: ", buildlist);
-    entry = hashDel(buildlist, (Object *) context_fqn);
-    objectFree(entry, TRUE);
-    //fprintf(stderr, "END\n");
-}
-
-static Vector *
-tsort(Hash *allnodes)
-{
-    Vector *results = NULL;
-    Hash   *buildlist = hashNew(TRUE);
-    int     elems;
-    String *context_fqn = NULL;
-
-    elems = hashElems(allnodes);
-    results = vectorNew(elems);
-    //dbgSexp(allnodes);
-    get_build_candidates(allnodes, buildlist);
-
-    while (hashElems(buildlist)) {
-	context_fqn = get_context_node(buildlist);
-	buildInContext(context_fqn, buildlist, allnodes, results);
-    }
-    objectFree((Object *) buildlist, TRUE);
-    return results;
-}
-
-
-/* Reset the DAGNODE status of each DagNode */
 static Object *
-resetDagNodeEntry(Object *node_entry, Object *ignore)
+addCandidateToBuild(Object *node_entry, Object *results)
 {
-    DagNode *node;
-    assert(isCons((Cons *) node_entry),
-	   "resetDagNodeEntry: parameter is not a cons cell");
-    node = (DagNode *) ((Cons *) node_entry)->cdr;
-    assert((node->type == OBJ_DAGNODE),
-	   "resetDagNodeEntry: entry is not a dagnode");
-    fprintf(stderr, "RESETTING: %s\n", node->fqn->value);
-    node->status = DAGNODE_READY;
+    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    Vector *vector = (Vector *) results;
+    String *parent_name;
+
+    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
+    if ((node->status == DAGNODE_READY) && (!node->dependencies)) {
+	vectorPush(vector, (Object *) node);
+    }
     return (Object *) node;
 }
 
 
-/* Return any entry from the hash */
-static Object *
-anyEntry(Object *node_entry, Object *p_result)
+static Vector *
+get_build_candidates(Hash *nodelist)
 {
-    Object *entry;
-    Object **result_ptr = (Object **) p_result;
-
-    assert(isCons((Cons *) node_entry),
-	   "anyEntry: parameter is not a cons cell");
-    entry = ((Cons *) node_entry)->cdr;
-    *result_ptr = entry;
-    return entry;
+    int elems = hashElems(nodelist);
+    Vector *results = vectorNew(elems);
+    BEGIN {
+	hashEach(nodelist, &addCandidateToBuild, (Object *) results);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, FALSE);
+    }
+    END
+    return results;
 }
 
-/* This implements the node traversal of a traditional tsort.  It visits
- * each dependency in turn setting the status to SORTING.  If it finds 
- * a node where the status is already SORTING, then a cyclic dependency
- * has been encountered.  Note that this only deals with fqns for now.
- * I hope there will be no need to deal properly with pqns for this,
- * which is only here for better error reporting.
- */
+static boolean
+inList(Cons *list, Object *obj)
+{
+    while (list) {
+	if (dereference(list->car) == obj) {
+	    return TRUE;
+	}
+	list = (Cons *) list->cdr;
+    }
+    return FALSE;
+}
+
 static void
-traverse(DagNode *this, DagNode *from)
+removeDependency(DagNode *from, DagNode *dependency)
 {
     int i;
-    DagNode *next;
-    Cons *cons;
+    Cons *deplist;
+    Object *obj;
 
-    if (this->status == DAGNODE_SORTING) {
-	RAISE(GENERAL_ERROR, 
-	      newstr("cyclic dependency detected from %s to %s",
-		     from->fqn->value, this->fqn->value));
-    }
-    if (this->status == DAGNODE_READY) {
-	this->status = DAGNODE_SORTING;
-	fprintf(stderr, "TRAVERSED TO NEW NODE\n");
-	showNodeDeps(this);
-	if (this->dependencies) {
-	    for (i = 0; i < this->dependencies->elems; i++) {
-		cons = (Cons *) this->dependencies->contents->vector[i];
-		next = (DagNode *) dereference(cons->car);
-
-		fprintf(stderr, "Traversing to dependency %s\n", 
-			next->fqn->value);
-		dbgSexp(next);
-		traverse(next, this);
-		fprintf(stderr, "back\n");
+    if (from->dependencies) {
+	for (i = 0; i < from->dependencies->elems; i++) {
+	    deplist = (Cons *) from->dependencies->contents->vector[i];
+	    if (inList(deplist, (Object *) dependency)) {
+		obj = vectorRemove(from->dependencies, i);
+		objectFree(obj, TRUE);
 	    }
 	}
-	if (this->parent) {
-	    next = (DagNode *) dereference((Object *) this->parent);
-	    fprintf(stderr, "Traversing to parent %s\n", next->fqn->value);
-	    traverse(next, this);
-	    fprintf(stderr, "back\n");
+	if (!from->dependencies->elems) {
+	    objectFree((Object *) from->dependencies, TRUE);
+	    from->dependencies = NULL;
 	}
-	this->status = DAGNODE_SORTED;
     }
 }
 
-static void
-describeDAGBreakage(Hash *dagnodes)
+static Vector *
+simple_tsort_visit(DagNode *visit_node, Hash *candidates)
 {
-    DagNode *start = NULL;
+    int elems = hashElems(candidates);
+    Vector *deps;
+    Vector *results = NULL;
+    Vector *kid_results = NULL;
+    DagNode *next;
 
-    hashEach(dagnodes, &resetDagNodeEntry, NULL);
-    hashEach(dagnodes, &anyEntry, (Object *) &start);
-    traverse(start, NULL);
-    return;
+    results = vectorNew(elems);
+    
+    vectorPush(results, (Object *) visit_node);
+    
+    if (deps = visit_node->dependents) {
+	while (next = (DagNode *) dereference(vectorPop(deps))) {
+	    removeDependency(next, visit_node);
+	    if (!next->dependencies) {
+		kid_results = simple_tsort_visit(next, candidates);
+		vectorAppend(results, kid_results);
+		objectFree((Object *) kid_results, FALSE);
+		kid_results = NULL;
+	    }
+	}
+    }
+
+    /* Finally, we remove visit_node from our candidates hash. */
+    (void) hashDel(candidates, (Object *) visit_node->fqn);
+    return results;
+}
+
+/* This is not the standard tsort algorithm.  Instead it is a very
+ * naive algorithm, which happens to deal well with PQN (partially
+ * qualified name)-based dependencies.  A dependency based on a PQN
+ * offers a set of alternate dependencies.  A PQN-based dependency is
+ * satisfied if any of the dependencies in the set is satisfied.  The
+ * standard tsort algorithm is very efficient but is driven by
+ * dependencies, so if one dependency of a PQN cannot be satisfied a
+ * cyclic dependency will be found.  In this case, we would have to 
+ * backtrack and try the next alternate dependency.  Backtracking in a a
+ * recursive algorithm is unpleasant.
+ * This algorithm works in the opposite direction.  It starts by
+ * building a list of all leaf nodes (those without dependencies).  Then
+ * it detaches these from the original list, revoking the dependencies
+ * as it goes.  What this means is that the algorithm is driven from
+ * dependents, and so as soon as any dependent is dealt with for a
+ * PQN-based dependency, the dependency is satisfied.  This obviates the
+ * need for backtracking at the expense of a less efficient algorithm.
+ */
+static Vector *
+simple_tsort(Hash *allnodes)
+{
+    Vector *results = NULL;
+    Vector *kid_results = NULL;
+    Vector *buildable = NULL;
+    DagNode *node = NULL;
+    int elems;
+    int prev = 0;
+    BEGIN {
+	elems = hashElems(allnodes);
+
+	while (TRUE) {
+	    buildable = get_build_candidates(allnodes);
+	    while (node = (DagNode *) dereference(vectorPop(buildable))) {
+		kid_results = simple_tsort_visit(node, allnodes);
+		if (results) {
+		    vectorAppend(results, kid_results);
+		    objectFree((Object *) kid_results, FALSE);
+		}
+		else {
+		    results = kid_results;
+		}
+	    }
+	    objectFree((Object *) buildable, TRUE);
+	    if (results->elems == elems) {
+		/* We are done! */
+		break;
+	    }
+	    if (results->elems <= prev) {
+		showAllDeps(allnodes);
+		RAISE(TSORT_CYCLIC_DEPENDENCY,
+		      newstr("No progress - cyclic dependency?"));
+	    }
+	    prev = results->elems;
+	}
+
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, TRUE);
+    }
+    END;
+    return results;
 }
 
 Vector *
@@ -983,26 +650,13 @@ gensort(Document *doc)
     Hash *dagnodes = NULL;
     Hash *pqnhash = NULL;
     Vector *sorted = NULL;
+
+
     BEGIN {
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
-	//showAllDeps(dagnodes);
-	sorted = tsort(dagnodes);
-	//dbgSexp(sorted);
-	if (hashElems(dagnodes)) {
-	    /* If we get here something bad has happened: there are
-	       unbuilt dagnodes in the dagnodes hash, which means that
-	       for some reason we have not been able to find a single build
-	       candidate for the remaining dagnodes.  This means our DAG
-	       is effectively broken (not acyclic).  */
-	    objectFree((Object *) sorted, TRUE);
-	    describeDAGBreakage(dagnodes);  /* This will raise an
-					     * exception if it detects
-					     * the problem. */
-					     
-	    RAISE(GENERAL_ERROR, newstr("NO BUILD CANDIDATES!"));
-	}
+	sorted = simple_tsort(dagnodes);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1036,6 +690,18 @@ nodeEq(DagNode *node1, DagNode *node2)
     return TRUE;
 }
 
+/* Identify whether it is necessary to navigate to/from node */
+static boolean
+requiresNavigation(xmlNode *node)
+{
+    String *visit = nodeAttribute(node, "visit");
+    if (visit) {
+	objectFree((Object *) visit, TRUE);
+	return TRUE;
+    }
+    return FALSE;
+}
+
 static DagNode *
 getCommonRoot(DagNode *current, DagNode *target)
 {
@@ -1055,18 +721,6 @@ getCommonRoot(DagNode *current, DagNode *target)
 	target = target->parent;
     }
     return current;
-}
-
-/* Identify whether it is necessary to navigate to/from node */
-static boolean
-requiresNavigation(xmlNode *node)
-{
-    String *visit = nodeAttribute(node, "visit");
-    if (visit) {
-	objectFree((Object *) visit, TRUE);
-	return TRUE;
-    }
-    return FALSE;
 }
 
 /* Depart the current node, returning a navigation DagNode if
@@ -1099,6 +753,8 @@ arriveNode(DagNode *target)
     return navigation;
 }
 
+
+
 /* Return the node in to's ancestry that is the direct descendant of
  * from */
 static DagNode *
@@ -1123,6 +779,7 @@ navigationToNode(DagNode *from, DagNode *target)
     DagNode *next = NULL;
     DagNode *common_root = NULL;
     DagNode *navigation = NULL;
+
     BEGIN {
 	if (from) {
 	    common_root = getCommonRoot(from, target);

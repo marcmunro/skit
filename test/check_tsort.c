@@ -90,6 +90,7 @@ START_TEST(check_gensort)
     ignore = evalSexp(tmp = newstr("(setq build t)"));
     objectFree(ignore, TRUE);
     skfree(tmp);
+    //showMalloc(1104);
     ignore = evalSexp(tmp = newstr("(setq drop t)"));
     objectFree(ignore, TRUE);
     skfree(tmp);

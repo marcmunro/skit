@@ -9,6 +9,16 @@
   <xsl:template match="dbobject/tablespace">
     <xsl:if test="../@action='build'">
       <print>
+	<xsl:if test="skit:eval('echoes') = 't'">
+          <xsl:text>\echo tablespace </xsl:text>
+          <xsl:value-of select="../@qname"/>
+          <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
+	<xsl:if test="@location=''">
+	  <xsl:text>&#x0A;/* This is a default tablespace.  We </xsl:text>
+	  <xsl:text>cannot and should not attempt</xsl:text>
+	  <xsl:text>&#x0A;   to create it.</xsl:text>
+	</xsl:if>
         <xsl:text>&#x0A;create tablespace </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text> owner </xsl:text>
@@ -17,6 +27,9 @@
         <xsl:value-of select="@location"/>
         <xsl:text>&apos;;&#x0A;</xsl:text>
 	<xsl:apply-templates/>
+	<xsl:if test="@location=''">
+	  <xsl:text> */&#x0A;</xsl:text>
+	</xsl:if>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
@@ -29,6 +42,11 @@
         <xsl:text> contain objects in other dbs;&#x0A;</xsl:text>
         <xsl:text>\echo To perform the drop uncomment the</xsl:text>
 	<xsl:text>  following line:&#x0A;</xsl:text>
+	<xsl:if test="@name='pg_default'">
+	  <!-- If the tablespace is pg_default, try even harder not to
+	       drop it! -->
+          <xsl:text>-- </xsl:text>
+	</xsl:if>
         <xsl:text>-- drop tablespace </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;&#x0A;</xsl:text>

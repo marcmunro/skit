@@ -318,10 +318,20 @@ extern char *vectorStr(Vector *vector);
 extern void vectorFree(Vector *vector, boolean free_contents);
 extern void vectorStringSort(Vector *vector);
 extern String *vectorConcat(Vector *vector);
+extern void vectorAppend(Vector *vector1, Vector *vector2);
 extern Object *vectorGet(Vector *vec, Object *key);
 extern Object *vectorRemove(Vector *vec, int index);
 extern Object *vectorDel(Vector *vec, Object *obj);
 extern void vectorSort(Vector *vec, ComparatorFn *fn);
+extern boolean vectorSeach(Vector *vec, Object *obj, int *p_index);
+extern Object *setPush(Vector *vector, Object *obj);
+#define setPop vectorPop
+#define setStr vectorStr
+#define setGet vectorSet
+#define setRemove vectorRemove
+#define setDel vectorDel
+#define setSearch vectorSearch
+
 
 // hash.c
 extern Hash *hashNew(boolean use_skalloc);

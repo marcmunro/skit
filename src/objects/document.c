@@ -248,7 +248,7 @@ static boolean addDummyElement = FALSE;
 
 static void here()
 {
-    fprintf(stderr, "HERE\n");
+    //fprintf(stderr, "HERE\n");
     addDummyElement = FALSE;
     return;
 }

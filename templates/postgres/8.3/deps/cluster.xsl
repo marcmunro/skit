@@ -38,7 +38,7 @@
     <dbobject type="dbincluster" name="{@name}" 
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}">
       <dependencies>
-	<xsl:if test="@tablespace != 'pg_default'">
+	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.', $parent_core, 
 			   '.', @tablespace)}"/>
 	</xsl:if>
@@ -65,7 +65,8 @@
       <dependencies>
 	<dependency fqn="{concat('dbincluster.cluster.', @name)}"/>
       </dependencies>
-      <database name="{@name}">
+      <database>
+	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="@name"/>
 	</xsl:apply-templates>

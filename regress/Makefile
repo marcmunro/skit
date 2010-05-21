@@ -111,6 +111,7 @@ regression_test1: skit drop_regress_db
 
 regression_test2: skit drop_regress_db \
 		$(REGRESS_DIR)/scratch/regressdb_both1.sql
+	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -135,6 +136,8 @@ regress_distclean: regress_clean
 
 # Describe what this makefile can build
 regress_help:
-	@echo "regress      - Run regression test suite"
+	@echo "regress              - Run full regression test suite"
 	@echo "regress_cluster      - Create regression test database cluster"
+	@echo "regression_test1     - Regression test 1 (extract/generate)"
+	@echo "regression_test2     - Regression test 2 (scatter/gather)"
 	@echo "drop_regress_cluster - Drop regression test database cluster"

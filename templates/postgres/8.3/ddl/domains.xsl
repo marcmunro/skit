@@ -10,6 +10,11 @@
   <xsl:template match="dbobject/domain">
     <xsl:if test="../@action='build'">
       <print>
+	<xsl:if test="skit:eval('echoes') = 't'">
+          <xsl:text>\echo domain </xsl:text>
+          <xsl:value-of select="../@qname"/>
+          <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 	

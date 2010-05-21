@@ -4,7 +4,7 @@ select c.oid::oid as oid,
        n.nspname as schema,
        c.relname as name,
        r.rolname as owner,
-       case t.spcname when 'pg_default' then null 
+       case when t.spcname is null then td.spcname
        else t.spcname end as tablespace, 
        c.relacl as privs,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
