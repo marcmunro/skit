@@ -26,7 +26,7 @@ REGRESS_LOG = $(REGRESS_DIR)/regress.log
 REGRESSDB_PORT = 54325
 REGRESSDB_HOST = /var/run/postgresql
 
-PGBIN = $(shell pg_config --bindir)
+PGBIN = $(shell $(REGRESS_DIR)/regress_run.sh pgbin)
 PSQL = psql -p $(REGRESSDB_PORT) -h $(REGRESSDB_HOST) -v home=$(top_builddir) 
 PG_DUMP = pg_dump -p $(REGRESSDB_PORT)
 

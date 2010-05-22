@@ -1457,7 +1457,6 @@ writeScatterFile(String *path, String *name, xmlNode *node,
     Object *checkonly = symbolGetValue("checkonly");
     Object *silent = symbolGetValue("silent");
 
-    boolean debug = FALSE; //streq("regress/scratch/dbdump/cluster/databases//regressdb.xml", fullpath->value);
     BEGIN {
 	prev_doc = simpleDocFromFile(fullpath);
 	scatter_root = firstElement(node->children);
@@ -1494,10 +1493,6 @@ writeScatterFile(String *path, String *name, xmlNode *node,
 	if (diff != IS_SAME) {
 	    new_root = xmlCopyNode(scatter_root, 1);
 	    new_doc = docForNode(new_root);
-	if (debug) {
-	    dbgSexp(scatter_root->doc->_private);
-	    dbgSexp(new_doc);
-	}
 	    if (header_node) {
 		add_header(new_root, header_node);
 	    }

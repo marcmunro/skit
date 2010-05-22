@@ -121,7 +121,7 @@ regression_test1()
 {
     echo "Running regression test 1 (build and drop)..." 1>&2
     mkdir regress/scratch 2>/dev/null
-    build_db regression1.sql
+    build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
 
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
@@ -151,7 +151,7 @@ regression_test2()
 {
     echo "Running regression test 2 (scatter and gather)..." 1>&2
     rm -rf scratch/dbdump/*
-    build_db regression1.sql
+    build_db regression1_`pguver`..sql
     dump_db regressdb scratch/regressdb_test2a.dmp ...
 
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
@@ -169,7 +169,61 @@ regression_test2()
     echo Regression test 2 complete 1>&2
 }
 
+verfromstring()
+{
+    sed -e '2d 
+s/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9]/\1/'
+}
+
+verfrompath()
+{
+    sed -e 's!.*/\([0-9][0-9]*\.[0-9][0-9]*\)/.*!\1!' | grep '[0-9]\.[0-9]'
+}
+
+pgver()
+{
+    psql --version | verfromstring
+}
+
+pguver()
+{
+    psql --version | verfromstring | sed -e 's/\./_/g'
+}
+
+pgbin()
+{
+    if [ which_pg_config >/dev/null -a -x `which pg_config` ]; then
+	# pg_config is runnable
+	config_bin=`pg_config --bindir`
+	config_ver=`echo $config_bin | verfrompath`
+
+	# pg_config lies to us on debian systems - at least it doesn't
+	# tell us the whole story as there may be multiple versions
+	# of bin directories and it may not give us the one we want
+	# to be using.
+	if [ "x${config_ver}" != "x" ]; then
+	    psqlver=`pgver`
+	    if [ "x${psqlver}" != "x" ]; then
+		if [ "${psqlver}" != "${config_ver}" ]; then
+		    # Looks like pg_config is lying.  We should
+		    # be able to just substitute the psqlver value in
+		    echo ${config_bin} | sed -e "s/${config_ver}/${psqlver}/"
+		    exit
+		fi	
+	    fi
+	fi	
+	echo ${config_bin}
+    else
+	which psql
+    fi
+}
+
 export MYPID=$$
+
+if [ "x$1" = "xpgbin" ]; then
+    pgbin
+    exit
+fi
 
 if [ "x$1" = "" ]; then
     regression_test1 >${REGRESS_LOG}
