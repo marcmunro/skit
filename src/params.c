@@ -182,6 +182,7 @@ nextArg(String **p_arg, boolean *p_option)
 	}
     }
     *p_arg = result;
+    return result;
 }
 
 

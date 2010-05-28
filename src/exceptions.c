@@ -300,7 +300,7 @@ exceptionEnd(char *file, int line)
 
 
 /* Define signal handling, using the skit exception system, for a number
- * of standard signals.  Thi sallows things like division by zero to be
+ * of standard signals.  This allows things like division by zero to be
  * trapped as exceptions.
  */
 void
