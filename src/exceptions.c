@@ -299,19 +299,6 @@ exceptionEnd(char *file, int line)
 }
 
 
-/* Called on entry to a BEGIN block, this returns TRUE if no exception
- * has been raised in the block (which will happen on initial entry),
- * and FALSE if an exception has been raised.
- */
-boolean
-exceptionNotRaised(int signal)
-{
-    Exception *ex = exceptionCurHandler();
-    ex->signal = signal;
-    return signal == 0;
-}
-
-
 /* Define signal handling, using the skit exception system, for a number
  * of standard signals.  Thi sallows things like division by zero to be
  * trapped as exceptions.

@@ -60,7 +60,7 @@
  * Would have expanded as follows:
  * {
  *     exceptionPush(exceptionNew(__FILE__, __LINE__));
- *     if (exceptionNotRaised(sigsetjmp(exceptionCurHandler()->handler, 1))) {
+ *     if (sigsetjmp(exceptionCurHandler()->handler, 1) == 0) {
  * 	// Protected Code
  *         exceptionPop();
  *     }
@@ -80,7 +80,7 @@
  *     { 
  * 	boolean exception_raised_jgjlksljksch = TRUE;
  * 	exceptionPush(exceptionNew(__FILE__, __LINE__));
- * 	if (exceptionNotRaised(sigsetjmp(exceptionCurHandler()->handler, 1))) {
+ * 	if (sigsetjmp(exceptionCurHandler()->handler, 1) == 0) {
  * 	    // Protected Code
  * 	    exception_raised_jgjlksljksch = FALSE;
  * 	    //exceptionPop();
@@ -140,10 +140,11 @@
  */
 #define BEGIN								\
     {									\
-	boolean exception_raised_jgjlksljksch = TRUE;			\
+	boolean exception_avoided_jgjlksljksch = FALSE;			\
+	int     exception_signal_jgjlksljksch;                          \
 	exceptionPush(exceptionNew(__FILE__, __LINE__));		\
-	if (exceptionNotRaised(						\
-		sigsetjmp(exceptionCurHandler()->handler, 1))) {	\
+	if (0 == (exception_signal_jgjlksljksch =                       \
+                    sigsetjmp(exceptionCurHandler()->handler, 1))) {	\
 
 /* End the if-block opened by BEGIN above, removing the exception
  * handler from the exception stack if we successfully reach the end of
@@ -153,10 +154,11 @@
  * will be re-raised on exit from the block (at the END token).
  */
 #define EXCEPTION(x)					\
-	    exception_raised_jgjlksljksch = FALSE;      \
+	    exception_avoided_jgjlksljksch = TRUE;      \
     	}						\
 	else {						\
-	    Exception *x = exceptionCurHandler(); {
+	    Exception *x = exceptionCurHandler();       \
+	    x->signal = exception_signal_jgjlksljksch; {
 
 /* Catch a specific numbered exception.  This block may re-raise the
  * exception using RAISE() with no arguments, may raise a different
@@ -182,11 +184,11 @@
 /* End an exception block, re-raising any unhandled exceptions. */
 #define END }						\
         }						\
-        if (exception_raised_jgjlksljksch) {		\
-	    exceptionEnd(__FILE__, __LINE__);		\
+        if (exception_avoided_jgjlksljksch) {		\
+	    exceptionPop();				\
         }						\
         else {						\
-	    exceptionPop();				\
+	    exceptionEnd(__FILE__, __LINE__);		\
         }						\
     }
 
