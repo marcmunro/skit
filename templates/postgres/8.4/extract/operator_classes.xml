@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="operator_class" from="operator_classes" 
+		filter="(string= (select operator_class 'schema')
+			         (select schema 'name'))">
+    <operator_class>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="is_default"/>
+      <skit:attr name="intype_name"/>
+      <skit:attr name="intype_schema"/>
+      <skit:attr name="family"/>
+      <skit:attr name="family_schema"/>
+      <skit:attr name="method"/>
+      <skit:attr name="generates_opfamily"/>
+      <skit:if test="(select operator_class 'comment')">
+	<comment>
+	  <skit:text expr="(select operator_class 'comment')"/>
+	</comment>
+      </skit:if>
+
+      <skit:foreach var="opclass_oper" from="opclass_opers"
+		    filter="(string= (select opclass_oper 'class_oid')
+			             (select operator_class 'oid'))">
+	<opclass_operator>
+	  <skit:attr name="name"/>
+	  <skit:attr name="schema"/>
+	  <skit:attr name="strategy"/>
+	  <skit:if test="(select opclass_oper 'leftarg_type')">
+	    <arg position="left">
+	      <skit:attr name="name"
+      			 expr="(select opclass_oper 'leftarg_type')"/>
+	      <skit:attr name="schema"
+      			 expr="(select opclass_oper 'leftarg_schema')"/>
+	    </arg>	
+	  </skit:if>
+	  <skit:if test="(select opclass_oper 'rightarg_type')">
+	    <arg position="right">
+	      <skit:attr name="name"
+      			 expr="(select opclass_oper 'rightarg_type')"/>
+	      <skit:attr name="schema"
+      			 expr="(select opclass_oper 'rightarg_schema')"/>
+	    </arg>	
+	  </skit:if>
+	</opclass_operator>
+      </skit:foreach>
+      <skit:foreach var="opclass_func" from="opclass_funcs"
+		    filter="(string= (select opclass_func 'class_oid')
+			             (select operator_class 'oid'))">
+	<opclass_function>
+	  <skit:attr name="name"/>
+	  <skit:attr name="schema"/>
+	  <skit:attr name="proc_num"/>
+	  <params>
+	    <param position="1">
+	      <skit:attr name="type" 
+			 expr="(select opclass_func 'left_type')"/>
+	      <skit:attr name="schema" 
+			 expr="(select opclass_func 'left_type_schema')"/>
+	    </param>
+	    <param position="2">
+	      <skit:attr name="type" 
+			 expr="(select opclass_func 'right_type')"/>
+	      <skit:attr name="schema" 
+			 expr="(select opclass_func 'right_type_schema')"/>
+	    </param>
+	  </params>
+	</opclass_function>
+      </skit:foreach>
+    </operator_class>
+  </skit:foreach>
+</skit:inclusion>  
+
+

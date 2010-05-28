@@ -12,6 +12,7 @@
 		          ('w' . 'update')
 		          ('a' . 'insert')
 		          ('d' . 'delete')
+		          ('D' . 'truncate')
 		          ('x' . 'references')
 		          ('t' . 'trigger')
 		          ('X' . 'execute')
