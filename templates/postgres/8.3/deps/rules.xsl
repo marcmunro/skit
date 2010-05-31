@@ -15,6 +15,9 @@
 	      qname="{skit:dbquote(@name)}"
 	      table_qname="{skit:dbquote(../@schema, ../@name)}">
 
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<!-- Add explicitly identified dependencies -->
 	<xsl:for-each select="depends[@function]">

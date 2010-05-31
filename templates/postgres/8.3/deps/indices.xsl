@@ -32,6 +32,9 @@
 		  select="concat('index.', $parent_core, '.', @name)"/>
     <dbobject type="index" fqn="{$index_fqn}" name="{@name}"
 	      qname="{skit:dbquote(../@schema, @name)}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>

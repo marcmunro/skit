@@ -223,6 +223,54 @@ START_TEST(broken_list4)
 }
 END_TEST
 
+START_TEST(alist_extract)
+{
+    Cons *alist = (Cons *) objectFromStr("(('a' . 20)('b' . 21)"
+					 "('c' . 22)('d' . 23))");
+    Cons *cell = NULL;
+    String *key;
+    key = stringNew("b");
+    cell = alistExtract(&alist, (Object *) key);
+    fail_unless(objectTypeCheck((Object *) cell, OBJ_CONS), 
+		"Expected Cons cell\n");
+    fail_unless(objectIntCheck(cell->cdr, 21), 
+		"Incorrect cell returned for key 'b'\n");
+    objectFree((Object *) cell, TRUE);
+
+    key->value[0] = 'a';
+    cell = alistExtract(&alist, (Object *) key);
+    fail_unless(objectTypeCheck((Object *) cell, OBJ_CONS), 
+		"Expected Cons cell\n");
+    fail_unless(objectIntCheck(cell->cdr, 20), 
+		"Incorrect cell returned for key 'a'\n");
+    objectFree((Object *) cell, TRUE);
+
+    key->value[0] = 'd';
+    cell = alistExtract(&alist, (Object *) key);
+    fail_unless(objectTypeCheck((Object *) cell, OBJ_CONS), 
+		"Expected Cons cell\n");
+    fail_unless(objectIntCheck(cell->cdr, 23), 
+		"Incorrect cell returned for key 'd'\n");
+    objectFree((Object *) cell, TRUE);
+
+    key->value[0] = 'c';
+    cell = alistExtract(&alist, (Object *) key);
+    fail_unless(objectTypeCheck((Object *) cell, OBJ_CONS), 
+		"Expected Cons cell\n");
+    fail_unless(objectIntCheck(cell->cdr, 22), 
+		"Incorrect cell returned for key 'c'\n");
+    objectFree((Object *) cell, TRUE);
+
+    /* All cells should have been removed from the alist.
+     * Check that the list is empty, then we are done */
+
+    fail_if(alist, "Alist should be empty");
+
+    objectFree((Object *) key, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 SIMPLE_TEST(nil_string, 
 	    objectReadCheck("()", "nil"),
 	    "Incorrect string representation of NULL\n")
@@ -872,6 +920,7 @@ objects_suite(void)
     ADD_TEST(tc_core, list_with_list);
     ADD_TEST(tc_core, list_with_nil);
     ADD_TEST(tc_core, alist);
+    ADD_TEST(tc_core, alist_extract);
     ADD_TEST(tc_core, simple_list2);
     ADD_TEST(tc_core, broken_list1);
     ADD_TEST(tc_core, broken_list2);

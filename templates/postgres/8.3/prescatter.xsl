@@ -27,6 +27,12 @@
       -->
   </xsl:template>
 
+  <xsl:template match="dbobject/context">
+    <!-- We may as well remove the context elements now.  We won't be
+         needing them.
+      -->
+  </xsl:template>
+
   <xsl:template match="dbobject[@type='grant']">
     <!-- We remove the dbobject for grants. -->
     <xsl:apply-templates/>

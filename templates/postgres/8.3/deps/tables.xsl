@@ -15,6 +15,9 @@
 			  ancestor::schema/@name, '.', @name)"/>
     <dbobject type="table" fqn="{$table_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@schema,@name)}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>

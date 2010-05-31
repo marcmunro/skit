@@ -15,7 +15,9 @@
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
     <option name='ec*hoes' type='flag' default='true'/>
+    <option name='i*gnore-contexts' type='flag'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
+    <option name='add_deps' type='boolean' value='true'/>
     <option name='add_deps' type='boolean' value='true'/>
   </skit:options>
 

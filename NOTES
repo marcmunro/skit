@@ -1,0 +1,115 @@
+Next tasks:
+
+1) Add context management to gensort
+A context is something that applies to a database object.  For now the
+only context is the "owner" context.  What we want to do is retain the
+context between objects that have the same context.  So, if we are doing
+the following:
+
+  grant x to y;
+
+  grant x to z;
+
+And the grant is done by w, the code generated now would be:
+
+  alter session set authorization w;
+  grant x to y;
+  alter session reset authorization;
+
+  alter session set authorization w;
+  grant x to z;
+  alter session reset authorization;
+
+If we could retain the context between statements, we could make it
+instead:
+
+  alter session set authorization w;
+  grant x to y;
+
+  grant x to z;
+  alter session reset authorization;
+
+This would be much more pleasant to read, and would make for a simpler
+script.  This should be a selectable option --ignore-contexts to disable
+it.
+
+Plan:
+a) Add --ignore_contexts option to generate			DONE
+b) Modify add_deps and rm_deps to record contexts		DONE
+c) Modify tsort.c:navigationToNode to deal with contexts
+d) Modify generator code to take notice of --ignore_contexts
+
+
+
+2) Add node traversal optimisation to gensort
+We want tsort output to be better cost-optimised.  When we are visiting
+a particular point in the tree, we should do as much as possible at that
+point before departing to other points in the tree.
+
+The algorithm needs to be refined.  There should be a switch to use the
+current non-optimised algorithm.
+
+algorithm:
+
+tsort(remaining_list):
+  buildlist = new empty list
+  cost_node = NULL
+  while (there are elements in remaining_list or candidate_list)
+    append all leaf nodes from remaining_list to candidate_list
+    if candidate_list was lengthened by above operation
+      costsort(cost_node, candidate_list)
+    cost_node = candidate_list.pop()
+    remove cost_node from remaining_list, eliminating deps as we do it
+    append cost_node to buildlist
+
+costsort(node, list):
+  sort list so that similarly located elements are placed next to each
+  other, pretending that node is the zeroth element of list and is not
+  movable.
+
+  If we have this node:
+    a.b
+
+  And this list:
+    a.c  a.b.d  a.b.d.e  a.b.d.f  a.b.d.g   a.c.f  g
+
+  The order should be
+    a.b.d     (this is at a.b so has zero cost)
+    a.b.d.e   (this is at a.b.d so has zero cost)
+    a.b.d.g   (this is at a.b.d so has cost a.b.d.e --> a.b.d)
+    a.c       (this is at a so has cost a.b.d.e --> a.b.d --> a.b  --> a)
+    a.c.f     (this is at a.c so has zero cost)
+    g         (this is at root so has cost a.c.f --> a.c --> a  --> root)
+
+  Only traversal back up the tree has a cost.  Within similar cost items,
+  we should check for similar contexts, and then sort alphabetically.
+
+  The sort algorithm will be as follows:
+  - find set of lowest code nodes from start node
+  - group the set into subsets by contexts (owner name)
+  - sort each subset alphabetically
+
+  NOTE: rather than building a true sort algorithm, it might be better to
+  simply place each new node at the most optimal place in the list as it
+  is removed from remaining_list.
+
+    
+Plan:
+
+a) add option to select old tsort algorithm
+b) create new tsort without costsort
+c) test
+d) add costsort
+
+
+
+3) Add diff handling
+This is a biggy.
+
+
+4) get check working using an out of the box version
+
+
+5) get all valgrind tests to pass
+
+

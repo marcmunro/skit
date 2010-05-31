@@ -11,11 +11,13 @@
 
 BEGIN {
     printing = 0
+    ok_to_go = 0
 }
 /^{/ {
-    printing = 1
+    printing = ok_to_go
 }
 /^SUPPRESSION/ {
+    ok_to_go = 1
     title = $2
     pattern = $3
     count = 1
@@ -25,13 +27,17 @@ BEGIN {
     next
 }
 /insert/ {
-    print "   " title "_" count++
+    if (printing) {
+	print "   " title "_" count++
+    }
     next
 }
 /fun:/ {
-    if ($1 ~ pattern) {
-	print "}"
-	printing = 0
+    if (printing) {
+	if ($1 ~ pattern) {
+	    print "}"
+	    printing = 0
+	}
     }
 }
 (printing)

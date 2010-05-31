@@ -13,6 +13,9 @@
 					  $parent_core, '.', @name)"/>
     <dbobject type="language" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{$tbs_fqn}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>

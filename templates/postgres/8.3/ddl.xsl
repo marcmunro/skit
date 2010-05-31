@@ -65,6 +65,7 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:include href="skitfile:ddl/owner.xsl"/>
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
   <xsl:include href="skitfile:ddl/database.xsl"/>
   <xsl:include href="skitfile:ddl/tablespace.xsl"/>

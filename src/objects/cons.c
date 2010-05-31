@@ -313,6 +313,27 @@ alistGet(Cons *alist, Object *key)
     return NULL;
 }
 
+Cons *
+alistExtract(Cons **p_alist, Object *key)
+{
+    Cons **p_this = p_alist;
+    Cons *this;
+    Cons *entry;
+    assert(consIsAlist(*p_alist), "alistGet arg1 is not an alist");
+
+    while (this = *p_this) {
+	entry = (Cons *) this->car;
+	if (objectCmp(entry->car, key) == 0) {
+	    /* This entry matches key. */
+	    objectFree((Object *) this, FALSE);
+	    *p_this = (Cons *) this->cdr;
+	    return entry;
+	}
+	p_this = (Cons **) &(this->cdr);
+    }
+    return NULL;
+}
+
 
 Object *
 consNth(Cons *list, int n)

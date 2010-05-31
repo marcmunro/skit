@@ -14,6 +14,9 @@
     <dbobject type="domain" name="{@name}" 
 	      qname="{skit:dbquote(@schema, @name)}"
 	      fqn="{$domain_fqn}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
@@ -64,6 +67,9 @@
     <dbobject type="type" name="{@name}"
 	      fqn="{$type_fqn}"
 	      qname="{skit:dbquote(@schema, @name)}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>

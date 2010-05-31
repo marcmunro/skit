@@ -16,6 +16,9 @@
 			  @method, ')')"/>
     <dbobject type="operator_class" fqn="{$operator_class_fqn}"
 	      name="{@name}" qname="{skit:dbquote(@schema, @name)}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<!-- operator family -->
 	<dependency fqn="{concat('operator_family.', 

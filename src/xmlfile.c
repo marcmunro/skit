@@ -1125,8 +1125,6 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 
 	treeFromVector(root, sorted);
 	objectFree((Object *) sorted, TRUE);
-	//RAISE(NOT_IMPLEMENTED_ERROR,
-	//      newstr("execgensort is not implemented"));
     }
     EXCEPTION(ex);
     FINALLY {

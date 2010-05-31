@@ -43,7 +43,7 @@ vectorExpand(Vector *vector)
     }
     else {
 	RAISE(GENERAL_ERROR, 
-	      newstr("vectorPush: vector space exhausted"));
+	      newstr("vectorExpand: vector space exhausted"));
     }
 }
 

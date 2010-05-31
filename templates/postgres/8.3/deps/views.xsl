@@ -14,6 +14,9 @@
     <dbobject type="view" fqn="{$view_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@schema,@name)}">
 
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<!-- Add explicitly identified dependencies -->
 	<xsl:for-each select="depends[@function]">

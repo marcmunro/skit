@@ -2,6 +2,7 @@
 <xsl:stylesheet 
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:skit="http://www.bloodnok.com/xml/skit"
   version="1.0">
 
   <xsl:template match="/*">
@@ -18,21 +19,14 @@
   <xsl:template match="dbobject[not(@nolist='true')]">
     <xsl:param name="depth"/>
     <xsl:choose>
-      <xsl:when test="/*/params[@grants='true']">
+      <xsl:when test="(self::*[@type='grant']) and 
+		      (skit:eval('grants') != 't')"/>
+      <xsl:when test="(self::*[@type='context']) and 
+                      (skit:eval('contexts') != 't')"/>
+      <xsl:otherwise>
 	<xsl:call-template name="printObject">
 	  <xsl:with-param name="depth" select="$depth"/>
 	</xsl:call-template>
-      </xsl:when>
-      <xsl:otherwise>
-	<!-- Do not list grants -->
-	<xsl:choose>
-	  <xsl:when test="self::*[@type='grant']"/>
-	  <xsl:otherwise>
-	    <xsl:call-template name="printObject">
-	      <xsl:with-param name="depth" select="$depth"/>
-	    </xsl:call-template>
-	  </xsl:otherwise>
-	</xsl:choose>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>

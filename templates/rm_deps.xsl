@@ -14,7 +14,10 @@
   <xsl:template match="dbincluster"/>
 
   <!-- Eliminate dependencies and their contents -->
-  <xsl:template match="dependencies"/>
+  <xsl:template match="dbobject/dependencies"/>
+
+  <!-- Eliminate context elements -->
+  <xsl:template match="dbobject/context"/>
 
   <!-- Eliminate dependency convenience objects -->
   <xsl:template match="allroles"/>

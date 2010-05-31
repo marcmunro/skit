@@ -644,13 +644,17 @@ simple_tsort(Hash *allnodes)
     return results;
 }
 
+static boolean handling_context = FALSE;
+
 Vector *
 gensort(Document *doc)
 {
     Hash *dagnodes = NULL;
     Hash *pqnhash = NULL;
     Vector *sorted = NULL;
+    Symbol *ignore_contexts = symbolGet("ignore-contexts");
 
+    handling_context = (ignore_contexts == NULL);
 
     BEGIN {
 	dagnodes = dagnodesFromDoc(doc);
@@ -753,8 +757,6 @@ arriveNode(DagNode *target)
     return navigation;
 }
 
-
-
 /* Return the node in to's ancestry that is the direct descendant of
  * from */
 static DagNode *
@@ -767,6 +769,104 @@ nextNodeFrom(DagNode *from, DagNode *to)
 	cur = cur->parent;
     }
     return prev;
+}
+
+static Cons *
+getContexts(DagNode *node)
+{
+    xmlNode *context_node;
+    Cons *cell;
+    Cons *contexts = NULL;
+    String *name;
+    String *value;
+
+    if (node) {
+	for (context_node = findFirstChild(node->dbobject, "context");
+	     context_node;
+	     context_node = findNextSibling(context_node, "context")) {
+	    name = nodeAttribute(context_node, "name");
+	    value = nodeAttribute(context_node, "value");
+	    cell = consNew((Object *) name, (Object *) value);
+	    contexts = consNew((Object *) cell, (Object *) contexts);
+	}
+    }
+    return contexts;
+}
+
+static xmlNode *
+dbobjectNode(char *type, char *name)
+{
+    xmlNode *xmlnode = xmlNewNode(NULL, BAD_CAST "dbobject");
+    char *fqn = newstr("context.%s.%s", type, name);
+    xmlNewProp(xmlnode, BAD_CAST "type", BAD_CAST "context");
+    xmlNewProp(xmlnode, BAD_CAST "subtype", BAD_CAST type);
+    xmlNewProp(xmlnode, BAD_CAST "name", BAD_CAST name);
+    xmlNewProp(xmlnode, BAD_CAST "qname", BAD_CAST name);
+    xmlNewProp(xmlnode, BAD_CAST "fqn", BAD_CAST fqn);
+    skfree(fqn);
+    return xmlnode;
+}
+
+static DagNode *
+setContextNode(String *name, String *value)
+{
+    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
+    return dagnodeNew(&dbobject, ARRIVE_NODE);
+}
+
+static DagNode *
+resetContextNode(String *name, String *value)
+{
+    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
+    return dagnodeNew(&dbobject, DEPART_NODE);
+}
+
+static void
+addContextNavigation(Vector *vec, DagNode *from, DagNode *target)
+{
+    Cons *from_contexts;
+    Cons *target_contexts;
+    Cons *this;
+    Cons *match;
+    String *name;
+    DagNode *context_node;
+    from_contexts = getContexts(from);
+    target_contexts = getContexts(target);
+    while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
+	name = (String *) this->car;
+	if (from_contexts &&
+	    (match = (Cons *) alistExtract(&from_contexts, 
+					   (Object *) name))) {
+	    /* We have the same context for both dagnodes. */
+	    if (objectCmp(this->cdr, match->cdr) != 0) {
+		context_node = resetContextNode(name, (String *) match->cdr);
+		vectorPush(vec, (Object *) context_node);
+		context_node = setContextNode(name, (String *) this->cdr);
+		vectorPush(vec, (Object *) context_node);
+		//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
+		//	((String *) match->cdr)->value);
+		//fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
+		//	((String *) this->cdr)->value);
+	    }
+	    objectFree((Object *) match, TRUE);
+	}
+	else {
+	    /* This is a new context */
+	    context_node = setContextNode(name, (String *) this->cdr);
+	    vectorPush(vec, (Object *) context_node);
+	    //fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
+	    //	    ((String *) this->cdr)->value);
+	}
+	objectFree((Object *) this, TRUE);
+    }
+    while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
+	name = (String *) this->car;
+	context_node = resetContextNode(name, (String *) this->cdr);
+	vectorPush(vec, (Object *) context_node);
+	//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
+	//	((String *) this->cdr)->value);
+	objectFree((Object *) this, TRUE);
+    }
 }
 
 /* Return a vector of DagNodes containing the navigation to get from
@@ -812,6 +912,9 @@ navigationToNode(DagNode *from, DagNode *target)
 		    vectorPush(results, (Object *) navigation);
 		}
 	    }
+	}
+	if (handling_context) {
+	    addContextNavigation(results, from, target);
 	}
     }
     EXCEPTION(ex) {

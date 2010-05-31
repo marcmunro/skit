@@ -14,6 +14,9 @@
     <dbobject type="constraint" fqn="{$constraint_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@name)}"
 	      table_qname="{skit:dbquote(../@schema, ../@name)}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<!-- Dependencies on other constraints -->
 	<xsl:if test="reftable/@refconstraintname">

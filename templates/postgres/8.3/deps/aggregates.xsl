@@ -25,6 +25,9 @@
     </xsl:variable>
     <dbobject type="aggregate" fqn="{$aggregate_fqn}"
 	      name="{@name}" qname="{$function_qname}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 	<!-- owner -->
 	<xsl:if test="@owner != 'public'">

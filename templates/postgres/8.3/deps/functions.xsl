@@ -24,6 +24,9 @@
     </xsl:variable>
     <dbobject type="function" fqn="{$function_fqn}"
 	      name="{@name}" qname="{$function_qname}">
+      <xsl:if test="@owner">
+	<context name="owner" value="{@owner}"/>	
+      </xsl:if>
       <dependencies>
 
 	<xsl:if test="(@language != 'c') and (@language != 'internal')
