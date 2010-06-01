@@ -137,6 +137,7 @@
       
       <define name="skit_element">
 	<choice>
+	  <ref name="exec_element"/>
 	  <ref name="runsql_element"/>
 	  <ref name="xslproc_element"/>
 	</choice>
@@ -163,6 +164,12 @@
 	<element name="xslproc">
 	  <attribute name="stylesheet"/>
 	  <attribute name="input"/>
+	</element>
+      </define>
+  
+      <define name="exec_element">
+	<element name="exec">
+	  <attribute name="expr"/>
 	</element>
       </define>
   
@@ -197,7 +204,9 @@
       <optional>
 	<ref name="options_element"/>
       </optional>
-      <ref name="stylesheet_elements"/>
+      <zeroOrMore>
+	<ref name="stylesheet_elements"/>
+      </zeroOrMore>
     </element>
   </start>
 </grammar>

@@ -6,20 +6,6 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template name="set_owner_from">
-    <xsl:if test="@from != //cluster/@username">
-      <xsl:text>set session authorization &apos;</xsl:text>
-      <xsl:value-of select="@from"/>
-      <xsl:text>&apos;;&#x0A;</xsl:text>
-    </xsl:if>
-  </xsl:template>
-
-  <xsl:template name="reset_owner_from">
-    <xsl:if test="@from != //cluster/@username">
-      <xsl:text>reset session authorization;&#x0A;</xsl:text>
-    </xsl:if>
-  </xsl:template>
-
   <xsl:template match="dbobject[@subtype='role']/grant">
     <xsl:if test="../@action='build'">
       <print>
@@ -41,11 +27,7 @@
   
     <xsl:if test="../@action='drop'">
       <print>
-	<xsl:if test="@from != //cluster/@username">
-          <xsl:text>set session authorization &apos;</xsl:text>
-          <xsl:value-of select="@from"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="set_owner"/>
 
         <xsl:text>revoke </xsl:text>
         <xsl:value-of select="skit:dbquote(@priv)"/>
@@ -53,9 +35,7 @@
         <xsl:value-of select="skit:dbquote(@to)"/>
         <xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:if test="@from != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="reset_owner"/>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>

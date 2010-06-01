@@ -15,15 +15,15 @@
   <xsl:template match="dbobject[@type='context']">
      <xsl:if test="@action='arrive'">
       <print>
-	<xsl:text>-- SET SESSION AUTHORIZATION &apos;</xsl:text>
+	<xsl:text>set session authorization &apos;</xsl:text>
 	<xsl:value-of select="@name"/>
-	<xsl:text>&apos;;&#x0A;</xsl:text>
+	<xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 
     <xsl:if test="@action='depart'">
       <print>
-	<xsl:text>-- RESET SESSION AUTHORIZATION;&#x0A;</xsl:text>
+	<xsl:text>reset session authorization;&#x0A;&#x0A;</xsl:text>
 	</print>
     </xsl:if>	
 

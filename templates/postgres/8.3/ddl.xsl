@@ -52,16 +52,38 @@
   </xsl:template>
 
   <xsl:template name="set_owner">
-    <xsl:if test="@owner != //cluster/@username">
-      <xsl:text>set session authorization &apos;</xsl:text>
-      <xsl:value-of select="@owner"/>
-      <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
+    <xsl:if test="skit:eval('ignore-contexts') = 't'">
+      <xsl:if test="@owner != //cluster/@username">
+	<xsl:text>set session authorization &apos;</xsl:text>
+	<xsl:value-of select="@owner"/>
+	<xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
+      </xsl:if>
     </xsl:if>
   </xsl:template>
 
   <xsl:template name="reset_owner">
-    <xsl:if test="@owner != //cluster/@username">
-      <xsl:text>reset session authorization;&#x0A;</xsl:text>
+    <xsl:if test="skit:eval('ignore-contexts') = 't'">
+      <xsl:if test="@owner != //cluster/@username">
+	<xsl:text>reset session authorization;&#x0A;</xsl:text>
+      </xsl:if>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="set_owner_from">
+    <xsl:if test="skit:eval('ignore-contexts') = 't'">
+      <xsl:if test="@from != //cluster/@username">
+	<xsl:text>set session authorization &apos;</xsl:text>
+	<xsl:value-of select="@from"/>
+	<xsl:text>&apos;;&#x0A;</xsl:text>
+      </xsl:if>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="reset_owner_from">
+    <xsl:if test="skit:eval('ignore-contexts') = 't'">
+      <xsl:if test="@from != //cluster/@username">
+	<xsl:text>reset session authorization;&#x0A;</xsl:text>
+      </xsl:if>
     </xsl:if>
   </xsl:template>
 

@@ -60,7 +60,7 @@ gendrop()
 genbuild()
 {
     echo ......build... 1>&2
-    ./skit --generate --build ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
+    ./skit --generate --build $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
     errexit
     echo .........editing build script to not create role `whoami`... 1>&2
     sed -e  "/create role \"`whoami`\"/ s/^/-- /" \
@@ -149,7 +149,7 @@ regression_test1()
 
 regression_test2()
 {
-    echo "Running regression test 2 (scatter and gather)..." 1>&2
+    echo "Running regression test 2 (scatter, gather, ignore-contexts)..." 1>&2
     mkdir regress/scratch 2>/dev/null
     rm -rf scratch/dbdump/*
     build_db regression1_`pguver`.sql
@@ -160,7 +160,8 @@ regression_test2()
     
     echo ...running skit generate from scatterfiles... 1>&2
     gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql
-    genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql
+    genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql \
+	     --ignore-contexts
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......

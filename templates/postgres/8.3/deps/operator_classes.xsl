@@ -17,7 +17,8 @@
     <dbobject type="operator_class" fqn="{$operator_class_fqn}"
 	      name="{@name}" qname="{skit:dbquote(@schema, @name)}">
       <xsl:if test="@owner">
-	<context name="owner" value="{@owner}"/>	
+	<context name="owner" value="{@owner}" 
+		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
 	<!-- operator family -->

@@ -26,7 +26,8 @@
     <dbobject type="aggregate" fqn="{$aggregate_fqn}"
 	      name="{@name}" qname="{$function_qname}">
       <xsl:if test="@owner">
-	<context name="owner" value="{@owner}"/>	
+	<context name="owner" value="{@owner}" 
+		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
 	<!-- owner -->

@@ -26,7 +26,8 @@
 				          arg[@position='right']/@name),
 			     ')')}">
       <xsl:if test="@owner">
-	<context name="owner" value="{@owner}"/>	
+	<context name="owner" value="{@owner}" 
+		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
 	<xsl:if test="arg[@position='left']/@schema != 'pg_catalog'">

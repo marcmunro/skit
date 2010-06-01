@@ -15,7 +15,8 @@
 	      qname="{skit:dbquote(@schema,@name)}">
 
       <xsl:if test="@owner">
-	<context name="owner" value="{@owner}"/>	
+	<context name="owner" value="{@owner}" 
+		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
 	<!-- Add explicitly identified dependencies -->

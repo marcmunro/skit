@@ -23,7 +23,8 @@
 	      pqn="{concat('grant.', $grant_name)}"
 	      fqn="{concat('grant.', $grant_name, ':', @from)}">
 
-      <context name="owner" value="{@from}"/>
+      <context name="owner" value="{@from}" 
+	       default="{//cluster/@username}"/>	
       <dependencies>
 	<!-- Dependencies on roles from, to and priv -->
 	<dependency fqn="{concat('role.cluster.', @priv)}"/>
@@ -102,7 +103,8 @@
       </xsl:attribute>
 
       <xsl:if test="@from">
-	<context name="owner" value="{@from}"/>	
+	<context name="owner" value="{@from}" 
+		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
 	<!-- Roles -->

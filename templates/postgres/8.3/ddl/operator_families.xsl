@@ -68,11 +68,7 @@
     <xsl:if test="../@action='drop'">
       <print>
       	<xsl:text>&#x0A;</xsl:text>
-      	<xsl:if test="@owner != //cluster/@username">
-      	  <xsl:text>set session authorization &apos;</xsl:text>
-      	  <xsl:value-of select="@owner"/>
-      	  <xsl:text>&apos;;&#x0A;</xsl:text>
-      	</xsl:if>
+	<xsl:call-template name="set_owner"/>
 	  
 	<xsl:text>drop operator family </xsl:text>
         <xsl:value-of select="../@qname"/>
@@ -80,9 +76,7 @@
         <xsl:value-of select="@method"/>
 	<xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:if test="@owner != //cluster/@username">
-          <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="reset_owner"/>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>

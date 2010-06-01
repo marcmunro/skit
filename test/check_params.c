@@ -967,7 +967,7 @@ START_TEST(generate3)
     initTemplatePath(".");
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(4, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

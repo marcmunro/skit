@@ -779,6 +779,7 @@ getContexts(DagNode *node)
     Cons *contexts = NULL;
     String *name;
     String *value;
+    String *dflt;
 
     if (node) {
 	for (context_node = findFirstChild(node->dbobject, "context");
@@ -786,7 +787,10 @@ getContexts(DagNode *node)
 	     context_node = findNextSibling(context_node, "context")) {
 	    name = nodeAttribute(context_node, "name");
 	    value = nodeAttribute(context_node, "value");
-	    cell = consNew((Object *) name, (Object *) value);
+	    dflt = nodeAttribute(context_node, "default");
+	    cell = consNew((Object *) name, 
+			   (Object *) consNew((Object *) value, 
+					      (Object *) dflt));
 	    contexts = consNew((Object *) cell, (Object *) contexts);
 	}
     }
@@ -808,28 +812,64 @@ dbobjectNode(char *type, char *name)
 }
 
 static DagNode *
-setContextNode(String *name, String *value)
+arriveContextNode(String *name, String *value)
 {
     Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
     return dagnodeNew(&dbobject, ARRIVE_NODE);
 }
 
 static DagNode *
-resetContextNode(String *name, String *value)
+departContextNode(String *name, String *value)
 {
     Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
     return dagnodeNew(&dbobject, DEPART_NODE);
 }
 
 static void
-addContextNavigation(Vector *vec, DagNode *from, DagNode *target)
+addArriveContext(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DagNode *context_node;
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = arriveContextNode(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+	//fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
+	//	((String *) cell2->car)->value);
+    }
+}
+
+static void
+addDepartContext(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DagNode *context_node;
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = departContextNode(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+	//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
+	//	((String *) cell2->car)->value);
+    }
+}
+
+static Cons *
+getContextNavigation(DagNode *from, DagNode *target)
 {
     Cons *from_contexts;
     Cons *target_contexts;
     Cons *this;
+    Cons *this2;
     Cons *match;
+    Cons *match2;
     String *name;
-    DagNode *context_node;
+    Vector *departures = vectorNew(10);
+    Vector *arrivals = vectorNew(10);
+    Cons *result = consNew((Object *) departures, (Object *) arrivals);
+
+    /* Contexts are lists of the form: (name value default) */
     from_contexts = getContexts(from);
     target_contexts = getContexts(target);
     while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
@@ -838,35 +878,28 @@ addContextNavigation(Vector *vec, DagNode *from, DagNode *target)
 	    (match = (Cons *) alistExtract(&from_contexts, 
 					   (Object *) name))) {
 	    /* We have the same context for both dagnodes. */
-	    if (objectCmp(this->cdr, match->cdr) != 0) {
-		context_node = resetContextNode(name, (String *) match->cdr);
-		vectorPush(vec, (Object *) context_node);
-		context_node = setContextNode(name, (String *) this->cdr);
-		vectorPush(vec, (Object *) context_node);
-		//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
-		//	((String *) match->cdr)->value);
-		//fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
-		//	((String *) this->cdr)->value);
+	    this2 = (Cons *) this->cdr;
+	    match2 = (Cons *) match->cdr;
+	    if (objectCmp(this2->car, match2->car) != 0) {
+		/* Depart the old context, and arrive at the new. */
+		addDepartContext(departures, match);
+		addArriveContext(arrivals, this);
 	    }
 	    objectFree((Object *) match, TRUE);
 	}
 	else {
-	    /* This is a new context */
-	    context_node = setContextNode(name, (String *) this->cdr);
-	    vectorPush(vec, (Object *) context_node);
-	    //fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
-	    //	    ((String *) this->cdr)->value);
+	    /* This is a new context. */
+	    addArriveContext(arrivals, this);
 	}
 	objectFree((Object *) this, TRUE);
     }
     while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
-	name = (String *) this->car;
-	context_node = resetContextNode(name, (String *) this->cdr);
-	vectorPush(vec, (Object *) context_node);
-	//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
-	//	((String *) this->cdr)->value);
+	/* Close the final contexts.  Unless we are in a default
+	 * context. */ 
+	addDepartContext(departures, this);
 	objectFree((Object *) this, TRUE);
     }
+    return result;
 }
 
 /* Return a vector of DagNodes containing the navigation to get from
@@ -874,13 +907,28 @@ addContextNavigation(Vector *vec, DagNode *from, DagNode *target)
 Vector *
 navigationToNode(DagNode *from, DagNode *target)
 {
-    Vector *results = vectorNew(10);
+    Cons *context_nav;
+    Vector *results;
+    Vector *context_arrivals = NULL;
+    Object *elem;
     DagNode *current = NULL;
     DagNode *next = NULL;
     DagNode *common_root = NULL;
     DagNode *navigation = NULL;
 
     BEGIN {
+	if (handling_context) {
+	    context_nav = getContextNavigation(from, target);
+	    /* Context departures must happen before any other
+	     * departures and arrivals after */
+	    results = (Vector *) context_nav->car;
+	    context_arrivals = (Vector *) context_nav->cdr;
+	    objectFree((Object *) context_nav, FALSE);
+	}
+	else
+	{
+	    results = vectorNew(10);
+	}
 	if (from) {
 	    common_root = getCommonRoot(from, target);
 	    current = from;
@@ -913,8 +961,14 @@ navigationToNode(DagNode *from, DagNode *target)
 		}
 	    }
 	}
-	if (handling_context) {
-	    addContextNavigation(results, from, target);
+	if (context_arrivals) {
+	    /* Although this reverses the order of context departures,
+	     * this should not be an issue as the order of contexts is
+	     * expected to be irrelevant. */
+	    while (elem = vectorPop(context_arrivals)) {
+		vectorPush(results, elem);
+	    }
+	    objectFree((Object *) context_arrivals, FALSE);
 	}
     }
     EXCEPTION(ex) {

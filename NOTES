@@ -36,7 +36,12 @@ it.
 Plan:
 a) Add --ignore_contexts option to generate			DONE
 b) Modify add_deps and rm_deps to record contexts		DONE
-c) Modify tsort.c:navigationToNode to deal with contexts
+c) Modify tsort.c:navigationToNode to deal with contexts	DONE (mostly)
+
+Next: modify addContextNavigation to return two vectors: one of depart
+contexts, one of arrive contexts.  The departs must be applied before any
+other navigation, the arrives after.  
+
 d) Modify generator code to take notice of --ignore_contexts
 
 

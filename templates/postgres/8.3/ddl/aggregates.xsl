@@ -52,11 +52,7 @@
     <xsl:if test="../@action='drop'">
       <print>
       	<xsl:text>&#x0A;</xsl:text>
-      	<xsl:if test="@owner != //cluster/@username">
-      	  <xsl:text>set session authorization &apos;</xsl:text>
-      	  <xsl:value-of select="@owner"/>
-      	  <xsl:text>&apos;;&#x0A;</xsl:text>
-      	</xsl:if>
+	<xsl:call-template name="set_owner"/>
 	  
       	<xsl:text>drop aggregate </xsl:text>
         <xsl:value-of select="skit:dbquote(@schema,@name)"/>
@@ -72,9 +68,7 @@
 	</xsl:choose>
 	<xsl:text>);&#x0A;</xsl:text>
 	  
-      	<xsl:if test="@owner != //cluster/@username">
-      	  <xsl:text>reset session authorization;&#x0A;</xsl:text>
-      	</xsl:if>
+	<xsl:call-template name="reset_owner"/>
       	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
