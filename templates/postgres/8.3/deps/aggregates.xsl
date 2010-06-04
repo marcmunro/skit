@@ -70,6 +70,7 @@
 				    transtype/@schema, '.',
 				    transtype/@name, ')')}"/>
 	</xsl:if>
+	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

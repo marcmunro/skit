@@ -42,6 +42,7 @@
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:for-each>
+	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

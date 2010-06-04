@@ -83,6 +83,7 @@
 			    arg[@position='right']/@schema, '.', 
 			    arg[@position='right']/@name, ')')}"/>
 	</xsl:if>
+	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

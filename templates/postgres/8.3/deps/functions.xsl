@@ -71,6 +71,7 @@
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
+	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

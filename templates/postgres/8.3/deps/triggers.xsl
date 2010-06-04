@@ -23,6 +23,10 @@
 	  <dependency fqn="{concat('function.', 
 			            ancestor::database/@name, '.', 
 				    @function)}"/>
+	  <xsl:call-template name="SchemaGrant"/>
+	  <xsl:call-template name="TableGrant">
+	    <xsl:with-param name="priv" select="'trigger'"/>
+	  </xsl:call-template>
 	</dependencies>
       </xsl:if>
       <xsl:copy select=".">

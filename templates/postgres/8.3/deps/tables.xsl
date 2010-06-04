@@ -6,6 +6,46 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <!-- Schema grant dependencies -->
+  <xsl:template name="SchemaGrant">
+    <xsl:param name="owner" select="@owner"/>
+    <!-- Dependency on schema usage grant to owner, public or self -->
+    <dependency pqn="{concat('grant.', 
+		     ancestor::database/@name, '.', 
+		     ancestor::schema/@name, '.usage:public')}"/>
+    <dependency pqn="{concat('grant.', 
+		     ancestor::database/@name, '.', 
+		     ancestor::schema/@name, '.usage:', 
+		     //cluster/@username)}"/>
+    <xsl:if test="$owner">
+      <dependency pqn="{concat('grant.', 
+		       ancestor::database/@name, '.', 
+		       ancestor::schema/@name, '.usage:', $owner)}"/>
+    </xsl:if>
+  </xsl:template>
+
+  <!-- Table grant dependencies -->
+  <xsl:template name="TableGrant">
+    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="schema" select="@schema"/>
+    <xsl:param name="table" select="@table"/>
+    <xsl:param name="priv"/>
+    <!-- Dependency on table usage grant to owner, public or self -->
+    <dependency pqn="{concat('grant.', 
+		     ancestor::database/@name, '.', 
+		     $schema, '.', $table, '.', $priv, ':public')}"/>
+
+    <dependency pqn="{concat('grant.', 
+		     ancestor::database/@name, '.', 
+		     $schema, '.', $table, '.', $priv, ':', 
+		     //cluster/@username)}"/>
+    <xsl:if test="$owner">
+      <dependency pqn="{concat('grant.', 
+		     ancestor::database/@name, '.', 
+		     $schema, '.', $table, '.', $priv, ':', $owner)}"/>
+    </xsl:if>
+  </xsl:template>
+
   <!-- Tables -->
   <xsl:template match="table">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
@@ -45,20 +85,7 @@
 			    @type_schema, '.', @type)}"/>
 	</xsl:for-each>
 
-	<!-- Dependency on schema usage grant to owner, public or self -->
-	<dependency pqn="{concat('grant.', 
-			 ancestor::database/@name, '.', 
-			 ancestor::schema/@name, '.usage:public')}"/>
-	<xsl:if test="@owner">
-	  <dependency pqn="{concat('grant.', 
-			   ancestor::database/@name, '.', 
-			   ancestor::schema/@name, '.usage:', @owner)}"/>
-	</xsl:if>
-	<dependency pqn="{concat('grant.', 
-			 ancestor::database/@name, '.', 
-			 ancestor::schema/@name, '.usage:', 
-			 //cluster/@username)}"/>
-
+	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>
