@@ -114,6 +114,12 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
 	stylesheet->doc = NULL;
     }
 
+    if (!stylesheet->stylesheet) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("Unable to find or build stylesheet"));
+    }
+
+
     ctxt = xsltNewTransformContext(stylesheet->stylesheet, src->doc);
     registerXSLTFunctions(ctxt);
 

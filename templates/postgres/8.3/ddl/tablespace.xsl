@@ -9,17 +9,18 @@
   <xsl:template match="dbobject/tablespace">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
           <xsl:text>\echo tablespace </xsl:text>
           <xsl:value-of select="../@qname"/>
           <xsl:text>&#x0A;</xsl:text>
 	</xsl:if>
 	<xsl:if test="@location=''">
-	  <xsl:text>&#x0A;/* This is a default tablespace.  We </xsl:text>
+	  <xsl:text>/* This is a default tablespace.  We </xsl:text>
 	  <xsl:text>cannot and should not attempt</xsl:text>
-	  <xsl:text>&#x0A;   to create it.</xsl:text>
+	  <xsl:text>&#x0A;   to create it.&#x0A;</xsl:text>
 	</xsl:if>
-        <xsl:text>&#x0A;create tablespace </xsl:text>
+        <xsl:text>create tablespace </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text> owner </xsl:text>
         <xsl:value-of select="skit:dbquote(@owner)"/>

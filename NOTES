@@ -1,52 +1,6 @@
 Next tasks:
 
-1) Add context management to gensort
-A context is something that applies to a database object.  For now the
-only context is the "owner" context.  What we want to do is retain the
-context between objects that have the same context.  So, if we are doing
-the following:
-
-  grant x to y;
-
-  grant x to z;
-
-And the grant is done by w, the code generated now would be:
-
-  alter session set authorization w;
-  grant x to y;
-  alter session reset authorization;
-
-  alter session set authorization w;
-  grant x to z;
-  alter session reset authorization;
-
-If we could retain the context between statements, we could make it
-instead:
-
-  alter session set authorization w;
-  grant x to y;
-
-  grant x to z;
-  alter session reset authorization;
-
-This would be much more pleasant to read, and would make for a simpler
-script.  This should be a selectable option --ignore-contexts to disable
-it.
-
-Plan:
-a) Add --ignore_contexts option to generate			DONE
-b) Modify add_deps and rm_deps to record contexts		DONE
-c) Modify tsort.c:navigationToNode to deal with contexts	DONE (mostly)
-
-Next: modify addContextNavigation to return two vectors: one of depart
-contexts, one of arrive contexts.  The departs must be applied before any
-other navigation, the arrives after.  
-
-d) Modify generator code to take notice of --ignore_contexts
-
-
-
-2) Add node traversal optimisation to gensort
+1) Add node traversal optimisation to gensort
 We want tsort output to be better cost-optimised.  When we are visiting
 a particular point in the tree, we should do as much as possible at that
 point before departing to other points in the tree.
@@ -108,13 +62,29 @@ d) add costsort
 
 
 
-3) Add diff handling
+2) Add diff handling
 This is a biggy.
 
 
-4) get check working using an out of the box version
+3) get check working using an out of the box version
 
 
-5) get all valgrind tests to pass
+4) get all valgrind tests to pass
+
+
+5) documentation
+
+
+6) update for the latest versions of postgres
+
+
+7) initial release
+
+
+8) implement merge
+
+
+9) implement grep
+
 
 

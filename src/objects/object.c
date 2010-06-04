@@ -417,11 +417,15 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
     new->fqn = actual_fqn;
     new->object_type = nodeAttribute(node->node, "type");
     new->dbobject = node->node;
-    new->status = DAGNODE_READY;
     new->build_type = build_type;
     new->dependencies = NULL;
     new->dependents = NULL;
+    new->is_buildable = FALSE;
+    new->buildable_kids = 0;
     new->parent = NULL;
+    new->kids = NULL;
+    new->next = NULL;
+    new->prev = NULL;
     return new;
 }
 

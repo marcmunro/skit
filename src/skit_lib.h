@@ -196,12 +196,6 @@ typedef struct Cursor {
 } Cursor;
 
 typedef enum {
-    DAGNODE_READY = 47,
-    DAGNODE_SORTING,
-    DAGNODE_SORTED
-} DagNodeStatus;
-
-typedef enum {
     BUILD_NODE = 53,
     DROP_NODE,
     DIFF_NODE,
@@ -215,11 +209,15 @@ typedef struct DagNode {
     String          *fqn;
     String          *object_type;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
-    DagNodeStatus    status;
     DagNodeBuildType build_type;
     Vector          *dependencies;
     Vector          *dependents;
+    boolean          is_buildable;
+    int              buildable_kids;
     struct DagNode  *parent;
+    struct DagNode  *kids;
+    struct DagNode  *next;
+    struct DagNode  *prev;
 } DagNode;
 
 /* Used by sexpTok as its parameter, to retain position information

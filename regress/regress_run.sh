@@ -50,7 +50,7 @@ scatter()
 gendrop()
 {
     echo ......drop... 1>&2
-    ./skit --generate --drop ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
+    ./skit --generate --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
     errexit
     echo .........editing drop script to enable dangerous drop statements... 1>&2
     sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
@@ -70,7 +70,7 @@ genbuild()
 genboth()
 {
     echo ......both... 1>&2
-    ./skit --generate --build --drop ${REGRESS_DIR}/$1 >${REGRESS_DIR}/$2
+    ./skit --generate --build --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/$2
     errexit
 }
 
@@ -119,7 +119,7 @@ diffextract()
 
 regression_test1()
 {
-    echo "Running regression test 1 (build and drop)..." 1>&2
+    echo "Running regression test 1 (build and drop, simple-sort)..." 1>&2
     mkdir regress/scratch 2>/dev/null
     build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
@@ -128,10 +128,12 @@ regression_test1()
 	    scratch/regressdb_dump1a.xml ...
 
     echo ...running skit generate... 1>&2
-    gendrop scratch/regressdb_dump1a.xml scratch/regressdb_drop1.sql
-    genbuild scratch/regressdb_dump1a.xml scratch/regressdb_build1.sql
-    genboth scratch/regressdb_dump1a.xml scratch/regressdb_both1.sql
-
+    gendrop scratch/regressdb_dump1a.xml scratch/regressdb_drop1.sql \
+	--simple-sort
+    genbuild scratch/regressdb_dump1a.xml scratch/regressdb_build1.sql \
+	--simple-sort
+    genboth scratch/regressdb_dump1a.xml scratch/regressdb_both1.sql \
+	--simple-sort
     execdrop scratch/regressdb_drop1.sql
     execbuild scratch/regressdb_build1.sql
 
@@ -159,7 +161,8 @@ regression_test2()
 	    scratch/dbdump
     
     echo ...running skit generate from scatterfiles... 1>&2
-    gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql
+    gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql \
+	     --ignore-contexts
     genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql \
 	     --ignore-contexts
     execdrop scratch/regressdb_drop2.sql

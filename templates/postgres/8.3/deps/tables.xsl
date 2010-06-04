@@ -44,6 +44,21 @@
 			    ancestor::database/@name, '.', 
 			    @type_schema, '.', @type)}"/>
 	</xsl:for-each>
+
+	<!-- Dependency on schema usage grant to owner, public or self -->
+	<dependency pqn="{concat('grant.', 
+			 ancestor::database/@name, '.', 
+			 ancestor::schema/@name, '.usage:public')}"/>
+	<xsl:if test="@owner">
+	  <dependency pqn="{concat('grant.', 
+			   ancestor::database/@name, '.', 
+			   ancestor::schema/@name, '.usage:', @owner)}"/>
+	</xsl:if>
+	<dependency pqn="{concat('grant.', 
+			 ancestor::database/@name, '.', 
+			 ancestor::schema/@name, '.usage:', 
+			 //cluster/@username)}"/>
+
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

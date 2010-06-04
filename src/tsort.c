@@ -495,7 +495,7 @@ addCandidateToBuild(Object *node_entry, Object *results)
     String *parent_name;
 
     assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
-    if ((node->status == DAGNODE_READY) && (!node->dependencies)) {
+    if (!node->dependencies) {
 	vectorPush(vector, (Object *) node);
     }
     return (Object *) node;
@@ -598,6 +598,8 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
  * dependents, and so as soon as any dependent is dealt with for a
  * PQN-based dependency, the dependency is satisfied.  This obviates the
  * need for backtracking at the expense of a less efficient algorithm.
+ *
+ * API notes: allnodes should be empty when we are done!
  */
 static Vector *
 simple_tsort(Hash *allnodes)
@@ -635,12 +637,252 @@ simple_tsort(Hash *allnodes)
 	    }
 	    prev = results->elems;
 	}
-
     }
     EXCEPTION(ex) {
 	objectFree((Object *) results, TRUE);
     }
     END;
+    return results;
+}
+
+static Object *
+appendToVec(Object *node_entry, Object *results)
+{
+    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    Vector *vector = (Vector *) results;
+    String *parent_name;
+
+    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
+    vectorPush(vector, (Object *) node);
+    return (Object *) node;
+}
+
+static Vector *
+nodeList(Hash *allnodes)
+{
+    int elems;
+    Vector *list;
+    elems = hashElems(allnodes);
+    list = vectorNew(elems);
+    hashEach(allnodes, &appendToVec, (Object *) list);
+
+    return list;
+}
+
+int 
+fqnCmp(const void *item1, const void *item2)
+{
+    DagNode *node1 = *((DagNode **) item1);
+    DagNode *node2 = *((DagNode  **) item2);
+    assert(node1 && node1->type == OBJ_DAGNODE,
+	   newstr("fqnCmp: node1 is not a dagnode (%d)", node1->type));
+    assert(node2 && node2->type == OBJ_DAGNODE,
+	   newstr("fqnCmp: node2 is not a dagnode (%d)", node2->type));
+    return strcmp(node1->fqn->value, node2->fqn->value);
+}
+
+/* Maintain an ordered, cyclic list of DagNode siblings */
+static void
+linkToSibling(DagNode *first, DagNode *node)
+{
+    if (first->next) {
+	node->prev = first->prev;
+	first->prev->next = node;
+    }
+    else {
+	first->next = node;
+	node->prev = first;
+    }
+    node->next = first;
+    first->prev = node;
+}
+
+static void
+linkToParent(DagNode *node)
+{
+    DagNode *parent = node->parent;
+    DagNode *first_sib = parent->kids;
+    if (first_sib) {
+	linkToSibling(first_sib, node);
+    }
+    else {
+	parent->kids = node;
+    }
+}
+
+/* Create a sorted tree, reflecting the hierarchy of DagNodes.  At each
+ * level of the tree, the nodes are sorted in fqn order.
+ */
+static DagNode *
+sortedTree(Hash *allnodes)
+{
+    Vector *nodelist = nodeList(allnodes);
+    DagNode *root = NULL;
+    DagNode *node;
+    int i;
+
+    /* First we sort the vector by fqn. */
+    qsort((void *) nodelist->contents->vector,
+	  nodelist->elems, sizeof(Object *), fqnCmp);
+
+    /* Now add each node into it's rightful place in the tree */
+    for (i = 0; i < nodelist->elems; i++) {
+	node = (DagNode *) nodelist->contents->vector[i];
+	if (node->parent) {
+	    linkToParent(node);
+	}
+	else {
+	    if (root) {
+		linkToSibling(root, node);
+	    }
+	    else {
+		root = node;
+	    }
+	}
+    }
+    objectFree((Object *) nodelist, FALSE);
+    return root;
+}
+
+static void
+makeBuildable(DagNode *node)
+{
+    DagNode *up = node->parent;
+    node->is_buildable = TRUE;
+    while (up) {
+	up->buildable_kids++;
+	up = up->parent;
+    }
+}
+
+static void
+makeUnbuildable(DagNode *node)
+{
+    DagNode *up = node->parent;
+    node->is_buildable = FALSE;
+    while (up) {
+	up->buildable_kids--;
+	up = up->parent;
+    }
+}
+
+static DagNode *
+nextBuildable(DagNode *node)
+{
+    DagNode *sibling;
+    /* Find the next buildable node in the tree.  */
+    if (!node) {
+	return NULL;
+    }
+    if (node->is_buildable) {
+	return node;
+    }
+    if (node->buildable_kids) {
+	return nextBuildable(node->kids);
+    }
+    if (sibling = node->next) {
+	while (sibling != node) {
+	    if (sibling->is_buildable) {
+		return sibling;
+	    }
+	    if (sibling->buildable_kids) {
+		return nextBuildable(sibling->kids);
+	    }
+	    sibling = sibling->next;
+	}
+    }
+    return nextBuildable(node->parent);
+}
+
+static Vector *
+removeNodeGetNewCandidates(DagNode *node, Hash *allnodes)
+{
+    Vector *results = vectorNew(64);
+    Vector *deps;
+    DagNode *next;
+
+    if (deps = node->dependents) {
+	while (next = (DagNode *) dereference(vectorPop(deps))) {
+	    removeDependency(next, node);
+	    if (!next->dependencies) {
+		(void) vectorPush(results, (Object *) next);
+	    }
+	}
+    }
+
+    /* Finally, we remove node from our hash. */
+    (void) hashDel(allnodes, (Object *) node->fqn);
+    return results;
+}
+
+static void
+makeAllBuildable(Vector *buildable)
+{
+    DagNode *next;
+    int i;
+
+    for (i = 0; i < buildable->elems; i++) {
+	next = (DagNode *) buildable->contents->vector[i];
+	makeBuildable(next);
+    }
+    objectFree((Object *) buildable, FALSE);
+}
+
+/* This is Marc's smart tsort algorithm.  This algorithm attempts to 
+ * sort not just by dependencies, but so that we do as little
+ * tree-traversal as possible during the build.
+ * The algorithm is this:
+ * smart_tsort(hash: all_nodes)
+ *   tree := create sorted tree from all_nodes
+ *           -- This tree is sorted by fqn and structured by node
+ *           --   parentage.  Each node in the tree has fields:
+ *           --   boolean: is_buildable, integer: buildable_kids
+ *           -- initialised to false and 0 respectively
+ *  candidates := unordered list of all buildable nodes from all_nodes
+ *  for each candidate in candidates loop
+ *    mark the node as buildable in tree
+ *    increment buildable_kids in all ancestors in the tree
+ *  end loop
+ *  buildlist := new empty list
+ *  previous position in tree := root of tree
+ *  loop
+ *    candidate := first buildable node found by minimal traversal of
+ *                   tree from previous position
+ *    append candidate to buildlist
+ *    mark node as built in tree
+ *    decrement buildable_kids in all ancestors in the tree
+ *    for each dependent item loop
+ *      unlink candidate from dependent
+ *      if dependent has no more dependencies then
+ *        mark dependent as buildable in tree
+ *        increment buildable_kids in all ancestors in the tree
+ *      end if
+ *    end loop
+ *  until no more buildable nodes
+ * 
+ * API notes: allnodes should be empty when we are done!
+ */
+static Vector *
+smart_tsort(Hash *allnodes)
+{
+    DagNode *root = sortedTree(allnodes);
+    DagNode *next;
+    int i;
+    Vector *buildable = get_build_candidates(allnodes);
+    Vector *results = vectorNew(hashElems(allnodes));
+
+    //showAllDeps(allnodes);
+    makeAllBuildable(buildable);
+
+    next = nextBuildable(root);
+    while (next) {
+	(void) vectorPush(results, (Object *) next);
+	makeUnbuildable(next);
+	buildable = removeNodeGetNewCandidates(next, allnodes);
+	makeAllBuildable(buildable);
+	next = nextBuildable(next);
+    }
+ 
     return results;
 }
 
@@ -653,6 +895,7 @@ gensort(Document *doc)
     Hash *pqnhash = NULL;
     Vector *sorted = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
+    Symbol *simple_sort = symbolGet("simple-sort");
 
     handling_context = (ignore_contexts == NULL);
 
@@ -660,7 +903,12 @@ gensort(Document *doc)
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
-	sorted = simple_tsort(dagnodes);
+	if (simple_sort) {
+	    sorted = simple_tsort(dagnodes);
+	}
+	else {
+	    sorted = smart_tsort(dagnodes);
+	}
     }
     EXCEPTION(ex);
     FINALLY {

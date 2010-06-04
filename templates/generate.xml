@@ -15,7 +15,18 @@
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
     <option name='ec*hoes' type='flag' default='true'/>
-    <option name='i*gnore-contexts' type='flag'/>
+    <option name='i*gnore-contexts' type='flag'>
+      This causes the context handling code that optimises context
+      switches, to be diabled.  The only context that we have right now
+      is for ownership, and the context arrival and departure code
+      causes "set authorization" and "reset authorization" statements to
+      be issued.
+    </option>
+    <option name='s*imple-sort' type='flag'>
+      This causes the simple, rather than smart, version of tsort to be
+      used.  It is is possible that the smart tsort may be buggy or
+      inefficient which is why this option exists.
+    </option>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
     <option name='add_deps' type='boolean' value='true'/>

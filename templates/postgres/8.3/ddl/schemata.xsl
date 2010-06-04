@@ -10,9 +10,8 @@
     <xsl:if test="../@action='build'">
       <print>
 	<xsl:if test="skit:eval('echoes') = 't'">
-          <xsl:text>\echo schema </xsl:text>
+          <xsl:text>&#x0A;\echo schema </xsl:text>
           <xsl:value-of select="../@qname"/>
-          <xsl:text>&#x0A;</xsl:text>
 	</xsl:if>
 	<xsl:choose>
 	  <xsl:when test="../@name='public'">

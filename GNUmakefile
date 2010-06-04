@@ -54,7 +54,10 @@ scatter:	skit
 	./skit -t extract.xml --dbtype=postgres --connect "dbname = 'regressdb' port = 5432 host = /var/run/postgresql" --scatter --path regress/scratch/dbdump
 
 
-gen:	skit
+gend:	skit
+	./skit --generate --drop  regress/scratch/regressdb_dump1a.xml
+
+genb:	skit
 	./skit --generate --build  regress/scratch/regressdb_dump1a.xml
 
 tryl:	skit

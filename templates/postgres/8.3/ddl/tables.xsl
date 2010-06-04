@@ -39,12 +39,12 @@
   <xsl:template match="dbobject/table">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
           <xsl:text>\echo table </xsl:text>
           <xsl:value-of select="../@qname"/>
           <xsl:text>&#x0A;</xsl:text>
 	</xsl:if>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
         <xsl:text>create table </xsl:text>
