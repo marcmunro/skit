@@ -665,6 +665,7 @@ EGREP
 LIBOBJS
 PQINCPATH
 PQLIB
+PG_CONFIG
 PKG_CONFIG
 GLIB_CFLAGS
 GLIB_LIBS
@@ -5305,21 +5306,59 @@ fi
 
 
 
-{ echo "$as_me:$LINENO: checking explicitly defined PostgreSQL libraries" >&5
-echo $ECHO_N "checking explicitly defined PostgreSQL libraries... $ECHO_C" >&6; }
+PG_POSSIBLE_VERSION=`psql --version | head -1 | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9][0-9]*.*/\1/'`
+
+# Extract the first word of "pg_configdir/pg_config${ac_exeext}", so it can be a program name with args.
+set dummy pg_configdir/pg_config${ac_exeext}; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PG_CONFIG="$PG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="/usr/lib/postgresql/$PG_POSSIBLE_VERSION/bin:/usr/local/pgsql/bin /usr/local/bin:/usrz/bin:/bin:/usr/lib/postgresql/bin:/opt/local/pgsql/bin:/opt/pgsql/bin/"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PG_CONFIG" && ac_cv_path_PG_CONFIG="`which pg_config${ac_exeext}`"
+  ;;
+esac
+fi
+PG_CONFIG=$ac_cv_path_PG_CONFIG
+if test -n "$PG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PG_CONFIG" >&5
+echo "${ECHO_T}$PG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 
 if test "x${with_pglibdir}" != "x" ; then
-        PQINCPATH="-I${with_pglibdir}"
-    { echo "$as_me:$LINENO: result: ${PQINCPATH}" >&5
-echo "${ECHO_T}${PQINCPATH}" >&6; }
-elif test -x "${with_pgconfigdir}/pg_config" ; then
-            PQINCPATH=-I`${with_pgconfigdir}/pg_config --libdir`
-    { echo "$as_me:$LINENO: result: ${PQINCPATH}" >&5
-echo "${ECHO_T}${PQINCPATH}" >&6; }
+        { echo "$as_me:$LINENO: checking PostgreSQL library from --with_pglibdir" >&5
+echo $ECHO_N "checking PostgreSQL library from --with_pglibdir... $ECHO_C" >&6; }
+    PQLIB="-I${with_pglibdir}"
+    { echo "$as_me:$LINENO: result: ${PQLIB}" >&5
+echo "${ECHO_T}${PQLIB}" >&6; }
 else
-    { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
         { echo "$as_me:$LINENO: checking for PQconnectdb in -lpq" >&5
 echo $ECHO_N "checking for PQconnectdb in -lpq... $ECHO_C" >&6; }
 if test "${ac_cv_lib_pq_PQconnectdb+set}" = set; then
@@ -5388,41 +5427,38 @@ fi
     if test $FOUND_PQLIB ; then
         PQLIB="-lpq"
     else
-        echo PostgreSQL library not found in default library path.
-        exit 0
+       { echo "$as_me:$LINENO: checking PostgreSQL library from pg_config" >&5
+echo $ECHO_N "checking PostgreSQL library from pg_config... $ECHO_C" >&6; }
+       if test -x "${PG_CONFIG}" ; then
+       	      	  PQLIB=-I`${PG_CONFIG} --pkglibdir`
+	  { echo "$as_me:$LINENO: result: ${PQLIB}" >&5
+echo "${ECHO_T}${PQLIB}" >&6; }
+	echo
+	  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+          echo PostgreSQL library not found.
+          exit 0
+	fi
     fi
 fi
 
-{ echo "$as_me:$LINENO: checking explicitly defined PostgreSQL headers" >&5
-echo $ECHO_N "checking explicitly defined PostgreSQL headers... $ECHO_C" >&6; }
+
+
+{ echo "$as_me:$LINENO: checking PostgreSQL headers" >&5
+echo $ECHO_N "checking PostgreSQL headers... $ECHO_C" >&6; }
 if test "x${with_pgincludedir}" != "x" ; then
         pg_inc_dir="${with_pgincludedir}"
     { echo "$as_me:$LINENO: result: ${pg_inc_dir}" >&5
 echo "${ECHO_T}${pg_inc_dir}" >&6; }
-elif test -x "${with_pgconfigdir}/pg_config"; then
-            pg_inc_dir=`${with_pgconfigdir}/pg_config --libincludedir`
+elif test -x "${PG_CONFIG}" ; then
+        pg_inc_dir=`${PG_CONFIG} --pkgincludedir`
     { echo "$as_me:$LINENO: result: ${pg_inc_dir}" >&5
 echo "${ECHO_T}${pg_inc_dir}" >&6; }
 else
     { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-    if test -d /usr/include/pgsql ; then
-        pg_inc_dir="/usr/include/pgsql"
-    elif test -d /usr/include/postgresql ; then
-        pg_inc_dir="/usr/include/postgresql"
-    elif test -d /usr/local/psql/include ; then
-        pg_inc_dir="/usr/local/psql/include"
-    elif test -d /opt/psql/include ; then
-        pg_inc_dir="/opt/psql/include"
-    elif test -f /usr/includes/libpq-fe.h ; then
-        pg_inc_dir="/usr/includes"
-    elif test -f /usr/include/libpq-fe.h ; then
-        pg_inc_dir="/usr/include"
-    else
-        echo PostgreSQL includes directory not found!
-        PQLIB=""
-        exit 0
-    fi
+    exit 0
+fi
 
 
 for ac_header in "$pg_inc_dir/libpq-fe.h"
@@ -5569,13 +5605,12 @@ fi
 
 done
 
-    if test $HAVE_HEADER-LIBPQ-FE.H ; then
-        PQINCPATH="-I$pg_inc_dir"
-    else
-        echo PostgreSQL header libpq-fe.h not found!
-        PQLIB=""
-        exit 0
-    fi
+if test $HAVE_HEADER-LIBPQ-FE.H ; then
+    PQINCPATH="-I$pg_inc_dir"
+else
+    echo PostgreSQL header libpq-fe.h not found!
+    PQLIB=""
+    exit 0
 fi
 
 
@@ -6658,6 +6693,7 @@ EGREP!$EGREP$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 PQINCPATH!$PQINCPATH$ac_delim
 PQLIB!$PQLIB$ac_delim
+PG_CONFIG!$PG_CONFIG$ac_delim
 PKG_CONFIG!$PKG_CONFIG$ac_delim
 GLIB_CFLAGS!$GLIB_CFLAGS$ac_delim
 GLIB_LIBS!$GLIB_LIBS$ac_delim
@@ -6670,7 +6706,7 @@ CHECK_LIBS!$CHECK_LIBS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

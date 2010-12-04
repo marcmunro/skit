@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  TODO: Complete this comment
+
+-->
+
+
+<skit:stylesheet
+  xmlns:skit="http://www.bloodnok.com/xml/skit">
+  
+  <skit:options>
+    <option name='sources' type='integer' value='2'/>
+    <option name='s*wap' type='flag'/>
+    <!-- Ensure add_deps.xsl is run before anything else is done -->
+    <option name='add_deps' type='boolean' value='true'/>
+  </skit:options>
+
+  <skit:diff rules="diffrules.xml" swap="swap"/>
+</skit:stylesheet>
+
+

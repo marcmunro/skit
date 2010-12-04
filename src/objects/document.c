@@ -12,12 +12,60 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "../skit_lib.h"
 #include "../exceptions.h"
 
 static String boolean_str = {OBJ_STRING, "boolean"};
 
 
+extern char *
+nodestr(xmlNode *node)
+{
+    char tmp[400];
+    char *end = &(tmp[0]);
+    char *result;
+    xmlAttrPtr attr;
+    xmlChar *str;
+
+    if (node) {
+	switch (node->type) {
+	case XML_ELEMENT_NODE:
+	    sprintf(tmp, "<%s", (char *) node->name);
+	    end += strlen(end);
+	    for(attr = node->properties; NULL != attr; attr = attr->next) {
+		str = (xmlChar *) attr->name;
+		sprintf(end, " %s=\"%s\"", (char *) str,
+			(char *) xmlGetProp(node, str));
+		end += strlen(end);
+	    }
+	    sprintf(end, ">");
+	    break;
+	case XML_TEXT_NODE:
+	    str = xmlNodeGetContent(node);
+	    sprintf(tmp, "\"%s\"", (char *) str);
+	    xmlFree(str);
+	    break;
+	default:
+	    str = xmlNodeGetContent(node);
+	    sprintf(tmp, "<!-- %s -->", (char *) str);
+	    xmlFree(str);
+	}
+	return newstr("%s", tmp);
+    }
+    else {
+	return newstr("nil");
+    }
+}
+
+extern void
+printNode(FILE *output, char *label, xmlNode *node)
+{
+    char *str = nodestr(node);
+
+    fprintf(output, "%s %s\n", label, str);
+    skfree(str);
+}
 
 Node *
 nodeNew(xmlNode *node)
@@ -637,7 +685,7 @@ documentStr(Document *doc)
 	xmlDocDumpFormatMemory(doc->doc, &xmlbuf, &buffersize, 1);
 	// Convert the result into something we can track within skit,
 	// and free it.
-	result = newstr((char *) xmlbuf);
+	result = newstr("%s", (char *) xmlbuf);
 	xmlFree(xmlbuf);
     }
     else {

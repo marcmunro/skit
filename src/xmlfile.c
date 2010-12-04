@@ -197,9 +197,9 @@ stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 
 	if (result_attr) {
 	    if (!result_reqd) {
-		/* This is a rather inefficient way of freeing a node,
-		   but it ensures that everything associated with the
-		   node is actually freed. */
+		/* This is a dumb way of freeing a node, but it ensures
+		 * that everything associated with the node is actually
+		 * freed. */ 
 		if (doc = docForNode(node)) {
 		    objectFree((Object *) doc, TRUE);
 		}
@@ -910,15 +910,6 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 }
 
 static xmlNode *
-unlinkNode(xmlNode * node)
-{
-    xmlNode *result = xmlCopyNode(node, 1);
-    xmlUnlinkNode(node);
-    return result;
-}
-
-
-static xmlNode *
 execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *stylesheet_name = nodeAttribute(template_node, "stylesheet");
@@ -939,7 +930,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	stylesheet = findDoc(stylesheet_name);
 
 	if (input && (streq(input->value, "pop"))) {
-	    source_doc = (Document *) actionStackPop();
+	    source_doc = docStackPop();
 	    if (!source_doc) {
 		RAISE(PARAMETER_ERROR,
 		      newstr("Failed to pop document for xsl processing"));
@@ -1121,7 +1112,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
-	    source_doc = (Document *) actionStackPop();
+	    source_doc = docStackPop();
 	}
 	sorted = gensort(source_doc);
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
@@ -1843,6 +1834,59 @@ gatherFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 
 
 static xmlNode *
+diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *diffrules = nodeAttribute(template_node, "rules");
+    String *swap = nodeAttribute(template_node, "swap");
+    Object *do_swap = evalSexp(swap->value);
+    xmlNode *result;
+
+    BEGIN {
+	result = doDiff(diffrules, do_swap != NULL);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) swap, TRUE);
+	objectFree((Object *) diffrules, TRUE);
+    }
+    END;
+
+    return result;
+
+#if 0
+    Document *source_doc = NULL;
+    Document *result_doc;
+    Hash *dagnodes = NULL;
+    Vector *sorted = NULL;
+    xmlNode *root;
+    xmlDocPtr xmldoc;
+
+    BEGIN {
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = docStackPop();
+	}
+	sorted = gensort(source_doc);
+	xmldoc = xmlNewDoc(BAD_CAST "1.0");
+	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
+	xmlDocSetRootElement(xmldoc, root);
+	result_doc = documentNew(xmldoc, NULL);
+
+	treeFromVector(root, sorted);
+	objectFree((Object *) sorted, TRUE);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) input, TRUE);
+	objectFree((Object *) source_doc, TRUE);
+    }
+    END;
+    return root;
+#endif
+
+}
+
+
+static xmlNode *
 execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *input = nodeAttribute(template_node, "input");
@@ -1853,7 +1897,7 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
-	    source_doc = (Document *) actionStackPop();
+	    source_doc = docStackPop();
 	    if (!source_doc) {
 		RAISE(PARAMETER_ERROR,
 		      newstr("Failed to pop document for skit:process"));
@@ -1910,6 +1954,7 @@ initSkitProcessors()
 	addProcessor("process", &execProcess);
 	addProcessor("scatter", &scatterFn);
 	addProcessor("gather", &gatherFn);
+	addProcessor("diff", &diffFn);
     }
 }
 
@@ -1933,7 +1978,7 @@ exec(xmlNode *template_node, xmlNode *parent_node, int depth)
 	stylesheet = findDoc(stylesheet_name);
 
 	if (input && (streq(input->value, "pop"))) {
-	    source_doc = (Document *) actionStackPop();
+	    source_doc = docStackPop();
 	}
 	else {
 	    root_node = processChildren(template_node, NULL, depth + 1);

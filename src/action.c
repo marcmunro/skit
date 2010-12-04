@@ -35,24 +35,25 @@ static String global_str = {OBJ_STRING, "global"};
 static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
 static Document *rmdeps_document = NULL;
-static Cons *action_stack = NULL;
+
+static Cons *docstack = NULL;
 
 void
-actionStackPush(Object *obj)
+docStackPush(Object *obj)
 {
     if (obj->type == OBJ_DOCUMENT) {
 	readDocDbver((Document *) obj);
     }
-    action_stack = consNew(obj, (Object *) action_stack);
+    docstack = consNew(obj, (Object *) docstack);
 }
 
-Object *
-actionStackPop()
+Document *
+docStackPop()
 {
-    Cons *front = action_stack;
+    Cons *front = docstack;
     Object *result = NULL;
-    if (action_stack) {
-	action_stack = (Cons *) action_stack->cdr;
+    if (docstack) {
+	docstack = (Cons *) docstack->cdr;
 	front->cdr = NULL;
 	result = front->car;
 	objectFree((Object *) front, FALSE);
@@ -61,14 +62,14 @@ actionStackPop()
 	readDocDbver((Document *) result);
     }
 
-    return result;
+    return (Document *) result;
 }
 
 Object *
-actionStackHead()
+docStackHead()
 {
-    if (action_stack) {
-	return (Object *) action_stack->car;
+    if (docstack) {
+	return (Object *) docstack->car;
     }
     return NULL;
 }
@@ -76,9 +77,9 @@ actionStackHead()
 // TOO: deprecate
 /* Count starts at 1 */
 static Cons *
-actionStackNth(int n)
+docStackNth(int n)
 {
-    Cons *nth = action_stack;
+    Cons *nth = docstack;
     while ((n > 1) && nth) {
 	nth = (Cons *) nth->cdr;
 	n--;
@@ -110,13 +111,13 @@ applyXSL(Document *xslsheet)
     Document *src_doc;
     Document *result_doc;
 
-    src_doc = (Document *) actionStackPop();
+    src_doc = (Document *) docStackPop();
     result_doc = applyXSLStylesheet(src_doc, xslsheet);
     objectFree((Object *) src_doc, TRUE);
-    actionStackPush((Object *) result_doc);
+    docStackPush((Object *) result_doc);
 }
 
-static void
+void
 addDeps()
 {
     applyXSL(getAddDepsDoc());
@@ -162,7 +163,7 @@ loadInFile(String *filename)
 	RAISE();
     }
     END;
-    actionStackPush((Object *) doc);
+    docStackPush((Object *) doc);
 }
 
 /* Determine whether the current action has a non-source file argument */
@@ -483,6 +484,12 @@ parseScatter(Object *obj)
 }
 
 static Object *
+parseDiff(Object *obj)
+{
+    return execParseTemplate("diff.xml");
+}
+
+static Object *
 parseGenerate(Object *obj)
 {
     return execParseTemplate("generate.xml");
@@ -597,6 +604,7 @@ defineActionParsers()
 	defineActionSymbol("parse_dbtype", &parseDbtype);
 	defineActionSymbol("parse_list", &parseList);
 	defineActionSymbol("parse_scatter", &parseScatter);
+	defineActionSymbol("parse_diff", &parseDiff);
     }
     done = TRUE;
 }
@@ -660,7 +668,7 @@ preprocessSourceDocs(int sources, Object *params)
     Object *add_deps = dereference(symbolGetValue("add_deps"));
 
     for (i = 1; i <= sources; i++) {
-	cons = actionStackNth(i);
+	cons = docStackNth(i);
 	src_doc = (Document *) cons->car;
 	if (add_deps && (!docHasDeps(src_doc))) {
 	    xslsheet = getAddDepsDoc();
@@ -679,7 +687,7 @@ static Object *
 executePrint(Object *params)
 {
     Int4 *sources = (Int4 *) dereference(symbolGetValue("sources"));
-    int action_stack_entries = consLen(action_stack);
+    int docstack_entries = consLen(docstack);
     boolean print_full;
     boolean print_xml;
     boolean has_deps;
@@ -688,7 +696,7 @@ executePrint(Object *params)
     char *docstr;
 
     // TODO: Ensure sources is retrieved successfully from the hash
-    if (action_stack_entries < sources->value) {
+    if (docstack_entries < sources->value) {
 	action_name = (String *) dereference(symbolGetValue("action"));
 
 	// TODO: Ensure action_name is retrieved successfully from the hash
@@ -699,7 +707,7 @@ executePrint(Object *params)
     print_full = dereference(symbolGetValue("full")) && TRUE;
     print_xml = dereference(symbolGetValue("xml")) && TRUE;
 
-    doc = (Document *) actionStackHead();
+    doc = (Document *) docStackHead();
     has_deps = docHasDeps(doc);
     //dbgSexp(doc);
 
@@ -713,7 +721,7 @@ executePrint(Object *params)
 	    rmDeps();
 	}
     }
-    doc = (Document *) actionStackPop();
+    doc = (Document *) docStackPop();
 
     if (docIsPrintable(doc) && (!print_xml) && (!print_full)) {
 	documentPrint(stdout, doc);
@@ -732,12 +740,12 @@ executeTemplate(Object *params)
 {
     Document *template = (Document *) dereference(symbolGetValue("template"));
     Int4 *sources = (Int4 *) dereference(symbolGetValue("sources"));
-    int action_stack_entries = consLen(action_stack);
+    int docstack_entries = consLen(docstack);
     String *action_name;
     Document *result;
 
     // TODO: Ensure sources is retrieved successfully from the hash
-    if (action_stack_entries < sources->value) {
+    if (docstack_entries < sources->value) {
 	action_name = (String *) dereference(symbolGetValue("action"));
 
 	// TODO: Ensure action_name is retrieved successfully from the hash
@@ -748,7 +756,7 @@ executeTemplate(Object *params)
     preprocessSourceDocs(sources->value, params);
     
     if (result = processTemplate(template)) {
-	actionStackPush((Object *) result);
+	docStackPush((Object *) result);
     }
 
     return NULL;
@@ -792,6 +800,7 @@ defineActionExecutors()
 	defineActionSymbol("execute_list", &executeTemplate);
 	defineActionSymbol("execute_generate", &executeTemplate);
 	defineActionSymbol("execute_scatter", &executeTemplate);
+	defineActionSymbol("execute_diff", &executeTemplate);
     }
     done = TRUE;
 }
@@ -882,11 +891,11 @@ executeAction(String *action, Hash *params)
 void
 finalAction()
 {
-    if (action_stack) {
+    if (docstack) {
 	symbolSet("sources", (Object *) int4New(1));
 	(void) executePrint(NULL);
     }
-    if (action_stack) {
+    if (docstack) {
 	RAISE(PARAMETER_ERROR, 
 	      newstr("Unprocessed documents still exist on the stack"));
     }

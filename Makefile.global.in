@@ -22,7 +22,8 @@ CC=			gcc
 #build tool flags
 #CFLAGS=			-g -O2
 # Turn off optimisation as it makes gdb harder to use
-CFLAGS=			-g -O0
+CFLAGS=			-ggdb3 -O0
+LDFLAGS=			-ggdb3 -O0
 
 override CPPFLAGS := -I ./test \
          @GLIB_CFLAGS@ \

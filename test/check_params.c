@@ -1,7 +1,7 @@
 /**
  * @file   check_params.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009, 2010 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <string.h>
 #include <regex.h>
 #include "../src/skit_lib.h"
 #include "../src/exceptions.h"
@@ -178,7 +179,7 @@ START_TEST(adddeps_options)
 	
 	
 	objectFree((Object *) param_list, TRUE);
-	doc = (Document *) actionStackPop();
+	doc = docStackPop();
 	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
@@ -239,7 +240,7 @@ START_TEST(template_options)
 	
 	
 	objectFree((Object *) param_list, TRUE);
-	doc = (Document *) actionStackPop();
+	doc = docStackPop();
 	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
@@ -271,7 +272,7 @@ START_TEST(too_many_sources)
     }
     END;
 
-    doc = (Document *) actionStackPop();
+    doc = docStackPop();
     objectFree((Object *) doc, TRUE);
 
     FREEMEMWITHCHECK;
@@ -288,7 +289,7 @@ START_TEST(missing_file)
     initTemplatePath("./test");
 
     BEGIN {
-	param_list = process_args(4, args);
+	param_list = process_args(3, args);
 	fail("Missing file not detected(1)");
     }
     EXCEPTION(ex);
@@ -298,7 +299,7 @@ START_TEST(missing_file)
     }
     END;
 
-    doc = (Document *) actionStackPop();
+    doc = docStackPop();
     objectFree((Object *) doc, TRUE);
 
     FREEMEMWITHCHECK;
@@ -411,7 +412,7 @@ START_TEST(multiple_options)
 	
 
 	objectFree((Object *) param_list, TRUE);
-	doc = (Document *) actionStackPop();
+	doc = docStackPop();
 	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
@@ -739,7 +740,7 @@ START_TEST(extract)
 	process_args2(8, args);
 	resetdirect(fi);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -778,7 +779,7 @@ START_TEST(print2)
 	process_args2(4, args);
 	//resetdirect(fi);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -818,7 +819,7 @@ START_TEST(gather)
 	process_args2(3, args);
 	//resetdirect(fi);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -858,7 +859,7 @@ START_TEST(scatter)
 	process_args2(7, args);
 	//resetdirect(fi);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -900,7 +901,7 @@ START_TEST(extract2)
 	process_args2(8, args);
 	//resetdirect(fi);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -938,7 +939,42 @@ START_TEST(generate2)
     BEGIN {
 	process_args2(8, args);
 	//process_args2(10, args);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(diff)
+{
+    char *args[] = {"./skit", "-t", "diff.xml", "zz", 
+		    "z2",  "--print", "--full"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //registerTestSQL();
+    //showFree(1205);
+    //showMalloc(299978);
+
+    BEGIN {
+	process_args2(7, args);
+	//process_args2(10, args);
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -1000,7 +1036,7 @@ START_TEST(generate)
 	fi = redirect("/dev/null");
 	process_args2(8, args);
 	resetdirect(fi);
-	//doc = (Document *) actionStackPop();
+	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
@@ -1042,6 +1078,7 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate2); // during development of new db objects
+    ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, scatter);
     ADD_TEST(tc_core, gather);
     ADD_TEST(tc_core, print2);

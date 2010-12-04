@@ -516,6 +516,7 @@ objectSexp(Object *obj)
     char *fails;
     String *tmps;
     char *tmp;
+    char *tmp2;
     if (!obj) {
 	return newstr("nil");
     }
@@ -543,6 +544,10 @@ objectSexp(Object *obj)
     case OBJ_CONNECTION:
 	return newstr("<%s %p>", objTypeName(obj), ((Connection *) obj)->conn);
     case OBJ_XMLNODE:
+	tmp = nodestr(((Node *)obj)->node);
+	tmp2 = newstr("<%s (%s)>", objTypeName(obj), tmp);
+	skfree(tmp);
+	return tmp2;
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_DAGNODE:

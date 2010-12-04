@@ -59,3 +59,5 @@ valgrind/*suppressions
 valgrind/alltests
 valgrind/out
 
+# The dbdump directory
+dbdump/

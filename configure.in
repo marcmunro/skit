@@ -103,69 +103,63 @@ AC_DEFUN(POSTGRESQL_CHECKS, [
         AC_SUBST(PQINCPATH)
         AC_SUBST(PQLIB)
 
-AC_MSG_CHECKING([explicitly defined PostgreSQL libraries])
+dnl Checking for pg_config in a list of possible locations.
+PG_POSSIBLE_VERSION=[`psql --version | head -1 | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9][0-9]*.*/\1/'`]
+
+AC_PATH_PROG([PG_CONFIG], 
+	     [pg_configdir/pg_config${ac_exeext}], 
+	     [`which pg_config${ac_exeext}`],
+	     [/usr/lib/postgresql/$PG_POSSIBLE_VERSION/bin:/usr/local/pgsql/bin /usr/local/bin:/usrz/bin:/bin:/usr/lib/postgresql/bin:/opt/local/pgsql/bin:/opt/pgsql/bin/])
+
 
 if test "x${with_pglibdir}" != "x" ; then
     dnl pglibdir was provided explicitly, so let's use it
-    PQINCPATH="-I${with_pglibdir}"
-    AC_MSG_RESULT([${PQINCPATH}])
-elif test -x "${with_pgconfigdir}/pg_config" ; then
-    dnl pg_config was provided explicitly, so use that to figure out	
-    dnl pglibdir
-    PQINCPATH=-I`${with_pgconfigdir}/pg_config --libdir`
-    AC_MSG_RESULT([${PQINCPATH}])
+    AC_MSG_CHECKING([PostgreSQL library from --with_pglibdir])
+    PQLIB="-I${with_pglibdir}"
+    AC_MSG_RESULT([${PQLIB}])
 else
-    AC_MSG_RESULT([no])
-
-    dnl Check for PQLIB first.
+    dnl Check for PQLIB the simple way.
     AC_CHECK_LIB(pq,PQconnectdb,FOUND_PQLIB=1)
     if test $FOUND_PQLIB ; then
         PQLIB="-lpq"
     else
-        echo PostgreSQL library not found in default library path.
-        exit 0
+       AC_MSG_CHECKING([PostgreSQL library from pg_config])
+       if test -x "${PG_CONFIG}" ; then
+       	  dnl We have found pg_config so use that to figure out pkglibdir
+    	  PQLIB=-I`${PG_CONFIG} --pkglibdir`
+	  AC_MSG_RESULT([${PQLIB}])
+	echo
+	  AC_MSG_RESULT([no])
+          echo PostgreSQL library not found.
+          exit 0
+	fi
     fi
 fi
 
-AC_MSG_CHECKING([explicitly defined PostgreSQL headers])
+
+
+AC_MSG_CHECKING([PostgreSQL headers])
 if test "x${with_pgincludedir}" != "x" ; then
     dnl pgincludedir was provided explicitly, so let's use it
     pg_inc_dir="${with_pgincludedir}"
     AC_MSG_RESULT([${pg_inc_dir}])
-elif test -x "${with_pgconfigdir}/pg_config"; then
-    dnl pg_config was provided explicitly, so use that to figure out	
-    dnl pgincludedir
-    pg_inc_dir=`${with_pgconfigdir}/pg_config --libincludedir`
+elif test -x "${PG_CONFIG}" ; then
+    dnl We have found pg_config so use that to figure out includedir
+    pg_inc_dir=`${PG_CONFIG} --pkgincludedir`
     AC_MSG_RESULT([${pg_inc_dir}])
 else
     AC_MSG_RESULT([no])
-    if test -d /usr/include/pgsql ; then
-        pg_inc_dir="/usr/include/pgsql"
-    elif test -d /usr/include/postgresql ; then
-        pg_inc_dir="/usr/include/postgresql"
-    elif test -d /usr/local/psql/include ; then
-        pg_inc_dir="/usr/local/psql/include"
-    elif test -d /opt/psql/include ; then
-        pg_inc_dir="/opt/psql/include"
-    elif test -f /usr/includes/libpq-fe.h ; then
-        pg_inc_dir="/usr/includes"
-    elif test -f /usr/include/libpq-fe.h ; then
-        pg_inc_dir="/usr/include"
-    else
-        echo PostgreSQL includes directory not found!
-        PQLIB=""
-        exit 0
-    fi
+    exit 0
+fi
 
-    dnl Check for libpq-fe.h
-    AC_CHECK_HEADERS("$pg_inc_dir/libpq-fe.h")
-    if test $HAVE_HEADER-LIBPQ-FE.H ; then
-        PQINCPATH="-I$pg_inc_dir"
-    else
-        echo PostgreSQL header libpq-fe.h not found!
-        PQLIB=""
-        exit 0
-    fi
+dnl Check for libpq-fe.h
+AC_CHECK_HEADERS("$pg_inc_dir/libpq-fe.h")
+if test $HAVE_HEADER-LIBPQ-FE.H ; then
+    PQINCPATH="-I$pg_inc_dir"
+else
+    echo PostgreSQL header libpq-fe.h not found!
+    PQLIB=""
+    exit 0
 fi
 ])
 

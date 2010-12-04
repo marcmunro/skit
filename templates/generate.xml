@@ -29,7 +29,6 @@
     </option>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
-    <option name='add_deps' type='boolean' value='true'/>
   </skit:options>
 
   <!-- If neither build or drop are specified, then we do a build -->

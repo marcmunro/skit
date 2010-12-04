@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:diffrules
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   version="1.0">
+
+  <!-- We assume that we will only be comparing one type of database at
+  a time.  So, we can simply match our database, cluster and dbincluster
+  objects based only on object type, hence match="type" for these
+  dbobjects.  Also, we would not want to compare on the basis of 
+  database name as it is likely we want to compare two different 
+  databases and they will probably have different names.  --> 
+
+  <dbobject type="cluster" key="type">
+    <attribute name="skit_xml_version" fail="true"
+	       msg="Cannot reconcile xml format diffs between %s and %s"/>
+
+    <dbobject type="database" key="type">
+      <attribute name="tablespace"/>
+      <attribute name="comment" merge_new="yes"/>
+      <attribute name="encoding"/>
+      <attribute name="owner"/>
+      <attribute name="connections"/>
+    </dbobject>
+  
+    <dbobject type="role" key="fqn">
+      <!-- The attributes which we wish to compare -->
+      <attribute name="max_connections"/>
+      <attribute name="password"/>
+      <attribute name="expires"/>
+      <attribute name="login"/>
+    
+      <element type="privilege" match="priv"/>
+      <element type="profile" match="param">
+	<attribute name="value"/>
+      </element>
+
+    </dbobject>
+
+  </dbobject>
+</skit:diffrules>
+

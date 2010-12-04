@@ -60,8 +60,8 @@ gend:	skit
 genb:	skit
 	./skit --generate --build  regress/scratch/regressdb_dump1a.xml
 
-tryl:	skit
-	./skit --generate --build y --list -g
+diff:	skit
+	./skit --diff xx xx
 
 # Build per-source object dependency files for inclusion
 %.d: %.c

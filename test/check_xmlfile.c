@@ -137,12 +137,12 @@ END_TEST
 START_TEST(adddeps)
 {
     String *filename = stringNew("test/testfiles/x.xml");
-    Object *doc;
+    Document *doc;
     initBuiltInSymbols();
     initTemplatePath("test/");
 
     loadInFile(filename);
-    doc = actionStackPop();
+    doc = docStackPop();
     //printSexp(stderr, "DOC: ", doc);
     
     objectFree((Object *) doc, TRUE);

@@ -174,12 +174,6 @@ regression_test2()
     echo Regression test 2 complete 1>&2
 }
 
-verfromstring()
-{
-    sed -e '2d 
-s/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9]/\1/'
-}
-
 verfrompath()
 {
     sed -e 's!.*/\([0-9][0-9]*\.[0-9][0-9]*\)/.*!\1!' | grep '[0-9]\.[0-9]'
@@ -187,12 +181,13 @@ verfrompath()
 
 pgver()
 {
-    psql --version | verfromstring
+   psql --version | head -1 | \
+       sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9][0-9]*.*/\1/'
 }
 
 pguver()
 {
-    psql --version | verfromstring | sed -e 's/\./_/g'
+    pgver | sed -e 's/\./_/g'
 }
 
 pgbin()

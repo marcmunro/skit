@@ -24,7 +24,7 @@
 
 typedef unsigned char boolean;
 
-typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME} DiffType;
+typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, HAS_DIFFKIDS} DiffType;
 
 typedef enum {
     TOKEN_OPEN_PAREN = 0,
@@ -248,6 +248,7 @@ typedef struct TokenStr {
 #endif
 
 #define dbgSexp(x) printSexp(stderr, #x ": ", (Object *) x)
+#define dbgNode(x) printNode(stderr, #x ": ", x)
 
 
 #define streq(a,b) (strcmp(a,b)==0)
@@ -435,10 +436,11 @@ extern Object *validateParamValue(String *type, String *value);
 // action.c
 extern void freeStdTemplates();
 extern void loadInFile(String *filename);
-extern Object *actionStackPop();
+extern Document *docStackPop();
 extern Hash *parseAction(String *action);
 extern void executeAction(String *action, Hash *params);
 extern void finalAction();
+extern void addDeps();
 
 // builtin_symbols.c
 extern void initBuiltinSymbols();
@@ -465,6 +467,7 @@ extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
 
 // document.c
+extern char *nodestr(xmlNode *node);
 extern Node *nodeNew(xmlNode *node);
 extern Document *documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader);
 extern void documentFree(Document *doc, boolean free_contents);
@@ -520,3 +523,6 @@ extern char *applyParams(char *qrystr, Object *params);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);
+
+//diff.c
+extern xmlNode *doDiff(String *diffrules, boolean swap);
