@@ -133,13 +133,30 @@ fnSetq(Object *obj)
     Object *obj_to_eval;
     Object *oldvalue;
     Object *new;
+    char *curstr;
+    char *newstr;
 
     raiseIfNotList("setq", obj);
     sym = (Symbol *) cons->car;
     raiseIfNotSymbol("setq", sym);
     next = (Cons *) cons->cdr;
     obj_to_eval = next? next->car: NULL;
-    symSet(sym, new = objectEval(obj_to_eval));
+    new = objectEval(obj_to_eval);
+
+#ifdef DEBUG
+    curstr = objectSexp(symGet(sym));
+    newstr = objectSexp(new);
+    fprintf(stderr, "Setq %s to %s (was %s)\n",
+	    sym->name, newstr, curstr);
+    skfree(curstr);
+    skfree(newstr);
+    sym->svalue = NULL;
+#endif
+
+
+    //fprintf(stderr, "BEFORE\n");
+    symSet(sym, new);
+    //fprintf(stderr, "AFTER\n");
     return (Object *) objRefNew(new);
 }
 
@@ -764,7 +781,7 @@ fnHashAdd(Object *obj)
 static void
 evalStr(char *str)
 {
-    char *tmp = newstr(str);
+    char *tmp = newstr("%s", str);
     Object *obj = evalSexp(tmp);
     objectFree(obj, TRUE);
     skfree(tmp);

@@ -283,20 +283,16 @@ addChunk(void *chunk)
 //
 
 static void
-debugdebug()
-{
-    fprintf(stderr, "HERE\n");
-}
-
-static void
 delChunk(void *chunk)
 {
     int previous = moveChunk(chunkTable(), freeTable(), chunk, free_number);
 
     if (!previous) {
-	debugdebug();
+	memdebug("FREEING UNKNOWN CHUNK");
+	printObj((Object *) chunk);
 	RAISE(MEMORY_ERROR, 
-	      newstr("DelChunk: Chunk %p not allocated", chunk));
+	      newstr("DelChunk: Chunk %p not allocated (at free %d)", 
+		     chunk, free_number));
     }
     if (previous == -1) {
 	//checkChunk(chunk);

@@ -30,7 +30,7 @@ stringNewByRef(char *value)
 String *
 stringNew(const char *value)
 {
-    return stringNewByRef(newstr(value));
+    return stringNewByRef(newstr("%s", value));
 }
 
 String *
@@ -178,7 +178,7 @@ stringSplit(String *instr, String *split)
     assert(split&& split->type == OBJ_STRING,
 	   "stringSplit: split must be a String");
 
-    mycopy = newstr(instr->value);
+    mycopy = newstr("%s", instr->value);
 
     while (entry = nextTok(mycopy, split->value, &placeholder)) {
 	cons = consNew((Object *) entry, NULL);

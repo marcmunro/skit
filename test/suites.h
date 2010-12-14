@@ -66,7 +66,7 @@ extern int captureOutput(TestRunner *test_fn, void *param, int print,
 			 char **p_stdout,  char **p_stderr,
 			 int *p_signal);
 
-#define TEST_TIMEOUT 60
+#define TEST_TIMEOUT 180
 
 #define FREEMEMWITHCHECK					\
     skitFreeMem();						\

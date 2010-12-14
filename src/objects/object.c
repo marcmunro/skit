@@ -76,7 +76,7 @@ regexpNew(char *str)
 	(void) regerror(err, &(result->regexp), msg, len);
 	RAISE(REGEXP_ERROR, msg);
     }
-    result->src_str = newstr(str);
+    result->src_str = newstr("%s", str);
     return result;
 }
 
@@ -89,7 +89,7 @@ regexpCopy(Regexp *regex)
     char *msg;
 
     result->type = OBJ_REGEXP;
-    result->src_str = newstr(regex->src_str);
+    result->src_str = newstr("%s", regex->src_str);
     err = regcomp(&(result->regexp), regex->src_str, 
 		  REG_NEWLINE + REG_EXTENDED);
     if (err) {
@@ -318,7 +318,7 @@ objectRead(TokenStr *sexp)
 	}
     }
     RAISE(LIST_ERROR, newstr(
-	      "objetRead: premature end of expression"));
+	      "objectRead: premature end of expression"));
     return NULL;
 }
 
@@ -765,7 +765,7 @@ isCollection(Object *object)
 Object *
 objectFromStr(char *instr)
 {
-    char *str = newstr(instr);
+    char *str = newstr("%s", instr);
     Object *obj;
     TokenStr token_str = {str, '\0', NULL};
 

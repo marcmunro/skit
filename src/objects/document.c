@@ -140,7 +140,7 @@ filenameFromUri(const char *URI)
     if ((URI == NULL) || (strncmp(URI, "skitfile:", 9))) {
         return NULL;
     }
-    filename = stringNewByRef(newstr(URI + 9));
+    filename = stringNewByRef(newstr("%s", URI + 9));
     path = findFile(filename);
     objectFree((Object *) filename, TRUE);
     return path;
@@ -961,7 +961,7 @@ static void
 assertXpathObj(void *obj, char *info)
 {
     if (!obj) {
-	RAISE(XPATH_EXCEPTION, newstr(info));
+	RAISE(XPATH_EXCEPTION, newstr("%s", info));
     }
 }
 

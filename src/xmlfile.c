@@ -67,7 +67,8 @@ tuplestackPop()
 static Object *
 curTuple()
 {
-    return symbolGetValue("tuple");
+    Object *result = symbolGetValue("tuple");
+    return result;
 }
 
 static char *
@@ -1314,12 +1315,12 @@ evalText(char *in)
 		if (!expr_end) {
 		    expr_end = pos;
 		}
-		expr = newstr(expr_start);
+		expr = newstr("%s", expr_start);
 		len = expr_end - expr_start - 1;
 		expr[len] = '\0';
 		expr_result = evalSexp(expr);
 		
-		tmp = newstr(remaining);
+		tmp = newstr("%s", remaining);
 		len = expr_start - remaining - 1;
 		tmp[len] = '\0';
 		tmp2 = newstr("%s%s", start, tmp);
@@ -1329,7 +1330,7 @@ evalText(char *in)
 		actual = dereference(expr_result);
 		if (actual) {
 		    if (actual->type == OBJ_STRING) {
-			tmp = newstr(((String *) actual)->value);
+			tmp = newstr("%s", ((String *) actual)->value);
 		    }
 		    else {
 			tmp = objectSexp(expr_result);
@@ -2192,7 +2193,7 @@ processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 		 * continue processing. */
 
 		if (failed_once) {
-		    RAISE(XML_PROCESSING_ERROR, newstr(ex->text));
+		    RAISE(XML_PROCESSING_ERROR, newstr("%s", ex->text));
 		}
 		failed_once = TRUE;
 		finishDocument(cur_template);
@@ -2273,7 +2274,7 @@ addParamAttribute(Object *obj, Object *params_node)
 	}
 	break;
     case OBJ_STRING:
-	param = newstr(((String *) value)->value);
+	param = newstr("%s", ((String *) value)->value);
 	break;
     case OBJ_INT4:
 	param = newstr("%d", ((Int4 *) value)->value);

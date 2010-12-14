@@ -133,7 +133,7 @@ symbolNew(char *name)
 	String *hashkey = stringNew(name);
 	sym = (Symbol *) skalloc(sizeof(Symbol));
 	sym->type = OBJ_SYMBOL;
-	sym->name = newstr(name);
+	sym->name = newstr("%s", name);
 	sym->fn = NULL;
 	sym->svalue = NULL;
 	sym->scope = NULL;
@@ -289,7 +289,7 @@ char *
 symbolStr(Symbol *sym)
 {
     assert((sym->type == OBJ_SYMBOL), "symbolStr: Not a symbol");
-    return newstr(sym->name);
+    return newstr("%s", sym->name);
 }
 
 // This is used to make a dynamically allocated copy of a symbol 

@@ -123,9 +123,15 @@ pgsqlConnect(Object *sqlfuncs)
 	char *tmp;
 	char *tmp2;
 
+	connect = (String *) symbolGetValueWithStatus("connect", &new_connection);
+
+	if (!connect) {
+		RAISE(SQL_ERROR,
+			  newstr("No database connection defined"));
+	}
+
 	new_connection = make_global = (connection == NULL);
 
-	connect = (String *) symbolGetValueWithStatus("connect", &new_connection);
 	host = get_param(connect, "host", HOST_MATCH, &new_connection);
     port = get_param(connect, "port", PORT_MATCH, &new_connection);
     dbname = get_param(connect, "dbname", DBNAME_MATCH, &new_connection);

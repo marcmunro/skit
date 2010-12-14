@@ -155,7 +155,7 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 	if (matches = locateFile(root->value, templatedir->value,
 				 dbdir->value, filename->value)) {
 	    if (matches == -1) {
-		return newstr(next_match());
+		return newstr("%s", next_match());
 	    }
 
 	    // Any matches must be from versioned subdirectories.  Check
@@ -207,7 +207,7 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 	if (best_match) {
 	    objectFree(best_match, TRUE);
 	}
-	return newstr(best_match_str);
+	return newstr("%s", best_match_str);
     }
     return NULL;
 }

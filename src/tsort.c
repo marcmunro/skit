@@ -909,6 +909,7 @@ gensort(Document *doc)
 	else {
 	    sorted = smart_tsort(dagnodes);
 	}
+	//dbgSexp(sorted);
     }
     EXCEPTION(ex);
     FINALLY {

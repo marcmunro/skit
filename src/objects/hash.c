@@ -130,7 +130,21 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 	    RAISE(GENERAL_ERROR, 
 		  newstr("hashAdd: failed to remove existing hash entry"));
 	}
+	//dbgSexp(previous_contents);
 	cons = (Cons *) previous_contents;
+	//fprintf(stderr, "prev: %x\n", cons);
+	//fprintf(stderr, "prev->car: %x\n", cons->car);
+	//fprintf(stderr, "prev->cdr: %x\n", cons->cdr);
+	//fprintf(stderr, "prev->cdr->car: %x\n", ((Cons *)cons->cdr)->car);
+	//dbgSexp(((Cons *)cons->cdr)->car);
+	//fprintf(stderr, "prev->cdr->car->car: %x\n", 
+	//	((Cons *)((Cons *)cons->cdr)->car)->car);
+	//fprintf(stderr, "prev->cdr->car->car->value: %x\n", 
+	//	((String *)((Cons *)((Cons *)cons->cdr)->car)->car)->value);
+	//fprintf(stderr, "prev->cdr->car->car->value: %s\n", 
+	//	((String *)((Cons *)((Cons *)cons->cdr)->car)->car)->value);
+	//fprintf(stderr, "prev->cdr->car->cdr: %x\n", 
+	//	((Cons *)((Cons *)cons->cdr)->car)->cdr);
 	previous_contents = cons->cdr;
 	objectFree((Object *) cons->car, TRUE);
 	objectFree((Object *) cons, FALSE);

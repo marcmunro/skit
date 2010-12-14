@@ -83,7 +83,7 @@ exceptionNew(char *file, int line)
     Exception *ex = (Exception *) skalloc(sizeof(Exception));
     memset(ex, 0, sizeof(Exception));
     ex->type = OBJ_EXCEPTION;
-    ex->file_caught = newstr(file);
+    ex->file_caught = newstr("%s", file);
     ex->line_caught = line;
     ex->depth = ++handlers_in_use;
     return ex;
@@ -163,7 +163,7 @@ doRaise(char *file, int line, int signal, char *txt)
     if (exhandler) {
 	exhandler->signal = signal;
 	exhandler->text = txt;
-	exhandler->file_raised = newstr(file);
+	exhandler->file_raised = newstr("%s", file);
 	exhandler->line_raised = line;
 	exhandler->backtrace = backtraceStr(exhandler, NULL);
 	longjmp(exhandler->handler, signal);
@@ -185,12 +185,12 @@ doReRaise(char *file, int line)
     Exception *new_handler = ex->prev;
 
     if (new_handler) {
-	new_handler->file_raised = newstr(file);
+	new_handler->file_raised = newstr("%s", file);
 	new_handler->line_raised = line;
 	new_handler->signal = ex->signal;
 	signal = ex->signal;
 	if (ex->text) {
-	    new_handler->text = newstr(ex->text);
+	    new_handler->text = newstr("%s", ex->text);
 	    new_handler->backtrace = backtraceStr(new_handler, ex);
 	}
 	exceptionPop();
@@ -200,7 +200,7 @@ doReRaise(char *file, int line)
 
     signal = ex->signal;
     if (ex->text) {
-	txt = newstr(ex->text);
+	txt = newstr("%s", ex->text);
     }
     else {
 	txt = newstr("NO EXCEPTION TEXT");

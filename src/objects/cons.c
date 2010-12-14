@@ -41,6 +41,8 @@ consNew(Object *car, Object *cdr)
 void
 consFree(Cons *cons, boolean free_contents)
 {
+    //fprintf(stderr, "cons: %p  ", cons);
+    //dbgSexp(cons);
     if (free_contents) {
 	objectFree(cons->car, free_contents);
 	objectFree(cons->cdr, free_contents);

@@ -339,6 +339,39 @@ START_TEST(too_few_sources)
 }
 END_TEST
 
+START_TEST(incomplete_extract)
+{
+    char *args[] = {"./skit", "--extract"};
+    Document *doc;
+    Cons *param_list;
+    Hash *param_hash;
+    String *action_key = stringNew("action");
+    String *action;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    param_list = process_args(2, args);
+    param_hash = (Hash *) param_list->car;
+    action = (String *) hashGet(param_hash, (Object *) action_key);
+
+    BEGIN {
+	executeAction(action, param_hash);
+
+	fail("Incomplete extract params not detected(1)");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) param_list, FALSE);
+	objectFree((Object *) action_key, TRUE);
+	fail_unless(contains(ex->text, "No database connection defined"),
+		    "Incomplete extract params not detected(2)");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(missing_template)
 {
     char *args[] = {"./skit", "-t", "missing.xml"};
@@ -960,7 +993,7 @@ END_TEST
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml", "zz", 
-		    "z2",  "--print", "--full"};
+		    "zz3",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -995,7 +1028,7 @@ END_TEST
 START_TEST(generate3)
 {
     char *args[] = {"./skit", "--generate", "--build", 
-		    "xx", "--print", "--full"};
+		    "x", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1004,6 +1037,58 @@ START_TEST(generate3)
 
     BEGIN {
 	process_args2(4, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(list)
+{
+    char *args[] = {"./skit", "--list", 
+		    "zz3", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //showFree(2826);
+    //showMalloc(1909);
+
+    BEGIN {
+	process_args2(4, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(deps)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    "zz3", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    showFree(4247);
+    //showMalloc(1909);
+
+    BEGIN {
+	process_args2(3, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1067,6 +1152,7 @@ params_suite(void)
     ADD_TEST(tc_core, missing_file);
     ADD_TEST(tc_core, too_many_sources);
     ADD_TEST(tc_core, too_few_sources);
+    ADD_TEST(tc_core, incomplete_extract);
     ADD_TEST(tc_core, missing_template);
     ADD_TEST(tc_core, multiple_options);
     ADD_TEST(tc_core, unknown_type);
@@ -1078,11 +1164,13 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate2); // during development of new db objects
-    ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, scatter);
     ADD_TEST(tc_core, gather);
     ADD_TEST(tc_core, print2);
     ADD_TEST(tc_core, generate3);
+    //ADD_TEST(tc_core, list);
+    //ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

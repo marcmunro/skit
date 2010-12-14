@@ -105,10 +105,10 @@ optionKeyList(String *instr)
     assert(instr->type == OBJ_STRING,
 	   "optionKeyList: Expected string");
 
-    str_for_tok = newstr(instr->value);
-    str_base = newstr(strtok_r(str_for_tok ,"*", &strtok_tmp));
+    str_for_tok = newstr("%s", instr->value);
+    str_base = newstr("%s", strtok_r(str_for_tok ,"*", &strtok_tmp));
     if (str = strtok_r(NULL, "", &strtok_tmp)) {
-	str_end = newstr(str);
+	str_end = newstr("%s", str);
     }
     else {
 	str_end = newstr("");

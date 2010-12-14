@@ -284,39 +284,6 @@ listUnhandled(Object *obj, Object *ignore)
     return (Object *) count;
 }
 
-static Node *
-getDiffMatch(xmlNode *node, Cons *rule, Hash *others)
-{
-    String *key = NULL;
-    //DOING STUFF HERE
-    dbgSexp(rule);
-    return NULL;
-}
-
-static xmlNode *
-diffDbobject(
-    xmlNode *node, 
-    Hash *rules, 
-    Hash *dbobjects2)
-{
-    xmlNode *result = xmlCopyNode(node, 2);
-    String *type = nodeAttribute(node, "type");
-    Cons *rule = getRule(rules, type);
-    Node *other;
-
-    dbgNode(node);
-    dbgSexp(rule);
-    if (rule) {
-	other = getDiffMatch(node, rule, dbobjects2);
-    }
-    //else {
-    //	addUnhandled(unhandled, type);
-    //}
-
-    objectFree((Object *) type, TRUE);
-    return result;
-}
-
 static Object *
 newDbobjectFromHash(Object *obj, Object *resultptr)
 {
@@ -422,11 +389,69 @@ dbobjectsFromLevel(xmlNode *node, Hash *rules)
     return alist;
 }
 
+/* Return the node from candidates that matches node according to rule */
+static xmlNode *
+getDiffMatch(xmlNode *node, Cons *rule, Hash *candidates)
+{
+    String *match_attr = (String *) rule->car;
+    String *node_attr = nodeAttribute(node, match_attr->value);
+    Node *match = NULL;
+    xmlNode *result;
+
+    match = (Node *) hashDel(candidates, (Object *) node_attr);
+    result = match->node;
+    objectFree((Object *) node_attr, TRUE);
+    objectFree((Object *) match, TRUE);
+
+    return result;
+}
+
+static xmlNode *
+diffDbobject(
+    xmlNode *node, 
+    Hash *rules, 
+    Cons *others,
+    boolean *diffs,
+    int level)
+{
+    String *type = nodeAttribute(node, "type");
+    Cons *rule = (Cons *) hashGet(rules, (Object *) type);
+    Hash *candidates = (Hash *) alistGet(others, (Object *) type);
+    xmlNode *result = xmlCopyNode(node, 2);
+    xmlNode *match;
+    xmlNode *kids;
+
+    if (rule) {
+	if (candidates &&
+	    (match = getDiffMatch(node, rule, candidates)))
+	{
+	    /* Check the kids for diffs */
+	    dbgNode(match);
+	    *diffs = FALSE;
+	    RAISE(XML_PROCESSING_ERROR, newstr("DEAL WITH DIFFS OR THE SAME"));
+	}
+	else {
+	    *diffs = TRUE;
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("DEAL WITH NO MATCH (OBJ DELETION)"));
+	}
+    }
+    else {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("DEAL WITH NO RULE (OBJ UNKNOWN ORIGINAL)"));
+	*diffs = TRUE;
+    }
+    objectFree((Object *) type, TRUE);
+
+    return NULL;
+}
+
 static xmlNode *
 processDiffs(
     xmlNode *node1, 
     xmlNode *node2, 
     Hash *rules,
+    boolean *diffs,
     int level)
 {
     xmlNode *next1 = getElement(node1);
@@ -434,56 +459,66 @@ processDiffs(
     xmlNode *result = NULL;
     xmlNode *new = NULL;
     xmlNode *prev = NULL;
-    Cons *dbobjects2 = NULL;
+    Cons *node2objects = NULL;
 
-    while (next1) {
-	dbgNode(next1);
-	dbgNode(next2);
-	if (streq("dbobject", (char *) next1->name)) {
-	    if (!dbobjects2) {
-		/* Create an alist keyed by dbobject type of
-		 * hashes of nodes.  The hashes will be indexed
-		 * according to the rules for the given dbobject type
-		 * or by fqn if no rule can be found. */
-		dbobjects2 = dbobjectsFromLevel(node2, rules);
-		dbgSexp(dbobjects2);
-	    }
-# HERE.  Next we implement diffDboject.  This should
-# create and return a new node with some diff info
-# the types will be New, Dropped, Identical, Diff, DiffKids,
-# norule_orig, norule, new
-# We also need to remove the recursion stopping level parameter 
-# once everything is stable.
-	    new = NULL;
-	    //new = diffDbobject(next1, rules, dbobjects2);
-	}
-	else {
-	    /* Copy this node and process the kids. */ 
-	    new = xmlCopyNode(next1, 2);
-	    next2 = skipToMatchingnode(next2, next1);
-	    if (next1->children && (level > 1)) {
-		new->children = processDiffs(next1->children,
-					     next2? next2->children: NULL, 
-					     rules, level - 1);
-	    }
-	}
-	if (!result) {
-	    result = new;
-	}
-	if (prev) {
-	    prev->next = new;
-	}
-	prev = new;
-	next1 = getElement(next1->next);
+    if (level <= 0) {
+	return NULL;
     }
 
-    if (dbobjects2) {
-	dbgSexp(dbobjects2);
-#ifdef wib
-	hashEach(dbobjects2, newDbobjectFromHash, (Object *) &result);
-#endif
-	objectFree((Object *) dbobjects2, TRUE);
+    BEGIN {
+	node2objects = dbobjectsFromLevel(node2, rules);
+	dbgSexp(node2objects);
+
+	while (next1) {
+	    if (streq("dbobject", (char *) next1->name)) {
+		new = diffDbobject(next1, rules, node2objects,
+				   diffs, level - 1);
+	    }
+	    next1 = getElement(next1->next);
+	}
+
+	if (node2objects) {
+	    dbgSexp(node2objects);
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("TODO: do something useful with node2objects"));
+	    objectFree((Object *) node2objects, TRUE);
+	    node2objects = NULL;
+	}
     }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) node2objects, TRUE);
+    }
+    END;
+
+    return result;
+}
+
+/* This will handle the 2 root dump nodes and one of the params nodes.
+ */
+static xmlNode *
+processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
+{
+    xmlNode *dump1 = getElement(root1);
+    xmlNode *dump2 = getElement(root2);
+    xmlNode *result = xmlCopyNode(dump1, 2);
+    String *dbname2 = nodeAttribute(dump2, "dbname");
+    String *time2 = nodeAttribute(dump2, "time");
+    xmlAttrPtr attr;
+    xmlNode *params;
+    xmlNode *child;
+    boolean diffs;
+
+    attr = xmlNewProp(result, "dbname2", dbname2->value);
+    attr = xmlNewProp(result, "time2", time2->value);
+    objectFree((Object *) dbname2, TRUE);
+    objectFree((Object *) time2, TRUE);
+
+    params = getElement(dump1->children);
+    child = xmlCopyNode(params, 2);
+    xmlAddChild(result, child);
+    child = processDiffs(params->next, dump2->children, rules, &diffs, 1);
+    
     return result;
 }
 
@@ -493,9 +528,9 @@ processDiff(Document *doc1, Document *doc2, Hash *rules)
     xmlNode *root1 = xmlDocGetRootElement(doc1->doc);
     xmlNode *root2 = xmlDocGetRootElement(doc1->doc);
     xmlNode *diffroot;
-    //Hash *unhandled = hashNew(TRUE);
+     //Hash *unhandled = hashNew(TRUE);
 
-    diffroot = processDiffs(root1, root2, rules, 3);
+    diffroot = processDiffRoot(root1, root2, rules);
     //hashEach(unhandled, listUnhandled, NULL);
     //objectFree((Object *) unhandled, TRUE);
     return diffroot;

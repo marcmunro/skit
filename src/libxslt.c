@@ -42,7 +42,7 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
 	}
 	instr2 = valuePop(ctxt);
 
-	str2 = stringNewByRef(newstr(instr2->stringval));
+	str2 = stringNewByRef(newstr("%s", instr2->stringval));
     }
 
     if ((nargs < 1) || (nargs > 2)) {
@@ -62,7 +62,7 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     instr = valuePop(ctxt);
-    str1 = stringNewByRef(newstr(instr->stringval));
+    str1 = stringNewByRef(newstr("%s", instr->stringval));
     xmlXPathFreeObject(instr);
 
     result = sqlDBQuote(str1, str2);
@@ -95,7 +95,7 @@ xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs)
     }
 
     instr = valuePop(ctxt);
-    expr = stringNewByRef(newstr(instr->stringval));
+    expr = stringNewByRef(newstr("%s", instr->stringval));
     xmlXPathFreeObject(instr);
 
     value = evalSexp(expr->value);
