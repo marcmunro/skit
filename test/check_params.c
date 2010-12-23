@@ -1034,6 +1034,8 @@ START_TEST(generate3)
 
     initBuiltInSymbols();
     initTemplatePath(".");
+    showMalloc(97969);
+    showFree(114869);
 
     BEGIN {
 	process_args2(4, args);
@@ -1059,7 +1061,7 @@ START_TEST(list)
     initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(2826);
-    //showMalloc(1909);
+    //showMalloc(4611);
 
     BEGIN {
 	process_args2(4, args);
@@ -1169,8 +1171,8 @@ params_suite(void)
     ADD_TEST(tc_core, gather);
     ADD_TEST(tc_core, print2);
     ADD_TEST(tc_core, generate3);
-    //ADD_TEST(tc_core, list);
-    //ADD_TEST(tc_core, deps);
+    ADD_TEST(tc_core, list);
+    ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

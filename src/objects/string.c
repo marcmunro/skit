@@ -228,3 +228,17 @@ stringNext(String *str, Object **p_placeholder)
     *p_placeholder = NULL;
     return NULL;
 }
+
+boolean 
+checkString(String *str, void *chunk)
+{
+    boolean found;
+    if (found = checkChunk(str->value, chunk)) {
+	fprintf(stderr, "...within value of \"%s\"", str->value);
+    }
+    if (checkChunk(str, chunk)) {
+ 	fprintf(stderr, "...within \"%s\"", str->value);
+	found = TRUE;
+    }
+    return found;
+}

@@ -121,8 +121,15 @@ freeSymbolTable()
     }
 }
 
-// Create new symbol and add it to the symbol table if it does not
-// already exist.
+void
+checkSymbols(void *chunk)
+{
+    (void) checkObj((Object *) symbols, chunk);
+}
+
+/* Create new symbol and add it to the symbol table if it does not
+ * already exist.
+ */
 Symbol *
 symbolNew(char *name)
 {
@@ -292,10 +299,11 @@ symbolStr(Symbol *sym)
     return newstr("%s", sym->name);
 }
 
-// This is used to make a dynamically allocated copy of a symbol 
-// that would have been allocated statically.  There is no harm in
-// copying a symbol that has already been dynamically allocated but
-// neither is there any benefit.
+/* This is used to make a dynamically allocated copy of a symbol 
+ * that would have been allocated statically.  There is no harm in
+ * copying a symbol that has already been dynamically allocated but
+ * neither is there any benefit.
+ */
 Symbol *
 symbolCopy(Symbol *old)
 {
@@ -353,3 +361,20 @@ symbolExec(Symbol *sym, Object *obj)
 	  newstr("symbolExec: symbol %s has no function", sym->name));
 }
 
+boolean
+checkSymbol(Symbol *sym, void *chunk)
+{
+    boolean found;
+    if (found = checkObj(sym->svalue, chunk)) {
+	printSexp(stderr, "...within svalue of ", (Object *) sym);
+    }
+    if (checkObj((Object*) sym->scope, chunk)) {
+	printSexp(stderr, "...within scope of ", (Object *) sym);
+	found = TRUE;
+    }
+    if (checkChunk(sym, chunk)) {
+	printSexp(stderr, "...within ", (Object *) sym);
+	found = TRUE;
+    }
+    return found;
+}

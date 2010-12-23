@@ -241,21 +241,12 @@ typedef struct TokenStr {
 #define assert(cond,str) 
 #endif
 
-#ifdef MEM_DEBUG
-#define MEMPRINTF printf
-#else 
-#define MEMPRINTF //
-#endif
 
 #define dbgSexp(x) printSexp(stderr, #x ": ", (Object *) x)
 #define dbgNode(x) printNode(stderr, #x ": ", x)
 
 
 #define streq(a,b) (strcmp(a,b)==0)
-//#define newstr (memchunks_incr(), g_strdup_printf)
-
-
-#define newstr(...)  memchunks_incr(g_strdup_printf(__VA_ARGS__))
 
 
 // cons.c
@@ -279,6 +270,7 @@ extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
 extern Object *consNext(Cons *list, Object **p_placeholder);
 extern Object *consAppend(Cons *list, Object *item);
+extern boolean checkCons(Cons *cons, void *chunk);
 
 // object.c
 extern Tuple *tupleNew(Cursor *cursor);
@@ -308,7 +300,7 @@ extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
 extern DagNode *dagnodeNew(Node *node, DagNodeBuildType build_type);
 extern char *nameForBuildType(DagNodeBuildType build_type);
-
+extern boolean checkObj(Object *obj, void *chunk);
 
 // vector.c
 extern Vector *vectorNew(int elems);
@@ -326,6 +318,7 @@ extern Object *vectorDel(Vector *vec, Object *obj);
 extern void vectorSort(Vector *vec, ComparatorFn *fn);
 extern boolean vectorSeach(Vector *vec, Object *obj, int *p_index);
 extern Object *setPush(Vector *vector, Object *obj);
+extern boolean checkVector(Vector *vec, void *chunk);
 #define setPop vectorPop
 #define setStr vectorStr
 #define setGet vectorSet
@@ -347,6 +340,7 @@ extern void hashEach(Hash *hash, TraverserFn *fn, Object *arg);
 extern Hash *hashCopy(Hash *hash);
 extern int hashElems(Hash *hash);
 extern Vector *vectorFromHash(Hash *hash);
+extern boolean checkHash(Hash *hash, void *chunk);
 
 // string.c
 extern String *stringNew(const char *value);
@@ -360,6 +354,7 @@ extern Int4 *stringToInt4(String *str);
 extern Cons *stringSplit(String *instr, String *split);
 extern String *stringLower(String *str);
 extern String *stringNext(String *str, Object **placeholder);
+extern boolean checkString(String *str, void *chunk);
 
 // symbol.c
 extern Hash *symbolTable();
@@ -382,7 +377,8 @@ extern Object *symbolGetValue(char *name);
 extern Object *symbolGetValueWithStatus(char *name, boolean *in_local_scope);
 extern void symbolSetRoot(char *name, Object *value);
 extern void symbolCreate(char *name, ObjectFn *fn, Object *value);
-
+extern void checkSymbols();
+extern boolean checkSymbol(Symbol *sym, void *chunk);
 
 // parse.c
 extern char *sexpTok(TokenStr *instr);
@@ -391,20 +387,45 @@ extern char *tokenTypeName(TokenType tt);
 extern char *strEval(char *instr);
 
 //mem.c
+#define MEM_DEBUG TRUE
+#ifdef MEM_DEBUG
+
+#define MEMPRINTF printf
 extern void *memchunks_incr(void *chunk);
 extern int memchunks_in_use();
 extern void showChunks();
-extern void *skalloc(size_t size);
-extern void skfree(void *ptr);
-extern void *skrealloc(void *p, size_t size);
-extern void memTrace(char *str);
+extern boolean checkChunk(void *chunk, void *check_for);
+extern void memShutdown();
 extern void curFree();
 extern void showFree(int number_to_show);
 extern void showMalloc(int number_to_show);
 extern void TrackMalloc(int number_to_show);
-extern void memShutdown();
+extern void chunkInfo(void *chunk);
+
+#define newstr(...)  memchunks_incr(g_strdup_printf(__VA_ARGS__))
+
+#else 
+
+#define MEMPRINTF 
+#define memchunks_incr(x)
+#define memchunks_in_use() 0
+#define showChunks()
+#define checkChunk(x)
+#define memShutdown()
+#define showFree(x)
+#define showMalloc(x)
+#define TrackMalloc(x)
+#define checkChunk(x)
+#define chunkInfo(x)
+
+#define newstr(...)  g_strdup_printf(__VA_ARGS__)
+
+#endif
+
+extern void *skalloc(size_t size);
+extern void skfree(void *ptr);
+extern void *skrealloc(void *p, size_t size);
 extern void skitFreeMem();
-extern void checkChunk(void *chunk);
 
 // optionlist.c
 extern Cons *optionlistNew();

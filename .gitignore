@@ -1,5 +1,7 @@
-# Ignore backup files
+# Ignore backup and temp files
 *~
+\#*#
+\.\#*
 
 # Object files 
 *.o

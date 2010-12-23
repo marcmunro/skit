@@ -1105,7 +1105,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *input = nodeAttribute(template_node, "input");
     Document *source_doc = NULL;
-    Document *result_doc;
+    Document *result_doc = NULL;
     Hash *dagnodes = NULL;
     Vector *sorted = NULL;
     xmlNode *root;
@@ -1126,6 +1126,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     EXCEPTION(ex);
     FINALLY {
+	objectFree((Object *) sorted, TRUE);
 	objectFree((Object *) input, TRUE);
 	objectFree((Object *) source_doc, TRUE);
     }

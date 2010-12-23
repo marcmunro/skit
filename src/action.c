@@ -855,7 +855,7 @@ executeAction(String *action, Hash *params)
 {
     Symbol *action_executor;
     String *executor_name;
-    Object *result;
+    Object *result = NULL;
     char *tmp = NULL;
     boolean global = FALSE;
 
@@ -875,8 +875,11 @@ executeAction(String *action, Hash *params)
 	    RAISE(NOT_IMPLEMENTED_ERROR,
 	    	  newstr("%s not implemented\n", executor_name->value));
 	}
+	//checkSymbols();
     }
-    EXCEPTION(ex);
+    EXCEPTION(ex) {
+	objectFree((Object *) docStackPop(), TRUE);
+    }
     FINALLY {
 	finishWithConnection();
 	objectFree((Object *) executor_name, TRUE);

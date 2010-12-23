@@ -251,14 +251,13 @@ addDependency(DagNode *node, Cons *deps)
     if (!(node->dependencies)) {
 	node->dependencies = vectorNew(10);
     }
+
     if (! setPush(node->dependencies, (Object *) deps)) {
 	/* The dependency was already present, so just free up the cons
 	 * we were passed. */
 	freeConsNode(deps);
 	return;
     }
-    //dbgSexp(node->dependencies);
-    //dbgSexp(deps);
 
     while (deps) {
 	addDependent(node, (DagNode *) dereference(deps->car));
@@ -284,6 +283,7 @@ addInvertedDependencies(DagNode *node, Cons *deps)
     }
 }
 
+/* Must use or free the deps object! */
 static void
 addDirectedDependency(DagNode *node, Cons *deps)
 {
@@ -333,20 +333,31 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
     char *tmpstr;
     Hash *pqnlist = (Hash *) hashes->cdr;
     Cons *fqnlist;
-    Cons *dagnodelist;
+    Cons *dagnodelist = NULL;
 
     if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
-	found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
-	if (!found) {
-	    tmpstr = newstr("processDependenciesForNode: no dependency "
-			    "found for %s", fqn->value);
-	    objectFree((Object *) fqn, TRUE);
-	    RAISE(GENERAL_ERROR, tmpstr);
+	BEGIN {
+	    found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
+	    if (!found) {
+		tmpstr = newstr("processDependenciesForNode: no dependency "
+				"found for %s", fqn->value);
+		RAISE(GENERAL_ERROR, tmpstr);
+	    }
+	    /* addDirectedDependency must use or free the consNode
+	     * created below. */
+	    addDirectedDependency(node, consNode(found));
 	}
-	objectFree((Object *) fqn, TRUE);
-	addDirectedDependency(node, consNode(found));
+	EXCEPTION(ex);
+	FINALLY {
+	    objectFree((Object *) fqn, TRUE);
+	}
+	END;
+	RAISE(GENERAL_ERROR,
+	      newstr("TESTING"));
     }
     else if (pqn = nodeAttribute(xmlnode, "pqn")) {
+    RAISE(GENERAL_ERROR,
+	  newstr("TESTING2"));
 	fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
 	objectFree((Object *) pqn, TRUE);
 	/* fqnlist is nil, is the item given by the pqn does not exist. */
@@ -375,6 +386,8 @@ processDependencies(DagNode *node, Cons *hashes)
 	     dep_node;
 	     dep_node = findNextSibling(dep_node, "dependency")) {
 	    addXmlnodeDependencies(node, dep_node, hashes);
+    RAISE(GENERAL_ERROR,
+	  newstr("TESTING"));
 	}
 	break;
     }
@@ -429,6 +442,8 @@ addDepsForNode(Object *node_entry, Object *hashes)
 		   newstr("addDepsForNode of type %d is not implemented",
 			  node->build_type));
     }
+    RAISE(GENERAL_ERROR,
+	  newstr("TESTING"));
     return (Object *) node;
 }
 
@@ -436,9 +451,12 @@ static void
 identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 {
     Cons *hashes = consNew((Object *) dagnodes, (Object *) pqnlist);
+
     BEGIN {
 	hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
 	hashEach(dagnodes, &addDepsForNode, (Object *) hashes);
+    RAISE(GENERAL_ERROR,
+	  newstr("TESTING"));
     }
     EXCEPTION(ex);
     FINALLY {
@@ -903,6 +921,9 @@ gensort(Document *doc)
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
+	RAISE(GENERAL_ERROR,
+	      newstr("TESTING"));
+
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
 	}

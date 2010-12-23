@@ -409,3 +409,17 @@ consAppend(Cons *list, Object *item)
     }
     prev->cdr = (Object *) new;
 }
+
+boolean 
+checkCons(Cons *cons, void *chunk)
+{
+    boolean found;
+    if (found = checkObj(cons->car, chunk)) {
+	printSexp(stderr, "...within car of ", (Object *) cons);
+    }
+    if (checkObj(cons->cdr, chunk)) {
+ 	printSexp(stderr, "...within cdr of ", (Object *) cons);
+	found = TRUE;
+    }
+    return checkChunk(cons, chunk) || found;
+}

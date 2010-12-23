@@ -440,3 +440,30 @@ vectorFromHash(Hash *hash)
     return vector;
 }
 
+static Object *
+checkHashEntry(Object *obj, Object *params)
+{
+    if (checkObj(obj, ((Cons *)params)->car)) {
+	((Cons *)params)->cdr = obj;  /* Just set to a non-null value */
+	printSexp(stderr, "...within hash_entry: ", obj);
+    }
+    return ((Cons *) obj)->cdr;
+}
+
+boolean
+checkHash(Hash *hash, void *chunk)
+{
+    Cons *params = consNew(chunk, NULL);
+    boolean found;
+    hashEach(hash, checkHashEntry, (Object *) params);
+    found = params->cdr != NULL;
+    objectFree((Object *) params, FALSE);
+    if (found) {
+	fprintf(stderr, "...within hash <NOT SHOWN>");
+    }
+    if (checkChunk(hash, chunk)) {
+	fprintf(stderr, "...in hash <NOT SHOWN>");
+	return TRUE;
+    }
+    return found;
+}

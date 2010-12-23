@@ -304,3 +304,25 @@ setPush(Vector *vector, Object *obj)
 }
 
 
+boolean
+checkVector(Vector *vec, void *chunk)
+{
+    boolean found = FALSE;
+    int i;
+    if (vec) {
+	for (i = 0; i < vec->elems; i++) {
+	    if (checkChunk(vec->contents->vector[i], chunk)) {
+		fprintf(stderr, "...within element %d\n", i);
+		found = TRUE;
+	    }
+	}
+	if (checkChunk(vec->contents, chunk)) {
+	    fprintf(stderr, "...within contents of\n");
+	    found = TRUE;
+	}
+	if (found = checkChunk(vec, chunk) || found) {
+	    fprintf(stderr, "...within vector\n");
+	}
+    }
+    return found;
+}

@@ -155,9 +155,9 @@ int4Cmp(Int4 *p1, Int4 *p2)
     assert(p1 && p1->type == OBJ_INT4, "int4Cmp: p1 is not Int4");
     assert(p2, "int4Cmp: p2 is NULL");
 
-    // p2 must be an integer or a string.  If it is a string we try to
-    // convert it to an integer.  If that fails we convert p1 to a
-    // string and do a string comparison.
+    /* p2 must be an integer or a string.  If it is a string we try to
+     * convert it to an integer.  If that fails we convert p1 to a
+     * string and do a string comparison. */
 
     switch (p2->type) {
     case OBJ_INT4:
@@ -432,6 +432,7 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
 void
 dagnodeFree(DagNode *node)
 {
+    fprintf(stderr, "Freeing DAGNODE %p: \"%s\"\n", node, node->fqn->value);
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->object_type, TRUE);
     objectFree((Object *) node->dependencies, TRUE);
@@ -458,10 +459,10 @@ objectFree(Object *obj, boolean free_contents)
 	case OBJ_HASH:
 	    hashFree((Hash *) obj, free_contents); break;
 	case OBJ_SYMBOL:
-	    // Note that symbolFree does not free symbols that are in
-	    // the symbol table.  We maybe shouldn't bother with
-	    // symbolFree at all since all symbols should be in the
-	    // table but I guess it does no harm.
+	    /* Note that symbolFree does not free symbols that are in
+	     * the symbol table.  We maybe shouldn't bother with
+	     * symbolFree at all since all symbols should be in the
+	     * table but I guess it does no harm. */
 	    symbolFree((Symbol *) obj, free_contents); break;
 	case OBJ_DOCUMENT:
 	    documentFree((Document *) obj, free_contents); break;
@@ -485,7 +486,7 @@ objectFree(Object *obj, boolean free_contents)
 	    }
 	    break;
 	default: 
-	    checkChunk(obj);
+	    chunkInfo(obj);
 	    fails = newstr("objectFree: Unhandled type: %d in %p\n", 
 			   obj->type, obj);
 	    RAISE(UNHANDLED_OBJECT_TYPE, fails);
@@ -782,3 +783,73 @@ objectFromStr(char *instr)
     return obj;
 }
 
+boolean
+checkDagnode(DagNode *node, void *chunk)
+{
+    boolean found;
+    if (found = checkString(node->fqn, chunk)) {
+	printSexp(stderr, "...within fqn of ", (Object *) node);
+    }
+    if (checkString(node->object_type, chunk)) {
+	printSexp(stderr, "...within object_type of ", (Object *) node);
+	found = TRUE;
+    }
+    if (checkVector(node->dependencies, chunk)) {
+	printSexp(stderr, "...within dependencies of ", (Object *) node);
+	found = TRUE;
+    }
+    if (checkVector(node->dependents, chunk)) {
+	printSexp(stderr, "...within dependents of ", (Object *) node);
+	found = TRUE;
+    }
+    if (checkChunk(node, chunk)) {
+	printSexp(stderr, "...within ", (Object *) node);
+	found = TRUE;
+    }
+    return found;
+}
+
+boolean
+checkObj(Object *obj, void *chunk)
+{
+    if (obj) {
+	switch (obj->type) {
+	case OBJ_HASH: return checkHash((Hash *) obj, chunk);
+	case OBJ_CONS: return checkCons((Cons *) obj, chunk);
+	case OBJ_STRING: return checkString((String *) obj, chunk);
+	case OBJ_SYMBOL: return checkSymbol((Symbol *) obj, chunk);
+	case OBJ_MISC: /* MISC objects are not skalloc'd */ return FALSE;
+	case OBJ_DAGNODE: return checkDagnode((DagNode *) obj, chunk);
+	case OBJ_INT4: 
+	    if (checkChunk(obj, chunk)) {
+		printSexp(stderr, "...within Int4 ", obj);
+		return TRUE;
+	    }
+	    return FALSE;
+	case OBJ_OBJ_REFERENCE: 
+	    if (checkChunk(obj, chunk)) {
+		fprintf(stderr, "...within OBJReference\n");
+		return TRUE;
+	    }
+	    return FALSE;
+	case OBJ_VECTOR: 
+	case OBJ_EXCEPTION: 
+	case OBJ_VARRAY: 
+	case OBJ_OPTIONLIST: 
+	case OBJ_DOCUMENT: 
+	case OBJ_XMLNODE: 
+	case OBJ_FN_REFERENCE: 
+	case OBJ_REGEXP: 
+	case OBJ_CONNECTION: 
+	case OBJ_CURSOR: 
+	case OBJ_TUPLE: 
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("checkObj: no check yet for objects of type %s",
+		     objTypeName(obj)));
+	default:
+	    RAISE(UNHANDLED_OBJECT_TYPE, 
+		  newstr("checkOBJ: cannot check objects of type %d", 
+			 obj->type));
+	}
+    }
+}
