@@ -17,7 +17,10 @@
 	<skit:let>
 	  <skit:var name="typetuple" expr="(select alltypes arg)"/>
 	  <skit:result expr="(concat (select typetuple 'schema') '.' 
-			             (select typetuple 'name'))"/>
+			             (select typetuple 'name')
+				     (and (string= 't'
+				            (select typetuple 'array'))
+					  '[]'))"/>
 	</skit:let>
       </skit:foreach>
       <skit:var name="signature"

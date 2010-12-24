@@ -85,6 +85,13 @@
 			    @type_schema, '.', @type)}"/>
 	</xsl:for-each>
 
+	<!-- Dependency on sequences -->
+	<xsl:for-each select="depends[@schema]">
+	  <dependency fqn="{concat('sequence.', 
+			    ancestor::database/@name, '.', 
+			    @schema, '.', @sequence)}"/>
+	</xsl:for-each>
+
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy select=".">

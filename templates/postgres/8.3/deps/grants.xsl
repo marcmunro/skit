@@ -83,15 +83,9 @@
       <xsl:attribute name="on">
 	<xsl:choose>
 	  <xsl:when test="name(..)='function'">
-	    <xsl:value-of select="concat(skit:dbquote(../@schema,
-				                      ../@name), '(')"/>
-	    <xsl:for-each select="../params/param">
-	      <xsl:if test="position() != 1">
-		<xsl:value-of select="','"/>
-	      </xsl:if>
-	      <xsl:value-of select="skit:dbquote(@schema, @type)"/>
+	    <xsl:for-each select="..">
+	      <xsl:call-template name="function-qname"/>
 	    </xsl:for-each>
-	    <xsl:value-of select="')'"/>
 	  </xsl:when>
 	  <xsl:when test="../@schema">
 	    <xsl:value-of select="skit:dbquote(../@schema, ../@name)"/>

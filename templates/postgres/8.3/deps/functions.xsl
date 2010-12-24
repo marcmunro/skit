@@ -7,20 +7,31 @@
    version="1.0">
 
   <!-- Functions -->
+  <xsl:template name="function-qname">
+    <xsl:value-of select="concat(skit:dbquote(@schema, @name), '(')"/>
+    <xsl:for-each select="params/param">
+      <xsl:if test="@mode != 'o'">
+	<!-- Check whether there is a preceding in or inout
+	     parameter.  If so, we need a comma. -->
+	<xsl:if test="preceding-sibling::node()[@mode != 'o']">
+	  <xsl:value-of select="','"/>
+	</xsl:if>
+	<xsl:value-of select="skit:dbquote(@schema, @type)"/>
+	<xsl:if test="@array">
+	  <xsl:value-of select="'[]'"/>
+	</xsl:if>
+      </xsl:if>
+    </xsl:for-each>
+    <xsl:value-of select="')'"/>
+  </xsl:template>
+
   <xsl:template match="function">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="function_fqn" 
 		  select="concat('function.', 
 			  ancestor::database/@name, '.', @signature)"/>
     <xsl:variable name="function_qname">
-      <xsl:value-of select="concat(skit:dbquote(@schema, @name), '(')"/>
-      <xsl:for-each select="params/param">
-	<xsl:if test="position() != 1">
-	  <xsl:value-of select="','"/>
-	</xsl:if>
-	<xsl:value-of select="skit:dbquote(@schema, @type)"/>
-      </xsl:for-each>
-      <xsl:value-of select="')'"/>
+      <xsl:call-template name="function-qname"/>
     </xsl:variable>
     <dbobject type="function" fqn="{$function_fqn}"
 	      name="{@name}" qname="{$function_qname}">

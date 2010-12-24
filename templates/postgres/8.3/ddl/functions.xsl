@@ -73,9 +73,9 @@
 	    <xsl:text>&apos;&#x0A;</xsl:text>
 	  </xsl:when>
 	  <xsl:otherwise>
-	    <xsl:text>&#x0A;$_$</xsl:text>
+	    <xsl:text>&#x0A;$_$&#x0A;</xsl:text>
             <xsl:value-of select="source/text()"/>
-	    <xsl:text>$_$&#x0A;</xsl:text>
+	    <xsl:text>&#x0A;$_$&#x0A;</xsl:text>
 	  </xsl:otherwise>
 	</xsl:choose>
 	<xsl:text>language </xsl:text>
@@ -105,7 +105,7 @@
 	  <xsl:call-template name="set_owner"/>
 	  
       	  <xsl:text>&#x0A;drop function </xsl:text>
-      	  <xsl:call-template name="function_header"/>
+          <xsl:value-of select="../@qname"/>
       	  <xsl:text>;&#x0A;</xsl:text>
 	  
 	  <xsl:call-template name="reset_owner"/>

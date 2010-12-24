@@ -109,8 +109,12 @@
       		  <skit:var name="argtuple" expr="(select alltypes arg)"/>
       		  <skit:attr name="type" expr="(select argtuple 'name')"/>
       		  <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+		  <skit:if test="(string= (select argtuple 'array') 't')">
+      		    <skit:attr name="array" expr="'t')"/>
+		  </skit:if>
       		  <skit:attr name="name" expr="(select argnames (- idx 1))"/>
-      		  <skit:attr name="mode" expr="(select argmodes (- idx 1))"/>
+      		  <skit:attr name="mode" expr="(or (select argmodes (-
+      		  idx 1)) 'i')"/>
       		  <skit:attr name="position" expr="idx"/>
 	        </skit:let>
       	      </param>

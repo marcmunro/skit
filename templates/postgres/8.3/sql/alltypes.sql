@@ -5,6 +5,7 @@
 
 select t.oid as oid,
        coalesce(tb.typname, t.typname) as name,
+       tb.typname is not null as array,
        coalesce(nb.nspname, n.nspname) as schema
 from   pg_catalog.pg_type t
 inner join 

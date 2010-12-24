@@ -189,6 +189,14 @@
 	  </index>
 	</skit:runsql>
 
+	<skit:runsql var="seqs" file="sql/seqdeps.sql"
+		     params="(select table 'oid')">
+	  <depends>
+	    <skit:attr name="schema" expr="(select seqs 'sequence_schema')"/>
+	    <skit:attr name="sequence" expr="(select seqs 'sequence_name')"/>
+	  </depends>
+	</skit:runsql>
+
 	<skit:if test="(select table 'comment')">
 	  <comment>
 	    <skit:text expr="(select table 'comment')"/>
