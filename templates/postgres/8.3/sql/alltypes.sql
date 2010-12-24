@@ -15,8 +15,7 @@ left outer join (
     inner join 
            pg_catalog.pg_namespace nb
         on nb.oid = tb.typnamespace)
-    on tb.typarray = t.oid
-where t.typname like '%threestr';
+    on tb.typarray = t.oid;
 
 
 
