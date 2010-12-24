@@ -57,20 +57,24 @@
 	  <skit:attr name="name"/>
 	  <skit:attr name="schema"/>
 	  <skit:attr name="proc_num"/>
-	  <params>
-	    <param position="1">
-	      <skit:attr name="type" 
-			 expr="(select opclass_func 'left_type')"/>
-	      <skit:attr name="schema" 
-			 expr="(select opclass_func 'left_type_schema')"/>
-	    </param>
-	    <param position="2">
-	      <skit:attr name="type" 
-			 expr="(select opclass_func 'right_type')"/>
-	      <skit:attr name="schema" 
-			 expr="(select opclass_func 'right_type_schema')"/>
-	    </param>
-	  </params>
+	  <skit:var name="argtypes" 
+		    expr="(split (select tuple 'argtype_oids') ',')"/>
+	  <skit:attr name="function"
+		     expr="(select function_sigs (select tuple 'proc_oid'))"/>
+      	  <params>
+      	    <skit:foreach from="argtypes" var="arg" index="idx">
+      	      <param>
+		<skit:let>
+      		  <skit:var name="argtuple" expr="(select alltypes arg)"/>
+      		  <skit:attr name="type" expr="(select argtuple 'name')"/>
+      		  <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+      		  <skit:attr name="name" expr="(select argnames (- idx 1))"/>
+      		  <skit:attr name="mode" expr="(select argmodes (- idx 1))"/>
+      		  <skit:attr name="position" expr="idx"/>
+	        </skit:let>
+      	      </param>
+      	    </skit:foreach>
+      	  </params>/
 	</opclass_function>
       </skit:foreach>
     </operator_class>

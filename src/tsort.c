@@ -240,14 +240,14 @@ addDependent(DagNode *node, DagNode *dep)
     if (!(dep->dependents)) {
 	dep->dependents = vectorNew(10);
     }
-    setPush(dep->dependents, (Object *) node);
+    setPush(dep->dependents, (Object *) objRefNew((Object *) node));
 }
 
 static void
 addDependency(DagNode *node, Cons *deps)
 {
     assert(node->type == OBJ_DAGNODE,
-	"addDependency: Cannot handle non-dagnode nodes");
+	"addDependency: node must be a dagnode");
     if (!(node->dependencies)) {
 	node->dependencies = vectorNew(10);
     }
@@ -326,8 +326,8 @@ static void
 addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
 {
     Hash *dagnodes = (Hash *) hashes->car;
-    String *fqn;
-    String *pqn;
+    String *fqn = NULL;
+    String *pqn = NULL;
     DagNode *found;
     char *prefix = nameForBuildType(node->build_type);
     char *tmpstr;
@@ -335,37 +335,36 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
     Cons *fqnlist;
     Cons *dagnodelist = NULL;
 
-    if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
-	BEGIN {
+    BEGIN {
+	if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
 	    found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
 	    if (!found) {
 		tmpstr = newstr("processDependenciesForNode: no dependency "
-				"found for %s", fqn->value);
+				"found for %s in %s", fqn->value,
+		                node->fqn->value);
 		RAISE(GENERAL_ERROR, tmpstr);
 	    }
 	    /* addDirectedDependency must use or free the consNode
 	     * created below. */
 	    addDirectedDependency(node, consNode(found));
 	}
-	EXCEPTION(ex);
-	FINALLY {
-	    objectFree((Object *) fqn, TRUE);
+	else if (pqn = nodeAttribute(xmlnode, "pqn")) {
+	    fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
+	    objectFree((Object *) pqn, TRUE);
+	    pqn = NULL;
+	    /* fqnlist is nil, is the item given by the pqn does not exist. */
+	    if (fqnlist) {
+		dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
+		addDirectedDependency(node, dagnodelist);
+	    }
 	}
-	END;
-	RAISE(GENERAL_ERROR,
-	      newstr("TESTING"));
     }
-    else if (pqn = nodeAttribute(xmlnode, "pqn")) {
-    RAISE(GENERAL_ERROR,
-	  newstr("TESTING2"));
-	fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) fqn, TRUE);
 	objectFree((Object *) pqn, TRUE);
-	/* fqnlist is nil, is the item given by the pqn does not exist. */
-	if (fqnlist) {
-	    dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
-	    addDirectedDependency(node, dagnodelist);
-	}
     }
+    END;
 }
 
 /* Find all of the dependency elements and add their dependencies to the
@@ -373,9 +372,9 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
 static void
 processDependencies(DagNode *node, Cons *hashes)
 {
-    // Looks like we cannot use xpath here as we have no appropriate
-    // context node.  Instead we should directly traverse to child nodes
-    // going to <dependencies> and then <dependency>
+    /* We cannot use xpath here as we have no appropriate context node.
+     * Instead we should directly traverse to child nodes going to
+     * <dependencies> and then <dependency> */
     xmlNode *deps_node = node->dbobject->children;
     xmlNode *dep_node;
 
@@ -386,8 +385,6 @@ processDependencies(DagNode *node, Cons *hashes)
 	     dep_node;
 	     dep_node = findNextSibling(dep_node, "dependency")) {
 	    addXmlnodeDependencies(node, dep_node, hashes);
-    RAISE(GENERAL_ERROR,
-	  newstr("TESTING"));
 	}
 	break;
     }
@@ -442,8 +439,6 @@ addDepsForNode(Object *node_entry, Object *hashes)
 		   newstr("addDepsForNode of type %d is not implemented",
 			  node->build_type));
     }
-    RAISE(GENERAL_ERROR,
-	  newstr("TESTING"));
     return (Object *) node;
 }
 
@@ -455,8 +450,6 @@ identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
     BEGIN {
 	hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
 	hashEach(dagnodes, &addDepsForNode, (Object *) hashes);
-    RAISE(GENERAL_ERROR,
-	  newstr("TESTING"));
     }
     EXCEPTION(ex);
     FINALLY {
@@ -577,13 +570,15 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
     Vector *results = NULL;
     Vector *kid_results = NULL;
     DagNode *next;
+    Object *ref;
 
     results = vectorNew(elems);
     
     vectorPush(results, (Object *) visit_node);
     
     if (deps = visit_node->dependents) {
-	while (next = (DagNode *) dereference(vectorPop(deps))) {
+	while (ref = vectorPop(deps)) {
+	    next = (DagNode *) dereference(ref);
 	    removeDependency(next, visit_node);
 	    if (!next->dependencies) {
 		kid_results = simple_tsort_visit(next, candidates);
@@ -591,6 +586,7 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
 		objectFree((Object *) kid_results, FALSE);
 		kid_results = NULL;
 	    }
+	    objectFree(ref, FALSE);
 	}
     }
 
@@ -818,13 +814,16 @@ removeNodeGetNewCandidates(DagNode *node, Hash *allnodes)
     Vector *results = vectorNew(64);
     Vector *deps;
     DagNode *next;
+    Object *ref;
 
     if (deps = node->dependents) {
-	while (next = (DagNode *) dereference(vectorPop(deps))) {
+	while (ref = vectorPop(deps)) {
+	    next = (DagNode *) dereference(ref);
 	    removeDependency(next, node);
 	    if (!next->dependencies) {
 		(void) vectorPush(results, (Object *) next);
 	    }
+	    objectFree(ref, FALSE);
 	}
     }
 
@@ -921,8 +920,6 @@ gensort(Document *doc)
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
-	RAISE(GENERAL_ERROR,
-	      newstr("TESTING"));
 
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);

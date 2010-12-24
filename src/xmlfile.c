@@ -1122,7 +1122,6 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	result_doc = documentNew(xmldoc, NULL);
 
 	treeFromVector(root, sorted);
-	objectFree((Object *) sorted, TRUE);
     }
     EXCEPTION(ex);
     FINALLY {

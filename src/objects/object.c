@@ -432,7 +432,6 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
 void
 dagnodeFree(DagNode *node)
 {
-    fprintf(stderr, "Freeing DAGNODE %p: \"%s\"\n", node, node->fqn->value);
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->object_type, TRUE);
     objectFree((Object *) node->dependencies, TRUE);

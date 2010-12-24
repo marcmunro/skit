@@ -80,8 +80,8 @@ main(int argc,
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(templatedir);
-	//showFree(614);
-	//showMalloc(1528);
+	//showFree(184168);
+	//showMalloc(64101);
 	process_args(argc, argv);
 
     }

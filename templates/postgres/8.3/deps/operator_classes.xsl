@@ -47,12 +47,7 @@
 	<xsl:for-each select="opclass_function">
 	  <xsl:if test="@schema != 'pg_catalog'">
 	    <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', 
-			     @schema, '.', @name, '(',
-			     params/param[@position='1']/@schema, '.',
-			     params/param[@position='1']/@type, ',',
-			     params/param[@position='2']/@schema, '.',
-			     params/param[@position='2']/@type, ')')}"/>
+			     ancestor::database/@name, '.', @function)}"/>
 	    
 	  </xsl:if>
 	</xsl:for-each>

@@ -1034,8 +1034,8 @@ START_TEST(generate3)
 
     initBuiltInSymbols();
     initTemplatePath(".");
-    showMalloc(97969);
-    showFree(114869);
+    //showMalloc(171893);
+    //showFree(114923);
 
     BEGIN {
 	process_args2(4, args);
