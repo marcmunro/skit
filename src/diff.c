@@ -172,12 +172,17 @@ getMatch(xmlNode *node, Cons *alist, Hash *rules)
     xmlNode *result = NULL;
     BEGIN {
 	if (rule) {
-	    candidates = (Hash *) alistGet(alist, (Object *) type);
 	    key_attr = (String *) rule->car;
 	    key = nodeAttribute(node, key_attr->value);
-	    if (match = (Node *) hashDel(candidates, (Object *) key)) {
-		result = match->node;
-	    }
+	}
+	else {
+	    /* No rule, so we match by fqn */
+	    key = nodeAttribute(node, "fqn");	    
+	}
+
+	candidates = (Hash *) alistGet(alist, (Object *) type);
+	if (match = (Node *) hashDel(candidates, (Object *) key)) {
+	    result = match->node;
 	}
     }
     EXCEPTION(ex);
