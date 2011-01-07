@@ -799,6 +799,7 @@ initBaseSymbols()
 {
     Symbol symbol_t = {OBJ_SYMBOL, "t", NULL, (Object *) &symbol_t};
     Hash *dbhash = hashNew(TRUE);
+    String *xml_version = stringNew(SKIT_XML_VERSION);
 
     (void) symbolCopy(&symbol_t);
     symbolCreate("setq", &fnSetq, NULL);
@@ -829,6 +830,7 @@ initBaseSymbols()
     symbolCreate("-", &fnMinus, NULL);
     symbolCreate("hashadd", &fnHashAdd, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
+    symbolCreate("skit_xml_version", NULL, (Object *) xml_version);
 
     defineVar("dbtype", (Object *) stringNew("postgres"));
     defineVar("dbver", NULL);

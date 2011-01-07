@@ -19,6 +19,12 @@
 #include <libxml/xmlreader.h>
 #include <libxslt/xsltInternals.h>
 
+/* Bump this whenever we make any structural changes to the skit xml
+ * namespace.
+ * XML versions history:
+ * 0.1    Initial development version
+ */
+#define SKIT_XML_VERSION "0.1"
 
 #define DIR_SEPARATOR '/'
 
@@ -65,6 +71,7 @@ typedef enum {
     OBJ_CURSOR,
     OBJ_TUPLE,
     OBJ_DAGNODE,
+    OBJ_TRIPLE,
     OBJ_MISC,                   // Eg, SqlFuncs structure
     OBJ_DOT,       		// This is not a real-object
     OBJ_CLOSE_PAREN,    	// This is not a real-object
@@ -219,6 +226,15 @@ typedef struct DagNode {
     struct DagNode  *next;
     struct DagNode  *prev;
 } DagNode;
+
+/* Used to conveniently pass around multiple nodes as parameters to
+ * hashEach.  This type is only ever allocated statically. */
+typedef struct Triple {
+    ObjType          type;
+    Object          *obj1;
+    Object          *obj2;
+    Object          *obj3;
+} Triple;
 
 /* Used by sexpTok as its parameter, to retain position information
  * while tokenising a string expression */

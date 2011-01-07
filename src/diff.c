@@ -87,177 +87,120 @@ loadDiffRules(String *diffrules)
     return rules;
 }
 
-#ifdef wurblyburby
-
-static void
-addUnhandled(Hash *unhandled, String *type)
+/* NOTE: Consumes type */
+static Cons *
+addNodeForLevel(xmlNode *dbobject, Cons *alist, String *type, String *key)
 {
-    Int4 *count = (Int4 *) hashGet(unhandled, (Object *) type);
-    String *key;
-    if (count) {
-	count->value++;
+    Hash *hash = (Hash *) alistGet(alist, (Object *) type);
+    Cons *alist_entry;
+    Node *existing_entry;
+    Node *node = nodeNew(dbobject);
+    char *errmsg;
+    char *str1;
+    char *str2;
+
+    if (!hash) {
+	hash = hashNew(TRUE);
+	alist_entry = consNew((Object *) type, (Object *) hash);
+	alist = consNew((Object *) alist_entry, (Object *) alist);
     }
     else {
-	count = int4New(1);
-	key = stringNew(type->value);
-	hashAdd(unhandled, (Object *) key, (Object *) count);
+	objectFree((Object *) type, TRUE);
     }
-}
-
-#if 0
-
-static void
-applyDiffRule(Node *this, Hash *objects2, Hash *rules,
-	      Vector *results, Hash *unhandled)
-{
-    String *type = nodeAttribute(this->node, "type");
-    Cons *diffrule = (Cons *) hashGet(rules, (Object *) type);
-    if (diffrule) {
-	fprintf(stderr, "Handling type %s\n", type->value);
+    existing_entry = (Node *) hashAdd(hash, (Object *) key, (Object *) node);
+    if (existing_entry) {
+	str1 = nodestr(existing_entry->node);
+	str2 = nodestr(node->node);
+	errmsg = newstr("Unexpected collision of node keys: %s with %s",
+			str1, str2);
+	skfree(str1);
+	skfree(str2);
+	objectFree((Object *) existing_entry, TRUE);
+	RAISE(XML_PROCESSING_ERROR, errmsg);
     }
-    else {
-	addUnhandled(unhandled, type);
-    }
-    objectFree((Object *) type, TRUE);
-}
-
-static void
-addNodeToList(xmlNode *node, Object *list)
-{
-    Node *dbobjectnode = nodeNew(node);
-    (void) vectorPush((Vector *) list, (Object *) dbobjectnode);
-}
-
-static Vector *
-dbobjectListFromDoc(Document *doc)
-{
-    Vector *list = vectorNew(1000);   /* As good a starting point as any */
-    xmlNode *root = xmlDocGetRootElement(doc->doc);
-    eachDbobject(root, (Object *) list, addNodeToList);
-    return list;
-}
-
-static Document *
-processDiff(Document *doc1, Document *doc2, Hash *rules)
-{
-    Vector *objects1 = dbobjectListFromDoc(doc1);
-    Hash *objects2 = dbobjectHashFromDoc(doc1);
-    Vector *results = vectorNew(objects1->elems * 1.5);
-    Hash *unhandled = hashNew(TRUE);
-    int i;
-    for (i = 0; i < objects1->elems; i++) {
-	applyDiffRule((Node *) objects1->contents->vector[i], objects2,
-		      rules, results, unhandled);
-    }
-    // TODO: PROCESS REMAINING ELEMENTS IN OBJECTS2 AS NEW OBJECTS
-
-    hashEach(unhandled, listUnhandled, NULL);
-    objectFree((Object *) results, TRUE);
-    objectFree((Object *) unhandled, TRUE);
-    objectFree((Object *) objects1, TRUE);
-    objectFree((Object *) objects2, TRUE);
-    return NULL;
+    return alist;
 }
 
 static xmlNode *
-copyTreeAsDiff(xmlNode *node, DiffType difftype)
+getDbobject(xmlNode *here)
 {
-    xmlNode *next = node;
-    xmlNode *result = NULL;
-    xmlNode *prev = NULL;
-    xmlNode *this;
-
-    while (next) {
-	this = xmlCopyNode(node, 2);
-	if (prev) {
-	    prev->next = this;
+    xmlNode *result = here;
+    while (result) {
+	if (streq("dbobject", (char *) result->name)) {
+	    return result;
 	}
-	else if (!result) {
-	    result = this;
-	}
-	prev = this;
-	if (streq("dbobject", (char *) this->name)) {
-	    setDiff(this, difftype);
-	}
-	if (next->children) {
-	    this->children = copyTreeAsDiff(next->children, difftype);
-	}
-	next = next->next;
+	result = result->next;
     }
     return result;
 }
-
-static xmlNode *
-nodeDiffs(xmlNode *node, Node *match)
-{
-    return NULL;
-}
-
-static xmlNode *
-dbojectDiff(xmlNode *node, Hash *others, Hash *rules, Hash *unhandled)
-{
-    String *type = nodeAttribute(node, "type");
-    String *match_fqn;
-    Node *rule = getRule(rules, type);
-    Node *match;
-    xmlNode *result;
-    if (!rule) {
-	addUnhandled(unhandled, type);
-	result = copyTreeAsDiff(node, IS_NEW);
-    }
-    else if (match = getDiffMatch(node, rule, others)) {
-	result = nodeDiffs(node, match);
-	objectFree((Object *) match, TRUE);
-    }
-    else {
-	result = copyTreeAsDiff(node, IS_NEW);
-    }
-    objectFree((Object *) type, TRUE);
-    return result;
-}
-
-xmlNode *
-dbobjectDiffsAtLevel(xmlNode *node, Hash *others, Hash *rules, Hash *unhandled)
-{
-    xmlNode *this = node;
-    xmlNode *first = NULL;
-    xmlNode *prev = NULL;
-    xmlNode *new;
-    String *fqn;
-    String *type;
-    while (this) {
-	if (streq("dbobject", (char *) this->name)) {
-	    type = nodeAttribute(this, "type");
-	    fqn = nodeAttribute(this, "fqn");
-	    dbgSexp(type);
-	    dbgSexp(fqn);
-	    objectFree((Object *) type, TRUE);
-	    objectFree((Object *) fqn, TRUE);
-	    new = dbojectDiff(this, others, rules, unhandled);
-	    if (prev) {
-		prev->next = new;
-	    }
-	    else if (!first) {
-		first = new;
-	    }
-	    prev = new;
-	}
-	else {
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("EXPECTING DBOBJECT, GOT %s", this->name));
-	}
-	this = this->next;
-    }
-    return first;
-}
-
-#endif
 
 static Cons *
-getRule(Hash *rules, String *type)
+allDbobjects(xmlNode *node, Hash *rules)
 {
-    return (Cons *) hashGet(rules, (Object *) type);
+    Cons *alist = NULL;
+    String *type;
+    char *keyattr;
+    String *key;
+    Cons *rule;
+    xmlNode *this = node;
+
+    while (this = getDbobject(this)) {
+	type = nodeAttribute(this, "type");
+	if (rule = (Cons *) hashGet(rules, (Object *) type)) {
+	    keyattr = ((String *) rule->car)->value;
+	}
+	else {
+	    keyattr = "fqn";
+	}
+	key = nodeAttribute(this, keyattr);
+	alist = addNodeForLevel(this, alist, type, key);
+	this = getElement(this->next);
+    }
+    return alist;
 }
+
+
+static xmlNode *
+getMatch(xmlNode *node, Cons *alist, Hash *rules)
+{
+    String *type = nodeAttribute(node, "type");
+    Cons *rule = (Cons *) hashGet(rules, (Object *) type);
+    String *key = NULL;
+    String *key_attr;
+    Hash *candidates;
+    Node *match = NULL;
+    xmlNode *result = NULL;
+    BEGIN {
+	if (rule) {
+	    candidates = (Hash *) alistGet(alist, (Object *) type);
+	    key_attr = (String *) rule->car;
+	    key = nodeAttribute(node, key_attr->value);
+	    if (match = (Node *) hashDel(candidates, (Object *) key)) {
+		result = match->node;
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) type, TRUE);
+	objectFree((Object *) key, TRUE);
+	objectFree((Object *) match, TRUE);
+    }
+    END;
+
+    return result;
+}
+
+#define addSibling(first, prev, this)			\
+    if (this) {						\
+        if (first) {					\
+	    prev->next = this;				\
+	}						\
+	else {						\
+	    first = this;				\
+	}						\
+	prev = this;					\
+    }
 
 static void
 setDiff(xmlNode *node, DiffType difftype)
@@ -274,176 +217,433 @@ setDiff(xmlNode *node, DiffType difftype)
     (void) xmlNewProp(node, (const xmlChar *) "diff", type);
 }
 
-static Object *
-listUnhandled(Object *obj, Object *ignore)
-{
-    String *type = (String *) ((Cons *) obj)->car;
-    Int4 *count = (Int4 *) ((Cons *) obj)->cdr;
-    fprintf(stderr, "UNHANDLED: %d instance%s of %s\n", count->value,
-	    count->value == 1? "": "s", type->value);
-    return (Object *) count;
-}
-
-static Object *
-newDbobjectFromHash(Object *obj, Object *resultptr)
-{
-    Node *node= (Node*) ((Cons *) obj)->cdr;
-    xmlNode **p_result = (xmlNode **) resultptr;
-    xmlNode *prev = *p_result;
-    xmlNode *new = xmlCopyNode(node->node, 2); 
-    setDiff(new, IS_NEW);
-    while (prev && prev->next) {
-	prev = prev->next;
-    }
-    if (prev) {
-	prev->next = new;
-    }
-    else {
-	*p_result = new;
-    }
-    return (Object *) node;
-}
-
-#endif
-
-static void
-addNodeToHash(xmlNode *node, Hash *hash)
-{
-    Node *dbobjectnode = nodeNew(node);
-    String *fqn = nodeAttribute(node, "fqn");
-    hashAdd((Hash *) hash, (Object *) fqn, (Object *) dbobjectnode);
-}
-
+/* Copy an object's dependency records */
 static xmlNode *
-skipToMatchingnode(xmlNode *node, xmlNode *to_match)
+copyDeps(xmlNode *node)
 {
-    xmlNode *this = getElement(node);
-    while (this) {
-	if (streq((char *) this->name, (char *) to_match->name)) {
-	    return this;
-	}
+    xmlNode *this = getElement(node->children);
+    xmlNode *result = NULL;
+    
+    while (this && !streq("dependencies", (char *) this->name)) {
 	this = getElement(this->next);
+    }
+    if (this) {
+	result = xmlCopyNode(this, 1);
+    }
+    return result;
+}
+
+/* Create a dependency element for a dependency that exists in the old
+ * version of an object but not the new. */
+static xmlNode *
+makeOldDep(char *type, String *qn)
+{
+    xmlNode *dep = xmlNewNode(NULL, BAD_CAST "dependency");
+
+    (void) xmlNewProp(dep, (const xmlChar *) type, (xmlChar *) qn->value);
+    (void) xmlNewProp(dep, (const xmlChar *) "old", (xmlChar *) "yes");
+
+    return dep;
+}
+
+/* Identify any deps in node1, that are not in node2, and return them as
+ * a list of siblings, marked with an "old" attribute. */
+static xmlNode *
+getOldDeps(xmlNode *node1, xmlNode *node2)
+{
+    Hash *fqns = hashNew(TRUE);
+    Hash *pqns = hashNew(TRUE);
+    String *qn = NULL;
+    xmlNode *result = NULL;
+    xmlNode *prev;
+    xmlNode *new;
+    xmlNode *this = NULL;
+    Symbol *t = symbolGet("t");
+    Object *found;
+
+    BEGIN {
+	/* Build hashes for fqn and pqn */
+	this = getElement(node2->children);
+	while (this && !streq("dependencies", (char *) this->name)) {
+	    this = getElement(this->next);
+	}
+	if (this) {
+	    this = getElement(this->children);
+	    while (this) {
+		if (qn = nodeAttribute(this, "fqn")) {
+		    hashAdd(fqns, (Object *) qn, (Object *) t);
+		}
+		else if (qn = nodeAttribute(this, "pqn")) {
+		    hashAdd(pqns, (Object *) qn, (Object *) t);
+		}
+		this = this->next;
+	    }
+	}
+	/* Check for items from node1, that are not present in the
+	 * hashes */
+	this = getElement(node1->children);
+	while (this && !streq("dependencies", (char *) this->name)) {
+	    this = getElement(this->next);
+	}
+	if (this) {
+	    this = getElement(this->children);
+	    while (this) {
+		if (qn = nodeAttribute(this, "fqn")) {
+		    if (!(found = hashGet(fqns, (Object *) qn))) {
+			new = makeOldDep("fqn", qn);
+		    }
+		}		
+		else if (qn = nodeAttribute(this, "pqn")) {
+		    if (!(found = hashGet(pqns, (Object *) qn))) {
+			new = makeOldDep("pqn", qn);
+		    }
+		}
+		if (!found) {
+		    addSibling(result, prev, new);
+		}
+		objectFree((Object *) qn, TRUE);
+		this = this->next;
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) fqns, TRUE);
+	objectFree((Object *) pqns, TRUE);
+    }
+    END;
+    return result;
+}
+
+/* Return the child of a dbobject that contains the actual content. */
+static xmlNode *
+skipToContents(xmlNode *node)
+{
+    xmlNode *this = getElement(node->children);
+    while (this && streq("dependencies", (char *) this->name)) {
+	this = this->next;
     }
     return this;
 }
 
-static Cons *
-addNodeForLevel(xmlNode *dbobject, Cons *alist, String *type, String *key)
+/* Return a diff node describing any difference between the attributes
+ * described by rule, or NULL, if there are no differences. */
+static xmlNode *
+check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 {
-    dbgSexp(alist);
-    Cons *type_entry = (Cons *) alistGet(alist, (Object *) type);
-    Hash *hash;
-    Node *existing_entry;
-    Node *node = nodeNew(dbobject);
-    char *errmsg;
-    char *str1;
-    char *str2;
-    if (type_entry) {
-	objectFree((Object *) type, TRUE);
-	hash = (Hash *) type_entry->cdr;
-    }
-    else {
-	hash = hashNew(TRUE);
-	type_entry = consNew((Object *) type, (Object *) hash);
-	alist = consNew((Object *) type_entry, (Object *) alist);
-    }
+    xmlNode *diff = NULL;
+    String *attr_name = nodeAttribute(rule, "name");
+    String *attr1 = nodeAttribute(content1, attr_name->value);
+    String *attr2 = nodeAttribute(content2, attr_name->value);
+    String *old = NULL;
+    String *new = NULL;
+    xmlChar *status = NULL;
+    String *fail = NULL;
     
-    existing_entry = (Node *) hashAdd(hash, (Object *) key, (Object *) node);
-    if (existing_entry) {
-	str1 = nodestr(existing_entry->node);
-	str2 = nodestr(node->node);
-	errmsg = newstr("Unexpected collision of node keys: %s with %s",
-			str1, str2);
-	skfree(str1);
-	skfree(str2);
-	objectFree((Object *) existing_entry, TRUE);
-	RAISE(XML_PROCESSING_ERROR, errmsg);
-    }
-    return alist;
-}
-
-static Cons *
-dbobjectsFromLevel(xmlNode *node, Hash *rules)
-{
-    Cons *alist = NULL;
-    String *type;
-    char *keyattr;
-    String *key;
-    Cons *rule;
-    xmlNode *this = node;
-
-    while (this) {
-	if (streq("dbobject", (char *) this->name)) {
-	    type = nodeAttribute(this, "type");
-	    if (rule = (Cons *) hashGet(rules, (Object *) type)) {
-		keyattr = ((String *) rule->car)->value;
+    if (attr1) {
+	if (attr2) {
+	    if (!streq(attr1->value, attr2->value)) {
+		status = "Diff";
+		old = attr1;
+		new = attr2;
+		attr1 = attr2 = NULL;
 	    }
-	    else {
-		keyattr = "fqn";
-	    }
-	    key = nodeAttribute(this, keyattr);
-	    alist = addNodeForLevel(this, alist, type, key);
-	}
-	this = getElement(this->next);
-    }
-    return alist;
-}
-
-/* Return the node from candidates that matches node according to rule */
-static xmlNode *
-getDiffMatch(xmlNode *node, Cons *rule, Hash *candidates)
-{
-    String *match_attr = (String *) rule->car;
-    String *node_attr = nodeAttribute(node, match_attr->value);
-    Node *match = NULL;
-    xmlNode *result;
-
-    match = (Node *) hashDel(candidates, (Object *) node_attr);
-    result = match->node;
-    objectFree((Object *) node_attr, TRUE);
-    objectFree((Object *) match, TRUE);
-
-    return result;
-}
-
-static xmlNode *
-diffDbobject(
-    xmlNode *node, 
-    Hash *rules, 
-    Cons *others,
-    boolean *diffs,
-    int level)
-{
-    String *type = nodeAttribute(node, "type");
-    Cons *rule = (Cons *) hashGet(rules, (Object *) type);
-    Hash *candidates = (Hash *) alistGet(others, (Object *) type);
-    xmlNode *result = xmlCopyNode(node, 2);
-    xmlNode *match;
-    xmlNode *kids;
-
-    if (rule) {
-	if (candidates &&
-	    (match = getDiffMatch(node, rule, candidates)))
-	{
-	    /* Check the kids for diffs */
-	    dbgNode(match);
-	    *diffs = FALSE;
-	    RAISE(XML_PROCESSING_ERROR, newstr("DEAL WITH DIFFS OR THE SAME"));
 	}
 	else {
-	    *diffs = TRUE;
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("DEAL WITH NO MATCH (OBJ DELETION)"));
+	    status = "Gone";
+	    old = attr1;
+	    attr1 = NULL;
 	}
     }
     else {
-	RAISE(XML_PROCESSING_ERROR, 
-	      newstr("DEAL WITH NO RULE (OBJ UNKNOWN ORIGINAL)"));
+	if (attr2) {
+	    status = "New";
+	    new = attr2;
+	    attr2 = NULL;
+	}
+    }
+    BEGIN {
+	if (status) {
+	    /* There is a difference.  Check if that must cause a failure */
+	    if (fail = nodeAttribute(rule, "fail")) {
+		String *tmp1 = nodeAttribute(content1, attr_name->value);
+		String *tmp2 = nodeAttribute(content2, attr_name->value);
+		String *msg = nodeAttribute(rule, "msg");
+		char *formatted_msg = newstr(msg->value, 
+					     tmp1? tmp1->value: "<null>",
+					     tmp2? tmp2->value: "<null>");
+		objectFree((Object *) tmp1, TRUE);
+		objectFree((Object *) tmp2, TRUE);
+		objectFree((Object *) msg, TRUE);
+
+		RAISE(XML_PROCESSING_ERROR, formatted_msg);
+	    }
+
+	    diff = xmlNewNode(NULL, BAD_CAST "attribute");
+	    (void) xmlNewProp(diff, (const xmlChar *) "name", 
+			      (xmlChar *) attr_name->value);
+	    (void) xmlNewProp(diff, (const xmlChar *) "status", status);
+	    if (old) {
+		(void) xmlNewProp(diff, (const xmlChar *) "old", 
+				  (xmlChar *) old->value);
+	    }
+	    if (new) {
+		(void) xmlNewProp(diff, (const xmlChar *) "new", 
+				  (xmlChar *) new->value);
+	    }
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) attr_name, TRUE);
+	objectFree((Object *) old, TRUE);
+	objectFree((Object *) new, TRUE);
+	objectFree((Object *) attr1, TRUE);
+	objectFree((Object *) attr2, TRUE);
+	objectFree((Object *) fail, TRUE);
+    }
+    END;
+
+    return diff;
+}
+
+static xmlNode *
+check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
+{
+/*  RAISE(NOT_IMPLEMENTED_ERROR, 
+	  newstr("check_element is not yet implemented"));
+*/  return NULL;
+}
+
+
+
+/* Check the differences between the content parts of 2 dbobject nodes,
+ * returning a list of diffs if any exist. */
+static xmlNode *
+objectDiffs(xmlNode *content1, xmlNode *content2, 
+	     Hash *rules, boolean *has_diffs)
+{
+    xmlNode *diffs = NULL;
+    xmlNode *diff;
+    xmlNode *prev = NULL;
+    String *type = stringNew(content1->name);
+    Cons *rule_entry = (Cons *) hashGet(rules, (Object *) type);
+    xmlNode *rule = ((Node *) rule_entry->cdr)->node;
+    xmlNode *this = getElement(rule->children);
+
+    BEGIN {
+	while (this) {
+	    if (streq(this->name, "attribute")) {
+		diff = check_attribute(content1, content2, this);
+	    }
+	    else if (streq(this->name, "element")) {
+		diff = check_element(content1, content2, this);
+	    }
+	    else {
+		diff = NULL;
+	    }
+
+	    if (diff) {
+		*has_diffs = TRUE;
+		if (prev) {
+		    prev->next = diff;
+		}
+		else {
+		    diffs = xmlNewNode(NULL, BAD_CAST "diffs");
+		    diffs->children = diff;
+		}
+		prev = diff;
+	    }
+	    this = getElement(this->next);
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) type, TRUE);
+    }
+    END;
+    return diffs;
+}
+
+static void
+diffdebug()
+{
+    fprintf(stderr, "DEBUG\n");
+}
+
+static xmlNode *processDiffs(xmlNode *node1,  xmlNode *node2, 
+			     Hash *rules, boolean *diffs);
+
+/* Copy the contents of a dbobject, and then recurse into other
+ * objects. */
+static xmlNode *
+copyAndRecurse(xmlNode *node1, xmlNode *node2, 
+	       Hash *rules, boolean *diffs)
+{
+    xmlNode *from1 = getElement(node1);
+    xmlNode *from2 = getElement(node2);
+    xmlNode *copy;
+    xmlNode *new;
+    xmlNode *prev = NULL;
+    if (from2) {
+	copy = xmlCopyNode(from2, 2);
+	from2 = getElement(from2->children);
+	while (from2 && !(streq("dbobject", (char *) from2->name))) {
+	    new = xmlCopyNode(from2, 1);
+	    addSibling(copy->children, prev, new);
+	    from2 = getElement(from2->next);
+	}
+	if (from2) {
+	    /* We must be at a dbobject.  This is where we need to
+	     * recurse. */
+	    if (from1) {
+		from1 = getElement(from1->children);
+	    }
+	    fprintf(stderr, "CALL 2\n");
+	    processDiffs(from1, from2, rules, diffs);
+	}
+    }
+    else {
+	diffdebug();
+	RAISE(NOT_IMPLEMENTED_ERROR, newstr("ARGGG"));
+    }
+    return copy;
+}
+
+/* Figure out the diffs for a single dbobject.  */
+static xmlNode *
+dbobjectDiff(xmlNode *node1, xmlNode *node2, 
+	     Hash *rules, boolean *diffs)
+{
+    xmlNode *copy_from = node2? node2: node1;
+    xmlNode *new_dbobj = xmlCopyNode(copy_from, 2);
+    xmlNode *deps = copyDeps(copy_from);
+    xmlNode *this;
+    xmlNode *contents1 = NULL;
+    xmlNode *contents2 = NULL;
+    xmlNode *new_contents;
+    xmlNode *old_deps;
+    xmlNode *last = NULL;
+    xmlNode *diffnodes = NULL;
+    DiffType difftype;
+    boolean  has_diffs = FALSE;
+
+    if (node1) {
+	contents1 = skipToContents(node1);
+	dbgNode(contents1);
+	if (node2) {
+	    contents2 = skipToContents(node2);
+	    dbgNode(contents2);
+	    if (old_deps = getOldDeps(node1, node2)) {
+		if (!deps) {
+		    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
+		}
+		if (this = deps->children) {
+		    while (this->next) {
+			this = this->next;
+		    }
+		    this->next = old_deps;
+		}
+		else {
+		    deps->children = old_deps;
+		}
+	    }
+	    diffnodes = objectDiffs(contents1, contents2, rules, &has_diffs);
+	    dbgNode(diffnodes);
+	    if (has_diffs) {
+		difftype = IS_DIFF;
+		*diffs = TRUE;
+	    }
+	    else {
+		difftype = IS_SAME;
+	    }
+	}
+	else {
+	    difftype = IS_GONE;
+	    *diffs = TRUE;
+	}
+    }
+    else {
+	contents2 = skipToContents(node2);
+	difftype = IS_NEW;
 	*diffs = TRUE;
     }
-    objectFree((Object *) type, TRUE);
 
-    return NULL;
+    /* Add any dependencies to our dbobject result */
+    if (deps) {
+	new_dbobj->children = deps;
+	last = deps;
+    }
+
+    /* Add any diffnodes to our dbobject result */
+    if (diffnodes) {
+	if (last) {
+	    last->next = diffnodes;
+	}
+	else {
+	    new_dbobj->children = diffnodes;
+	}
+	last = diffnodes;
+    }
+    fprintf(stderr, "RECURSE 1\n");
+    dbgNode(contents1);
+    dbgNode(contents2);
+    /* Add the object contents, and its descendents to our dbobject result */
+    if (new_contents = copyAndRecurse(contents1, contents2, 
+				      rules, &has_diffs)) {
+	if (last) {
+	    last->next = new_contents;
+	}
+	else {
+	    new_dbobj->children = new_contents;
+	}
+    }
+
+    fprintf(stderr, "DONE 1\n");
+    setDiff(new_dbobj, difftype);
+    return new_dbobj;
+}
+
+
+static Object *
+recordNewObj(Object *obj, Object *param)
+{
+    Object *elem = ((Cons *) obj)->cdr;
+    Hash *rules = (Hash *) ((Triple *) param)->obj1;
+    Node *first = (Node *) ((Triple *) param)->obj2;
+    Node *prev = (Node *) ((Triple *) param)->obj3;
+    boolean diffs;
+    xmlNode *new;
+    new = dbobjectDiff(((Node *) elem)->node, NULL, rules, &diffs);
+    addSibling(first->node, prev->node, new);
+    return elem;
+}
+
+
+/* Process any unmatched objects for the current level from doc1.  These
+ * are objects in doc1 for which there are no matches in doc2, ie dropped
+ * objects. */ 
+static xmlNode *
+processRemaining(Cons *remaining, Hash *rules, boolean *diffs)
+{
+    Cons *next = remaining;
+    Cons *entry;
+    Hash *hash;
+    Node first = {OBJ_XMLNODE, NULL};
+    Node prev = {OBJ_XMLNODE, NULL};
+    Triple params = {OBJ_TRIPLE, (Object *) rules, 
+		     (Object *) &first, (Object *) &prev};
+
+    while (next) {
+	entry = (Cons *) next->car;
+	hash = (Hash *) entry->cdr;
+	next = (Cons *) next->cdr;
+	hashEach(hash, recordNewObj, (Object *) &params);
+    }
+    if (first.node) {
+	*diffs = TRUE;
+    }
+    return first.node;
 }
 
 static xmlNode *
@@ -451,45 +651,36 @@ processDiffs(
     xmlNode *node1, 
     xmlNode *node2, 
     Hash *rules,
-    boolean *diffs,
-    int level)
+    boolean *diffs)
 {
-    xmlNode *next1 = getElement(node1);
-    xmlNode *next2 = getElement(node2);
+    xmlNode *dbobj2 = getElement(node2);
+    Cons *node1objects = NULL;
+    xmlNode *match;
+    xmlNode *prev;
+    xmlNode *next = NULL;
     xmlNode *result = NULL;
-    xmlNode *new = NULL;
-    xmlNode *prev = NULL;
-    Cons *node2objects = NULL;
 
-    if (level <= 0) {
-	return NULL;
-    }
-
+    fprintf(stderr, "IN\n");
     BEGIN {
-	node2objects = dbobjectsFromLevel(node2, rules);
-	dbgSexp(node2objects);
-
-	while (next1) {
-	    if (streq("dbobject", (char *) next1->name)) {
-		new = diffDbobject(next1, rules, node2objects,
-				   diffs, level - 1);
-	    }
-	    next1 = getElement(next1->next);
+	node1objects = allDbobjects(node1, rules);
+	while (dbobj2 = getDbobject(dbobj2)) {
+	    match = getMatch(dbobj2, node1objects, rules);
+	    dbgNode(dbobj2);
+	    dbgNode(match);
+	    //dbgSexp(node1objects);
+	    next = dbobjectDiff(match, dbobj2, rules, diffs);
+	    addSibling(result, prev, next);
+	    dbobj2 = dbobj2->next;
 	}
-
-	if (node2objects) {
-	    dbgSexp(node2objects);
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("TODO: do something useful with node2objects"));
-	    objectFree((Object *) node2objects, TRUE);
-	    node2objects = NULL;
-	}
+	next = processRemaining(node1objects, rules, diffs);
+	addSibling(result, prev, next);
     }
     EXCEPTION(ex);
     FINALLY {
-	objectFree((Object *) node2objects, TRUE);
+	objectFree((Object *) node1objects, TRUE);
     }
     END;
+    fprintf(stderr, "RETURN\n");
 
     return result;
 }
@@ -505,35 +696,19 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     String *dbname2 = nodeAttribute(dump2, "dbname");
     String *time2 = nodeAttribute(dump2, "time");
     xmlAttrPtr attr;
-    xmlNode *params;
-    xmlNode *child;
-    boolean diffs;
+    xmlNode *diffs;
+    boolean has_diffs;
 
     attr = xmlNewProp(result, "dbname2", dbname2->value);
     attr = xmlNewProp(result, "time2", time2->value);
     objectFree((Object *) dbname2, TRUE);
     objectFree((Object *) time2, TRUE);
 
-    params = getElement(dump1->children);
-    child = xmlCopyNode(params, 2);
-    xmlAddChild(result, child);
-    child = processDiffs(params->next, dump2->children, rules, &diffs, 1);
-    
+    fprintf(stderr, "CALL 1\n");
+    diffs = processDiffs(dump1->children, dump2->children, rules, 
+			 &has_diffs);
+    xmlAddChild(result, diffs);
     return result;
-}
-
-static xmlNode *
-processDiff(Document *doc1, Document *doc2, Hash *rules)
-{
-    xmlNode *root1 = xmlDocGetRootElement(doc1->doc);
-    xmlNode *root2 = xmlDocGetRootElement(doc1->doc);
-    xmlNode *diffroot;
-     //Hash *unhandled = hashNew(TRUE);
-
-    diffroot = processDiffRoot(root1, root2, rules);
-    //hashEach(unhandled, listUnhandled, NULL);
-    //objectFree((Object *) unhandled, TRUE);
-    return diffroot;
 }
 
 
@@ -552,8 +727,8 @@ doDiff(String *diffrules, boolean swap)
 	    readDocs(&doc1, &doc2);
 	}
 	rules = loadDiffRules(diffrules);
-	dbgSexp(rules);
-	result = processDiff(doc1, doc2, rules);
+	result = processDiffRoot(xmlDocGetRootElement(doc1->doc), 
+				 xmlDocGetRootElement(doc2->doc), rules);
     }
     EXCEPTION(ex);
     FINALLY {

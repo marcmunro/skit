@@ -1027,7 +1027,7 @@ END_TEST
 
 START_TEST(generate3)
 {
-    char *args[] = {"./skit", "--generate", "--build", 
+    char *args[] = {"./skit", "--generate", "--drop", 
 		    "x", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1162,17 +1162,17 @@ params_suite(void)
     ADD_TEST(tc_core, no_alias_name);
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
+    ADD_TEST(tc_core, scatter);
     //ADD_TEST(tc_core, extract);
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate2); // during development of new db objects
-    //ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, scatter);
-    ADD_TEST(tc_core, gather);
-    ADD_TEST(tc_core, print2);
-    ADD_TEST(tc_core, generate3);
-    ADD_TEST(tc_core, list);
-    ADD_TEST(tc_core, deps);
+    ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, gather);
+    //ADD_TEST(tc_core, print2);
+    //ADD_TEST(tc_core, generate3);
+    //ADD_TEST(tc_core, list);
+    //ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);

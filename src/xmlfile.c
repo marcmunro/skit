@@ -173,7 +173,6 @@ docForNode(xmlNode *node) {
 	}
 	doc = xmlNewDoc((const xmlChar *) "1.0");
 	xmlDocSetRootElement(doc, root_node);
-
 	return documentNew(doc, NULL);
     }
     return NULL;
@@ -961,8 +960,8 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     scratch = xmlDocGetRootElement(result_doc->doc);
     result = xmlCopyNode(scratch, 1);  // Adding this seems to make it
-				      // safe.  WTF?
-    //xmlUnlinkNode(result);          // This should be enough but is not!
+				       // safe.  WTF?
+    //xmlUnlinkNode(result);           // This should be enough but is not!
     objectFree((Object *) result_doc, TRUE);
     return result;
 }
@@ -1853,37 +1852,6 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     END;
 
     return result;
-
-#if 0
-    Document *source_doc = NULL;
-    Document *result_doc;
-    Hash *dagnodes = NULL;
-    Vector *sorted = NULL;
-    xmlNode *root;
-    xmlDocPtr xmldoc;
-
-    BEGIN {
-	if (input && (streq(input->value, "pop"))) {
-	    source_doc = docStackPop();
-	}
-	sorted = gensort(source_doc);
-	xmldoc = xmlNewDoc(BAD_CAST "1.0");
-	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
-	xmlDocSetRootElement(xmldoc, root);
-	result_doc = documentNew(xmldoc, NULL);
-
-	treeFromVector(root, sorted);
-	objectFree((Object *) sorted, TRUE);
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) input, TRUE);
-	objectFree((Object *) source_doc, TRUE);
-    }
-    END;
-    return root;
-#endif
-
 }
 
 

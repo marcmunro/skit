@@ -22,29 +22,12 @@ DEFAULT: help
 #DB_PORT = -p 5435
 # Uncomment if not doing local connections
 #DB_HOST = -h localhost
-#DB_HOST = 
-#DB_CLUSTER = test81
-#DB_VERSION = 8.1
+#DB_CLUSTER = 
+#DB_VERSION = 
 #DB_USER = 
 
 DB_CONNECT = $(DB_PORT) $(DB_HOST) $(DB_CLUSTER) $(DB_VERSION) $(DB_USER)
 
-#CODE_SOURCES = $(wildcard src/*.c)
-#XML_SOURCES = $(wildcard templates/*/*/*.xml) $(wildcard templates/*/*/*/*.xml) 
-#XSL_SOURCES = $(wildcard templates/*/*/*.xsl) $(wildcard templates/*/*/*/*.xsl) 
-#SQL_SOURCES = $(wildcard templates/*/*/*.sql) $(wildcard templates/*/version.sql) 
-
-#EXTRACT_SOURCES = $(wildcard templates/*/*/extract.xml) \
-#		  $(wildcard templates/*/*/function_params.xsl) \
-#		  $(wildcard templates/*/*/post_extract.xsl) \
-#		  $(SQL_SOURCES) $(CODE_SOURCES)
-
-#GENERATE_SOURCES = $(wildcard templates/*/*/generate.xml) \
-#	 	   $(wildcard templates/*/*/add_deps.xsl) \
-#		   $(wildcard templates/*/*/ddl.xsl)
-
-
-#SOURCES = $(CODE_SOURCES) $(XML_SOURCES) $(XSL_SOURCES) $(SQL_SOURCES)
 include $(top_builddir)/Makefile.global
 SUBDIRS = src test dbscript regress
 include $(SUBDIRS:%=%/Makefile)

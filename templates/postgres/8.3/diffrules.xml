@@ -4,12 +4,12 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- We assume that we will only be comparing one type of database at
-  a time.  So, we can simply match our database, cluster and dbincluster
-  objects based only on object type, hence match="type" for these
-  dbobjects.  Also, we would not want to compare on the basis of 
-  database name as it is likely we want to compare two different 
-  databases and they will probably have different names.  --> 
+  <!-- We assume that we will only be comparing one database at a time.
+       So, we can simply match our database, cluster and dbincluster
+       objects based only on object type, hence match="type" for these
+       dbobjects.  Also, we would not want to compare on the basis of
+       database name as it is likely we want to compare two different
+       databases and they will probably have different names.  -->
 
   <dbobject type="cluster" key="type">
     <attribute name="skit_xml_version" fail="true"
