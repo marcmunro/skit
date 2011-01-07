@@ -216,6 +216,7 @@ setDiff(xmlNode *node, DiffType difftype)
     case IS_GONE: type = "Gone"; break;
     case IS_DIFF: type = "Diff"; break;
     case IS_SAME: type = "None"; break;
+    case IS_UNKNOWN: type = "UNKNOWN"; break;
     case HAS_DIFFKIDS: type = "DifKids"; break;
     }
 
@@ -433,10 +434,19 @@ objectDiffs(xmlNode *content1, xmlNode *content2,
     xmlNode *prev = NULL;
     String *type = stringNew(content1->name);
     Cons *rule_entry = (Cons *) hashGet(rules, (Object *) type);
-    xmlNode *rule = ((Node *) rule_entry->cdr)->node;
-    xmlNode *this = getElement(rule->children);
+    xmlNode *rule;
+    xmlNode *this = NULL;
 
     BEGIN {
+	if (rule_entry) {
+	    rule = ((Node *) rule_entry->cdr)->node;
+	    this = getElement(rule->children);
+	}
+	else {
+	    *has_diffs = TRUE;  /* Overload the has_diffs param to 
+				 * indicate that we don't know if
+				 * there are diffs or not. */
+	}
 	while (this) {
 	    if (streq(this->name, "attribute")) {
 		diff = check_attribute(content1, content2, this);
@@ -504,7 +514,6 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 	    if (from1) {
 		from1 = getElement(from1->children);
 	    }
-	    fprintf(stderr, "CALL 2\n");
 	    processDiffs(from1, from2, rules, diffs);
 	}
     }
@@ -556,7 +565,13 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	    diffnodes = objectDiffs(contents1, contents2, rules, &has_diffs);
 	    dbgNode(diffnodes);
 	    if (has_diffs) {
-		difftype = IS_DIFF;
+		if (diffnodes) {
+		    difftype = IS_DIFF;
+		}
+		else {
+		    difftype = IS_UNKNOWN;
+		    diffdebug();
+		}
 		*diffs = TRUE;
 	    }
 	    else {
@@ -590,7 +605,6 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	}
 	last = diffnodes;
     }
-    fprintf(stderr, "RECURSE 1\n");
     dbgNode(contents1);
     dbgNode(contents2);
     /* Add the object contents, and its descendents to our dbobject result */
@@ -604,7 +618,6 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	}
     }
 
-    fprintf(stderr, "DONE 1\n");
     setDiff(new_dbobj, difftype);
     return new_dbobj;
 }
@@ -665,14 +678,10 @@ processDiffs(
     xmlNode *next = NULL;
     xmlNode *result = NULL;
 
-    fprintf(stderr, "IN\n");
     BEGIN {
 	node1objects = allDbobjects(node1, rules);
 	while (dbobj2 = getDbobject(dbobj2)) {
 	    match = getMatch(dbobj2, node1objects, rules);
-	    dbgNode(dbobj2);
-	    dbgNode(match);
-	    //dbgSexp(node1objects);
 	    next = dbobjectDiff(match, dbobj2, rules, diffs);
 	    addSibling(result, prev, next);
 	    dbobj2 = dbobj2->next;
@@ -685,7 +694,6 @@ processDiffs(
 	objectFree((Object *) node1objects, TRUE);
     }
     END;
-    fprintf(stderr, "RETURN\n");
 
     return result;
 }
@@ -709,7 +717,6 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     objectFree((Object *) dbname2, TRUE);
     objectFree((Object *) time2, TRUE);
 
-    fprintf(stderr, "CALL 1\n");
     diffs = processDiffs(dump1->children, dump2->children, rules, 
 			 &has_diffs);
     xmlAddChild(result, diffs);

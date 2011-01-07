@@ -30,7 +30,8 @@
 
 typedef unsigned char boolean;
 
-typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, HAS_DIFFKIDS} DiffType;
+typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, 
+	      IS_UNKNOWN, HAS_DIFFKIDS} DiffType;
 
 typedef enum {
     TOKEN_OPEN_PAREN = 0,
