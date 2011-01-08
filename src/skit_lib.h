@@ -51,15 +51,17 @@ typedef enum {
 
 
 typedef enum {
-    OBJ_UNDEFINED = 128,  	// Start with a non-zero to make debugging
-    OBJ_INT4,			// and testing for unitialised objects
-    OBJ_STRING,			// easier.
+    OBJ_UNDEFINED = 128,  	/* Start with a non-zero to make
+				 * debugging and testing for unitialised
+				 * objects easier */
+    OBJ_INT4,			
+    OBJ_STRING,
     OBJ_CONS,
     OBJ_EXCEPTION,
     OBJ_VECTOR,
-    OBJ_VARRAY,                 // VARRAY IS THE DYNAMICALLY-SIZED CONTENTS
-                                // OF A VECTOR.  IT IS NOT REALLY AN
-                                // OBJECT IN ITS OWN RIGHT
+    OBJ_VARRAY,                 /* VARRAY IS THE DYNAMICALLY-SIZED
+                                 * CONTENTS OF A VECTOR.  IT IS NOT
+                                 * REALLY AN OBJECT IN ITS OWN RIGHT */
     OBJ_HASH,                  
     OBJ_SYMBOL,
     OBJ_OPTIONLIST,
@@ -73,11 +75,11 @@ typedef enum {
     OBJ_TUPLE,
     OBJ_DAGNODE,
     OBJ_TRIPLE,
-    OBJ_MISC,                   // Eg, SqlFuncs structure
-    OBJ_DOT,       		// This is not a real-object
-    OBJ_CLOSE_PAREN,    	// This is not a real-object
-    OBJ_CLOSE_BRACKET,  	// This is not a real-object
-    OBJ_CLOSE_ANGLE     	// This is not a real-object
+    OBJ_MISC,                   /* Eg, SqlFuncs structure */
+    OBJ_DOT,       		/* This is not a real-object */
+    OBJ_CLOSE_PAREN,    	/* This is not a real-object */
+    OBJ_CLOSE_BRACKET,  	/* This is not a real-object */
+    OBJ_CLOSE_ANGLE     	/* This is not a real-object */
 } ObjType;
 
 #define OBJ_NOTOBJECT OBJ_DOT

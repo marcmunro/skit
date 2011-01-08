@@ -493,13 +493,14 @@ static xmlNode *processDiffs(xmlNode *node1,  xmlNode *node2,
  * objects. */
 static xmlNode *
 copyAndRecurse(xmlNode *node1, xmlNode *node2, 
-	       Hash *rules, boolean *diffs)
+	       Hash *rules, boolean *has_diffs)
 {
     xmlNode *from1 = getElement(node1);
     xmlNode *from2 = getElement(node2);
     xmlNode *copy;
     xmlNode *new;
     xmlNode *prev = NULL;
+    xmlNode *diffs;
     if (from2) {
 	copy = xmlCopyNode(from2, 2);
 	from2 = getElement(from2->children);
@@ -514,7 +515,8 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 	    if (from1) {
 		from1 = getElement(from1->children);
 	    }
-	    processDiffs(from1, from2, rules, diffs);
+	    diffs = processDiffs(from1, from2, rules, has_diffs);
+	    addSibling(copy->children, prev, diffs);
 	}
     }
     else {
@@ -544,10 +546,10 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 
     if (node1) {
 	contents1 = skipToContents(node1);
-	dbgNode(contents1);
+	//dbgNode(contents1);
 	if (node2) {
 	    contents2 = skipToContents(node2);
-	    dbgNode(contents2);
+	    //dbgNode(contents2);
 	    if (old_deps = getOldDeps(node1, node2)) {
 		if (!deps) {
 		    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
@@ -563,14 +565,12 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 		}
 	    }
 	    diffnodes = objectDiffs(contents1, contents2, rules, &has_diffs);
-	    dbgNode(diffnodes);
 	    if (has_diffs) {
 		if (diffnodes) {
 		    difftype = IS_DIFF;
 		}
 		else {
 		    difftype = IS_UNKNOWN;
-		    diffdebug();
 		}
 		*diffs = TRUE;
 	    }
@@ -605,8 +605,8 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	}
 	last = diffnodes;
     }
-    dbgNode(contents1);
-    dbgNode(contents2);
+    //dbgNode(contents1);
+    //dbgNode(contents2);
     /* Add the object contents, and its descendents to our dbobject result */
     if (new_contents = copyAndRecurse(contents1, contents2, 
 				      rules, &has_diffs)) {
