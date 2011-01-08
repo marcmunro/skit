@@ -14,6 +14,7 @@
     <option name='s*wap' type='flag'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
+    <option name='retain_deps' type='boolean' value='true'/>
   </skit:options>
 
   <skit:diff rules="diffrules.xml" swap="swap"/>

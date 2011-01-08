@@ -743,6 +743,10 @@ executeTemplate(Object *params)
     int docstack_entries = consLen(docstack);
     String *action_name;
     Document *result;
+    boolean retain_deps;
+    xmlNode *root;
+
+    retain_deps = dereference(symbolGetValue("retain_deps")) && TRUE;
 
     // TODO: Ensure sources is retrieved successfully from the hash
     if (docstack_entries < sources->value) {
@@ -756,6 +760,12 @@ executeTemplate(Object *params)
     preprocessSourceDocs(sources->value, params);
     
     if (result = processTemplate(template)) {
+	if (retain_deps) {
+	    root = xmlDocGetRootElement(result->doc);
+	    (void) xmlNewProp(root, (const xmlChar *) "retain_deps", 
+			      (xmlChar *) "true");
+	    dbgNode(root);
+	}
 	docStackPush((Object *) result);
     }
 

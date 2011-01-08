@@ -3,6 +3,24 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   version="1.0">
 
+  <!-- If this document may not have its deps removed, just copy it
+       verbatim --> 
+  <xsl:template match="/*[@retain_deps='true']">
+    <dump>
+      <wibble/>
+    </dump>
+  </xsl:template>
+
+  <!-- This template handles copy-only mode.  This is used when we
+       discover that a document may not have its deps removed -->
+  <xsl:template match="*" mode="copy">
+    <xsl:copy select=".">
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates mode="copy"/>
+    </xsl:copy>
+  </xsl:template>
+
+
   <xsl:template match="/">
     <xsl:for-each select="//*">
       <xsl:apply-templates select="."/>
