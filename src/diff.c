@@ -515,13 +515,14 @@ diffdebug()
 }
 
 static xmlNode *processDiffs(xmlNode *node1,  xmlNode *node2, 
-			     Hash *rules, boolean *diffs);
+			     Hash *rules, boolean *diffs, boolean is_gone);
 
 /* Copy the contents of a dbobject, and then recurse into other
  * objects. */
 static xmlNode *
 copyAndRecurse(xmlNode *node1, xmlNode *node2, 
-	       Hash *rules, boolean *has_diffs)
+	       Hash *rules, boolean *has_diffs,
+               boolean is_gone)
 {
     xmlNode *from1 = getElement(node1);
     xmlNode *from2 = getElement(node2);
@@ -545,13 +546,14 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 	    if (from1) {
 		from1 = getElement(from1->children);
 	    }
-	    diffs = processDiffs(from1, from2, rules, has_diffs);
+	    diffs = processDiffs(from1, from2, rules, has_diffs, is_gone);
 	    addSibling(copy->children, prev, diffs);
 	}
     }
     else {
-	diffdebug();
-	RAISE(NOT_IMPLEMENTED_ERROR, newstr("ARGGG"));
+	/* Should not be able to reach this point as node2 must
+	 * always be provided. */
+	RAISE(GENERAL_ERROR, newstr("diff coding error"));
     }
     return copy;
 }
@@ -559,7 +561,7 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 /* Figure out the diffs for a single dbobject.  */
 static xmlNode *
 dbobjectDiff(xmlNode *node1, xmlNode *node2, 
-	     Hash *rules, boolean *diffs)
+	     Hash *rules, boolean *diffs, boolean is_gone)
 {
     xmlNode *copy_from = node2? node2: node1;
     xmlNode *new_dbobj = xmlCopyNode(copy_from, 2);
@@ -607,13 +609,14 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	    }
 	}
 	else {
-	    difftype = IS_GONE;
-	    *diffs = TRUE;
+	    /* Should not be able to reach this point as node2 must
+	     * always be provided. */
+	    RAISE(GENERAL_ERROR, newstr("diff coding error"));
 	}
     }
     else {
 	contents2 = skipToContents(node2);
-	difftype = IS_NEW;
+	difftype = is_gone? IS_GONE: IS_NEW;
 	*diffs = TRUE;
     }
 
@@ -649,7 +652,7 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     //dbgNode(contents2);
     /* Add the object contents, and its descendents to our dbobject result */
     if (new_contents = copyAndRecurse(contents1, contents2, 
-				      rules, &has_diffs)) {
+				      rules, &has_diffs, is_gone)) {
 	if (last) {
 	    last->next = new_contents;
 	}
@@ -667,7 +670,7 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 
 
 static Object *
-recordNewObj(Object *obj, Object *param)
+recordDroppedObj(Object *obj, Object *param)
 {
     Object *elem = ((Cons *) obj)->cdr;
     Hash *rules = (Hash *) ((Triple *) param)->obj1;
@@ -675,7 +678,7 @@ recordNewObj(Object *obj, Object *param)
     Node *prev = (Node *) ((Triple *) param)->obj3;
     boolean diffs;
     xmlNode *new;
-    new = dbobjectDiff(((Node *) elem)->node, NULL, rules, &diffs);
+    new = dbobjectDiff(NULL, ((Node *) elem)->node, rules, &diffs, TRUE);
     addSibling(first->node, prev->node, new);
     return elem;
 }
@@ -699,7 +702,7 @@ processRemaining(Cons *remaining, Hash *rules, boolean *diffs)
 	entry = (Cons *) next->car;
 	hash = (Hash *) entry->cdr;
 	next = (Cons *) next->cdr;
-	hashEach(hash, recordNewObj, (Object *) &params);
+	hashEach(hash, recordDroppedObj, (Object *) &params);
     }
     if (first.node) {
 	*diffs = TRUE;
@@ -712,7 +715,8 @@ processDiffs(
     xmlNode *node1, 
     xmlNode *node2, 
     Hash *rules,
-    boolean *diffs)
+    boolean *diffs,
+    boolean is_gone)
 {
     xmlNode *dbobj2 = getElement(node2);
     Cons *node1objects = NULL;
@@ -725,7 +729,7 @@ processDiffs(
 	node1objects = allDbobjects(node1, rules);
 	while (dbobj2 = getDbobject(dbobj2)) {
 	    match = getMatch(dbobj2, node1objects, rules);
-	    next = dbobjectDiff(match, dbobj2, rules, diffs);
+	    next = dbobjectDiff(match, dbobj2, rules, diffs, is_gone);
 	    addSibling(result, prev, next);
 	    dbobj2 = dbobj2->next;
 	}
@@ -761,7 +765,7 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     objectFree((Object *) time2, TRUE);
 
     diffs = processDiffs(dump1->children, dump2->children, rules, 
-			 &has_diffs);
+			 &has_diffs, FALSE);
     xmlAddChild(result, diffs);
     return result;
 }
@@ -776,10 +780,10 @@ doDiff(String *diffrules, boolean swap)
     Hash *rules = NULL;
     BEGIN {
 	if (swap) {
-	    readDocs(&doc2, &doc1);
+	    readDocs(&doc1, &doc2);
 	}
 	else {
-	    readDocs(&doc1, &doc2);
+	    readDocs(&doc2, &doc1);
 	}
 	rules = loadDiffRules(diffrules);
 	result = processDiffRoot(xmlDocGetRootElement(doc1->doc), 
