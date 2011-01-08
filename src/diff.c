@@ -26,6 +26,18 @@ readDocs(Document **p_doc1, Document **p_doc2)
     *p_doc2 = docStackPop();
 }
 
+static boolean
+isDepNode(xmlNode *node)
+{
+    return streq("dependencies", (char *) node->name);
+}
+
+static boolean
+isContextNode(xmlNode *node)
+{
+    return streq("context", (char *) node->name);
+}
+
 static void
 readDbobjectRule(xmlNode *node, Object *rules)
 {
@@ -230,7 +242,23 @@ copyDeps(xmlNode *node)
     xmlNode *this = getElement(node->children);
     xmlNode *result = NULL;
     
-    while (this && !streq("dependencies", (char *) this->name)) {
+    while (this && !isDepNode(this)) {
+	this = getElement(this->next);
+    }
+    if (this) {
+	result = xmlCopyNode(this, 1);
+    }
+    return result;
+}
+
+/* Copy an object's context record */
+static xmlNode *
+copyContext(xmlNode *node)
+{
+    xmlNode *this = getElement(node->children);
+    xmlNode *result = NULL;
+    
+    while (this && !streq("context", (char *) this->name)) {
 	this = getElement(this->next);
     }
     if (this) {
@@ -270,7 +298,7 @@ getOldDeps(xmlNode *node1, xmlNode *node2)
     BEGIN {
 	/* Build hashes for fqn and pqn */
 	this = getElement(node2->children);
-	while (this && !streq("dependencies", (char *) this->name)) {
+	while (this && !isDepNode(this)) {
 	    this = getElement(this->next);
 	}
 	if (this) {
@@ -288,7 +316,7 @@ getOldDeps(xmlNode *node1, xmlNode *node2)
 	/* Check for items from node1, that are not present in the
 	 * hashes */
 	this = getElement(node1->children);
-	while (this && !streq("dependencies", (char *) this->name)) {
+	while (this && !isDepNode(this)) {
 	    this = getElement(this->next);
 	}
 	if (this) {
@@ -326,7 +354,7 @@ static xmlNode *
 skipToContents(xmlNode *node)
 {
     xmlNode *this = getElement(node->children);
-    while (this && streq("dependencies", (char *) this->name)) {
+    while (this && (isDepNode(this) || isContextNode(this))) { 
 	this = this->next;
     }
     return this;
@@ -501,6 +529,8 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
     xmlNode *new;
     xmlNode *prev = NULL;
     xmlNode *diffs;
+    *has_diffs = FALSE;
+
     if (from2) {
 	copy = xmlCopyNode(from2, 2);
 	from2 = getElement(from2->children);
@@ -534,6 +564,7 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     xmlNode *copy_from = node2? node2: node1;
     xmlNode *new_dbobj = xmlCopyNode(copy_from, 2);
     xmlNode *deps = copyDeps(copy_from);
+    xmlNode *context = copyContext(copy_from);
     xmlNode *this;
     xmlNode *contents1 = NULL;
     xmlNode *contents2 = NULL;
@@ -541,7 +572,7 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     xmlNode *old_deps;
     xmlNode *last = NULL;
     xmlNode *diffnodes = NULL;
-    DiffType difftype;
+    DiffType difftype = IS_SAME;
     boolean  has_diffs = FALSE;
 
     if (node1) {
@@ -574,9 +605,6 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 		}
 		*diffs = TRUE;
 	    }
-	    else {
-		difftype = IS_SAME;
-	    }
 	}
 	else {
 	    difftype = IS_GONE;
@@ -593,6 +621,18 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     if (deps) {
 	new_dbobj->children = deps;
 	last = deps;
+    }
+
+    /* Add any context to our dbobject result */
+    // TODO: Deal with change of context!!!!!!!!!!!
+    if (context) {
+	if (last) {
+	    last->next = context;
+	}
+	else {
+	    new_dbobj->children = context;
+	}
+	last = context;
     }
 
     /* Add any diffnodes to our dbobject result */
@@ -615,6 +655,9 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 	}
 	else {
 	    new_dbobj->children = new_contents;
+	}
+	if (has_diffs && (difftype == IS_SAME)) {
+	    difftype = HAS_DIFFKIDS;
 	}
     }
 
