@@ -664,9 +664,9 @@ fnCdr(Object *obj)
 
     evalCar(cons);
     list = dereference(cons->car);
-    dbgSexp(list);
+    //dbgSexp(list);
     item = ((Cons *) list)->cdr;
-    dbgSexp(item);
+    //dbgSexp(item);
 
     return (Object *) objRefNew(item);
 }

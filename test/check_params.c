@@ -993,7 +993,7 @@ END_TEST
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml", "zz", 
-		    "zz3",  "--print", "--full"};
+		    "zz3"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1005,7 +1005,76 @@ START_TEST(diff)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(5, args);
+	//process_args2(10, args);
+	//doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(difflist)
+{
+    char *args[] = {"./skit", "-t", "diff.xml", "zz", 
+		    "zz3", "--list"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //registerTestSQL();
+    //showFree(1205);
+    //showMalloc(299978);
+
+    BEGIN {
+	process_args2(6, args);
+	//process_args2(10, args);
+	//doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(smalldiff)
+{
+    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
+		    "sz3"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //registerTestSQL();
+    //showFree(1205);
+    //showMalloc(299978);
+
+    BEGIN {
+	process_args2(5, args);
 	//process_args2(10, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
@@ -1054,7 +1123,7 @@ END_TEST
 START_TEST(list)
 {
     char *args[] = {"./skit", "--list", 
-		    "zz3", "--print", "--full"};
+		    "diff.out", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1064,7 +1133,7 @@ START_TEST(list)
     //showMalloc(4611);
 
     BEGIN {
-	process_args2(4, args);
+	process_args2(5, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1167,11 +1236,13 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate2); // during development of new db objects
+    ADD_TEST(tc_core, smalldiff);
     ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, gather);
     //ADD_TEST(tc_core, print2);
     //ADD_TEST(tc_core, generate3);
-    //ADD_TEST(tc_core, list);
+    ADD_TEST(tc_core, list);
     //ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);

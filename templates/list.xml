@@ -21,9 +21,9 @@
   <!-- If all is specified, we set both grants and contexts -->
   <skit:exec expr="(setq contexts (or contexts all))"/>
   <skit:exec expr="(setq grants (or grants all))"/>
-  <skit:exec expr="(debug 'CONTEXTS' contexts)"/>
-  <skit:exec expr="(debug 'GRANTS' grants)"/>
-  <skit:exec expr="(debug 'ALL' all)"/>
+  <!-- <skit:exec expr="(debug 'CONTEXTS' contexts)"/>
+       <skit:exec expr="(debug 'GRANTS' grants)"/>
+       <skit:exec expr="(debug 'ALL' all)"/> -->
 
   <skit:xslproc stylesheet="list.xsl" input="pop"/>
 </skit:stylesheet>

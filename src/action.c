@@ -764,7 +764,6 @@ executeTemplate(Object *params)
 	    root = xmlDocGetRootElement(result->doc);
 	    (void) xmlNewProp(root, (const xmlChar *) "retain_deps", 
 			      (xmlChar *) "true");
-	    dbgNode(root);
 	}
 	docStackPush((Object *) result);
     }

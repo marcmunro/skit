@@ -5,15 +5,22 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit"
   version="1.0">
 
+  <xsl:variable name="is_diff" select="boolean(/*/dbobject/@diff)"/>
+
   <xsl:template match="/*">
-      <xsl:copy select=".">
-	<xsl:copy-of select="@*"/>
-	<printable/>  <!-- Simple tag to show whether the output doc is
-			   printable as other than an xml document -->
-	<xsl:apply-templates>
-	  <xsl:with-param name="depth" select="1"/>
-	</xsl:apply-templates>
-      </xsl:copy>
+    <xsl:copy select=".">
+      <!-- Eliminate retain_deps if provided (list *must* remove deps) -->
+      <xsl:for-each select="@*">
+	<xsl:if test="name(.) != 'retain_deps'">
+	  <xsl:copy-of select="."/>
+	</xsl:if>
+      </xsl:for-each>
+      <printable/>  <!-- Simple tag to show whether the output doc is
+			 printable as other than an xml document -->
+      <xsl:apply-templates>
+	<xsl:with-param name="depth" select="1"/>
+      </xsl:apply-templates>
+    </xsl:copy>
   </xsl:template>
 
   <xsl:template match="dbobject[not(@nolist='true')]">
@@ -47,6 +54,10 @@
 	  <xsl:value-of select="@name"/>
 	  <xsl:text>|</xsl:text>
 	  <xsl:value-of select="@fqn"/>
+	  <xsl:if test="$is_diff">
+	    <xsl:text>|diff=</xsl:text>
+	    <xsl:value-of select="@diff"/>
+	  </xsl:if>
 	  <xsl:if test="@action">
 	    <xsl:text>|</xsl:text>
 	    <xsl:value-of select="@action"/>

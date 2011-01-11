@@ -290,7 +290,7 @@ nextParam(Object **params)
     Object *placeholder = NULL;
     return NULL;
     if (params && *params) {
-	dbgSexp(*params);
+	//dbgSexp(*params);
 	if (isCollection(*params)) {
 	    fprintf(stderr, "YES\n");
 	    result =  objNext(*params, &placeholder);
@@ -347,7 +347,7 @@ char *applyNthParam(char *qrystr, int n, Object *param)
 	sprintf(param_str, ":%d", n);
 	return applyOneParam(qrystr, param_str, param);
     }
-    dbgSexp(param);
+    //dbgSexp(param);
     RAISE(NOT_IMPLEMENTED_ERROR,
 	  newstr("applyParams cannot deal with non-string objects (%d)",
 		 param? param->type: 0));
