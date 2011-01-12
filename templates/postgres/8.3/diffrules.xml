@@ -6,31 +6,24 @@
    version="1.0">
 
   <!-- We assume that we will only be comparing one database at a time.
-       So, we can simply match our database, cluster and dbincluster
-       objects based only on object type, hence match="type" for these
-       dbobjects.  Also, we would not want to compare on the basis of
-       database name as it is likely we want to compare two different
-       databases and they will probably have different names.  -->
+       So, we can simply match our database, and cluster objects based
+       only on object type, hence match="type" for these dbobjects.
+       Also, we would not want to compare on the basis of database name
+       as it is likely we want to compare two different databases and
+       they will probably have different names. 
+
+       Note that dbincluster objects are dealt with by the rules for
+       database objects as the actual object type contained by a
+       dbincluster dbobject is a database.  -->
 
   <dbobject type="cluster" key="type">
     <attribute name="skit_xml_version" fail="true"
 	       msg="Cannot reconcile xml format diffs between %s and %s"/>
 
     <xi:include href="skitfile:diff/database.xml"/>
+    <xi:include href="skitfile:diff/roles.xml"/>
+    <xi:include href="skitfile:diff/tablespaces.xml"/>
 
-    <dbobject type="role" key="fqn">
-      <!-- The attributes which we wish to compare -->
-      <attribute name="max_connections"/>
-      <attribute name="password"/>
-      <attribute name="expires"/>
-      <attribute name="login"/>
-    
-      <element type="privilege" match="priv"/>
-      <element type="profile" match="param">
-	<attribute name="value"/>
-      </element>
-
-    </dbobject>
 
   </dbobject>
 </skit:diffrules>

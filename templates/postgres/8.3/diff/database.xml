@@ -6,10 +6,10 @@
 
   <dbobject type="database" key="type">
     <attribute name="tablespace"/>
-    <attribute name="comment" merge_new="yes"/>
     <attribute name="encoding"/>
     <attribute name="owner"/>
     <attribute name="connections"/>
+    <attribute name="comment" merge_new="yes"/>
   </dbobject>
 
 </skit:inclusion>  
