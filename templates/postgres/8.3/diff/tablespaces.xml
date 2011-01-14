@@ -4,12 +4,9 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="tablespace" match="fqn">
+  <dbobject type="tablespace" key="name">
     <attribute name="owner"/>
     <attribute name="location"/>
-    <dbobject type="grant" match="fqn">
-      <attribute name="with_grant" rebuild="true"/>
-    </dbobject>
   </dbobject>	
 
 </skit:inclusion>  

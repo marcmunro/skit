@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="grant" key="fqn">
+    <!-- Rebuild is the safest option for this attribute as the 
+	 owner of the parent object may have changed and it is
+	 too difficult to deal with this otherwise.  -->
+    <attribute name="with_grant" rebuild="true"/>
+  </dbobject>
+</skit:inclusion>  

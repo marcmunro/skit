@@ -9,7 +9,8 @@
     <attribute name="encoding"/>
     <attribute name="owner"/>
     <attribute name="connections"/>
-    <attribute name="comment" merge_new="yes"/>
   </dbobject>
 
+  <!-- Nothing to do for dbincluster, except tell diff that it exists -->
+  <dbobject type="dbincluster" key="type"/>
 </skit:inclusion>  

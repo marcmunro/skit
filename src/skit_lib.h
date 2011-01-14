@@ -33,6 +33,14 @@ typedef unsigned char boolean;
 typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, 
 	      IS_UNKNOWN, HAS_DIFFKIDS} DiffType;
 
+#define DIFFNEW     "New"
+#define DIFFGONE    "Gone"
+#define DIFFDIFF    "Diff"
+#define DIFFSAME    "None"
+#define DIFFUNKNOWN "UNKNOWN"
+#define DIFFKIDS    "Diffkids"
+
+
 typedef enum {
     TOKEN_OPEN_PAREN = 0,
     TOKEN_CLOSE_PAREN,
@@ -211,8 +219,11 @@ typedef enum {
     DIFF_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
+    EXISTS_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
+
+
 
 typedef struct DagNode {
     ObjType          type;

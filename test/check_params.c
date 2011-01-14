@@ -990,10 +990,10 @@ START_TEST(generate2)
 }
 END_TEST
 
-START_TEST(diff)
+START_TEST(difflist)
 {
-    char *args[] = {"./skit", "-t", "diff.xml", "zz", 
-		    "zz3"};
+    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
+		    "sz3", "--list", "-g"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1005,8 +1005,7 @@ START_TEST(diff)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(5, args);
-	//process_args2(10, args);
+	process_args2(7, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1025,10 +1024,10 @@ START_TEST(diff)
 }
 END_TEST
 
-START_TEST(difflist)
+START_TEST(diffgen)
 {
-    char *args[] = {"./skit", "-t", "diff.xml", "zz", 
-		    "zz3", "--list"};
+    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
+		    "sz3", "--generate"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1041,7 +1040,6 @@ START_TEST(difflist)
 
     BEGIN {
 	process_args2(6, args);
-	//process_args2(10, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1060,10 +1058,14 @@ START_TEST(difflist)
 }
 END_TEST
 
-START_TEST(smalldiff)
+START_TEST(diff)
 {
+    // Full size diff with the following params.
+    //char *args[] = {"./skit", "-t", "diff.xml", "zz", 
+    //		    "zz3"};
+    // Smaller diff with these params.
     char *args[] = {"./skit", "-t", "diff.xml", "sz", 
-		    "sz3"};
+		    "sz3", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1074,7 +1076,7 @@ START_TEST(smalldiff)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(7, args);
 	//process_args2(10, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
@@ -1235,10 +1237,10 @@ params_suite(void)
     //ADD_TEST(tc_core, extract);
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate2); // during development of new db objects
-    ADD_TEST(tc_core, smalldiff);
+    ADD_TEST(tc_core, generate2); // during development of new db objects
     ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
     //ADD_TEST(tc_core, print2);
     //ADD_TEST(tc_core, generate3);

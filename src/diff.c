@@ -44,11 +44,18 @@ readDbobjectRule(xmlNode *node, Object *rules)
     String *type = nodeAttribute(node, "type");
     String *key = nodeAttribute(node, "key");
     Node *rulenode = nodeNew(node);
-    Cons *rule = consNew((Object *) key, (Object *) rulenode);
+    Cons *rule;
+    char *errmsg;
     /* For now, the rule info is simply a cons cell containing the match
      *  attribute and the node.  This will be expanded as the need
      *  becomes clear.
      */
+    if (!key) {
+	errmsg = newstr("diffrule for %s has no key", type->value);
+	objectFree((Object *) type, TRUE);
+	RAISE(XML_PROCESSING_ERROR, errmsg);
+    }
+    rule = consNew((Object *) key, (Object *) rulenode);
     hashAdd((Hash *) rules, (Object *) type, (Object *) rule);
 }
 
@@ -224,12 +231,12 @@ setDiff(xmlNode *node, DiffType difftype)
 {
     xmlChar *type;
     switch (difftype) {
-    case IS_NEW: type = "New"; break;
-    case IS_GONE: type = "Gone"; break;
-    case IS_DIFF: type = "Diff"; break;
-    case IS_SAME: type = "None"; break;
-    case IS_UNKNOWN: type = "UNKNOWN"; break;
-    case HAS_DIFFKIDS: type = "DifKids"; break;
+    case IS_NEW: type = DIFFNEW; break;
+    case IS_GONE: type = DIFFGONE; break;
+    case IS_DIFF: type = DIFFDIFF; break;
+    case IS_SAME: type = DIFFSAME; break;
+    case IS_UNKNOWN: type = DIFFUNKNOWN; break;
+    case HAS_DIFFKIDS: type = DIFFKIDS; break;
     }
 
     (void) xmlNewProp(node, (const xmlChar *) "diff", type);
@@ -452,15 +459,15 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 
 
 /* Check the differences between the content parts of 2 dbobject nodes,
- * returning a list of diffs if any exist. */
+ * returning a list of diffs if any exist.
+ * NOTE: consumes type */
 static xmlNode *
 objectDiffs(xmlNode *content1, xmlNode *content2, 
-	     Hash *rules, boolean *has_diffs)
+	    String * type, Hash *rules, boolean *has_diffs)
 {
     xmlNode *diffs = NULL;
     xmlNode *diff;
     xmlNode *prev = NULL;
-    String *type = stringNew(content1->name);
     Cons *rule_entry = (Cons *) hashGet(rules, (Object *) type);
     xmlNode *rule;
     xmlNode *this = NULL;
@@ -570,6 +577,7 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     xmlNode *this;
     xmlNode *contents1 = NULL;
     xmlNode *contents2 = NULL;
+    String *type;
     xmlNode *new_contents;
     xmlNode *old_deps;
     xmlNode *last = NULL;
@@ -597,7 +605,9 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 		    deps->children = old_deps;
 		}
 	    }
-	    diffnodes = objectDiffs(contents1, contents2, rules, &has_diffs);
+	    type = nodeAttribute(node1, "type");
+	    diffnodes = objectDiffs(contents1, contents2, type, 
+				    rules, &has_diffs);
 	    if (has_diffs) {
 		if (diffnodes) {
 		    difftype = IS_DIFF;
@@ -763,7 +773,6 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     attr = xmlNewProp(result, "time2", time2->value);
     objectFree((Object *) dbname2, TRUE);
     objectFree((Object *) time2, TRUE);
-
     diffs = processDiffs(dump1->children, dump2->children, rules, 
 			 &has_diffs, FALSE);
     xmlAddChild(result, diffs);

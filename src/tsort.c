@@ -40,15 +40,50 @@ addDagNodeToHash(Object *node, Object *hash)
     /* If this dbobject describes a diff, we will use that to figure out
      * what DagNodes to create, otherwise we figure it out from do_build
      * and do_drop. */
+    String *diff = nodeAttribute(((Node *) node)->node, "diff");
+    String *fqn;
+    char *errmsg;
+    DagNodeBuildType build_type;
+    boolean both = FALSE;
 
-    if (do_build) {
-	doAddNode((Hash *) hash, (Node *) node, BUILD_NODE);
+    if (diff) {
+	if (streq(diff->value, DIFFSAME)) {
+	    build_type = EXISTS_NODE;
+	}
+	else if (streq(diff->value, DIFFNEW)) {
+	    build_type = BUILD_NODE;
+	}
+	else if (streq(diff->value, DIFFGONE)) {
+	    build_type = DROP_NODE;
+	}
+	else if (streq(diff->value, DIFFDIFF)) {
+	    build_type = DIFF_NODE;
+	}
+	else {
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    errmsg = newstr(
+		"addDagNodeToHash: cannot handle diff type %s in %s", 
+		diff->value, fqn->value);
+	    objectFree((Object *) diff, TRUE);
+	    objectFree((Object *) fqn, TRUE);
+	    RAISE(GENERAL_ERROR, errmsg);
+	}
+	objectFree((Object *) diff, TRUE);
+    }
+    else {
+	if (do_build) {
+	    build_type = BUILD_NODE;
+	    both = do_drop;
+	}
+	else if (do_drop) {
+	    build_type = DROP_NODE;
+	}
     }
 
-    if (do_drop) {
+    doAddNode((Hash *) hash, (Node *) node, build_type);
+    if (both) {
 	doAddNode((Hash *) hash, (Node *) node, DROP_NODE);
     }
-
     return hash;
 }
 
@@ -339,7 +374,7 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
 	if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
 	    found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
 	    if (!found) {
-		tmpstr = newstr("processDependenciesForNode: no dependency "
+		tmpstr = newstr("addXmlnodeDependencies: no dependency "
 				"found for %s in %s", fqn->value,
 		                node->fqn->value);
 		RAISE(GENERAL_ERROR, tmpstr);
@@ -435,6 +470,10 @@ addDepsForNode(Object *node_entry, Object *hashes)
     switch (node->build_type) {
     case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
     case DROP_NODE:  addDepsForDropNode(node, (Cons *) hashes); break;
+    case EXISTS_NODE: 
+	/* No deps for this node as it already exists before we apply
+	 * diffs and continues to exist after. */
+	break;
     default: RAISE(NOT_IMPLEMENTED_ERROR,
 		   newstr("addDepsForNode of type %d is not implemented",
 			  node->build_type));
@@ -1170,9 +1209,9 @@ getContextNavigation(DagNode *from, DagNode *target)
 }
 
 /* Return a vector of DagNodes containing the navigation to get from
- * from to target */
+ * start to target */
 Vector *
-navigationToNode(DagNode *from, DagNode *target)
+navigationToNode(DagNode *start, DagNode *target)
 {
     Cons *context_nav;
     Vector *results;
@@ -1185,7 +1224,7 @@ navigationToNode(DagNode *from, DagNode *target)
 
     BEGIN {
 	if (handling_context) {
-	    context_nav = getContextNavigation(from, target);
+	    context_nav = getContextNavigation(start, target);
 	    /* Context departures must happen before any other
 	     * departures and arrivals after */
 	    results = (Vector *) context_nav->car;
@@ -1196,11 +1235,11 @@ navigationToNode(DagNode *from, DagNode *target)
 	{
 	    results = vectorNew(10);
 	}
-	if (from) {
-	    common_root = getCommonRoot(from, target);
-	    current = from;
+	if (start) {
+	    common_root = getCommonRoot(start, target);
+	    current = start;
 	    while (!nodeEq(current, common_root)) {
-		if ((current == from) &&
+		if ((current == start) &&
 		    (current->build_type == DROP_NODE)) {
 		    /* We don't need to depart from a drop node as
 		     * the drop must perform the departure for us. */ 
