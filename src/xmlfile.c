@@ -1036,13 +1036,14 @@ copyObjectNode(xmlNode *source)
 static char *
 actionName(DagNode *node)
 {
-    /* Simplest test is againt the 3rd character of the fqn */
-    switch (node->fqn->value[2]) {
-    case 'r': return "arrive";
-    case 'i': return "build";
-    case 'o': return "drop";
-    case 'p': return "depart";
+    /* Fastest test is againt the 4th character of the fqn */
+    switch (node->fqn->value[3]) {
+    case 'i': return "arrive";
+    case 'l': return "build";
+    case 'p': return "drop";
+    case 'a': return "depart";
     case 'f': return "diff";
+    case 's': return "exists";
     }
     RAISE(GENERAL_ERROR,
 	  newstr("actionName: cannot identify action from fqn \"%s\"", 

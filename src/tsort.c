@@ -45,6 +45,7 @@ addDagNodeToHash(Object *node, Object *hash)
     char *errmsg;
     DagNodeBuildType build_type;
     boolean both = FALSE;
+    //dbgNode(((Node *) node)->node);
 
     if (diff) {
 	if (streq(diff->value, DIFFSAME)) {

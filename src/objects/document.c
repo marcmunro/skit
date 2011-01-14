@@ -978,6 +978,7 @@ xpathEach(Document *doc, String *xpath,
     int i;
 
     //dbgSexp(doc);
+    fprintf(stderr, "START\n");
     BEGIN {
 	context = xmlXPathNewContext(doc->doc);
 	assertXpathObj(context, "xpathEach: unable to establish context");
@@ -992,6 +993,7 @@ xpathEach(Document *doc, String *xpath,
     
 	for(i = 0; i < nodecount; ++i) {
 	    node.node = nodelist->nodeTab[i];
+	    //dbgNode(node.node);
 	    assertXpathObj(node.node, "xpathEach: missing node");
 	    if(node.node->type == XML_ELEMENT_NODE) {
 		param = (*traverser)((Object *) &node, param);
@@ -999,7 +1001,7 @@ xpathEach(Document *doc, String *xpath,
 	    else {
 		RAISE(NOT_IMPLEMENTED_ERROR, 
 		      newstr("xpathEach: cannot handle node type %d",
-			  node.node->type));
+			     node.node->type));
 	    }
 	}
     }
@@ -1017,6 +1019,7 @@ xpathEach(Document *doc, String *xpath,
 	}
     }
     END;
+    fprintf(stderr, "FINISH\n");
 
     return param;
 }

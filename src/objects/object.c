@@ -503,8 +503,9 @@ nameForBuildType(DagNodeBuildType build_type)
     case DIFF_NODE: return "diff";
     case ARRIVE_NODE: return "arrive";
     case DEPART_NODE: return "depart";
+    case EXISTS_NODE: return "exists";
     }
-    return "";
+    return "UNKNOWNBUILDTYPE";
 }
 
 /* Return dynamically-created string representation of object. 
