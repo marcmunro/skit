@@ -88,6 +88,96 @@ addDagNodeToHash(Object *node, Object *hash)
     return hash;
 }
 
+static Object *
+addDagNodeToHash2(Object *node, Object *hash)
+{
+    /* If this dbobject describes a diff, we will use that to figure out
+     * what DagNodes to create, otherwise we figure it out from do_build
+     * and do_drop. */
+    String *diff = nodeAttribute(((Node *) node)->node, "diff");
+    String *fqn;
+    char *errmsg;
+    DagNodeBuildType build_type;
+    boolean both = FALSE;
+    //dbgNode(((Node *) node)->node);
+
+    if (diff) {
+	if (streq(diff->value, DIFFSAME)) {
+	    build_type = EXISTS_NODE;
+	}
+	else if (streq(diff->value, DIFFNEW)) {
+	    build_type = BUILD_NODE;
+	}
+	else if (streq(diff->value, DIFFGONE)) {
+	    build_type = DROP_NODE;
+	}
+	else if (streq(diff->value, DIFFDIFF)) {
+	    build_type = DIFF_NODE;
+	}
+	else {
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    errmsg = newstr(
+		"addDagNodeToHash: cannot handle diff type %s in %s", 
+		diff->value, fqn->value);
+	    objectFree((Object *) diff, TRUE);
+	    objectFree((Object *) fqn, TRUE);
+	    RAISE(GENERAL_ERROR, errmsg);
+	}
+	objectFree((Object *) diff, TRUE);
+    }
+    else {
+	if (do_build) {
+	    build_type = BUILD_NODE;
+	    both = do_drop;
+	}
+	else if (do_drop) {
+	    build_type = DROP_NODE;
+	}
+    }
+
+    doAddNode((Hash *) hash, (Node *) node, build_type);
+    if (both) {
+	doAddNode((Hash *) hash, (Node *) node, DROP_NODE);
+    }
+    return NULL;
+}
+
+static Object *
+dbobjectsToHash(Object *this, Object *hash)
+{
+    Node *node = (Node *) this;
+    if (streq(node->node->name, "dbobject")) {
+	dbgSexp(node);
+    }
+    return NULL;
+}
+
+
+
+/* Perform a depth-first traversal of an xml node tree from start,
+ * applying traverser at each node.   If traverser returns an object,
+ * traversal will terminate and the object will be returned to the
+ * caller.
+ */
+static Object *
+xmlTraverse(xmlNode *start, TraverserFn *traverser, Object *param)
+{
+    xmlNode *cur = getElement(start);
+    Node node = {OBJ_XMLNODE, NULL};
+    node.node = cur;
+    Object *result;
+    result = (*traverser)((Object *) &node, param);
+    cur = getElement(cur->children);
+    while (cur && (!result)) {
+	result = xmlTraverse(cur, traverser, param);
+	cur = getElement(cur->next);
+    }
+    return result;
+}
+
+
+
+
 /* Build a hash of dagnodes from the provided document.  The hash
  * may contain one build node and one drop node per database object,
  * depending on which build and drop options have been selected.
@@ -102,8 +192,10 @@ dagnodesFromDoc(Document *doc)
     do_drop = dereference(symbolGetValue("drop")) && TRUE;
 
     BEGIN {
-	(void) xpathEach(doc, xpath_expr, &addDagNodeToHash, 
-			 (Object *) daghash);
+	(void) xmlTraverse(doc->doc->children, &addDagNodeToHash2, 
+			   (Object *) daghash);
+	//(void) xpathEach(doc, xpath_expr, &addDagNodeToHash, 
+	//	 (Object *) daghash);
     }
     EXCEPTION(ex) {
 	objectFree((Object *) daghash, TRUE);

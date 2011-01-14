@@ -536,6 +536,7 @@ extern Object *xpathEach(Document *doc, String *xpath,
 			 TraverserFn *traverser, Object *param);
 extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);
 extern void readDocDbver(Document *doc);
+extern xmlNode *getElement(xmlNode *node);
 
 // exceptions.c functions are defined in exceptions.h
 

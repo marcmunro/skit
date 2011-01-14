@@ -978,7 +978,7 @@ xpathEach(Document *doc, String *xpath,
     int i;
 
     //dbgSexp(doc);
-    fprintf(stderr, "START\n");
+    //fprintf(stderr, "START\n");
     BEGIN {
 	context = xmlXPathNewContext(doc->doc);
 	assertXpathObj(context, "xpathEach: unable to establish context");
@@ -1019,7 +1019,7 @@ xpathEach(Document *doc, String *xpath,
 	}
     }
     END;
-    fprintf(stderr, "FINISH\n");
+    //fprintf(stderr, "FINISH\n");
 
     return param;
 }

@@ -1601,7 +1601,7 @@ copyNodes(xmlNode *target, xmlNode *from)
     (void) xmlAddNextSibling(target, text);
 }
 
-static xmlNode *
+xmlNode *
 getElement(xmlNode *node)
 {
     while (node && (node->type != XML_ELEMENT_NODE)) {

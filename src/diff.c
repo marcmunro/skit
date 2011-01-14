@@ -61,15 +61,6 @@ readDbobjectRule(xmlNode *node, Object *rules)
 
 typedef void (NodeOp)(xmlNode *node, Object *obj);
 
-static xmlNode *
-getElement(xmlNode *node) 
-{
-    while (node && (node->type != XML_ELEMENT_NODE)) {
-	node = node->next;
-    }
-    return node;
-}
-
 static void
 eachDbobject(xmlNode *node, Object *obj, NodeOp fn)
 {
