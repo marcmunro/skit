@@ -532,6 +532,8 @@ extern Cons *getDocumentInclusion(Document *doc, String *URI);
 extern Document *findDoc(String *filename);
 extern boolean docIsPrintable(Document *doc);
 extern boolean docHasDeps(Document *doc);
+extern Object *xmlTraverse(xmlNode *start, TraverserFn *traverser, 
+			   Object *param);
 extern Object *xpathEach(Document *doc, String *xpath,
 			 TraverserFn *traverser, Object *param);
 extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);

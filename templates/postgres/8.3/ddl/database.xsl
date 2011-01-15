@@ -50,6 +50,43 @@
       </print>
     </xsl:if>	
 
+    <xsl:if test="../@action='diff'">
+      <print>
+	<xsl:for-each select="../diffs/attribute">
+          <xsl:if test="@name='connections'">
+            <xsl:text>alter database </xsl:text>
+	    <xsl:value-of select="../../@qname"/>
+	    <xsl:text> connection limit </xsl:text>
+	    <xsl:value-of select="@new"/>
+	    <xsl:text>;&#x0A;</xsl:text>
+	  </xsl:if>
+          <xsl:if test="@name='owner'">
+            <xsl:text>alter database </xsl:text>
+	    <xsl:value-of select="../../@qname"/>
+	    <xsl:text> owner to </xsl:text>
+	    <xsl:value-of select="@new"/>
+	    <xsl:text>;&#x0A;</xsl:text>
+	  </xsl:if>
+          <xsl:if test="@name='tablespace'">
+            <xsl:text>\echo WARNING: database default tablespace</xsl:text>
+	    <xsl:text> changes from &quot;</xsl:text>
+	    <xsl:value-of select="@old"/>
+	    <xsl:text>&quot; to &quot;</xsl:text>
+	    <xsl:value-of select="@new"/>
+	    <xsl:text>&quot;&#x0A;</xsl:text>
+	  </xsl:if>
+          <xsl:if test="@name='encoding'">
+            <xsl:text>\echo WARNING: database character encoding</xsl:text>
+	    <xsl:text> changes from &quot;</xsl:text>
+	    <xsl:value-of select="@old"/>
+	    <xsl:text>&quot; to &quot;</xsl:text>
+	    <xsl:value-of select="@new"/>
+	    <xsl:text>&quot;&#x0A;</xsl:text>
+	  </xsl:if>
+	</xsl:for-each>
+      </print>
+    </xsl:if>	
+
     <xsl:if test="../@action='drop'">
       <print>
         <xsl:text>DBEOF&#x0A;&#x0A;&#x0A;</xsl:text>

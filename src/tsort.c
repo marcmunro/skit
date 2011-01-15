@@ -34,148 +34,61 @@ doAddNode(Hash *hash, Node *node, DagNodeBuildType build_type)
     }
 }
 
-static Object *
-addDagNodeToHash(Object *node, Object *hash)
-{
-    /* If this dbobject describes a diff, we will use that to figure out
-     * what DagNodes to create, otherwise we figure it out from do_build
-     * and do_drop. */
-    String *diff = nodeAttribute(((Node *) node)->node, "diff");
-    String *fqn;
-    char *errmsg;
-    DagNodeBuildType build_type;
-    boolean both = FALSE;
-    //dbgNode(((Node *) node)->node);
-
-    if (diff) {
-	if (streq(diff->value, DIFFSAME)) {
-	    build_type = EXISTS_NODE;
-	}
-	else if (streq(diff->value, DIFFNEW)) {
-	    build_type = BUILD_NODE;
-	}
-	else if (streq(diff->value, DIFFGONE)) {
-	    build_type = DROP_NODE;
-	}
-	else if (streq(diff->value, DIFFDIFF)) {
-	    build_type = DIFF_NODE;
-	}
-	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
-	    errmsg = newstr(
-		"addDagNodeToHash: cannot handle diff type %s in %s", 
-		diff->value, fqn->value);
-	    objectFree((Object *) diff, TRUE);
-	    objectFree((Object *) fqn, TRUE);
-	    RAISE(GENERAL_ERROR, errmsg);
-	}
-	objectFree((Object *) diff, TRUE);
-    }
-    else {
-	if (do_build) {
-	    build_type = BUILD_NODE;
-	    both = do_drop;
-	}
-	else if (do_drop) {
-	    build_type = DROP_NODE;
-	}
-    }
-
-    doAddNode((Hash *) hash, (Node *) node, build_type);
-    if (both) {
-	doAddNode((Hash *) hash, (Node *) node, DROP_NODE);
-    }
-    return hash;
-}
-
-static Object *
-addDagNodeToHash2(Object *node, Object *hash)
-{
-    /* If this dbobject describes a diff, we will use that to figure out
-     * what DagNodes to create, otherwise we figure it out from do_build
-     * and do_drop. */
-    String *diff = nodeAttribute(((Node *) node)->node, "diff");
-    String *fqn;
-    char *errmsg;
-    DagNodeBuildType build_type;
-    boolean both = FALSE;
-    //dbgNode(((Node *) node)->node);
-
-    if (diff) {
-	if (streq(diff->value, DIFFSAME)) {
-	    build_type = EXISTS_NODE;
-	}
-	else if (streq(diff->value, DIFFNEW)) {
-	    build_type = BUILD_NODE;
-	}
-	else if (streq(diff->value, DIFFGONE)) {
-	    build_type = DROP_NODE;
-	}
-	else if (streq(diff->value, DIFFDIFF)) {
-	    build_type = DIFF_NODE;
-	}
-	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
-	    errmsg = newstr(
-		"addDagNodeToHash: cannot handle diff type %s in %s", 
-		diff->value, fqn->value);
-	    objectFree((Object *) diff, TRUE);
-	    objectFree((Object *) fqn, TRUE);
-	    RAISE(GENERAL_ERROR, errmsg);
-	}
-	objectFree((Object *) diff, TRUE);
-    }
-    else {
-	if (do_build) {
-	    build_type = BUILD_NODE;
-	    both = do_drop;
-	}
-	else if (do_drop) {
-	    build_type = DROP_NODE;
-	}
-    }
-
-    doAddNode((Hash *) hash, (Node *) node, build_type);
-    if (both) {
-	doAddNode((Hash *) hash, (Node *) node, DROP_NODE);
-    }
-    return NULL;
-}
-
-static Object *
-dbobjectsToHash(Object *this, Object *hash)
-{
-    Node *node = (Node *) this;
-    if (streq(node->node->name, "dbobject")) {
-	dbgSexp(node);
-    }
-    return NULL;
-}
-
-
-
-/* Perform a depth-first traversal of an xml node tree from start,
- * applying traverser at each node.   If traverser returns an object,
- * traversal will terminate and the object will be returned to the
- * caller.
+/* Identify dbobject nodes, adding them as Dagnodes to our hash
  */
 static Object *
-xmlTraverse(xmlNode *start, TraverserFn *traverser, Object *param)
+dagnodesToHash(Object *this, Object *hash)
 {
-    xmlNode *cur = getElement(start);
-    Node node = {OBJ_XMLNODE, NULL};
-    node.node = cur;
-    Object *result;
-    result = (*traverser)((Object *) &node, param);
-    cur = getElement(cur->children);
-    while (cur && (!result)) {
-	result = xmlTraverse(cur, traverser, param);
-	cur = getElement(cur->next);
+    Node *node = (Node *) this;
+    String *diff;
+    String *fqn;
+    char *errmsg;
+    DagNodeBuildType build_type;
+    boolean both = FALSE;
+    if (streq(node->node->name, "dbobject")) {
+	diff = nodeAttribute(node->node, "diff");
+
+	if (diff) {
+	    if (streq(diff->value, DIFFSAME)) {
+		build_type = EXISTS_NODE;
+	    }
+	    else if (streq(diff->value, DIFFNEW)) {
+		build_type = BUILD_NODE;
+	    }
+	    else if (streq(diff->value, DIFFGONE)) {
+		build_type = DROP_NODE;
+	    }
+	    else if (streq(diff->value, DIFFDIFF)) {
+		build_type = DIFF_NODE;
+	    }
+	    else {
+		fqn = nodeAttribute(((Node *) node)->node, "fqn");
+		errmsg = newstr(
+		    "addDagNodeToHash: cannot handle diff type %s in %s", 
+		    diff->value, fqn->value);
+		objectFree((Object *) diff, TRUE);
+		objectFree((Object *) fqn, TRUE);
+		RAISE(GENERAL_ERROR, errmsg);
+	    }
+	    objectFree((Object *) diff, TRUE);
+	}
+	else {
+	    if (do_build) {
+		build_type = BUILD_NODE;
+		both = do_drop;
+	    }
+	    else if (do_drop) {
+		build_type = DROP_NODE;
+	    }
+	}
+	
+	doAddNode((Hash *) hash, node, build_type);
+	if (both) {
+	    doAddNode((Hash *) hash, node, DROP_NODE);
+	}
     }
-    return result;
+    return NULL;
 }
-
-
 
 
 /* Build a hash of dagnodes from the provided document.  The hash
@@ -186,68 +99,60 @@ static Hash *
 dagnodesFromDoc(Document *doc)
 {
     Hash *daghash = hashNew(TRUE);
-    String *xpath_expr = stringNew("//dbobject");
 
     do_build = dereference(symbolGetValue("build")) && TRUE;
     do_drop = dereference(symbolGetValue("drop")) && TRUE;
 
     BEGIN {
-	(void) xmlTraverse(doc->doc->children, &addDagNodeToHash2, 
+	(void) xmlTraverse(doc->doc->children, &dagnodesToHash, 
 			   (Object *) daghash);
-	//(void) xpathEach(doc, xpath_expr, &addDagNodeToHash, 
-	//	 (Object *) daghash);
     }
     EXCEPTION(ex) {
 	objectFree((Object *) daghash, TRUE);
-    }
-    FINALLY {
-	objectFree((Object *) xpath_expr, TRUE);
     }
     END;
     return daghash;
 }
 
 static Object *
-addPqnEntry(Object *node, Object *hash)
+pqnsToHash(Object *this, Object *pqnhash)
 {
-    xmlChar *pqn = xmlGetProp(((Node *)node)->node, "pqn");
+    Node *node = (Node *) this;
+    xmlChar *pqn;
     xmlChar *fqn;
     String *key;
     String *value;
     Cons *list;
     Cons *prev;
-    if (pqn) {
-	fqn = xmlGetProp(((Node *)node)->node, "fqn");
-	key = stringNew(pqn);
-	value = stringNew(fqn);
-	xmlFree(pqn);
-	xmlFree(fqn);
-	list = consNew((Object *) value, NULL);
-	if (prev = (Cons *) hashAdd((Hash *) hash, 
-				    (Object *) key, (Object *) list)) {
-	    /* Append previous hash contents to list */
-	    list->cdr = (Object *) prev;
+    if (streq(node->node->name, "dbobject")) {
+	if (pqn  = xmlGetProp(node->node, "pqn")) {
+	    fqn = xmlGetProp(((Node *)node)->node, "fqn");
+	    key = stringNew(pqn);
+	    value = stringNew(fqn);
+	    xmlFree(pqn);
+	    xmlFree(fqn);
+	    list = consNew((Object *) value, NULL);
+	    if (prev = (Cons *) hashAdd((Hash *) pqnhash, 
+					(Object *) key, (Object *) list)) {
+		/* Append previous hash contents to list */
+		list->cdr = (Object *) prev;
+	    }
 	}
     }
-
-    return hash;
+    return NULL;
 }
 
 static Hash *
 makePqnHash(Document *doc)
 {
     Hash *pqnhash = hashNew(TRUE);
-    String *xpath_expr = stringNew("//dbobject");
     
     BEGIN {
-	(void) xpathEach(doc, xpath_expr, &addPqnEntry, 
-			 (Object *) pqnhash);
+	(void) xmlTraverse(doc->doc->children, &pqnsToHash, 
+			   (Object *) pqnhash);
     }
     EXCEPTION(ex) {
 	objectFree((Object *) pqnhash, TRUE);
-    }
-    FINALLY {
-	objectFree((Object *) xpath_expr, TRUE);
     }
     END;
     return pqnhash;
@@ -393,6 +298,31 @@ addDependency(DagNode *node, Cons *deps)
     }
 }
 
+/* We have not implemented the use of a list of alternate dependencies
+ * for diffs.  It is not obvious to me that it is actually needed,
+ * though I clearly thought so when implementing addDependency.  
+ * TODO: Either add this or refactor addDependency to simplify it by
+ * removing the use of lists. 
+ */
+static void
+addDiffDependency(DagNode *node, DagNode *depnode, boolean old)
+{
+    if (old) {
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("addDiffDependency not implemented for old deps"));
+    }
+    else {
+	switch (depnode->build_type) {
+	case BUILD_NODE: 
+	case DIFF_NODE: 
+	    addDependency(node, consNode(depnode));
+	    break;
+	default:
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("addDiffDependency not implemented for all types"));
+	}
+    }
+}
 
 /* Like addDependency but handles dependencies in the opposite direction
  * (eg for drops) */
@@ -546,6 +476,81 @@ addDepsForBuildNode(DagNode *node, Cons *hashes)
     END;
 }
 
+static DagNode *
+getDepForDiff(xmlNode *dep, Cons *hashes, boolean is_old)
+{
+    String *fqn;
+    Object *result = NULL;
+    String *key;
+
+    if (fqn = nodeAttribute(dep, "fqn")) {
+	/* Now get an appropriate dependency record */
+	key = stringNewByRef(newstr("exists.%s", fqn->value));
+	if (result = hashGet((Hash *) hashes->car, (Object *) key)) {
+	    objectFree((Object *) key, TRUE);
+	    objectFree((Object *) fqn, TRUE);
+	    /* No need to record a dependency against an exists node */
+	    return NULL;
+	}
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("getDepForDiff non-exists nodes not implemented"));
+    }
+    else {
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("getDepForDiff pqn handling not implemented"));
+    }
+    return (DagNode *) result;
+}
+
+/* These are the rules for diff dependencies:     
+ * - for standard dependencies:
+ *   - if there is an exists node, all is well and there is no
+ *     dependency
+ *   - if there is s build node we depend on that
+ *   - if there is a diff node, we depend on the diff
+ *   - otherwise we have an error
+ * - handle parents the same as standard dependencies
+ * - when there are old dependencies:
+ *   - if the old dependency's node is a drop, it depends on this diff
+ *     (ie the drop may not happen until the diff has been performed)
+ *   - if the old dependency's node is a diff, the same applies
+ *   - if the old dep is an exists node, it can be ignored
+ *   - otherwise there is an error.
+ * 
+ */
+static void
+addDepsForDiffNode(DagNode *node, Cons *hashes)
+{
+    xmlNode *deps_node;
+    xmlNode *dep_node;
+    String *old;
+    boolean is_old;
+    DagNode *dependency;
+    
+    if (node->parent) {
+	addDiffDependency(node, node->parent, FALSE);
+    }
+
+    for (deps_node = findFirstChild(node->dbobject, "dependencies");
+	 deps_node;
+	 deps_node = findNextSibling(deps_node, "dependencies")) {
+	for (dep_node = findFirstChild(deps_node, "dependency");
+	     dep_node;
+	     dep_node = findNextSibling(dep_node, "dependency")) 
+	{
+	    old = nodeAttribute(dep_node, "old");
+	    if (is_old = (old && TRUE)) {
+		objectFree((Object *) old, TRUE);
+	    }
+
+	    if (dependency = getDepForDiff(dep_node, hashes, is_old)) {
+		addDiffDependency(node, dependency, is_old);
+	    }
+	}
+	break;
+    }
+}
+
 static void
 addDepsForDropNode(DagNode *node, Cons *hashes)
 {
@@ -562,6 +567,7 @@ addDepsForNode(Object *node_entry, Object *hashes)
 
     switch (node->build_type) {
     case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
+    case DIFF_NODE:  addDepsForDiffNode(node, (Cons *) hashes); break;
     case DROP_NODE:  addDepsForDropNode(node, (Cons *) hashes); break;
     case EXISTS_NODE: 
 	/* No deps for this node as it already exists before we apply
@@ -735,7 +741,7 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
  * standard tsort algorithm is very efficient but is driven by
  * dependencies, so if one dependency of a PQN cannot be satisfied a
  * cyclic dependency will be found.  In this case, we would have to 
- * backtrack and try the next alternate dependency.  Backtracking in a a
+ * backtrack and try the next alternate dependency.  Backtracking in a
  * recursive algorithm is unpleasant.
  * This algorithm works in the opposite direction.  It starts by
  * building a list of all leaf nodes (those without dependencies).  Then
@@ -1045,7 +1051,7 @@ gensort(Document *doc)
     Vector *sorted = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Symbol *simple_sort = symbolGet("simple-sort");
-
+    
     handling_context = (ignore_contexts == NULL);
 
     BEGIN {
@@ -1059,7 +1065,6 @@ gensort(Document *doc)
 	else {
 	    sorted = smart_tsort(dagnodes);
 	}
-	//dbgSexp(sorted);
     }
     EXCEPTION(ex);
     FINALLY {

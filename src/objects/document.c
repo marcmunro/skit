@@ -909,24 +909,19 @@ setFoundNode(Object *node, Object *result)
     return result;
 }
 
+static Object *
+findClusterNode(Object *this, Object *ignore)
+{
+    if (streq(((Node *) this)->node->name, "cluster")) {
+	return (Object *) nodeNew(((Node *) this)->node);
+    }
+    return NULL;
+}
+
 static Node *
 getClusterNode(Document *doc)
 {
-    String *xpath_expr = stringNew("//cluster");
-    Node *node = nodeNew(NULL);
-
-    BEGIN {
-	(void) xpathEach(doc, xpath_expr, &setFoundNode, (Object *) node);
-    }
-    EXCEPTION(ex) {
-	objectFree((Object *) node, TRUE);
-    }
-    FINALLY {
-	objectFree((Object *) xpath_expr, TRUE);
-    }
-    END;
-
-    return node;
+    return (Node *) xmlTraverse(doc->doc->children, &findClusterNode, NULL);
 }
 
 void
@@ -938,7 +933,7 @@ readDocDbver(Document *doc)
     Object *obj = NULL;
 
     BEGIN {
-	if (node->node) {
+	if (node) {
 	    version_str = nodeAttribute(node->node, "version");
 	    sexp = newstr("(setq dbver-from-source (version '%s'))", 
 			  version_str->value);
@@ -957,6 +952,31 @@ readDocDbver(Document *doc)
     END;
 }
 
+/* Perform a depth-first traversal of an xml node tree from start,
+ * applying traverser at each node.   If traverser returns an object,
+ * traversal will terminate and the object will be returned to the
+ * caller.
+ */
+Object *
+xmlTraverse(xmlNode *start, TraverserFn *traverser, Object *param)
+{
+    xmlNode *cur = getElement(start);
+    Node node = {OBJ_XMLNODE, NULL};
+    node.node = cur;
+    Object *result;
+    result = (*traverser)((Object *) &node, param);
+    cur = getElement(cur->children);
+    while (cur && (!result)) {
+	result = xmlTraverse(cur, traverser, param);
+	cur = getElement(cur->next);
+    }
+    return result;
+}
+
+
+
+#ifdef deprecated
+
 static void
 assertXpathObj(void *obj, char *info)
 {
@@ -965,6 +985,7 @@ assertXpathObj(void *obj, char *info)
     }
 }
 
+/* Deprecate the use of this: it seems flaky.  Use xmlTraverse instead. */
 Object *
 xpathEach(Document *doc, String *xpath,
 	  TraverserFn *traverser, Object *param)
@@ -1023,6 +1044,7 @@ xpathEach(Document *doc, String *xpath,
 
     return param;
 }
+#endif
 
 String *
 nodeAttribute(xmlNodePtr node, 

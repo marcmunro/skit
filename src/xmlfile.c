@@ -1091,11 +1091,16 @@ treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
 
     for (i = 0; i < sorted_nodes->elems; i++) {
 	dnode = (DagNode *) sorted_nodes->contents->vector[i];
-	addNavigationNodes(parent_node, prev, dnode);
-	curnode = copyObjectNode(dnode->dbobject);
-	addAction(curnode, actionName(dnode));
-	xmlAddChild(parent_node, curnode);
-	prev = dnode;
+	if (dnode->build_type != EXISTS_NODE) {
+	    /* Ignore EXISTS_NODES for the purpose of adding navigation
+	     * nodes.  There is no point in navigating to these nodes as
+	     * we are not going to do anything with them. */
+	    addNavigationNodes(parent_node, prev, dnode);
+	    curnode = copyObjectNode(dnode->dbobject);
+	    addAction(curnode, actionName(dnode));
+	    xmlAddChild(parent_node, curnode);
+	    prev = dnode;
+	}
     }
     addNavigationNodes(parent_node, prev, NULL);
 }
