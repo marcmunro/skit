@@ -1201,3 +1201,21 @@ documentFreeMem()
     scatter_template = NULL;
 }
 
+xmlNode *
+getElement(xmlNode *node)
+{
+    while (node && (node->type != XML_ELEMENT_NODE)) {
+	node = node->next;
+    }
+    return node;
+}
+
+xmlNode *
+getText(xmlNode *node)
+{
+    while (node && (node->type != XML_TEXT_NODE)) {
+	node = node->next;
+    }
+    return node;
+}
+

@@ -9,6 +9,9 @@
     <attribute name="encoding"/>
     <attribute name="owner"/>
     <attribute name="connections"/>
+    <element type="comment">
+      <text/>
+    </element>
   </dbobject>
 
   <!-- Nothing to do for dbincluster, except tell diff that it exists -->

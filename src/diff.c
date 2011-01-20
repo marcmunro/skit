@@ -51,7 +51,7 @@ readDbobjectRule(xmlNode *node, Object *rules)
      *  becomes clear.
      */
     if (!key) {
-	errmsg = newstr("diffrule for %s has no key", type->value);
+	errmsg = newstr("diff rule for %s has no key", type->value);
 	objectFree((Object *) type, TRUE);
 	RAISE(XML_PROCESSING_ERROR, errmsg);
     }
@@ -440,70 +440,257 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 }
 
 static xmlNode *
-check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
+text_diff(xmlChar *str1, xmlChar *str2)
 {
-/*  RAISE(NOT_IMPLEMENTED_ERROR, 
-	  newstr("check_element is not yet implemented"));
-*/  return NULL;
+    xmlNode *diff;
+    xmlNode *prev;
+    xmlNodePtr text;
+    if (streq(str1, str2)) {
+	return NULL;
+    }
+    prev = xmlNewNode(NULL, BAD_CAST "old");
+    text =  xmlNewText(str1);
+    xmlAddChild(prev, text);
+    diff = xmlNewNode(NULL, BAD_CAST "new");
+    text =  xmlNewText(str2);
+    xmlAddChild(diff, text);
+    prev->next = diff;
+    diff = xmlNewNode(NULL, BAD_CAST "text");
+    diff->children = prev;
+    prev = diff;
+    diff = xmlNewNode(NULL, BAD_CAST "diffs");
+    diff->children = prev;
+    return diff;
 }
 
-
-
-/* Check the differences between the content parts of 2 dbobject nodes,
- * returning a list of diffs if any exist.
- * NOTE: consumes type */
 static xmlNode *
-objectDiffs(xmlNode *content1, xmlNode *content2, 
-	    String * type, Hash *rules, boolean *has_diffs)
+check_text(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 {
-    xmlNode *diffs = NULL;
-    xmlNode *diff;
-    xmlNode *prev = NULL;
-    Cons *rule_entry = (Cons *) hashGet(rules, (Object *) type);
-    xmlNode *rule;
-    xmlNode *this = NULL;
-
-    BEGIN {
-	if (rule_entry) {
-	    rule = ((Node *) rule_entry->cdr)->node;
-	    this = getElement(rule->children);
+    xmlNode *text1 = getText(content1->children);
+    xmlNode *text2 = getText(content2->children);
+    xmlChar *str1  = text1? xmlNodeGetContent(text1): NULL;
+    xmlChar *str2  = text2? xmlNodeGetContent(text2): NULL;
+    xmlNode *diff = NULL;
+    if (str1) {
+	if (str2)
+	{
+	    diff = text_diff(str1, str2);
+	    xmlFree(str2);
 	}
 	else {
-	    *has_diffs = TRUE;  /* Overload the has_diffs param to 
-				 * indicate that we don't know if
-				 * there are diffs or not. */
+	    diff = text_diff(str1, "");
 	}
-	while (this) {
-	    if (streq(this->name, "attribute")) {
-		diff = check_attribute(content1, content2, this);
-	    }
-	    else if (streq(this->name, "element")) {
-		diff = check_element(content1, content2, this);
+	xmlFree(str1);
+    }
+    else if (str2) {
+	    diff = text_diff("", str2);
+	    xmlFree(str2);
+    }
+    return diff;
+}
+
+static xmlNode *
+next_elem_of_type(xmlNode *node, String *elem_type)
+{
+    while (node = getElement(node)) {
+	if (streq(node->name, elem_type->value)) {
+	    return node;
+	}
+	node = node->next;
+    }
+    return NULL;
+}
+
+static xmlNode *
+diffElement(xmlNode *source, char *type, char *status, char *key)
+{
+    xmlNode *diff = xmlNewNode(NULL, BAD_CAST "element");
+    (void) xmlNewProp(diff, (const xmlChar *) "status", status);
+    (void) xmlNewProp(diff, (const xmlChar *) "type", type);
+    if (key) {
+	(void) xmlNewProp(diff, (const xmlChar *) "key", key);
+    }
+    diff->children = xmlCopyNode(source, 1);
+    return diff;
+}
+
+static Object *
+handleNewElem(Object *obj, Object *param)
+{
+    Node *source = (Node *) ((Cons *) obj)->cdr;
+    Node *rule = (Node *) ((Cons *) param)->car;
+    Node *results = (Node *) ((Cons *) param)->cdr;
+    String *type = nodeAttribute(rule->node, "type");
+    String *key = nodeAttribute(rule->node, "key");
+    xmlNode *diff = diffElement(source->node, type->value, 
+				DIFFNEW, key? key->value: NULL);
+    if (diff) {
+	if (results) {
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("handleNewElem appending diffs not implemented"));
+	    // Actually, I think the implementation should be as
+	    // follows, but I have no tests for it yet.
+	    diff->next = results->node;
+	    results->node = diff;
+ 	}
+	else {
+	    results = nodeNew(diff);
+	    ((Cons *) param)->cdr = (Object *) results;
+	}
+    }
+
+    objectFree((Object *) type, TRUE);
+    objectFree((Object *) key, TRUE);
+    return (Object *) source;
+}
+
+static xmlNode *
+getLastKid(xmlNode *node)
+{
+    if (node) {
+	node = node->children;
+    }
+    while (node->next) {
+	node = node->next;
+    }
+    return node;
+}
+
+static xmlNode *
+elementDiffs(xmlNode *content1, xmlNode *content2, 
+	     xmlNode *ruleset);
+
+/* Return a diff node describing any difference between the elements
+ * described by rule, or NULL, if there are no differences. */
+static xmlNode *
+check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
+{
+    xmlNode *diff = NULL;
+    xmlNode *prev = NULL;
+    String *elem_type = nodeAttribute(rule, "type");
+    String *key_type = nodeAttribute(rule, "key");
+    String *key;
+    xmlNode *elem1 = content1->children;
+    xmlNode *elem2 = content2->children;
+    Hash *elems2 = hashNew(TRUE);
+    Node *node;
+    Object *obj;
+    Node *rulenode = nodeNew(rule);
+    Cons results = {OBJ_CONS, (Object *) rulenode, NULL};
+
+    BEGIN {
+	/* Build a hash of file2 elements, that we can match against
+	 * file1 elements. */
+	while (elem2 = next_elem_of_type(elem2, elem_type)) {
+	    if (key_type) {
+		key = nodeAttribute(elem2, key_type->value);
 	    }
 	    else {
-		diff = NULL;
+		key = stringNew(elem2->name);
+	    }
+	    node = nodeNew(elem2);
+	    if (obj = hashAdd(elems2, (Object *) key, (Object *) node)) {
+		/* There was already a matching element */
+		objectFree(obj, TRUE);
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("diff rule for element \"%s\" in <%s/> "
+			     "has multiple matches", elem_type->value,
+			     content2->name));
+	    }
+	    elem2 = elem2->next;
+	}
+
+	/* Now handle each element of the given type from file1 */
+	while (elem1 = next_elem_of_type(elem1, elem_type)) {
+	    if (key_type) {
+		key = nodeAttribute(elem1, key_type->value);
+	    }
+	    else {
+		key = stringNew(elem1->name);
 	    }
 
+	    node = (Node *) hashDel(elems2, (Object *) key);
+	    objectFree((Object *) key, TRUE);
+
+	    if (node) {
+		fprintf(stderr, "HERE\n");
+		elem2 = node->node;
+		objectFree((Object *) node, TRUE);
+		diff = diffElement(elem2, elem_type->value, 
+				   DIFFDIFF, key_type? key_type->value: NULL);
+		prev = getLastKid(diff);
+		prev->next = elementDiffs(elem1, elem2, 
+					     getElement(rule->children));
+	    }
+	    else {
+		diff = diffElement(elem1, elem_type->value, 
+				   DIFFGONE, key_type? key_type->value: NULL);
+	    }
 	    if (diff) {
-		*has_diffs = TRUE;
-		if (prev) {
-		    prev->next = diff;
-		}
-		else {
-		    diffs = xmlNewNode(NULL, BAD_CAST "diffs");
-		    diffs->children = diff;
-		}
+		diff->next = prev;
 		prev = diff;
 	    }
-	    this = getElement(this->next);
+	    elem1 = elem1->next;
 	}
+
+	if (prev) {
+	    results.cdr = (Object *) nodeNew(prev);
+	}
+	/* Finally handle any unmatched elements from file2 */
+	hashEach(elems2, handleNewElem, (Object *) &results);
+
     }
     EXCEPTION(ex);
     FINALLY {
-	objectFree((Object *) type, TRUE);
+	objectFree((Object *) rulenode, TRUE);
+	objectFree((Object *) elem_type, TRUE);
+	objectFree((Object *) key_type, TRUE);
+	objectFree((Object *) elems2, TRUE);
     }
     END;
-    return diffs;
+
+    if (results.cdr) {
+	node = (Node *) results.cdr;
+	diff = node->node;
+	objectFree((Object *) node, TRUE);
+	return diff;
+    }
+
+    return NULL;
+}
+
+
+/* Check the differences between two elements (these may be the
+ * contents nodes of two dbobjects, or elements within such contents
+ * nodes) returning a list of diffs if any exist. */
+static xmlNode *
+elementDiffs(xmlNode *content1, xmlNode *content2, 
+	     xmlNode *rule)
+{
+    xmlNode *diff;
+    xmlNode *prev = NULL;
+
+    while (rule) {
+	if (streq(rule->name, "attribute")) {
+	    diff = check_attribute(content1, content2, rule);
+	}
+	else if (streq(rule->name, "element")) {
+	    diff = check_element(content1, content2, rule);
+	}
+	else if (streq(rule->name, "text")) {
+	    diff = check_text(content1, content2, rule);
+	}
+	else {
+	    diff = NULL;
+	}
+	
+	if (diff) {
+	    diff->next = prev;
+	    prev = diff;
+	}
+	rule = getElement(rule->next);
+    }
+    return prev;
 }
 
 static void
@@ -572,7 +759,10 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     xmlNode *new_contents;
     xmlNode *old_deps;
     xmlNode *last = NULL;
+    xmlNode *difflist;
     xmlNode *diffnodes = NULL;
+    Cons *rule_entry;
+    xmlNode *ruleset;
     DiffType difftype = IS_SAME;
     boolean  has_diffs = FALSE;
 
@@ -597,8 +787,24 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 		}
 	    }
 	    type = nodeAttribute(node1, "type");
-	    diffnodes = objectDiffs(contents1, contents2, type, 
-				    rules, &has_diffs);
+	    rule_entry = (Cons *) hashGet(rules, (Object *) type);
+	    objectFree((Object *) type, TRUE);
+	    if (rule_entry) {
+		ruleset = ((Node *) rule_entry->cdr)->node;
+		difflist = elementDiffs(contents1, contents2,
+					getElement(ruleset->children));
+		if (difflist) {
+		    has_diffs = TRUE;
+		    diffnodes = xmlNewNode(NULL, BAD_CAST "diffs");
+		    diffnodes->children = difflist;
+		}
+	    }
+	    else {
+		has_diffs = TRUE;  /* Set the has_diffs param to 
+				    * indicate that we don't know if
+				    * there are diffs or not. */
+	    }
+
 	    if (has_diffs) {
 		if (diffnodes) {
 		    difftype = IS_DIFF;

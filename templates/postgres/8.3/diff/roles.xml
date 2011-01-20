@@ -11,9 +11,10 @@
     <attribute name="expires"/>
     <attribute name="login"/>
     
+    <!--
     <element type="privilege" match="priv"/>
     <element type="profile" match="param">
       <attribute name="value"/>
-    </element>
+    </element>-->
   </dbobject>
 </skit:inclusion>  

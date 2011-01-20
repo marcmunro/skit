@@ -1606,15 +1606,6 @@ copyNodes(xmlNode *target, xmlNode *from)
     (void) xmlAddNextSibling(target, text);
 }
 
-xmlNode *
-getElement(xmlNode *node)
-{
-    while (node && (node->type != XML_ELEMENT_NODE)) {
-	node = node->next;
-    }
-    return node;
-}
-
 static boolean
 processGatherNodes(xmlNode *node, char *filename);
 
