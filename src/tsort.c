@@ -52,6 +52,9 @@ dagnodesToHash(Object *this, Object *hash)
 	    if (streq(diff->value, DIFFSAME)) {
 		build_type = EXISTS_NODE;
 	    }
+	    else if (streq(diff->value, DIFFKIDS)) {
+		build_type = EXISTS_NODE;
+	    }
 	    else if (streq(diff->value, DIFFNEW)) {
 		build_type = BUILD_NODE;
 	    }
@@ -650,7 +653,7 @@ addCandidateToBuild(Object *node_entry, Object *results)
     return (Object *) node;
 }
 
-
+/* Return a vector of all nodes without dependencies */
 static Vector *
 get_build_candidates(Hash *nodelist)
 {
@@ -797,6 +800,42 @@ simple_tsort(Hash *allnodes)
     return results;
 }
 
+#ifdef algorithm
+L <-- Empty list that will contain the sorted nodes
+S <-- Set of all nodes with no incoming edges
+for each node n in S do
+    visit(n) 
+function visit(node n)
+    if n has not been visited yet then
+        mark n as visited
+        for each node m with an edge from n to m do
+            visit(m)
+        add n to L
+
+
+static void
+do_tsort(Vector *results, Hash *candidates)
+{
+#TODO: implement this
+This should be called on exit from the smart tsort to cope with anything that
+is at yet unbuilt.  It should also be called from the simple_tsort function.
+Note that when a cyclic dependency is encountered, we have to backtrack
+marking being visited nodes as unvisited, and then try again until we
+have exhausted all possible sets of candidates.  If we still have a
+cyclic dependency at this point, we must somehow break it. 
+
+}
+#endif
+
+/* Standard tsort algorithm */
+static Vector *
+simple_tsort2(Hash *allnodes)
+{
+    Vector *results = vectorNew(hashElems(allnodes));
+    do_tsort(results, allnodes);
+    return results;
+}
+
 static Object *
 appendToVec(Object *node_entry, Object *results)
 {
@@ -896,8 +935,10 @@ sortedTree(Hash *allnodes)
     return root;
 }
 
+/* Mark this node as buildable, and update the counts of buildable_kids
+ * in all ancestors. */
 static void
-makeBuildable(DagNode *node)
+markAsBuildable(DagNode *node)
 {
     DagNode *up = node->parent;
     node->is_buildable = TRUE;
@@ -907,8 +948,10 @@ makeBuildable(DagNode *node)
     }
 }
 
+/* Remove node as a build candidate (after it has been selected for
+ * building), taking care of its ancestors' counts of buildable_kids */
 static void
-makeUnbuildable(DagNode *node)
+unmarkBuildable(DagNode *node)
 {
     DagNode *up = node->parent;
     node->is_buildable = FALSE;
@@ -971,21 +1014,24 @@ removeNodeGetNewCandidates(DagNode *node, Hash *allnodes)
 }
 
 static void
-makeAllBuildable(Vector *buildable)
+markAllBuildable(Vector *buildable)
 {
     DagNode *next;
     int i;
 
     for (i = 0; i < buildable->elems; i++) {
 	next = (DagNode *) buildable->contents->vector[i];
-	makeBuildable(next);
+	markAsBuildable(next);
     }
     objectFree((Object *) buildable, FALSE);
 }
 
 /* This is Marc's smart tsort algorithm.  This algorithm attempts to 
  * sort not just by dependencies, but so that we do as little
- * tree-traversal as possible during the build.
+ * tree-traversal as possible during the build.  Note that this is
+ * way slower than the standard tsort algorithm but produces output
+ * which is more "naturally ordered" (more like a person would create,
+ * making the output more readable).
  * The algorithm is this:
  * smart_tsort(hash: all_nodes)
  *   tree := create sorted tree from all_nodes
@@ -1027,14 +1073,14 @@ smart_tsort(Hash *allnodes)
     Vector *results = vectorNew(hashElems(allnodes));
 
     //showAllDeps(allnodes);
-    makeAllBuildable(buildable);
+    markAllBuildable(buildable);
 
     next = nextBuildable(root);
     while (next) {
 	(void) vectorPush(results, (Object *) next);
-	makeUnbuildable(next);
+	unmarkBuildable(next);
 	buildable = removeNodeGetNewCandidates(next, allnodes);
-	makeAllBuildable(buildable);
+	markAllBuildable(buildable);
 	next = nextBuildable(next);
     }
  
@@ -1064,6 +1110,13 @@ gensort(Document *doc)
 	}
 	else {
 	    sorted = smart_tsort(dagnodes);
+	}
+	if (hashElems(dagnodes)) {
+	    char *nodes = objectSexp((Object *) dagnodes);
+	    char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
+				  nodes);
+	    skfree(nodes);
+	    RAISE(GENERAL_ERROR, errmsg);
 	}
     }
     EXCEPTION(ex);

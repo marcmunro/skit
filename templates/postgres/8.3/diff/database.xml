@@ -12,6 +12,8 @@
     <element type="comment">
       <text/>
     </element>
+
+    <xi:include href="skitfile:diff/schema.xml"/>
   </dbobject>
 
   <!-- Nothing to do for dbincluster, except tell diff that it exists -->

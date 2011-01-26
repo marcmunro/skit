@@ -957,7 +957,7 @@ START_TEST(generate2)
 {
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'regressdb' port = " PGPORT "host = " PGHOST,
+		    "dbname = 'skittest'",
                     "--generate", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;

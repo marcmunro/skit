@@ -86,6 +86,24 @@ execdrop()
     echo ==== FINISHED DROP SCRIPT $1 ==== 
 }
 
+gendiff()
+{
+    echo ......generating diff... 1>&2
+    echo "==== RUNNING SKIT DIFF $1 $2 -> $3 ===="
+    ./skit --diff ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
+	--generate >${REGRESS_DIR}/$3
+    errexit
+    echo ==== FINISHED DIFF $1 $2 ==== 
+}
+
+execdiff()
+{
+    echo ......executing diff script... 1>&2
+    echo ==== RUNNING DIFF SCRIPT $1 ==== 
+    sh ${REGRESS_DIR}/$1 2>&1 | errcheck
+    errexit
+}
+
 execbuild()
 {
     echo ...executing build script... 1>&2
@@ -173,6 +191,51 @@ regression_test2()
     echo Regression test 2 complete 1>&2
 }
 
+regression_test3()
+{
+    echo "Running regression test 3 (diffs)..." 1>&2
+    mkdir regress/scratch 2>/dev/null
+    rm -rf scratch/dbdump/*
+    # Get up to date dumps of each of 2 starting databases
+    build_db regression3b_`pguver`.sql
+    echo ...Creating target diff database... 1>&2
+    dump_db regressdb scratch/regressdb_test3b.dmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3b.xml ...
+    echo ...running skit generate to create initial drop... 1>&2
+    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql \
+	     --ignore-contexts
+    execdrop scratch/regressdb_drop3b.sql
+
+    echo ...Creating source diff database... 1>&2
+    build_db regression3a_`pguver`.sql
+    dump_db regressdb scratch/regressdb_test3a.dmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3a.xml ...
+    echo "...diff source->target..." 1>&2
+    gendiff scratch/regressdb_dump3a.xml scratch/regressdb_dump3b.xml \
+	scratch/regressdb_diff3a2b.sql
+    execdiff scratch/regressdb_diff3a2b.sql
+
+    echo ...checking db equivalence to target... 1>&2
+    dump_db regressdb scratch/regressdb_test3b2.dmp ...
+    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp
+
+    echo "...diff target->source..." 1>&2
+    gendiff scratch/regressdb_dump3b.xml scratch/regressdb_dump3a.xml \
+	scratch/regressdb_diff3b2a.sql
+    execdiff scratch/regressdb_diff3b2a.sql
+
+    echo ...checking db equivalence to source ... 1>&2
+    dump_db regressdb scratch/regressdb_test3a2.dmp ...
+    diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp
+
+    rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
+    echo Regression test 3: need to check cluster objects 1>&2
+    exit 2
+    echo Regression test 3 complete 1>&2
+}
+
 verfrompath()
 {
     sed -e 's!.*/\([0-9][0-9]*\.[0-9][0-9]*\)/.*!\1!' | grep '[0-9]\.[0-9]'
@@ -227,6 +290,7 @@ fi
 if [ "x$1" = "" ]; then
     regression_test1 >${REGRESS_LOG}
     regression_test2 >>${REGRESS_LOG}
+    regression_test3 >>${REGRESS_LOG}
 fi
 
 if [ "x$1" = "x1" ]; then
@@ -236,6 +300,11 @@ fi
 
 if [ "x$1" = "x2" ]; then
     regression_test2 >>${REGRESS_LOG}
+    shift
+fi
+
+if [ "x$1" = "x3" ]; then
+    regression_test3 >>${REGRESS_LOG}
     shift
 fi
 

@@ -85,7 +85,8 @@ regress_cluster:
 	@#echo ...Creating tablespace dirs...
 	@mkdir -p $(REGRESS_DIR)/REGRESSDB/tbs/tbs2 \
 		  $(REGRESS_DIR)/REGRESSDB/tbs/tbs3 \
-		  $(REGRESS_DIR)/REGRESSDB/tbs/tbs4
+		  $(REGRESS_DIR)/REGRESSDB/tbs/tbs4 \
+		  $(REGRESS_DIR)/REGRESSDB/tbs/TBS4
 	@$(MAKE) --no-print-directory rdbstart
 
 
@@ -119,6 +120,17 @@ regression_test2: skit drop_regress_db \
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 regress/regress_run.sh 2
+
+regression_test3: skit drop_regress_db \
+		$(REGRESS_DIR)/scratch/regressdb_both1.sql
+	@$(MAKE) --no-print-directory drop_regress_db
+	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP="$(PG_DUMP)"; \
+	 regress/regress_run.sh 3
 
 
 regress: skit regress_cluster regression_test1 regression_test2

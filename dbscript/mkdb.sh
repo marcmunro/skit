@@ -8,3 +8,4 @@ cp ${dir}/../dbscript/postgresql.conf ${dir}/../testdb
 mkdir -p ${dir}/../testdb/tbs/tbs2
 mkdir -p ${dir}/../testdb/tbs/tbs3
 mkdir -p ${dir}/../testdb/tbs/tbs4
+mkdir -p ${dir}/../testdb/tbs/TBS4

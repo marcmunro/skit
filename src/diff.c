@@ -613,7 +613,6 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 	    objectFree((Object *) key, TRUE);
 
 	    if (node) {
-		fprintf(stderr, "HERE\n");
 		elem2 = node->node;
 		objectFree((Object *) node, TRUE);
 		diff = diffElement(elem2, elem_type->value, 

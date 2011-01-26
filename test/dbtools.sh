@@ -22,6 +22,7 @@ create_cluster()
     mkdir -m 755 ${TEST_HOME}/pgdata/tbs/tbs2 2>/dev/null
     mkdir -m 755 ${TEST_HOME}/pgdata/tbs/tbs3 2>/dev/null
     mkdir -m 755 ${TEST_HOME}/pgdata/tbs/tbs4 2>/dev/null
+    mkdir -m 755 ${TEST_HOME}/pgdata/tbs/TBS4 2>/dev/null
 }
 
 dbcheck()
