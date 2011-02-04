@@ -254,10 +254,10 @@ getOptionValue(Cons *optionlist, String *option)
 
 
 static Object *
-addUnprovidedValue(Object *obj, Object *params)
+addUnprovidedValue(Cons *entry, Object *params)
 {
-    Object *key = ((Cons *) obj)->car;
-    Cons *alist = (Cons *) ((Cons *) obj)->cdr;
+    Object *key = entry->car;
+    Cons *alist = (Cons *) entry->cdr;
     Object *value = alistGet(alist, (Object *) &value_str);
 
     if (!value) {
@@ -285,10 +285,10 @@ addDefaults(Hash *params, Cons *optionlist)
 }
 
 static Object *
-checkUnprovidedValue(Object *obj, Object *params)
+checkUnprovidedValue(Cons *entry, Object *params)
 {
-    Object *key = ((Cons *) obj)->car;
-    Cons *alist = (Cons *) ((Cons *) obj)->cdr;
+    Object *key = entry->car;
+    Cons *alist = (Cons *) entry->cdr;
     Object *required = alistGet(alist, (Object *) &required_str);
     Object *value;
     if (required) {
@@ -817,10 +817,10 @@ defineActionExecutors()
 /* This assigns to a symbol a value from the param hash.
  */
 static Object *
-setVarFromParam(Object *obj, Object *params)
+setVarFromParam(Cons *entry, Object *params)
 {
-    String *key = (String *) ((Cons *) obj)->car;
-    Object *value = ((Cons *) obj)->cdr;
+    String *key = (String *) entry->car;
+    Object *value = entry->cdr;
     Symbol *sym;
 
     //printSexp(stderr, "KEY: ", key);

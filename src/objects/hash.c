@@ -358,9 +358,9 @@ eachHashEntry(
     gpointer contents,
     gpointer params)
 {
-    TraverserFn *fn = (TraverserFn *) ((Cons *) params)->car;
-    Object *param = (Object *) ((Cons *) params)->cdr;
-    Object *hash_entry = (Object *) contents;
+    HashEachFn *fn = (HashEachFn *) ((Cons *) params)->car;
+    Object *param = ((Cons *) params)->cdr;
+    Cons *hash_entry = (Cons *) contents;
     Object *actual_contents = ((Cons *) hash_entry)->cdr;
     Object *result = fn(hash_entry, param);
 
@@ -373,7 +373,7 @@ eachHashEntry(
 
 
 void
-hashEach(Hash *hash, TraverserFn *fn, Object *arg)
+hashEach(Hash *hash, HashEachFn *fn, Object *arg)
 {
     Cons params = {OBJ_CONS, (Object *) fn, arg};
     g_hash_table_foreach(hash->hash, eachHashEntry, (gpointer) &params);
@@ -381,7 +381,7 @@ hashEach(Hash *hash, TraverserFn *fn, Object *arg)
 
 
 static Object *
-hashDropEntry(Object *node_entry, Object *ignore)
+hashDropEntry(Cons *node_entry, Object *ignore)
 {
     return NULL;
 }
@@ -423,9 +423,9 @@ hashElems(Hash *hash)
 
 
 static Object *
-addElemToVector(Object *obj, Object *vector)
+addElemToVector(Cons *entry, Object *vector)
 {
-    Object *elem = ((Cons *) obj)->cdr;
+    Object *elem = entry->cdr;
     vectorPush((Vector *) vector, elem);
     return elem;
 }
@@ -441,13 +441,14 @@ vectorFromHash(Hash *hash)
 }
 
 static Object *
-checkHashEntry(Object *obj, Object *params)
+checkHashEntry(Cons *entry, Object *params)
 {
-    if (checkObj(obj, ((Cons *)params)->car)) {
-	((Cons *)params)->cdr = obj;  /* Just set to a non-null value */
-	printSexp(stderr, "...within hash_entry: ", obj);
+    if (checkObj((Object *) entry, ((Cons *)params)->car)) {
+        /* Just set to a non-null value */
+	((Cons *) params)->cdr = (Object *) entry;  
+	printSexp(stderr, "...within hash_entry: ", (Object *) entry);
     }
-    return ((Cons *) obj)->cdr;
+    return entry->cdr;
 }
 
 boolean

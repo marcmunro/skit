@@ -2221,10 +2221,10 @@ processTemplate(Document *template)
 }
 
 static Object *
-addParamAttribute(Object *obj, Object *params_node)
+addParamAttribute(Cons *entry, Object *params_node)
 {
-    String *key = (String *) ((Cons *) obj)->car;
-    Cons *value = (Cons *) ((Cons *) obj)->cdr;
+    String *key = (String *) entry->car;
+    Cons *value = (Cons *) entry->cdr;
     char *param = NULL;
     xmlNode *node;
 

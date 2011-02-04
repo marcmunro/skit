@@ -96,10 +96,6 @@ typedef struct Object {
     ObjType type;
 } Object;
 
-typedef Object *(ObjectFn)(Object *);
-typedef Object *(TraverserFn)(Object *, Object *);
-typedef int (ComparatorFn)(Object **, Object **);
-
 typedef struct Int4 {
     ObjType type;
     int     value;
@@ -154,6 +150,8 @@ typedef struct Hash {
     ObjType     type;
     GHashTable *hash;    
 } Hash;
+
+typedef Object *(ObjectFn)(Object *);
 
 typedef struct Symbol {
     ObjType     type;
@@ -223,7 +221,11 @@ typedef enum {
     UNSPECIFIED_NODE
 } DagNodeBuildType;
 
-
+typedef enum {
+    UNVISITED = 27,
+    VISITING,
+    VISITED
+} DagNodeStatus;
 
 typedef struct DagNode {
     ObjType          type;
@@ -231,6 +233,7 @@ typedef struct DagNode {
     String          *object_type;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
     DagNodeBuildType build_type;
+    DagNodeStatus    status;
     Vector          *dependencies;
     Vector          *dependents;
     boolean          is_buildable;
@@ -277,6 +280,10 @@ typedef struct TokenStr {
 
 
 #define streq(a,b) (strcmp(a,b)==0)
+
+typedef Object *(TraverserFn)(Object *, Object *);
+typedef Object *(HashEachFn)(Cons *, Object *);
+typedef int (ComparatorFn)(Object **, Object **);
 
 
 // cons.c
@@ -366,7 +373,7 @@ extern char *hashStr(Hash *hash);
 extern void hashFree(Hash *hash, boolean free_contents);
 extern Object *hashGet(Hash *hash, Object *key);
 extern Cons *hashToAlist(Hash *hash);
-extern void hashEach(Hash *hash, TraverserFn *fn, Object *arg);
+extern void hashEach(Hash *hash, HashEachFn *fn, Object *arg);
 extern Hash *hashCopy(Hash *hash);
 extern int hashElems(Hash *hash);
 extern Vector *vectorFromHash(Hash *hash);

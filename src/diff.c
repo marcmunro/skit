@@ -515,9 +515,9 @@ diffElement(xmlNode *source, char *type, char *status, char *key)
 }
 
 static Object *
-handleNewElem(Object *obj, Object *param)
+handleNewElem(Cons *entry, Object *param)
 {
-    Node *source = (Node *) ((Cons *) obj)->cdr;
+    Node *source = (Node *) entry->cdr;
     Node *rule = (Node *) ((Cons *) param)->car;
     Node *results = (Node *) ((Cons *) param)->cdr;
     String *type = nodeAttribute(rule->node, "type");
@@ -876,9 +876,9 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 
 
 static Object *
-recordDroppedObj(Object *obj, Object *param)
+recordDroppedObj(Cons *entry, Object *param)
 {
-    Object *elem = ((Cons *) obj)->cdr;
+    Object *elem = entry->cdr;
     Hash *rules = (Hash *) ((Triple *) param)->obj1;
     Node *first = (Node *) ((Triple *) param)->obj2;
     Node *prev = (Node *) ((Triple *) param)->obj3;

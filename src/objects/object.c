@@ -418,6 +418,7 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
     new->object_type = nodeAttribute(node->node, "type");
     new->dbobject = node->node;
     new->build_type = build_type;
+    new->status = UNVISITED;
     new->dependencies = NULL;
     new->dependents = NULL;
     new->is_buildable = FALSE;

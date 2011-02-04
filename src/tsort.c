@@ -218,9 +218,9 @@ getPrefixedAttribute(xmlNodePtr node,
 }
 
 static Object *
-addParentForNode(Object *node_entry, Object *dagnodes)
+addParentForNode(Cons *node_entry, Object *dagnodes)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
     String *fqn;
 
@@ -564,9 +564,9 @@ addDepsForDropNode(DagNode *node, Cons *hashes)
 }
 
 static Object *
-addDepsForNode(Object *node_entry, Object *hashes)
+addDepsForNode(Cons *node_entry, Object *hashes)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    DagNode *node = (DagNode *) node_entry->cdr;
 
     switch (node->build_type) {
     case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
@@ -626,9 +626,9 @@ showAllNodeDeps(DagNode *node)
 }
 
 static Object *
-showDeps(Object *node_entry, Object *dagnodes)
+showDeps(Cons *node_entry, Object *dagnodes)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    DagNode *node = (DagNode *) node_entry->cdr;
     showAllNodeDeps(node);
     return (Object *) node;
 }
@@ -640,9 +640,9 @@ showAllDeps(Hash *nodes)
 }
 
 static Object *
-addCandidateToBuild(Object *node_entry, Object *results)
+addCandidateToBuild(Cons *node_entry, Object *results)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    DagNode *node = (DagNode *) node_entry->cdr;
     Vector *vector = (Vector *) results;
     String *parent_name;
 
@@ -800,46 +800,142 @@ simple_tsort(Hash *allnodes)
     return results;
 }
 
-#ifdef algorithm
-L <-- Empty list that will contain the sorted nodes
-S <-- Set of all nodes with no incoming edges
-for each node n in S do
-    visit(n) 
-function visit(node n)
-    if n has not been visited yet then
-        mark n as visited
-        for each node m with an edge from n to m do
-            visit(m)
-        add n to L
 
-
-static void
-do_tsort(Vector *results, Hash *candidates)
+/* This function checks that the set of dependencies in allnodes, makes
+ * A DAG.  Specifically, it resolves optional dependencies picking a
+ * specific dependency from each set of candidates, and attempts to
+ * resolve cyclic dependencies by checking for SOMETHING.
+ * Here is the basic algorithm:
+ * for each node n do
+ *   visit(n)
+ * function visit(node n)
+ *  if node has been visited
+ *    return null
+ *  if node is being visited
+ *    -- We have a cyclic dependency - indicate this to the caller
+ *    return n
+ *  mark n as being visited
+ *  for ds = each set of dependencies in n
+ *    node d = first dep in ds
+ *    while d and not found
+ *      n2 = visit(d)
+ *      if n2
+ *        d = next dep in ds
+ *      else
+ *        ds = d
+ *        found = d
+ *    if found
+ *      replace ds with d
+ *    else
+ *      -- We still have a cyclic dependency.  Let the caller try to 
+ *      -- resolve it.
+ *      mark n as unvisited
+ *      return n2
+ *  mark n as visited
+ *  return null
+ */
+static Cons *
+visitNode(DagNode *node)
 {
-#TODO: implement this
-This should be called on exit from the smart tsort to cope with anything that
-is at yet unbuilt.  It should also be called from the simple_tsort function.
-Note that when a cyclic dependency is encountered, we have to backtrack
-marking being visited nodes as unvisited, and then try again until we
-have exhausted all possible sets of candidates.  If we still have a
-cyclic dependency at this point, we must somehow break it. 
+    static boolean first_time = TRUE;  // For debugging only
+    int i;
+    Cons *depset;
+    DagNode *dep;
+    Cons *result;
+    boolean found = FALSE;
 
+    dbgSexp(node);
+    switch (node->status) {
+    case VISITED:
+	fprintf(stderr, "VISITED\n");
+	return NULL;
+    case VISITING:
+	fprintf(stderr, "VISITING\n");
+	return consNew((Object *) objRefNew((Object *) node), NULL);
+    }
+    node->status = VISITING;
+    fprintf(stderr, "UNVISITED\n");
+    if (first_time) {
+	dbgSexp(node->dependencies);
+	fprintf(stderr, "FIRST TIME\n");
+	first_time = FALSE;
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    depset = (Cons *) node->dependencies->contents->vector[i];
+	    dbgSexp(depset);
+	    while (depset && !found) {
+		dep = (DagNode *) depset->car;
+		dbgSexp(dep);
+		depset = (Cons *) depset->cdr;
+	    }
+	}
+    }
+    node->status = VISITED;
+    return NULL;
 }
-#endif
 
-/* Standard tsort algorithm */
-static Vector *
-simple_tsort2(Hash *allnodes)
+static Cons *
+visitNode2(DagNode *node)
 {
-    Vector *results = vectorNew(hashElems(allnodes));
-    do_tsort(results, allnodes);
-    return results;
+    static boolean first_time = TRUE;  // For debugging only
+    int i;
+    Cons *depset2;
+    DagNode *dep2;
+    Cons *result;
+    boolean found = FALSE;
+
+    switch (node->status) {
+    case VISITED:
+	return NULL;
+    case VISITING:
+	return consNew((Object *) objRefNew((Object *) node), NULL);
+    }
+    node->status = VISITING;
+    if (first_time) {
+	dbgSexp(node->dependencies);
+	first_time = FALSE;
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    depset2 = (Cons *) node->dependencies->contents->vector[i];
+	    dbgSexp(depset2);
+	    while (depset2 && !found) {
+		dep2 = (DagNode *) depset2->car;
+		dbgSexp(dep2);
+		result = visitNode(dep2);
+		depset2 = (Cons *) depset2->cdr;
+	    }
+	}
+    }
+    node->status = VISITED;
+    return NULL;
 }
 
 static Object *
-appendToVec(Object *node_entry, Object *results)
+visitNodeInHash(Cons *entry, Object *ignore)
 {
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
+    DagNode *node = (DagNode *) entry->cdr;
+    Cons *result;
+    char *deps;
+    char *errmsg;
+    if (result = visitNode2(node)) {
+	deps = objectSexp((Object *) result);
+	errmsg = newstr("Cyclic dependency: %s", deps);
+	skfree(deps);
+	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
+    }
+
+    return (Object *) node;
+}
+
+static void
+check_dag(Hash *allnodes)
+{
+    fprintf(stderr, "CHECKING_DAG\n");
+    hashEach(allnodes, &visitNodeInHash, NULL);
+}
+
+static Object *
+appendToVec(Cons *node_entry, Object *results)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
     Vector *vector = (Vector *) results;
     String *parent_name;
 
@@ -1104,6 +1200,7 @@ gensort(Document *doc)
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
+	check_dag(dagnodes);
 
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
