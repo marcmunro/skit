@@ -822,8 +822,7 @@ simple_tsort(Hash *allnodes)
  *      if n2
  *        d = next dep in ds
  *      else
- *        ds = d
- *        found = d
+ *        found = true
  *    if found
  *      replace ds with d
  *    else
@@ -837,71 +836,36 @@ simple_tsort(Hash *allnodes)
 static Cons *
 visitNode(DagNode *node)
 {
-    static boolean first_time = TRUE;  // For debugging only
     int i;
     Cons *depset;
     DagNode *dep;
     Cons *result;
     boolean found = FALSE;
 
-    dbgSexp(node);
     switch (node->status) {
     case VISITED:
-	fprintf(stderr, "VISITED\n");
 	return NULL;
     case VISITING:
-	fprintf(stderr, "VISITING\n");
 	return consNew((Object *) objRefNew((Object *) node), NULL);
     }
     node->status = VISITING;
-    fprintf(stderr, "UNVISITED\n");
-    if (first_time) {
-	dbgSexp(node->dependencies);
-	fprintf(stderr, "FIRST TIME\n");
-	first_time = FALSE;
-	for (i = 0; i < node->dependencies->elems; i++) {
-	    depset = (Cons *) node->dependencies->contents->vector[i];
-	    dbgSexp(depset);
-	    while (depset && !found) {
-		dep = (DagNode *) depset->car;
-		dbgSexp(dep);
+    for (i = 0; i < node->dependencies->elems; i++) {
+	depset = (Cons *) node->dependencies->contents->vector[i];
+	while (depset && !found) {
+	    dep = (DagNode *) dereference(depset->car);
+	    if (result = visitNode(dep)) {
 		depset = (Cons *) depset->cdr;
+		fprintf(stderr, "TRYING AGAIN\n");
+		dbgSexp(depset);
+	    }
+	    else {
+		found = TRUE;
+		// FIXME: REPLACE depset with single DEP
 	    }
 	}
-    }
-    node->status = VISITED;
-    return NULL;
-}
-
-static Cons *
-visitNode2(DagNode *node)
-{
-    static boolean first_time = TRUE;  // For debugging only
-    int i;
-    Cons *depset2;
-    DagNode *dep2;
-    Cons *result;
-    boolean found = FALSE;
-
-    switch (node->status) {
-    case VISITED:
-	return NULL;
-    case VISITING:
-	return consNew((Object *) objRefNew((Object *) node), NULL);
-    }
-    node->status = VISITING;
-    if (first_time) {
-	dbgSexp(node->dependencies);
-	first_time = FALSE;
-	for (i = 0; i < node->dependencies->elems; i++) {
-	    depset2 = (Cons *) node->dependencies->contents->vector[i];
-	    dbgSexp(depset2);
-	    while (depset2 && !found) {
-		dep2 = (DagNode *) depset2->car;
-		dbgSexp(dep2);
-		result = visitNode(dep2);
-		depset2 = (Cons *) depset2->cdr;
-	    }
+	if (!found) {
+	    RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("ARG"));
+	    return result;
 	}
     }
     node->status = VISITED;
@@ -915,7 +879,7 @@ visitNodeInHash(Cons *entry, Object *ignore)
     Cons *result;
     char *deps;
     char *errmsg;
-    if (result = visitNode2(node)) {
+    if (result = visitNode(node)) {
 	deps = objectSexp((Object *) result);
 	errmsg = newstr("Cyclic dependency: %s", deps);
 	skfree(deps);
