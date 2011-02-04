@@ -50,9 +50,9 @@
 	<xsl:if test="comment">
 	  <xsl:text>&#x0A;comment on database </xsl:text>
 	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is&#x0A;'</xsl:text>
+	  <xsl:text> is&#x0A;</xsl:text>
 	  <xsl:value-of select="comment"/>
-	  <xsl:text>';&#x0A;</xsl:text>
+	  <xsl:text>;&#x0A;</xsl:text>
 	</xsl:if>
 	<xsl:text>&#x0A;</xsl:text>
       </print>

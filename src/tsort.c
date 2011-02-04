@@ -669,18 +669,6 @@ get_build_candidates(Hash *nodelist)
     return results;
 }
 
-static boolean
-inList(Cons *list, Object *obj)
-{
-    while (list) {
-	if (dereference(list->car) == obj) {
-	    return TRUE;
-	}
-	list = (Cons *) list->cdr;
-    }
-    return FALSE;
-}
-
 static void
 removeDependency(DagNode *from, DagNode *dependency)
 {
@@ -691,7 +679,8 @@ removeDependency(DagNode *from, DagNode *dependency)
     if (from->dependencies) {
 	for (i = 0; i < from->dependencies->elems; i++) {
 	    deplist = (Cons *) from->dependencies->contents->vector[i];
-	    if (inList(deplist, (Object *) dependency)) {
+	    if ((DagNode *) dereference(deplist->car) == dependency) {
+		//if (inList(deplist, (Object *) dependency)) {
 		obj = vectorRemove(from->dependencies, i);
 		objectFree(obj, TRUE);
 	    }
@@ -736,6 +725,76 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
     return results;
 }
 
+static DagNode *
+tsortVisitNode(DagNode *node, Vector *results)
+{
+    DagNode *result;
+    Cons *depset;
+    DagNode *dep;
+    int i;
+
+    switch (node->status) {
+    case VISITED:
+	return NULL;
+    case VISITING:
+	return node;
+    }
+    node->status = VISITING;
+    if (node->dependencies) {
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    depset = (Cons *) node->dependencies->contents->vector[i];
+	    if (depset) {
+		dep = (DagNode *) dereference(depset->car);
+		if (result = tsortVisitNode(dep, results)) {
+		    return result;
+		}
+	    }
+	}
+    }
+    node->status = VISITED;
+    vectorPush(results, (Object *) node);
+    return NULL;
+}
+
+static Object *
+tsortVisitHashNode(Cons *entry, Object *results)
+{
+    DagNode *node = (DagNode *) entry->cdr;
+    DagNode *result;
+    char *deps;
+    char *errmsg;
+    if (result = tsortVisitNode(node, (Vector *) results)) {
+	deps = objectSexp((Object *) result);
+	errmsg = newstr("Cyclic dependency: %s", deps);
+	skfree(deps);
+	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
+    }
+
+    return (Object *) node;
+}
+
+static Object *
+tsortSetUnvisited(Cons *entry, Object *ignore)
+{
+    DagNode *node = (DagNode *) entry->cdr;
+    node->status = UNVISITED;
+
+    return (Object *) node;
+}
+
+
+static Vector *
+simple_tsort(Hash *allnodes)
+{
+    int elems = hashElems(allnodes);
+    Vector *results = vectorNew(elems);
+    hashEach(allnodes, &tsortSetUnvisited, NULL);
+    hashEach(allnodes, &tsortVisitHashNode, (Object *) results);
+    dbgSexp(results);
+    return results;
+}
+
+
 /* This is not the standard tsort algorithm.  Instead it is a very
  * naive algorithm, which happens to deal well with PQN (partially
  * qualified name)-based dependencies.  A dependency based on a PQN
@@ -757,7 +816,7 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
  * API notes: allnodes should be empty when we are done!
  */
 static Vector *
-simple_tsort(Hash *allnodes)
+simple_tsort2(Hash *allnodes)
 {
     Vector *results = NULL;
     Vector *kid_results = NULL;
@@ -849,23 +908,29 @@ visitNode(DagNode *node)
 	return consNew((Object *) objRefNew((Object *) node), NULL);
     }
     node->status = VISITING;
-    for (i = 0; i < node->dependencies->elems; i++) {
-	depset = (Cons *) node->dependencies->contents->vector[i];
-	while (depset && !found) {
-	    dep = (DagNode *) dereference(depset->car);
-	    if (result = visitNode(dep)) {
-		depset = (Cons *) depset->cdr;
-		fprintf(stderr, "TRYING AGAIN\n");
-		dbgSexp(depset);
+    if (node->dependencies) {
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    depset = (Cons *) node->dependencies->contents->vector[i];
+	    while (depset && !found) {
+		dep = (DagNode *) dereference(depset->car);
+		if (result = visitNode(dep)) {
+		    depset = (Cons *) depset->cdr;
+		    fprintf(stderr, "TRYING AGAIN\n");
+		    dbgSexp(depset);
+		}
+		else {
+		    found = TRUE;
+		    /* Replace depset with single dep */
+		    objectFree(node->dependencies->contents->vector[i], TRUE);
+		    depset = consNew((Object *) objRefNew((Object *) dep), 
+				     NULL);
+		    node->dependencies->contents->vector[i] = (Object *) depset;
+		}
 	    }
-	    else {
-		found = TRUE;
-		// FIXME: REPLACE depset with single DEP
+	    if (!found) {
+		RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("ARG"));
+		return result;
 	    }
-	}
-	if (!found) {
-	    RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("ARG"));
-	    return result;
 	}
     }
     node->status = VISITED;
@@ -1144,6 +1209,14 @@ smart_tsort(Hash *allnodes)
 	next = nextBuildable(next);
     }
  
+    if (hashElems(allnodes)) {
+	char *nodes = objectSexp((Object *) allnodes);
+	char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
+			      nodes);
+	skfree(nodes);
+	RAISE(GENERAL_ERROR, errmsg);
+    }
+
     return results;
 }
 
@@ -1171,13 +1244,6 @@ gensort(Document *doc)
 	}
 	else {
 	    sorted = smart_tsort(dagnodes);
-	}
-	if (hashElems(dagnodes)) {
-	    char *nodes = objectSexp((Object *) dagnodes);
-	    char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
-				  nodes);
-	    skfree(nodes);
-	    RAISE(GENERAL_ERROR, errmsg);
 	}
     }
     EXCEPTION(ex);
