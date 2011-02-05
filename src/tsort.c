@@ -725,19 +725,23 @@ simple_tsort_visit(DagNode *visit_node, Hash *candidates)
     return results;
 }
 
-static DagNode *
+static Cons *
 tsortVisitNode(DagNode *node, Vector *results)
 {
-    DagNode *result;
+    static int count = 5;  // DEBUG CODE - to force exception
+    Cons *result;
     Cons *depset;
     DagNode *dep;
     int i;
 
+    if (count-- < 0) {
+	node->status = VISITING;
+    }
     switch (node->status) {
     case VISITED:
 	return NULL;
     case VISITING:
-	return node;
+	return consNew((Object *) node, NULL);
     }
     node->status = VISITING;
     if (node->dependencies) {
@@ -746,7 +750,7 @@ tsortVisitNode(DagNode *node, Vector *results)
 	    if (depset) {
 		dep = (DagNode *) dereference(depset->car);
 		if (result = tsortVisitNode(dep, results)) {
-		    return result;
+		    return consNew((Object *) node, (Object *) result);
 		}
 	    }
 	}
@@ -760,17 +764,17 @@ static Object *
 tsortVisitHashNode(Cons *entry, Object *results)
 {
     DagNode *node = (DagNode *) entry->cdr;
-    DagNode *result;
+    Cons *result;
     char *deps;
     char *errmsg;
     if (result = tsortVisitNode(node, (Vector *) results)) {
 	deps = objectSexp((Object *) result);
-	errmsg = newstr("Cyclic dependency: %s", deps);
+	errmsg = newstr("Unresolved cyclic dependency: %s", deps);
 	skfree(deps);
 	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
     }
 
-    return (Object *) node;
+    return NULL; /* Remove node from the hash */
 }
 
 static Object *
@@ -790,7 +794,6 @@ simple_tsort(Hash *allnodes)
     Vector *results = vectorNew(elems);
     hashEach(allnodes, &tsortSetUnvisited, NULL);
     hashEach(allnodes, &tsortVisitHashNode, (Object *) results);
-    dbgSexp(results);
     return results;
 }
 
