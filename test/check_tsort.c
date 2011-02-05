@@ -79,27 +79,44 @@ check_build_order(Vector *results, char *list_str)
 
 START_TEST(check_gensort)
 {
-    Document *doc;
-    Vector *results;
+    Document *doc = NULL;
+    Vector *results = NULL;
     Object *ignore;
     char *tmp;
     int result;
     Symbol *simple_sort;
+    boolean failed = FALSE;
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	ignore = evalSexp(tmp = newstr("(setq build t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	//showMalloc(1104);
+	ignore = evalSexp(tmp = newstr("(setq drop t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	
+	doc = getDoc("test/data/gensource1.xml");
+	simple_sort = symbolNew("simple-sort");    
+	results = gensort(doc);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
 
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    ignore = evalSexp(tmp = newstr("(setq build t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
-    //showMalloc(1104);
-    ignore = evalSexp(tmp = newstr("(setq drop t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
 
-    doc = getDoc("test/data/gensource1.xml");
-    simple_sort = symbolNew("simple-sort");    
-    results = gensort(doc);
-    //printSexp(stderr, "RESULTS: ", (Object *) results);
 
     check_build_order(results, "('drop.database.cluster.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
