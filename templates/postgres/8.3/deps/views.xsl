@@ -12,7 +12,8 @@
     <xsl:variable name="view_fqn" 
 		  select="concat('view.', $parent_core, '.', @name)"/>
     <dbobject type="view" fqn="{$view_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@schema,@name)}">
+	      qname="{skit:dbquote(@schema,@name)}"
+	      cycle_breaker="viewbase">
 
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 

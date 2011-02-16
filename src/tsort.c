@@ -268,6 +268,7 @@ freeConsNode(Cons *node)
 static void
 addDependent(DagNode *node, DagNode *dep)
 {
+    Object *new;
     assert(node->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode nodes");
     assert(dep->type == OBJ_DAGNODE,
@@ -276,7 +277,11 @@ addDependent(DagNode *node, DagNode *dep)
     if (!(dep->dependents)) {
 	dep->dependents = vectorNew(10);
     }
-    setPush(dep->dependents, (Object *) objRefNew((Object *) node));
+    if (!setPush(dep->dependents, 
+		 new = (Object *) objRefNew((Object *) node))) {
+	/* If the object was already in place, free up the objReference */
+	objectFree(new, FALSE);
+    }
 }
 
 static void
@@ -294,11 +299,35 @@ addDependency(DagNode *node, Cons *deps)
 	freeConsNode(deps);
 	return;
     }
+}
 
-    while (deps) {
-	addDependent(node, (DagNode *) dereference(deps->car));
-	deps = (Cons *) deps->cdr;
+static Object *
+addDependentsForNode(Cons *node_entry, Object *param)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
+    Hash *allnodes = (Hash *) param;
+    Vector *dependencies = node->dependencies;
+    int i;
+    Cons *deps;
+    DagNode *dep;
+
+    if (dependencies) {
+	for (i = 0; i < dependencies->elems; i++) {
+	    deps = (Cons *) dependencies->contents->vector[i];
+	    while (deps) {
+		addDependent(node, (DagNode *) dereference(deps->car));
+		deps = (Cons *) deps->cdr;
+	    }
+	}
     }
+    return (Object *) node;
+}
+
+
+static void
+addAllDependents(Hash *allnodes)
+{
+    hashEach(allnodes, &addDependentsForNode, (Object *) allnodes);
 }
 
 /* We have not implemented the use of a list of alternate dependencies
@@ -692,51 +721,41 @@ removeDependency(DagNode *from, DagNode *dependency)
     }
 }
 
-static Vector *
-simple_tsort_visit(DagNode *visit_node, Hash *candidates)
+static void
+removeDependency2(DagNode *from, DagNode *dependency)
 {
-    int elems = hashElems(candidates);
-    Vector *deps;
-    Vector *results = NULL;
-    Vector *kid_results = NULL;
-    DagNode *next;
-    Object *ref;
+    int i;
+    Cons *deplist;
+    Object *obj;
 
-    results = vectorNew(elems);
-    
-    vectorPush(results, (Object *) visit_node);
-    
-    if (deps = visit_node->dependents) {
-	while (ref = vectorPop(deps)) {
-	    next = (DagNode *) dereference(ref);
-	    removeDependency(next, visit_node);
-	    if (!next->dependencies) {
-		kid_results = simple_tsort_visit(next, candidates);
-		vectorAppend(results, kid_results);
-		objectFree((Object *) kid_results, FALSE);
-		kid_results = NULL;
+    if (from->dependencies) {
+	for (i = 0; i < from->dependencies->elems; i++) {
+	    deplist = (Cons *) from->dependencies->contents->vector[i];
+	    if ((DagNode *) dereference(deplist->car) == dependency) {
+		//if (inList(deplist, (Object *) dependency)) {
+		printSexp(stderr, "Removing dep: ", (Object *) dependency);
+		dbgSexp(from->dependencies);
+		obj = vectorRemove(from->dependencies, i);
+		dbgSexp(obj);
+		dbgSexp(from->dependencies);
+		objectFree(obj, TRUE);
 	    }
-	    objectFree(ref, FALSE);
+	}
+	if (!from->dependencies->elems) {
+	    objectFree((Object *) from->dependencies, TRUE);
+	    from->dependencies = NULL;
 	}
     }
-
-    /* Finally, we remove visit_node from our candidates hash. */
-    (void) hashDel(candidates, (Object *) visit_node->fqn);
-    return results;
 }
 
 static Cons *
 tsortVisitNode(DagNode *node, Vector *results)
 {
-    static int count = 5;  // DEBUG CODE - to force exception
     Cons *result;
     Cons *depset;
     DagNode *dep;
     int i;
 
-    if (count-- < 0) {
-	node->status = VISITING;
-    }
     switch (node->status) {
     case VISITED:
 	return NULL;
@@ -802,81 +821,122 @@ simple_tsort(Hash *allnodes)
     EXCEPTION(ex);
     WHEN_OTHERS {
 	objectFree((Object *) results, FALSE);
+	RAISE();
+
     }
     END;
     return results;
 }
 
 
-/* This is not the standard tsort algorithm.  Instead it is a very
- * naive algorithm, which happens to deal well with PQN (partially
- * qualified name)-based dependencies.  A dependency based on a PQN
- * offers a set of alternate dependencies.  A PQN-based dependency is
- * satisfied if any of the dependencies in the set is satisfied.  The
- * standard tsort algorithm is very efficient but is driven by
- * dependencies, so if one dependency of a PQN cannot be satisfied a
- * cyclic dependency will be found.  In this case, we would have to 
- * backtrack and try the next alternate dependency.  Backtracking in a
- * recursive algorithm is unpleasant.
- * This algorithm works in the opposite direction.  It starts by
- * building a list of all leaf nodes (those without dependencies).  Then
- * it detaches these from the original list, revoking the dependencies
- * as it goes.  What this means is that the algorithm is driven from
- * dependents, and so as soon as any dependent is dealt with for a
- * PQN-based dependency, the dependency is satisfied.  This obviates the
- * need for backtracking at the expense of a less efficient algorithm.
- *
- * API notes: allnodes should be empty when we are done!
- */
-static Vector *
-simple_tsort2(Hash *allnodes)
-{
-    Vector *results = NULL;
-    Vector *kid_results = NULL;
-    Vector *buildable = NULL;
-    DagNode *node = NULL;
-    int elems;
-    int prev = 0;
-    BEGIN {
-	elems = hashElems(allnodes);
+#ifdef TODO
+TODO: 
+Add mitigation mechanism for cyclic deps
+Modify the depset stuff to not use a list but instead directly reference
+each dep node.
 
-	while (TRUE) {
-	    buildable = get_build_candidates(allnodes);
-	    while (node = (DagNode *) dereference(vectorPop(buildable))) {
-		kid_results = simple_tsort_visit(node, allnodes);
-		if (results) {
-		    vectorAppend(results, kid_results);
-		    objectFree((Object *) kid_results, FALSE);
-		}
-		else {
-		    results = kid_results;
-		}
+Breaking a cyclic dep:
+
+We detect cycle in visitNode when we get a cons back:
+    cycle_node = car(cons);
+    new_node = new xmlNode()
+    set type and fqn of new_node based on the value of the cycle_breaker
+       attribute of cycle_node
+    copy dependencies, skipping those marked as drop_on_cycle='cycle_node/@type'
+    copy other relevant contents of cycle node
+    new_dnode = new DagNode(cycle_node)
+    process deps for new node
+    add dep for cycle_node to new_dnode
+    visitNode(new_dnode)
+    return new_dnode
+#endif
+
+static DagNode *
+makeBreakerNode(DagNode *from_node, String *breaker_type)
+{
+    xmlNode *dbobject = from_node->dbobject;
+    xmlChar *old_fqn = xmlGetProp(dbobject, "fqn");
+    char *fqn_suffix = strstr(old_fqn, ".");
+    char *new_fqn = newstr("%s%s", breaker_type->value, fqn_suffix);
+    xmlNode *breaker_dbobject = xmlCopyNode(dbobject, 1);
+    Node *breaker_node;
+    DagNode *breaker;
+    
+    xmlSetProp(breaker_dbobject, "type", breaker_type->value);
+    xmlUnsetProp(breaker_dbobject, "cycle_breaker");
+    xmlSetProp(breaker_dbobject, "fqn", new_fqn);
+    xmlFree(old_fqn);
+    skfree(new_fqn);
+
+    breaker_node = nodeNew(breaker_dbobject);
+    breaker = dagnodeNew(breaker_node, from_node->build_type);
+    objectFree((Object *) breaker_node, FALSE);
+    return breaker;
+}
+
+static void
+copyMostDeps(DagNode *target, DagNode *src)
+{
+    DagNode *ignore = src->cur_dep;
+    Cons *src_cons;
+    Cons *target_cons;
+    DagNode *src_dagnode;
+    int i;
+
+    for (i = 0; i < src->dependencies->elems; i++) {
+	src_cons = (Cons *) src->dependencies->contents->vector[i];
+	target_cons = NULL;
+	while (src_cons) {
+	    src_dagnode = (DagNode *) dereference(src_cons->car);
+	    if (! streq(src_dagnode->fqn->value, ignore->fqn->value)) {
+		/* Add the dependency */
+		target_cons = consNew((Object *) objRefNew(
+					  (Object *) src_dagnode), 
+				      (Object *) target_cons); 
 	    }
-	    objectFree((Object *) buildable, TRUE);
-	    if (results->elems == elems) {
-		/* We are done! */
-		break;
-	    }
-	    if (results->elems <= prev) {
-		showAllDeps(allnodes);
-		RAISE(TSORT_CYCLIC_DEPENDENCY,
-		      newstr("No progress - cyclic dependency?"));
-	    }
-	    prev = results->elems;
+	    src_cons = (Cons *) src_cons->cdr;
+	}
+	if (target_cons) {
+	    addDependency(target, target_cons);
 	}
     }
-    EXCEPTION(ex) {
-	objectFree((Object *) results, TRUE);
-    }
-    END;
-    return results;
 }
 
+static DagNode *
+attemptCycleBreak(
+    DagNode *cur_node,
+    DagNode *cycle_node)
+{
+    xmlNode *dbobject = cycle_node->dbobject;
+    String *breaker_type = nodeAttribute(dbobject, "cycle_breaker");
+    DagNode *breaker = NULL;
+
+    if (breaker_type) {
+	/* We break the cycle of X->Y->X as follows:
+	 * (cur_node is Y, cycle_node is X)
+	 * create a new dbobject X_break as a copy of X, but without 
+	 * the dependency in cycle_node->cur_dep and with a type of
+	 * breaker_type.  We add a dependency on X_break to X, set Y's
+	 * cur_dep to X_break, visit X_break using visitNode() and then
+	 * return X_break as the result. 
+	 */
+	breaker = makeBreakerNode(cycle_node, breaker_type);
+	copyMostDeps(breaker, cycle_node);
+	removeDependency2(cycle_node, cycle_node->cur_dep);
+
+	objectFree((Object *) breaker_type, TRUE);
+	objectFree((Object *) breaker, TRUE);
+	return NULL;
+
+    }
+    return breaker;
+}
 
 /* This function checks that the set of dependencies in allnodes, makes
  * A DAG.  Specifically, it resolves optional dependencies picking a
  * specific dependency from each set of candidates, and attempts to
- * resolve cyclic dependencies by checking for SOMETHING.
+ * resolve cyclic dependencies by checking each dbobject in the cycle
+ * for the ability to break a cyle.
  * Here is the basic algorithm:
  * for each node n do
  *   visit(n)
@@ -904,47 +964,97 @@ simple_tsort2(Hash *allnodes)
  *      return n2
  *  mark n as visited
  *  return null
+ * TODO: make the pseudocode reflect the code.
  */
+static Cons *visitNode(DagNode *node);
+
+static DagNode *
+dependencyFromSet(
+    DagNode *node,
+    Cons *depset, 
+    boolean break_allowed,
+    Cons **p_cycle)
+{
+    DagNode *dep;
+    Cons *cycle;
+
+    while (depset) {
+	dep = (DagNode *) dereference(depset->car);
+	node->cur_dep = dep;
+	if (cycle = visitNode(dep)) {
+	    /* We have a cyclic dependency. */
+	    depset = (Cons *) depset->cdr;
+	    dbgSexp(depset);
+	    dbgSexp(cycle);
+	    if (break_allowed) {
+		if (dep = attemptCycleBreak(node, dep)) {
+		    objectFree((Object *) cycle, TRUE);
+		    return dep;
+		}
+
+		*p_cycle = cycle;
+		return NULL;
+	    }
+	    if (depset) {
+		/* We have another way to satisfy this dependency, so
+		 * let's try it. */ 
+		fprintf(stderr, "TRYING AGAIN\n");
+		dbgSexp(depset);
+		dbgSexp(cycle);
+		//objectFree((Object *) cycle, TRUE);
+	    }
+	    else {
+		*p_cycle = cycle;
+		return NULL;
+	    }
+	}
+	else {
+	    return dep;
+	}
+    }
+    return dep;
+}
+
 static Cons *
 visitNode(DagNode *node)
 {
     int i;
     Cons *depset;
     DagNode *dep;
-    Cons *result;
-    boolean found = FALSE;
-
+    Cons *result = NULL;
     switch (node->status) {
     case VISITED:
-	return NULL;
+        return NULL;
     case VISITING:
-	return consNew((Object *) objRefNew((Object *) node), NULL);
+        return consNew((Object *) objRefNew((Object *) node), NULL);
     }
     node->status = VISITING;
     if (node->dependencies) {
-	for (i = 0; i < node->dependencies->elems; i++) {
-	    depset = (Cons *) node->dependencies->contents->vector[i];
-	    while (depset && !found) {
-		dep = (DagNode *) dereference(depset->car);
-		if (result = visitNode(dep)) {
-		    depset = (Cons *) depset->cdr;
-		    fprintf(stderr, "TRYING AGAIN\n");
-		    dbgSexp(depset);
+        for (i = 0; i < node->dependencies->elems; i++) {
+            depset = (Cons *) node->dependencies->contents->vector[i];
+	    dep = dependencyFromSet(node, depset, FALSE, &result);
+	    if (!dep) {
+		/* We have an unhandled cyclic dependency.  Attempt a
+		 * retry, allowing it to be handled. */
+
+		objectFree((Object *) result, TRUE);
+		dep = dependencyFromSet(node, depset, TRUE, &result);
+		if (!dep) {
+		    fprintf(stderr, "ABOUT TO FAIL\n");
+		    dbgNode(node->dbobject);
+		    result = consNew((Object *) objRefNew((Object *) node),
+				     (Object *) result);
 		}
-		else {
-		    found = TRUE;
-		    /* Replace depset with single dep */
-		    objectFree(node->dependencies->contents->vector[i], TRUE);
-		    depset = consNew((Object *) objRefNew((Object *) dep), 
-				     NULL);
-		    node->dependencies->contents->vector[i] = (Object *) depset;
-		}
-	    }
-	    if (!found) {
-		RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("ARG"));
+		node->status = UNVISITED;
 		return result;
 	    }
-	}
+	    /* Replace depset with the single dependency to
+	     * which we have successfully traversed.  */
+	    objectFree(node->dependencies->contents->vector[i], TRUE);
+	    depset = consNew((Object *) objRefNew((Object *) dep),
+			     NULL);
+	    node->dependencies->contents->vector[i] = (Object *) depset;
+        }
     }
     node->status = VISITED;
     return NULL;
@@ -957,9 +1067,12 @@ visitNodeInHash(Cons *entry, Object *ignore)
     Cons *result;
     char *deps;
     char *errmsg;
+    
     if (result = visitNode(node)) {
+	dbgSexp(result);
 	deps = objectSexp((Object *) result);
-	errmsg = newstr("Cyclic dependency: %s", deps);
+	objectFree((Object *) result, TRUE);
+	errmsg = newstr("Cyclic dependency in %s", deps);
 	skfree(deps);
 	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
     }
@@ -1210,6 +1323,7 @@ smart_tsort(Hash *allnodes)
     Vector *buildable = get_build_candidates(allnodes);
     Vector *results = vectorNew(hashElems(allnodes));
 
+    addAllDependents(allnodes);
     //showAllDeps(allnodes);
     markAllBuildable(buildable);
 

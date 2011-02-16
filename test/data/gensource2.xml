@@ -249,6 +249,36 @@
         </dependencies>
         <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
           <comment>'standard public schema'</comment>
+          <dbobject type="view" fqn="view.skittest.public.v1" name="v1"
+		    qname="public.v1" cycle_breaker="viewbase">
+            <context name="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="view.skittest.public.v2"/>
+              <dependency fqn="role.cluster.marc"/>
+              <dependency pqn="grant.skittest.public.usage:public"/>
+              <dependency pqn="grant.skittest.public.usage:marc"/>
+              <dependency pqn="grant.skittest.public.usage:marc"/>
+            </dependencies>
+            <view name="v1" schema="public" owner="marc">
+              <source>SELECT v2.mykey FROM v2;</source>
+              <depends schema="public" view="v2"/>
+            </view>
+          </dbobject>
+          <dbobject type="view" fqn="view.skittest.public.v2" name="v2"
+              qname="public.v2" cycle_breaker="viewbase">
+            <context name="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="view.skittest.public.v1"/>
+              <dependency fqn="role.cluster.marc"/>
+              <dependency pqn="grant.skittest.public.usage:public"/>
+              <dependency pqn="grant.skittest.public.usage:marc"/>
+              <dependency pqn="grant.skittest.public.usage:marc"/>
+            </dependencies>
+            <view name="v2" schema="public" owner="marc">
+              <source>SELECT v1.mykey FROM v1;</source>
+              <depends schema="public" view="v1"/>
+            </view>
+          </dbobject>
         </schema>
       </dbobject>
     </database>

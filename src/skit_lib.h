@@ -238,6 +238,7 @@ typedef struct DagNode {
     Vector          *dependents;
     boolean          is_buildable;
     int              buildable_kids;
+    struct DagNode  *cur_dep;
     struct DagNode  *parent;
     struct DagNode  *kids;
     struct DagNode  *next;

@@ -76,7 +76,6 @@ check_build_order(Vector *results, char *list_str)
     }
 }
 
-
 START_TEST(check_gensort)
 {
     Document *doc = NULL;
@@ -101,6 +100,43 @@ START_TEST(check_gensort)
 	simple_sort = symbolNew("simple-sort");    
 	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
+
+	check_build_order(results, "('drop.database.cluster.skittest' "
+		      "'drop.dbincluster.cluster.skittest' "
+		      "'build.dbincluster.cluster.skittest' "
+		      "'build.database.cluster.skittest')");
+	check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.keep')");
+	check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.lose')");
+	check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.marc')");
+	check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.marco')");
+	check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.wibble')");
+	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
+		      "'build.role.cluster.lose' "
+		      "'build.grant.cluster.lose.keep:keep')");
+	check_build_order(results, "('build.role.cluster.keep' "
+		      "'build.grant.cluster.lose.keep:keep')");
+	check_build_order(results, 
+		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
+		      "'drop.tablespace.cluster.tbs2' "
+		      "'build.role.cluster.regress' "
+		      "'build.tablespace.cluster.tbs2' "
+	              "'build.grant.cluster.tbs2.create:keep2:regress')");
+	check_build_order(results, 
+		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
+		      "'drop.tablespace.cluster.tbs2' "
+		      "'build.role.cluster.keep2' "
+		      "'build.tablespace.cluster.tbs2' "
+	              "'build.grant.cluster.tbs2.create:keep2:regress')");
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -116,45 +152,6 @@ START_TEST(check_gensort)
     if (failed) {
 	fail("gensort fails with exception");
     }
-
-
-    check_build_order(results, "('drop.database.cluster.skittest' "
-		      "'drop.dbincluster.cluster.skittest' "
-		      "'build.dbincluster.cluster.skittest' "
-		      "'build.database.cluster.skittest')");
-    check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.keep')");
-    check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.keep2')");
-    check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.lose')");
-    check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.marc')");
-    check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.marco')");
-    check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
-		      "'build.cluster' 'build.role.cluster.wibble')");
-    check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
-		      "'build.role.cluster.lose' "
-		      "'build.grant.cluster.lose.keep:keep')");
-    check_build_order(results, "('build.role.cluster.keep' "
-		      "'build.grant.cluster.lose.keep:keep')");
-    check_build_order(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
-		      "'build.role.cluster.regress' "
-		      "'build.tablespace.cluster.tbs2' "
-	              "'build.grant.cluster.tbs2.create:keep2:regress')");
-    check_build_order(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
-		      "'build.role.cluster.keep2' "
-		      "'build.tablespace.cluster.tbs2' "
-	              "'build.grant.cluster.tbs2.create:keep2:regress')");
-
-    objectFree((Object *) results, TRUE);
-    objectFree((Object *) doc, TRUE);
-    FREEMEMWITHCHECK;
 }
 END_TEST
 
@@ -305,6 +302,87 @@ START_TEST(navigation2)
 }
 END_TEST
 
+
+START_TEST(check_cyclic_gensort)
+{
+    Document *doc = NULL;
+    Vector *results = NULL;
+    Object *ignore;
+    char *tmp;
+    int result;
+    Symbol *simple_sort;
+    boolean failed = FALSE;
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	ignore = evalSexp(tmp = newstr("(setq build t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	//showMalloc(1104);
+	ignore = evalSexp(tmp = newstr("(setq drop t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	
+	doc = getDoc("test/data/gensource2.xml");
+	simple_sort = symbolNew("simple-sort");    
+	results = gensort(doc);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
+
+	check_build_order(results, "('drop.database.cluster.skittest' "
+		      "'drop.dbincluster.cluster.skittest' "
+		      "'build.dbincluster.cluster.skittest' "
+		      "'build.database.cluster.skittest')");
+	check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.keep')");
+	check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.lose')");
+	check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.marc')");
+	check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.marco')");
+	check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
+		      "'build.cluster' 'build.role.cluster.wibble')");
+	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
+		      "'build.role.cluster.lose' "
+		      "'build.grant.cluster.lose.keep:keep')");
+	check_build_order(results, "('build.role.cluster.keep' "
+		      "'build.grant.cluster.lose.keep:keep')");
+	check_build_order(results, 
+		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
+		      "'drop.tablespace.cluster.tbs2' "
+		      "'build.role.cluster.regress' "
+		      "'build.tablespace.cluster.tbs2' "
+	              "'build.grant.cluster.tbs2.create:keep2:regress')");
+	check_build_order(results, 
+		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
+		      "'drop.tablespace.cluster.tbs2' "
+		      "'build.role.cluster.keep2' "
+		      "'build.tablespace.cluster.tbs2' "
+	              "'build.grant.cluster.tbs2.create:keep2:regress')");
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
 Suite *
 tsort_suite(void)
 {
@@ -316,6 +394,8 @@ tsort_suite(void)
     ADD_TEST(tc_core, check_gensort2);
     ADD_TEST(tc_core, navigation);
     ADD_TEST(tc_core, navigation2);
+    ADD_TEST(tc_core, check_cyclic_gensort);
+    //ADD_TEST(tc_core, check_cyclic_gensort2);
 				
     suite_add_tcase(s, tc_core);
 

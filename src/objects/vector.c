@@ -291,7 +291,8 @@ vectorSearch(Vector *vector, Object *obj, int *p_index)
 
 
 /* Like vectorPush, but only push the object onto the vector if there is
- * not already an equivalent object in place
+ * not already an equivalent object in place.  Return the object if it
+ * is added.
  */
 Object *
 setPush(Vector *vector, Object *obj)
