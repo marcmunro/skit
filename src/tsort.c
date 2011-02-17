@@ -698,47 +698,49 @@ get_build_candidates(Hash *nodelist)
     return results;
 }
 
+static Cons *
+removeDagnodeFromList(Cons *list, DagNode *node)
+{
+    Cons *prev = NULL;
+    Cons *cur = list;
+    Cons *result;
+
+    while (cur) {
+	if ((DagNode *) dereference(cur->car) == node) {
+	    if (prev) {
+		prev->cdr = cur->cdr;
+		result = list;
+	    }
+	    else {
+		result = (Cons *) cur->cdr;
+	    }
+	    objectFree(cur->car, FALSE);
+	    objectFree((Object *) cur, FALSE);
+	    return result;
+	}
+	prev = cur;
+	cur = (Cons *) cur->cdr;
+    }
+    return list;
+}
+
 static void
 removeDependency(DagNode *from, DagNode *dependency)
 {
     int i;
     Cons *deplist;
     Object *obj;
+    DagNode *dep;
 
     if (from->dependencies) {
 	for (i = 0; i < from->dependencies->elems; i++) {
 	    deplist = (Cons *) from->dependencies->contents->vector[i];
-	    if ((DagNode *) dereference(deplist->car) == dependency) {
-		//if (inList(deplist, (Object *) dependency)) {
-		obj = vectorRemove(from->dependencies, i);
-		objectFree(obj, TRUE);
+	    deplist = removeDagnodeFromList(deplist, dependency);
+	    if (deplist) {
+		from->dependencies->contents->vector[i] = (Object *) deplist;
 	    }
-	}
-	if (!from->dependencies->elems) {
-	    objectFree((Object *) from->dependencies, TRUE);
-	    from->dependencies = NULL;
-	}
-    }
-}
-
-static void
-removeDependency2(DagNode *from, DagNode *dependency)
-{
-    int i;
-    Cons *deplist;
-    Object *obj;
-
-    if (from->dependencies) {
-	for (i = 0; i < from->dependencies->elems; i++) {
-	    deplist = (Cons *) from->dependencies->contents->vector[i];
-	    if ((DagNode *) dereference(deplist->car) == dependency) {
-		//if (inList(deplist, (Object *) dependency)) {
-		printSexp(stderr, "Removing dep: ", (Object *) dependency);
-		dbgSexp(from->dependencies);
-		obj = vectorRemove(from->dependencies, i);
-		dbgSexp(obj);
-		dbgSexp(from->dependencies);
-		objectFree(obj, TRUE);
+	    else {
+		(void) vectorRemove(from->dependencies, i);
 	    }
 	}
 	if (!from->dependencies->elems) {
@@ -829,28 +831,6 @@ simple_tsort(Hash *allnodes)
 }
 
 
-#ifdef TODO
-TODO: 
-Add mitigation mechanism for cyclic deps
-Modify the depset stuff to not use a list but instead directly reference
-each dep node.
-
-Breaking a cyclic dep:
-
-We detect cycle in visitNode when we get a cons back:
-    cycle_node = car(cons);
-    new_node = new xmlNode()
-    set type and fqn of new_node based on the value of the cycle_breaker
-       attribute of cycle_node
-    copy dependencies, skipping those marked as drop_on_cycle='cycle_node/@type'
-    copy other relevant contents of cycle node
-    new_dnode = new DagNode(cycle_node)
-    process deps for new node
-    add dep for cycle_node to new_dnode
-    visitNode(new_dnode)
-    return new_dnode
-#endif
-
 static DagNode *
 makeBreakerNode(DagNode *from_node, String *breaker_type)
 {
@@ -875,7 +855,7 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
 }
 
 static void
-copyMostDeps(DagNode *target, DagNode *src)
+copyDeps(DagNode *target, DagNode *src)
 {
     DagNode *ignore = src->cur_dep;
     Cons *src_cons;
@@ -883,21 +863,21 @@ copyMostDeps(DagNode *target, DagNode *src)
     DagNode *src_dagnode;
     int i;
 
-    for (i = 0; i < src->dependencies->elems; i++) {
-	src_cons = (Cons *) src->dependencies->contents->vector[i];
-	target_cons = NULL;
-	while (src_cons) {
-	    src_dagnode = (DagNode *) dereference(src_cons->car);
-	    if (! streq(src_dagnode->fqn->value, ignore->fqn->value)) {
-		/* Add the dependency */
+    if (src->dependencies) {
+	for (i = 0; i < src->dependencies->elems; i++) {
+	    src_cons = (Cons *) src->dependencies->contents->vector[i];
+	    target_cons = NULL;
+	    while (src_cons) {
+		src_dagnode = (DagNode *) dereference(src_cons->car);
 		target_cons = consNew((Object *) objRefNew(
 					  (Object *) src_dagnode), 
 				      (Object *) target_cons); 
+		src_cons = (Cons *) src_cons->cdr;
 	    }
-	    src_cons = (Cons *) src_cons->cdr;
-	}
-	if (target_cons) {
-	    addDependency(target, target_cons);
+
+	    if (target_cons) {
+		addDependency(target, target_cons);
+	    }
 	}
     }
 }
@@ -920,14 +900,13 @@ attemptCycleBreak(
 	 * cur_dep to X_break, visit X_break using visitNode() and then
 	 * return X_break as the result. 
 	 */
+
 	breaker = makeBreakerNode(cycle_node, breaker_type);
-	copyMostDeps(breaker, cycle_node);
-	removeDependency2(cycle_node, cycle_node->cur_dep);
-
+	copyDeps(breaker, cycle_node);
+	removeDependency(breaker, cur_node);
+	xmlSetProp(cycle_node->dbobject, "cycle_breaker_fqn", 
+		   breaker->fqn->value);
 	objectFree((Object *) breaker_type, TRUE);
-	objectFree((Object *) breaker, TRUE);
-	return NULL;
-
     }
     return breaker;
 }
@@ -978,14 +957,13 @@ dependencyFromSet(
     DagNode *dep;
     Cons *cycle;
 
+    *p_cycle = NULL;
     while (depset) {
 	dep = (DagNode *) dereference(depset->car);
 	node->cur_dep = dep;
 	if (cycle = visitNode(dep)) {
 	    /* We have a cyclic dependency. */
 	    depset = (Cons *) depset->cdr;
-	    dbgSexp(depset);
-	    dbgSexp(cycle);
 	    if (break_allowed) {
 		if (dep = attemptCycleBreak(node, dep)) {
 		    objectFree((Object *) cycle, TRUE);
@@ -998,10 +976,7 @@ dependencyFromSet(
 	    if (depset) {
 		/* We have another way to satisfy this dependency, so
 		 * let's try it. */ 
-		fprintf(stderr, "TRYING AGAIN\n");
-		dbgSexp(depset);
-		dbgSexp(cycle);
-		//objectFree((Object *) cycle, TRUE);
+		objectFree((Object *) cycle, TRUE);
 	    }
 	    else {
 		*p_cycle = cycle;
@@ -1036,18 +1011,16 @@ visitNode(DagNode *node)
 	    if (!dep) {
 		/* We have an unhandled cyclic dependency.  Attempt a
 		 * retry, allowing it to be handled. */
-
 		objectFree((Object *) result, TRUE);
 		dep = dependencyFromSet(node, depset, TRUE, &result);
 		if (!dep) {
-		    fprintf(stderr, "ABOUT TO FAIL\n");
-		    dbgNode(node->dbobject);
 		    result = consNew((Object *) objRefNew((Object *) node),
 				     (Object *) result);
+		    node->status = UNVISITED;
+		    return result;
 		}
-		node->status = UNVISITED;
-		return result;
 	    }
+
 	    /* Replace depset with the single dependency to
 	     * which we have successfully traversed.  */
 	    objectFree(node->dependencies->contents->vector[i], TRUE);
@@ -1069,7 +1042,6 @@ visitNodeInHash(Cons *entry, Object *ignore)
     char *errmsg;
     
     if (result = visitNode(node)) {
-	dbgSexp(result);
 	deps = objectSexp((Object *) result);
 	objectFree((Object *) result, TRUE);
 	errmsg = newstr("Cyclic dependency in %s", deps);
@@ -1083,7 +1055,6 @@ visitNodeInHash(Cons *entry, Object *ignore)
 static void
 check_dag(Hash *allnodes)
 {
-    fprintf(stderr, "CHECKING_DAG\n");
     hashEach(allnodes, &visitNodeInHash, NULL);
 }
 
@@ -1324,7 +1295,7 @@ smart_tsort(Hash *allnodes)
     Vector *results = vectorNew(hashElems(allnodes));
 
     addAllDependents(allnodes);
-    //showAllDeps(allnodes);
+    showAllDeps(allnodes);
     markAllBuildable(buildable);
 
     next = nextBuildable(root);
@@ -1365,7 +1336,7 @@ gensort(Document *doc)
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
 	check_dag(dagnodes);
-
+	//showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
 	}
