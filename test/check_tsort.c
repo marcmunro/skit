@@ -531,6 +531,54 @@ START_TEST(check_cyclic_gensort2)
 }
 END_TEST
 
+START_TEST(check_cyclic_exception)
+{
+    Document *doc = NULL;
+    Vector *results = NULL;
+    Object *ignore;
+    char *tmp;
+    int result;
+    Symbol *simple_sort;
+    boolean failed = FALSE;
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	ignore = evalSexp(tmp = newstr("(setq build t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	//showMalloc(1104);
+	ignore = evalSexp(tmp = newstr("(setq drop t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	
+	doc = getDoc("test/data/gensource3.xml");
+	results = gensort(doc);
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fail("check_cyclic_exception: No exception raised!");
+    }
+    EXCEPTION(ex);
+    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("check_cyclic_exception: unexpected exception");
+    }
+}
+END_TEST
+
 
 Suite *
 tsort_suite(void)
@@ -544,7 +592,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, navigation2);
     ADD_TEST(tc_core, check_cyclic_gensort);
     ADD_TEST(tc_core, check_cyclic_gensort2);
-    //ADD_TEST(tc_core, check_cyclic_exception);
+    ADD_TEST(tc_core, check_cyclic_exception);
 				
     suite_add_tcase(s, tc_core);
 

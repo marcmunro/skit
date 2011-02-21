@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="skittest" time="20090611091918">
-  <!-- This is for checking resolved cyclic dependencies.  The 
-       dbobject definitions for v1 and v2 have cyclic dependencies
-       on each other. -->
-
+  <!-- This is for checking unresolved cyclic dependencies.  The 
+       dbobject definitions for v1 and v2 are lacking cycle_breaker 
+       definitions -->
+       
   <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
     <cluster type="postgres" version="8.3.7" username="marc">
       <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep">
@@ -254,7 +254,7 @@
         <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
           <comment>'standard public schema'</comment>
           <dbobject type="view" fqn="view.skittest.public.v1" name="v1"
-		    qname="public.v1" cycle_breaker="viewbase">
+		    qname="public.v1">
             <context name="owner" value="marc" default="marc"/>
             <dependencies>
               <dependency fqn="view.skittest.public.v2"/>
@@ -269,7 +269,7 @@
             </view>
           </dbobject>
           <dbobject type="view" fqn="view.skittest.public.v2" name="v2"
-              qname="public.v2" cycle_breaker="viewbase">
+              qname="public.v2">
             <context name="owner" value="marc" default="marc"/>
             <dependencies>
               <dependency fqn="view.skittest.public.v1"/>

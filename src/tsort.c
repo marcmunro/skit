@@ -945,27 +945,31 @@ attemptCycleBreak(
  *  return null
  * TODO: make the pseudocode reflect the code.
  */
-static Cons *visitNode(DagNode *node);
+static Cons *visitNode(DagNode *node, Hash *allnodes);
 
 static DagNode *
 dependencyFromSet(
     DagNode *node,
     Cons *depset, 
+    Hash *allnodes,
     boolean break_allowed,
     Cons **p_cycle)
 {
     DagNode *dep;
     Cons *cycle;
+    String *newfqn;
 
     *p_cycle = NULL;
     while (depset) {
 	dep = (DagNode *) dereference(depset->car);
 	node->cur_dep = dep;
-	if (cycle = visitNode(dep)) {
+	if (cycle = visitNode(dep, allnodes)) {
 	    /* We have a cyclic dependency. */
 	    depset = (Cons *) depset->cdr;
 	    if (break_allowed) {
 		if (dep = attemptCycleBreak(node, dep)) {
+		    newfqn = stringNew(dep->fqn->value);
+		    hashAdd(allnodes, (Object *) newfqn, (Object *) dep);
 		    objectFree((Object *) cycle, TRUE);
 		    return dep;
 		}
@@ -991,7 +995,7 @@ dependencyFromSet(
 }
 
 static Cons *
-visitNode(DagNode *node)
+visitNode(DagNode *node, Hash *allnodes)
 {
     int i;
     Cons *depset;
@@ -1007,12 +1011,12 @@ visitNode(DagNode *node)
     if (node->dependencies) {
         for (i = 0; i < node->dependencies->elems; i++) {
             depset = (Cons *) node->dependencies->contents->vector[i];
-	    dep = dependencyFromSet(node, depset, FALSE, &result);
+	    dep = dependencyFromSet(node, depset, allnodes, FALSE, &result);
 	    if (!dep) {
 		/* We have an unhandled cyclic dependency.  Attempt a
 		 * retry, allowing it to be handled. */
 		objectFree((Object *) result, TRUE);
-		dep = dependencyFromSet(node, depset, TRUE, &result);
+		dep = dependencyFromSet(node, depset, allnodes, TRUE, &result);
 		if (!dep) {
 		    result = consNew((Object *) objRefNew((Object *) node),
 				     (Object *) result);
@@ -1034,14 +1038,14 @@ visitNode(DagNode *node)
 }
 
 static Object *
-visitNodeInHash(Cons *entry, Object *ignore)
+visitNodeInHash(Cons *entry, Object *allnodes)
 {
     DagNode *node = (DagNode *) entry->cdr;
     Cons *result;
     char *deps;
     char *errmsg;
     
-    if (result = visitNode(node)) {
+    if (result = visitNode(node, (Hash *) allnodes)) {
 	deps = objectSexp((Object *) result);
 	objectFree((Object *) result, TRUE);
 	errmsg = newstr("Cyclic dependency in %s", deps);
@@ -1055,7 +1059,7 @@ visitNodeInHash(Cons *entry, Object *ignore)
 static void
 check_dag(Hash *allnodes)
 {
-    hashEach(allnodes, &visitNodeInHash, NULL);
+    hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
 }
 
 static Object *
@@ -1295,7 +1299,7 @@ smart_tsort(Hash *allnodes)
     Vector *results = vectorNew(hashElems(allnodes));
 
     addAllDependents(allnodes);
-    showAllDeps(allnodes);
+    //showAllDeps(allnodes);
     markAllBuildable(buildable);
 
     next = nextBuildable(root);
