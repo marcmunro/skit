@@ -850,6 +850,7 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
 
     breaker_node = nodeNew(breaker_dbobject);
     breaker = dagnodeNew(breaker_node, from_node->build_type);
+    breaker->parent = from_node->parent;
     objectFree((Object *) breaker_node, FALSE);
     return breaker;
 }

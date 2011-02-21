@@ -58,8 +58,32 @@
 	      </depends>
 	    </skit:if>
 	  </skit:if>
-
 	</skit:runsql>
+
+	<skit:runsql to="columns" file="sql/columns.sql"
+		     params="(select view 'oid')"/>
+	<skit:foreach var="column" from="columns">
+	  <column>
+	    <skit:attr name="colnum"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="type"/>
+	    <skit:attr name="type_schema"/>
+	    <skit:attr name="size"/>
+	    <skit:attr name="precision"/>
+	    <skit:attr name="nullable"/>
+	    <skit:attr name="dimensions"/>
+	    <skit:attr name="typstorage"/>
+	    <skit:attr name="storage_policy"/>
+	    <skit:attr name="is_local"/>
+	    <skit:attr name="default"/>
+	    <skit:attr name="stats_target"/>
+	    <skit:if test="(select column 'comment')">
+	      <comment>
+		<skit:text expr="(select column 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </column>
+	</skit:foreach>
 
 	<skit:if test="(select view 'comment')">
 	  <comment>

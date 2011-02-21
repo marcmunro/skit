@@ -1068,7 +1068,16 @@ create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
 comment on conversion myconv is
 'conversion comment';
 
+create view v1 as select null::integer as field1, null::text as field2;
 
+create view v2 as select * from v1;
+
+create or replace view v1 as select * from v2;
+
+comment on view v2 is 
+'Mutually dependent view on v1, to test cyclic dependency handling.';
+comment on view v1 is 
+'Mutually dependent view on v2, to test cyclic dependency handling.';
 
 DBEOF
 
