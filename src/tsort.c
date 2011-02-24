@@ -46,6 +46,8 @@ dagnodesToHash(Object *this, Object *hash)
     DagNodeBuildType build_type;
     boolean both = FALSE;
     if (streq(node->node->name, "dbobject")) {
+	dbgNode(node->node);
+	dbgNode(node->node->parent);
 	diff = nodeAttribute(node->node, "diff");
 
 	if (diff) {
@@ -1337,11 +1339,12 @@ gensort(Document *doc)
     handling_context = (ignore_contexts == NULL);
 
     BEGIN {
+	dbgSexp(doc);
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
 	check_dag(dagnodes);
-	//showAllDeps(dagnodes);
+	showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
 	}
@@ -1635,15 +1638,23 @@ navigationToNode(DagNode *start, DagNode *target)
 	}
 	/* Now navigate from common root towards target */
 	current = common_root;
+	fprintf(stderr, "DEPARTURES ");
+	dbgSexp(results);
 	while (!nodeEq(current, target)) {
+	    dbgSexp(current);
+	    dbgSexp(target);
+	    dbgSexp(target->parent);
 	    current = nextNodeFrom(current, target);
+	    printSexp(stderr, "nextNodeFrom(current, target) is: ", current);
 	    if ((current == target) &&
 		(current->build_type == BUILD_NODE)) {
 		/* We don't need to arrive at a build node as the build
 		 * must perform the arrival for us. */
 	    }
 	    else {
+		printSexp(stderr, "Navigation to: ", current);
 		if (navigation = arriveNode(current)) {
+		    dbgSexp(navigation);
 		    vectorPush(results, (Object *) navigation);
 		}
 	    }
@@ -1662,6 +1673,7 @@ navigationToNode(DagNode *start, DagNode *target)
 	objectFree((Object *) results, TRUE);
     }
     END;
+    dbgSexp(results);
     return results;
 }
 

@@ -54,6 +54,29 @@
       </print>
     </xsl:if>
 
+    <xsl:if test="../@action='diff'">
+      <print>
+	<xsl:for-each select="../diffs/attribute">
+	  <xsl:if test="@name='owner'">
+            <xsl:text>alter tablespace &quot;</xsl:text>
+            <xsl:value-of select="../../@name"/>
+            <xsl:text>&quot; owner to &quot;</xsl:text>
+            <xsl:value-of select="@new"/>
+            <xsl:text>&quot;;&#x0A;</xsl:text>
+	  </xsl:if>
+          <xsl:if test="@name='location'">
+            <xsl:text>\echo WARNING tablespace &quot;</xsl:text>
+            <xsl:value-of select="../../@name"/>
+            <xsl:text>&quot; has moved from</xsl:text>
+            <xsl:text> &apos;</xsl:text>
+            <xsl:value-of select="@old"/>
+            <xsl:text>&apos; to &apos;</xsl:text>
+            <xsl:value-of select="@new"/>
+            <xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
+	  </xsl:if>
+	</xsl:for-each>
+      </print>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

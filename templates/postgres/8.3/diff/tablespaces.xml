@@ -7,6 +7,9 @@
   <dbobject type="tablespace" key="name">
     <attribute name="owner"/>
     <attribute name="location"/>
+    <element type="comment">
+      <text/>
+    </element>
   </dbobject>	
 
 </skit:inclusion>  

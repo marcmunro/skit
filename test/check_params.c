@@ -958,7 +958,7 @@ START_TEST(generate2)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname = 'skittest'",
-                    "--generate", "--drop",  "--print", "--full"};
+                    "--generate", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1237,9 +1237,9 @@ params_suite(void)
     //ADD_TEST(tc_core, extract);
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate2); // during development of new db objects
-    ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, generate2); // during development of new db objects
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, difflist);
     ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
     //ADD_TEST(tc_core, print2);

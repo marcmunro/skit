@@ -32,6 +32,13 @@ dump_db()
     errexit
 }
 
+dump_db_globals()
+{
+    echo $3taking db globals snapshot... 1>&2
+    pg_dumpall -p ${REGRESSDB_PORT} --globals-only >${REGRESS_DIR}/$2
+    errexit
+}
+
 extract()
 {
     echo $3running skit extract... 1>&2
@@ -127,6 +134,13 @@ diffdump()
     errexit
 }
 
+diffglobals()
+{
+    echo ......comparing pg_dumpall snapshots... 1>&2
+    regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
+    errexit
+}
+
 diffextract()
 {
     echo ......checking results of extracts... 1>&2
@@ -200,6 +214,7 @@ regression_test3()
     build_db regression3b_`pguver`.sql
     echo ...Creating target diff database... 1>&2
     dump_db regressdb scratch/regressdb_test3b.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test3b.gdmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3b.xml ...
     echo ...running skit generate to create initial drop... 1>&2
@@ -210,6 +225,7 @@ regression_test3()
     echo ...Creating source diff database... 1>&2
     build_db regression3a_`pguver`.sql
     dump_db regressdb scratch/regressdb_test3a.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test3a.gdmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3a.xml ...
     echo "...diff source->target..." 1>&2
@@ -219,7 +235,9 @@ regression_test3()
 
     echo ...checking db equivalence to target... 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...
     diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp
+    diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp
 
     echo "...diff target->source..." 1>&2
     gendiff scratch/regressdb_dump3b.xml scratch/regressdb_dump3a.xml \
@@ -228,11 +246,11 @@ regression_test3()
 
     echo ...checking db equivalence to source ... 1>&2
     dump_db regressdb scratch/regressdb_test3a2.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test3a2.gdmp ...
     diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp
+    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
-    echo Regression test 3: need to check cluster objects 1>&2
-    exit 2
     echo Regression test 3 complete 1>&2
 }
 
