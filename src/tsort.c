@@ -12,6 +12,7 @@
  */
 
 #include <string.h>
+#include <stdarg.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 
@@ -219,39 +220,68 @@ getPrefixedAttribute(xmlNodePtr node,
     return NULL;
 }
 
+static DagNode *
+findMatchingParent(Hash *dagnodes, char *fqn, ...)
+{
+    va_list args;
+    char *prefix;
+    String *key;
+    DagNode *result;
+
+    va_start(args, fqn);
+    while (prefix = va_arg(args, char *)) {
+	key = stringNewByRef(newstr("%s.%s", prefix, fqn));
+	result = hashGet(dagnodes, (Object *) key);
+	objectFree((Object *) key, TRUE);
+	if (result) {
+	    break;
+	}
+    }
+    va_end(args);
+    return result;
+}
+
 static Object *
 addParentForNode(Cons *node_entry, Object *dagnodes)
 {
     DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
-    String *fqn = NULL;
-
+    xmlChar *fqn = NULL;
+    DagNode *parent;
     if (xmlnode) {
 	BEGIN {
+	    fqn  = xmlGetProp(xmlnode, "fqn");
+
 	    switch (node->build_type) {
 	    case BUILD_NODE:
-		fqn = getPrefixedAttribute(xmlnode, "build", "fqn");
+	    case DIFF_NODE:
+	    case EXISTS_NODE:
+		parent = findMatchingParent((Hash *) dagnodes, fqn, 
+					    "build", "exists", "diff", NULL);
 		break;
 	    case DROP_NODE:
-		fqn = getPrefixedAttribute(xmlnode, "drop", "fqn");
-		break;
-	    case DIFF_NODE:
-		fqn = getPrefixedAttribute(xmlnode, "diff", "fqn");
-		break;
-	    case EXISTS_NODE:
-		fqn = getPrefixedAttribute(xmlnode, "exists", "fqn");
+		parent = findMatchingParent((Hash *) dagnodes, fqn, 
+					    "drop", "exists", "diff", NULL);
 		break;
 	    default:
 		RAISE(NOT_IMPLEMENTED_ERROR,
 		      newstr("addParentForNode of type %d is not implemented",
 			     node->build_type));
 	    }
-	    node->parent = (DagNode *) hashGet((Hash *) dagnodes, 
-					       (Object *) fqn);
+	    if (parent) {
+		node->parent = parent;
+	    }
+	    else {
+		RAISE(TSORT_ERROR,
+		      newstr("addParentForNode: No parent found for %s",
+			  node->fqn->value));
+	    }
 	}
 	EXCEPTION(ex);
 	FINALLY {
-	    objectFree((Object *) fqn, TRUE);
+	    if (fqn) {
+		xmlFree(fqn);
+	    }
 	}
 	END;
     }
@@ -345,6 +375,12 @@ addAllDependents(Hash *allnodes)
  * removing the use of lists. 
  */
 static void
+tsortdebug(char *x)
+{
+    fprintf(stderr, "DEBGUG %s\n", x);
+}
+
+static void
 addDiffDependency(DagNode *node, DagNode *depnode, boolean old)
 {
     if (old) {
@@ -355,9 +391,12 @@ addDiffDependency(DagNode *node, DagNode *depnode, boolean old)
 	switch (depnode->build_type) {
 	case BUILD_NODE: 
 	case DIFF_NODE: 
+	case EXISTS_NODE: 
 	    addDependency(node, consNode(depnode));
 	    break;
 	default:
+	    dbgSexp(node);
+	    tsortdebug("zz");
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
 		  newstr("addDiffDependency not implemented for all types"));
 	}
@@ -1644,11 +1683,11 @@ navigationToNode(DagNode *start, DagNode *target)
 	}
 	/* Now navigate from common root towards target */
 	current = common_root;
-	//fprintf(stderr, "DEPARTURES ");
-	//dbgSexp(results);
+	fprintf(stderr, "DEPARTURES ");
+	dbgSexp(results);
 	while (!nodeEq(current, target)) {
-	    //dbgSexp(current);
-	    //dbgSexp(target);
+	    dbgSexp(current);
+	    dbgSexp(target);
 	    dbgSexp(target->parent);
 	    current = nextNodeFrom(current, target);
 	    //printSexp(stderr, "nextNodeFrom(current, target) is: ", current);
@@ -1660,7 +1699,7 @@ navigationToNode(DagNode *start, DagNode *target)
 	    else {
 		//printSexp(stderr, "Navigation to: ", current);
 		if (navigation = arriveNode(current)) {
-		    //dbgSexp(navigation);
+		    dbgSexp(navigation);
 		    vectorPush(results, (Object *) navigation);
 		}
 	    }

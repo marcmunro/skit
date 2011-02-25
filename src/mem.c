@@ -215,6 +215,7 @@ chunkInfo(void *chunk)
 	}
 	else {
 	    fprintf(stderr, "Chunk %p is not known to mem.c\n", chunk);
+	    memdebug("in chunkinfo(2)");
 	}
     }
     free(keystr);

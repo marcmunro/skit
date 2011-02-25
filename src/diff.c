@@ -17,21 +17,6 @@
 #include "skit_lib.h"
 #include "exceptions.h"
 
-// TODO: REMOVE THIS!
-static void
-checkKids(xmlNode *node)
-{
-    xmlNode *this = node->children;
-    while (this) {
-	if (this->parent != node) {
-	    dbgNode(node);
-	    dbgNode(this);
-	    RAISE(XML_PROCESSING_ERROR, newstr("XML IS FUCKED UP"));
-	}
-	this = this->next;
-    }
-}
-
 static void
 readDocs(Document **p_doc1, Document **p_doc2)
 {
@@ -86,7 +71,6 @@ eachDbobject(xmlNode *node, Object *obj, NodeOp fn)
 	    fn(this, obj);
 	}
 	if (this->children) {
-	    checkKids(this);
 	    eachDbobject(this->children, obj, fn);
 	}
 	this = getElement(this->next);
@@ -255,7 +239,7 @@ copyDeps(xmlNode *node)
 {
     xmlNode *this = getElement(node->children);
     xmlNode *result = NULL;
-    checkKids(this);
+
     while (this && !isDepNode(this)) {
 	this = getElement(this->next);
     }
@@ -271,8 +255,7 @@ copyContext(xmlNode *node)
 {
     xmlNode *this = getElement(node->children);
     xmlNode *result = NULL;
-    checkKids(this);
-    
+
     while (this && !streq("context", (char *) this->name)) {
 	this = getElement(this->next);
     }
@@ -313,12 +296,10 @@ getOldDeps(xmlNode *node1, xmlNode *node2)
     BEGIN {
 	/* Build hashes for fqn and pqn */
 	this = getElement(node2->children);
-	checkKids(node2);
 	while (this && !isDepNode(this)) {
 	    this = getElement(this->next);
 	}
 	if (this) {
-	    checkKids(this);
 	    this = getElement(this->children);
 	    while (this) {
 		if (qn = nodeAttribute(this, "fqn")) {
@@ -333,12 +314,10 @@ getOldDeps(xmlNode *node1, xmlNode *node2)
 	/* Check for items from node1, that are not present in the
 	 * hashes */
 	this = getElement(node1->children);
-	checkKids(node1);
 	while (this && !isDepNode(this)) {
 	    this = getElement(this->next);
 	}
 	if (this) {
-	    checkKids(this);
 	    this = getElement(this->children);
 	    while (this) {
 		if (qn = nodeAttribute(this, "fqn")) {
@@ -373,7 +352,7 @@ static xmlNode *
 skipToContents(xmlNode *node)
 {
     xmlNode *this = getElement(node->children);
-    checkKids(node);
+
     while (this && (isDepNode(this) || isContextNode(this))) { 
 	this = this->next;
     }
@@ -487,7 +466,6 @@ text_diff(xmlChar *str1, xmlChar *str2)
 
     diffs = xmlNewNode(NULL, BAD_CAST "diffsxxx");
     xmlAddChild(diffs, textnode);
-    checkKids(diffs);
     return diffs;
 }
 
@@ -499,8 +477,6 @@ check_text(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     xmlChar *str1  = text1? xmlNodeGetContent(text1): NULL;
     xmlChar *str2  = text2? xmlNodeGetContent(text2): NULL;
     xmlNode *diff = NULL;
-    checkKids(content1);
-    checkKids(content2);
     if (str1) {
 	if (str2)
 	{
@@ -541,7 +517,6 @@ diffElement(xmlNode *source, char *type, char *status, char *key)
 	(void) xmlNewProp(diff, (const xmlChar *) "key", key);
     }
     xmlAddChild(diff, xmlCopyNode(source, 1));
-    checkKids(diff);
     return diff;
 }
 
@@ -608,8 +583,6 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     Object *obj;
     Node *rulenode = nodeNew(rule);
     Cons results = {OBJ_CONS, (Object *) rulenode, NULL};
-    if (elem1) checkKids(elem1);
-    if (elem2) checkKids(elem2);
 
     BEGIN {
 	/* Build a hash of file2 elements, that we can match against
@@ -653,7 +626,6 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 		prev = getLastKid(diff);
 		prev->next = elementDiffs(elem1, elem2, 
 					     getElement(rule->children));
-		checkKids(rule);
 	    }
 	    else {
 		diff = diffElement(elem1, elem_type->value, 
@@ -753,7 +725,6 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 
     if (from2) {
 	copy = xmlCopyNode(from2, 2);
-	checkKids(from2);
 	from2 = getElement(from2->children);
 	while (from2 && !(streq("dbobject", (char *) from2->name))) {
 	    new = xmlCopyNode(from2, 1);
@@ -763,7 +734,6 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 	if (from2) {
 	    /* We must be at a dbobject.  This is where we need to
 	     * recurse. */
-	    checkKids(from1);
 	    if (from1) {
 		from1 = getElement(from1->children);
 	    }
@@ -773,7 +743,6 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
 	if (kids) {
 	    xmlAddChildList(copy, kids);
 	}
-	checkKids(copy);
     }
     else {
 	/* Should not be able to reach this point as node2 must
@@ -792,7 +761,6 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
     xmlNode *new_dbobj = xmlCopyNode(copy_from, 2);
     xmlNode *deps = copyDeps(copy_from);
     xmlNode *context = copyContext(copy_from);
-    xmlNode *this;
     xmlNode *contents1 = NULL;
     xmlNode *contents2 = NULL;
     xmlNode *kids = NULL;
@@ -817,11 +785,8 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 		if (!deps) {
 		    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
 		}
-		if (this = deps->children) {
-		    while (this->next) {
-			this = this->next;
-		    }
-		    this->next = old_deps;
+		if (deps->children) {
+		    xmlAddPrevSibling(deps->children, old_deps);
 		}
 		else {
 		    xmlAddChildList(deps, old_deps);
