@@ -1238,8 +1238,8 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);
     //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
     ADD_TEST(tc_core, generate2); // during development of new db objects
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, difflist);
     ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
     //ADD_TEST(tc_core, print2);

@@ -43,7 +43,6 @@ tuplestackPush(Object *tuple)
     tuple_sym->svalue = tuple;  /* We do this directly so that we don't
 				 * try to free the previous contents. */
 
-    //fprintf(stderr, "TUPLEPUSH: tuple = %p\n", tuple);
     (void) consPush((Cons **) &(tuplestack->svalue),  tuple);
 }
 
@@ -61,7 +60,6 @@ tuplestackPop()
     }
     tuple_sym->svalue = tuple;  /* We do this directly so that we don't
 				 * try to free the previous contents. */
-    //fprintf(stderr, "TUPLEPOP: tuple = %p\n", tuple);
 }
 
 static Object *
@@ -107,9 +105,6 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
     xsltTransformContextPtr ctxt;
     const char *params[1] = {NULL};
 
-    //dbgSexp(stylesheet);
-    //dbgSexp(src);
-    //fprintf(stderr, "===============DONE==============\n");
     if ((!stylesheet->stylesheet) && stylesheet->doc) {
 	stylesheet->stylesheet = xsltParseStylesheetDoc(stylesheet->doc);
 	stylesheet->doc = NULL;
@@ -120,7 +115,6 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
 	      newstr("Unable to find or build stylesheet"));
     }
 
-
     ctxt = xsltNewTransformContext(stylesheet->stylesheet, src->doc);
     registerXSLTFunctions(ctxt);
 
@@ -129,7 +123,6 @@ applyXSLStylesheet(Document *src, Document *stylesheet)
 					 NULL, ctxt)) {
 	xsltFreeTransformContext(ctxt);
 	doc = documentNew(result, NULL);
-	//dbgSexp(doc);
 	return doc;
     }
     return NULL;
@@ -511,25 +504,15 @@ iterate(Object *collection, String *filter,
 	    }
 	    
 	    BEGIN {
-		//char *tmp = objectSexp(tuple);
-		//if (streq(tmp, "'regress=C/regress'")) {
-		//    xmlfiledebug(tuple);
-		//}
-		//skfree(tmp);
-		//fprintf(stderr, "TUPLE: %p\n", tuple);
-		//printSexp(stderr, "TUPLE: ", tuple);
 		if (do_it) {
 		    child = processChildren(template_node, parent_node, 
 					    depth + 1);
 		    if (!first_child) {
 			first_child = child;
 		    }
-		    //fprintf(stderr, "TUPLE2: %p\n", tuple);
-		    //printSexp(stderr, "TUPLE2: ", tuple);
 		}
 	    }
 	    EXCEPTION(ex);
-	    //fprintf(stderr, "EXCEPTION ITERATE(1)\n");
 	    FINALLY {
 		objectFree(tuple, TRUE);
 		tuplestackPop();
@@ -545,7 +528,6 @@ iterate(Object *collection, String *filter,
 	}
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION ITERATE(2)\n");
     FINALLY {
 	// TODO: This direct handling of symbol svalues below is dumb.
 	// See if this can be handled better by dropSymbolScope 
@@ -604,7 +586,6 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 	params = getExprAttribute(template_node, "params");
 	cursor = sqlExec(conn, sqltext, params);
 	
-	//printSexp(stderr, "CURSOR: ", cursor);
 	if (varname) {
 	    sym = symbolNew(varname->value);
 	    setScopeForSymbol(sym);
@@ -676,7 +657,6 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION FOREACH\n");
     FINALLY {
 	objectFree((Object *) fromname, TRUE);
 	objectFree((Object *) filter, TRUE);
@@ -712,7 +692,6 @@ execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 	}
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION EXECIF\n");
     FINALLY {
 	objectFree((Object *) expr, TRUE);
     }
@@ -729,7 +708,6 @@ execLet(xmlNode *template_node, xmlNode *parent_node, int depth)
 	result = processChildren(template_node, parent_node, depth + 1);
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION LET\n");
     FINALLY {
 	dropSymbolScope();
     }
@@ -837,7 +815,6 @@ getParam(xmlNode *template_node, xmlNode *cur_node)
 	sym->svalue = value;
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION GETPARAM\n");
     FINALLY {
 	objectFree((Object *) name, TRUE);
 	objectFree((Object *) dflt, TRUE);
@@ -901,7 +878,6 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 	result = processRemaining(function_start, parent_node, depth + 1);
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION EXEC FUNC\n");
     FINALLY {
 	dropSymbolScope();
     }
@@ -940,8 +916,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    root_node = processChildren(template_node, NULL, depth + 1);
 	    source_doc = docForNode(root_node);
 	}
-	//dbgSexp(source_doc);
-	//dbgSexp(stylesheet);
+
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	if (!result_doc) {
 	       RAISE(XML_PROCESSING_ERROR,
@@ -1121,7 +1096,6 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docStackPop();
 	}
 	sorted = gensort(source_doc);
-	dbgSexp(sorted);
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
@@ -1819,7 +1793,6 @@ docGatherContents(Document *doc, String *filename)
     xmlNode *node = xmlDocGetRootElement(doc->doc);
     (void) processGatherNodes(node, filename->value);
     reIndentDoc(doc);
-    //dbgSexp(doc);
 }
 
 static xmlNode *
@@ -1950,8 +1923,7 @@ exec(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    root_node = processChildren(template_node, NULL, depth + 1);
 	    source_doc = docForNode(root_node);
 	}
-	//dbgSexp(source_doc);
-	//dbgSexp(stylesheet);
+
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	if (!result_doc) {
 	    RAISE(XML_PROCESSING_ERROR,
@@ -1992,8 +1964,6 @@ execXmlNodeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     initSkitProcessors();
     if (ref = (FnReference *) hashGet(skit_processors, (Object *) name)) {
 	fn = (xmlFn *) ref->fn;
-	//printSexp(stderr, "ACTUAL:", debug_obj);
-	//printSexp(stderr, "EXECUTING: ", name);
 	objectFree((Object *) name, TRUE);
 	return (*fn)(template_node, parent_node, depth);
     }
@@ -2033,7 +2003,6 @@ processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    processChildren(template_node, this, depth + 1);
 	}
 	EXCEPTION(ex) {
-	    //fprintf(stderr, "EXCEPTION PROCESS NODE\n");
 	    if (this) xmlFreeNode(this);
 	    RAISE();
 	}
@@ -2082,7 +2051,6 @@ nodeLocation(xmlNode *node)
     char *filename;
     int line_no = node->line;
     //(void) getNodeURI(node);
-    //fprintf(stderr, "ZZZ\n");
 
     if (cons) {
 	filename = ((String *) cons->car)->value;
@@ -2119,7 +2087,6 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
 	char *location = nodeLocation(template_node);
 	char *oldtext = ex->text;
 	char *newtext = newstr("%s\nat %s", oldtext, location);
-	//fprintf(stderr, "EXCEPTION PROCESS ELEMENT\n");
 	ex->text = newtext;
 	skfree(location);
 	skfree(oldtext);
