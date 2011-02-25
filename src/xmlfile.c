@@ -1100,6 +1100,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
 	treeFromVector(root, sorted);
+	dbgSexp(sorted);
 	result_doc = documentNew(xmldoc, NULL);
     }
     EXCEPTION(ex);

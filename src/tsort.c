@@ -224,7 +224,7 @@ addParentForNode(Cons *node_entry, Object *dagnodes)
 {
     DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
-    String *fqn;
+    String *fqn = NULL;
 
     if (xmlnode) {
 	BEGIN {
@@ -234,6 +234,12 @@ addParentForNode(Cons *node_entry, Object *dagnodes)
 		break;
 	    case DROP_NODE:
 		fqn = getPrefixedAttribute(xmlnode, "drop", "fqn");
+		break;
+	    case DIFF_NODE:
+		fqn = getPrefixedAttribute(xmlnode, "diff", "fqn");
+		break;
+	    case EXISTS_NODE:
+		fqn = getPrefixedAttribute(xmlnode, "exists", "fqn");
 		break;
 	    default:
 		RAISE(NOT_IMPLEMENTED_ERROR,

@@ -738,49 +738,6 @@ static xmlNode *processDiffs(xmlNode *node1,  xmlNode *node2,
 /* Copy the contents of a dbobject, and then recurse into other
  * objects. */
 static xmlNode *
-copyAndRecurseOld(xmlNode *node1, xmlNode *node2, 
-	       Hash *rules, boolean *has_diffs,
-               boolean is_gone)
-{
-    xmlNode *from1 = getElement(node1);
-    xmlNode *from2 = getElement(node2);
-    xmlNode *copy;
-    xmlNode *new;
-    xmlNode *prev = NULL;
-    xmlNode *diffs;
-    *has_diffs = FALSE;
-
-    if (from2) {
-	copy = xmlCopyNode(from2, 2);
-	checkKids(from2);
-	from2 = getElement(from2->children);
-	while (from2 && !(streq("dbobject", (char *) from2->name))) {
-	    new = xmlCopyNode(from2, 1);
-	    addSibling(copy->children, prev, new);
-	    checkKids(copy);
-	    from2 = getElement(from2->next);
-	}
-	if (from2) {
-	    /* We must be at a dbobject.  This is where we need to
-	     * recurse. */
-	    checkKids(from1);
-	    if (from1) {
-		from1 = getElement(from1->children);
-	    }
-	    diffs = processDiffs(from1, from2, rules, has_diffs, is_gone);
-	    addSibling(copy->children, prev, diffs);
-	    //checkKids(copy);
-	}
-    }
-    else {
-	/* Should not be able to reach this point as node2 must
-	 * always be provided. */
-	RAISE(GENERAL_ERROR, newstr("diff coding error"));
-    }
-    return copy;
-}
-
-static xmlNode *
 copyAndRecurse(xmlNode *node1, xmlNode *node2, 
 	       Hash *rules, boolean *has_diffs,
                boolean is_gone)
@@ -1059,7 +1016,7 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     objectFree((Object *) time2, TRUE);
     diffs = processDiffs(dump1->children, dump2->children, rules, 
 			 &has_diffs, FALSE);
-    xmlAddChild(result, diffs);
+    xmlAddChildList(result, diffs);
     return result;
 }
 
