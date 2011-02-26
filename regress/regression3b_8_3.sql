@@ -15,6 +15,10 @@ create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "wibble" valid until '2007-03-01 00:00:00-08';
 alter role "wibble" noinherit;
+alter role "regress" with superuser;
+alter role "regress" set client_min_messages = 'warning';
+
+create role "keep2";
 
 \set tbs3dir '''':home'/regress/REGRESSDB/tbs/tbs3'''
 create tablespace "tbs3" owner "regress"

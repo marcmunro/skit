@@ -133,7 +133,8 @@ regression_test3: skit drop_regress_db \
 	 regress/regress_run.sh 3
 
 
-regress: skit regress_cluster regression_test1 regression_test2
+regress: skit regress_cluster regression_test1 regression_test2 \
+	     regression_test3
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 

@@ -14,11 +14,19 @@
 
   <xsl:template match="dbobject/cluster">
     <xsl:if test="../@action='build'">
-      <print>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</print>
+      <print>
+	<xsl:text>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
+	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
+	<xsl:text>set escape_string_warning = off;&#x0A;&#x0A;</xsl:text>
+      </print>
     </xsl:if>	
 
     <xsl:if test="../@action='arrive'">
-      <print>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</print>
+      <print>
+	<xsl:text>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
+	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
+	<xsl:text>set escape_string_warning = off;&#x0A;&#x0A;</xsl:text>
+      </print>
     </xsl:if>	
 
     <xsl:if test="../@action='depart'">

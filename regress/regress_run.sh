@@ -233,7 +233,7 @@ regression_test3()
 	scratch/regressdb_diff3a2b.sql
     execdiff scratch/regressdb_diff3a2b.sql
 
-    echo ...checking db equivalence to target... 1>&2
+    echo "...checking db equivalence to target..." 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...
     diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp
@@ -244,7 +244,7 @@ regression_test3()
 	scratch/regressdb_diff3b2a.sql
     execdiff scratch/regressdb_diff3b2a.sql
 
-    echo ...checking db equivalence to source ... 1>&2
+    echo "...checking db equivalence to source ..." 1>&2
     dump_db regressdb scratch/regressdb_test3a2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3a2.gdmp ...
     diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp

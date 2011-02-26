@@ -992,8 +992,10 @@ END_TEST
 
 START_TEST(difflist)
 {
-    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
-		    "sz3", "--list", "-g"};
+    char *args[] = {"./skit", "-t", "diff.xml", 
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
+		    "--list", "-g"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1026,8 +1028,9 @@ END_TEST
 
 START_TEST(diffgen)
 {
-    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
-		    "sz3", "--generate"};
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    "sz", "sz3",
+		    "--generate"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1064,8 +1067,10 @@ START_TEST(diff)
     //char *args[] = {"./skit", "-t", "diff.xml", "zz", 
     //		    "zz3"};
     // Smaller diff with these params.
-    char *args[] = {"./skit", "-t", "diff.xml", "sz", 
-		    "sz3", "--print", "--full"};
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
+		    "--print", "--full"};
     Document *doc;
     char *bt;
 

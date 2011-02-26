@@ -3,18 +3,18 @@ psql -d postgres -v home=`pwd` <<'CLUSTEREOF'
 create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
 alter role "regress" valid until 'infinity';
-alter role "regress" noinherit;
-alter role "regress" with superuser;
-alter role "regress" set client_min_messages = 'warning';
+alter role "regress" set client_min_messages = 'notice';
 
 create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
-alter role "wibble" valid until '2007-03-01 00:00:00-08';
+alter role "wibble" valid until '2007-03-02 00:00:00-08';
 alter role "wibble" noinherit;
 
 create role "keep" with login;
 alter role "keep" password 'md5a6e3dfe729e3efdf117eeb1059051f77';
 alter role "keep" noinherit;
+
+create role "lose" with login;
 
 \set tbs3dir '''':home'/regress/REGRESSDB/tbs/tbs3'''
 create tablespace "tbs3" owner "regress"

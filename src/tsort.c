@@ -221,7 +221,7 @@ getPrefixedAttribute(xmlNodePtr node,
 }
 
 static DagNode *
-findMatchingParent(Hash *dagnodes, char *fqn, ...)
+findMatchingNode(Hash *dagnodes, String *fqn, ...)
 {
     va_list args;
     char *prefix;
@@ -230,8 +230,8 @@ findMatchingParent(Hash *dagnodes, char *fqn, ...)
 
     va_start(args, fqn);
     while (prefix = va_arg(args, char *)) {
-	key = stringNewByRef(newstr("%s.%s", prefix, fqn));
-	result = hashGet(dagnodes, (Object *) key);
+	key = stringNewByRef(newstr("%s.%s", prefix, fqn->value));
+	result = (DagNode *) hashGet(dagnodes, (Object *) key);
 	objectFree((Object *) key, TRUE);
 	if (result) {
 	    break;
@@ -246,22 +246,22 @@ addParentForNode(Cons *node_entry, Object *dagnodes)
 {
     DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
-    xmlChar *fqn = NULL;
+    String *fqn = NULL;
     DagNode *parent;
     if (xmlnode) {
 	BEGIN {
-	    fqn  = xmlGetProp(xmlnode, "fqn");
+	    fqn  = nodeAttribute(xmlnode, "fqn");
 
 	    switch (node->build_type) {
 	    case BUILD_NODE:
 	    case DIFF_NODE:
 	    case EXISTS_NODE:
-		parent = findMatchingParent((Hash *) dagnodes, fqn, 
-					    "build", "exists", "diff", NULL);
+		parent = findMatchingNode((Hash *) dagnodes, fqn, 
+					  "build", "exists", "diff", NULL);
 		break;
 	    case DROP_NODE:
-		parent = findMatchingParent((Hash *) dagnodes, fqn, 
-					    "drop", "exists", "diff", NULL);
+		parent = findMatchingNode((Hash *) dagnodes, fqn, 
+					  "drop", "exists", "diff", NULL);
 		break;
 	    default:
 		RAISE(NOT_IMPLEMENTED_ERROR,
@@ -279,9 +279,7 @@ addParentForNode(Cons *node_entry, Object *dagnodes)
 	}
 	EXCEPTION(ex);
 	FINALLY {
-	    if (fqn) {
-		xmlFree(fqn);
-	    }
+	    objectFree((Object *) fqn, TRUE);
 	}
 	END;
     }
@@ -384,8 +382,8 @@ static void
 addDiffDependency(DagNode *node, DagNode *depnode, boolean old)
 {
     if (old) {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("addDiffDependency not implemented for old deps"));
+	//RAISE(NOT_IMPLEMENTED_ERROR, 
+	//      newstr("addDiffDependency not implemented for old deps"));
     }
     else {
 	switch (depnode->build_type) {
@@ -559,26 +557,21 @@ static DagNode *
 getDepForDiff(xmlNode *dep, Cons *hashes, boolean is_old)
 {
     String *fqn;
-    Object *result = NULL;
+    Hash *dagnodes = (Hash *) hashes->car;
+    DagNode *result = NULL;
     String *key;
 
     if (fqn = nodeAttribute(dep, "fqn")) {
 	/* Now get an appropriate dependency record */
-	key = stringNewByRef(newstr("exists.%s", fqn->value));
-	if (result = hashGet((Hash *) hashes->car, (Object *) key)) {
-	    objectFree((Object *) key, TRUE);
-	    objectFree((Object *) fqn, TRUE);
-	    /* No need to record a dependency against an exists node */
-	    return NULL;
-	}
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("getDepForDiff non-exists nodes not implemented"));
+	result = findMatchingNode(dagnodes, fqn, 
+				  "build", "exists", "diff", NULL);
     }
     else {
 	RAISE(NOT_IMPLEMENTED_ERROR, 
 	      newstr("getDepForDiff pqn handling not implemented"));
     }
-    return (DagNode *) result;
+    objectFree((Object *) fqn, TRUE);
+    return result;
 }
 
 /* These are the rules for diff dependencies:     
@@ -1089,21 +1082,33 @@ static Object *
 visitNodeInHash(Cons *entry, Object *allnodes)
 {
     DagNode *node = (DagNode *) entry->cdr;
-    Cons *result;
+    Cons *cons;
     char *deps;
     char *errmsg;
-    
-    if (result = visitNode(node, (Hash *) allnodes)) {
-	deps = objectSexp((Object *) result);
-	objectFree((Object *) result, TRUE);
+    int i;
+
+    if (cons= visitNode(node, (Hash *) allnodes)) {
+	deps = objectSexp((Object *) cons);
+	objectFree((Object *) cons, TRUE);
 	errmsg = newstr("Cyclic dependency in %s", deps);
 	skfree(deps);
 	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
     }
 
+    /* Now replace each list in the dependencies with the single
+     * dependency that makes the DAG. */
+    //dbgSexp(node->dependencies);
+    /*for (i = 0; i < node->dependencies->elems; i++) {
+	cons = (Cons *) node->dependencies->contents->vector[i];
+	node->dependencies->contents->vector[i] = cons->car;
+	objectFree((Object *) cons, FALSE);
+	}*/
+
     return (Object *) node;
 }
 
+/* Concerts the almost DAG into a DAG.  It resolves cyclic dependencies,
+ * and replaces lists of dependencies with single dependencies */
 static void
 check_dag(Hash *allnodes)
 {
@@ -1388,6 +1393,7 @@ gensort(Document *doc)
 	dagnodes = dagnodesFromDoc(doc);
 	pqnhash = makePqnHash(doc);
 	identifyDependencies(doc, dagnodes, pqnhash);
+	//showAllDeps(dagnodes);
 	check_dag(dagnodes);
 	//showAllDeps(dagnodes);
 	if (simple_sort) {
@@ -1683,23 +1689,15 @@ navigationToNode(DagNode *start, DagNode *target)
 	}
 	/* Now navigate from common root towards target */
 	current = common_root;
-	fprintf(stderr, "DEPARTURES ");
-	dbgSexp(results);
 	while (!nodeEq(current, target)) {
-	    dbgSexp(current);
-	    dbgSexp(target);
-	    dbgSexp(target->parent);
 	    current = nextNodeFrom(current, target);
-	    //printSexp(stderr, "nextNodeFrom(current, target) is: ", current);
 	    if ((current == target) &&
 		(current->build_type == BUILD_NODE)) {
 		/* We don't need to arrive at a build node as the build
 		 * must perform the arrival for us. */
 	    }
 	    else {
-		//printSexp(stderr, "Navigation to: ", current);
 		if (navigation = arriveNode(current)) {
-		    dbgSexp(navigation);
 		    vectorPush(results, (Object *) navigation);
 		}
 	    }
