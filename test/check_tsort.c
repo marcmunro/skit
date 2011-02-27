@@ -77,6 +77,7 @@ test_build_order(Vector *results, char *list_str)
 	objectFree((Object *) name, TRUE);
 	objectFree(tmp, FALSE);
     }
+    return NULL;
 }
 
 static void

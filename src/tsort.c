@@ -344,16 +344,12 @@ addDependentsForNode(Cons *node_entry, Object *param)
     Hash *allnodes = (Hash *) param;
     Vector *dependencies = node->dependencies;
     int i;
-    Cons *deps;
-    DagNode *dep;
+    Object *deps;
 
     if (dependencies) {
 	for (i = 0; i < dependencies->elems; i++) {
-	    deps = (Cons *) dependencies->contents->vector[i];
-	    while (deps) {
-		addDependent(node, (DagNode *) dereference(deps->car));
-		deps = (Cons *) deps->cdr;
-	    }
+	    deps = dependencies->contents->vector[i];
+	    addDependent(node, (DagNode *) dereference(deps));
 	}
     }
     return (Object *) node;
@@ -738,48 +734,17 @@ get_build_candidates(Hash *nodelist)
     return results;
 }
 
-static Cons *
-removeDagnodeFromList(Cons *list, DagNode *node)
-{
-    Cons *prev = NULL;
-    Cons *cur = list;
-    Cons *result;
-
-    while (cur) {
-	if ((DagNode *) dereference(cur->car) == node) {
-	    if (prev) {
-		prev->cdr = cur->cdr;
-		result = list;
-	    }
-	    else {
-		result = (Cons *) cur->cdr;
-	    }
-	    objectFree(cur->car, FALSE);
-	    objectFree((Object *) cur, FALSE);
-	    return result;
-	}
-	prev = cur;
-	cur = (Cons *) cur->cdr;
-    }
-    return list;
-}
-
 static void
 removeDependency(DagNode *from, DagNode *dependency)
 {
     int i;
-    Cons *deplist;
-    Object *obj;
     DagNode *dep;
 
     if (from->dependencies) {
 	for (i = 0; i < from->dependencies->elems; i++) {
-	    deplist = (Cons *) from->dependencies->contents->vector[i];
-	    deplist = removeDagnodeFromList(deplist, dependency);
-	    if (deplist) {
-		from->dependencies->contents->vector[i] = (Object *) deplist;
-	    }
-	    else {
+	    dep = (DagNode *) from->dependencies->contents->vector[i];
+	    if (dereference((Object *) dep) == (Object *) dependency) {
+		objectFree((Object *) dep, TRUE);
 		(void) vectorRemove(from->dependencies, i);
 	    }
 	}
@@ -896,7 +861,7 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
 }
 
 static void
-copyDeps(DagNode *target, DagNode *src)
+copyDeps(DagNode *target, DagNode *src, DagNode *do_not_copy)
 {
     DagNode *ignore = src->cur_dep;
     Cons *src_cons;
@@ -910,12 +875,13 @@ copyDeps(DagNode *target, DagNode *src)
 	    target_cons = NULL;
 	    while (src_cons) {
 		src_dagnode = (DagNode *) dereference(src_cons->car);
-		target_cons = consNew((Object *) objRefNew(
-					  (Object *) src_dagnode), 
-				      (Object *) target_cons); 
+		if (src_dagnode != do_not_copy) {
+		    target_cons = consNew((Object *) objRefNew(
+					      (Object *) src_dagnode), 
+					  (Object *) target_cons); 
+		}
 		src_cons = (Cons *) src_cons->cdr;
 	    }
-
 	    if (target_cons) {
 		addDependency(target, target_cons);
 	    }
@@ -943,8 +909,7 @@ attemptCycleBreak(
 	 */
 
 	breaker = makeBreakerNode(cycle_node, breaker_type);
-	copyDeps(breaker, cycle_node);
-	removeDependency(breaker, cur_node);
+	copyDeps(breaker, cycle_node, cur_node);
 	xmlSetProp(cycle_node->dbobject, "cycle_breaker_fqn", 
 		   breaker->fqn->value);
 	objectFree((Object *) breaker_type, TRUE);
@@ -1085,7 +1050,6 @@ visitNodeInHash(Cons *entry, Object *allnodes)
     Cons *cons;
     char *deps;
     char *errmsg;
-    int i;
 
     if (cons= visitNode(node, (Hash *) allnodes)) {
 	deps = objectSexp((Object *) cons);
@@ -1095,24 +1059,36 @@ visitNodeInHash(Cons *entry, Object *allnodes)
 	RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg);
     }
 
-    /* Now replace each list in the dependencies with the single
-     * dependency that makes the DAG. */
-    //dbgSexp(node->dependencies);
-    /*for (i = 0; i < node->dependencies->elems; i++) {
-	cons = (Cons *) node->dependencies->contents->vector[i];
-	node->dependencies->contents->vector[i] = cons->car;
-	objectFree((Object *) cons, FALSE);
-	}*/
-
     return (Object *) node;
 }
 
-/* Concerts the almost DAG into a DAG.  It resolves cyclic dependencies,
+static Object *
+depConsToDagNode(Cons *entry, Object *allnodes)
+{
+    DagNode *node = (DagNode *) entry->cdr;
+    Cons *cons;
+    int i;
+    /* Now replace each list in the dependencies with the single
+     * dependency that makes the DAG. */
+    //return (Object *) node;
+    if (node->dependencies) {
+	for (i = 0; i < node->dependencies->elems; i++) {
+	    cons = (Cons *) node->dependencies->contents->vector[i];
+	    node->dependencies->contents->vector[i] = cons->car;
+	    objectFree((Object *) cons, FALSE);
+	}
+    }
+    return (Object *) node;
+}
+
+
+/* Converts the almost DAG into a DAG.  It resolves cyclic dependencies,
  * and replaces lists of dependencies with single dependencies */
 static void
 check_dag(Hash *allnodes)
 {
     hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
+    hashEach(allnodes, &depConsToDagNode, (Object *) allnodes);
 }
 
 static Object *
@@ -1395,6 +1371,7 @@ gensort(Document *doc)
 	identifyDependencies(doc, dagnodes, pqnhash);
 	//showAllDeps(dagnodes);
 	check_dag(dagnodes);
+	//fprintf(stderr, "\n\nXX\n\n");
 	//showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
