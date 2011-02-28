@@ -308,6 +308,7 @@ extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
 extern Object *consNext(Cons *list, Object **p_placeholder);
 extern Object *consAppend(Cons *list, Object *item);
+extern Cons *consConcat(Cons *list, Cons *list2);
 extern boolean checkCons(Cons *cons, void *chunk);
 
 // object.c

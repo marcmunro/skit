@@ -408,6 +408,19 @@ consAppend(Cons *list, Object *item)
 	prev = next;
     }
     prev->cdr = (Object *) new;
+    return item;
+}
+
+Cons *
+consConcat(Cons *list, Cons *list2)
+{
+    Cons *prev = list;
+    Cons *next;
+    while (next = (Cons *) prev->cdr) {
+	prev = next;
+    }
+    prev->cdr = (Object *) list2;
+    return list;
 }
 
 boolean 

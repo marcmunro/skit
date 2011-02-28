@@ -903,6 +903,25 @@ START_TEST(concat)
 }
 END_TEST
 
+START_TEST(cons_concat)
+{
+    Cons *list1 = (Cons *) evalSexp("(1 2 3)");
+    Cons *list2 = (Cons *) evalSexp("(4 5 6)");
+    Cons *result = consConcat(list1, list2);
+    char *resultstr = objectSexp((Object *) result);
+    char *tmp;
+
+    initBuiltInSymbols();
+
+    fail_unless(streq(resultstr, "(1 2 3 4 5 6)"),
+		tmp = newstr("consConcat: incorrect concatenation result: %s", 
+			     resultstr));
+    skfree(tmp);
+    skfree(resultstr);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 Suite *
 objects_suite(void)
 {
@@ -957,6 +976,7 @@ objects_suite(void)
     ADD_TEST(tc_core, vectorremove);
     ADD_TEST(tc_core, vectorsort);
     ADD_TEST(tc_core, concat);
+    ADD_TEST(tc_core, cons_concat);
     suite_add_tcase(s, tc_core);
 
     return s;

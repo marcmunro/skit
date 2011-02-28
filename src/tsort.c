@@ -317,12 +317,6 @@ findByPqn(Hash *nodes_by_pqn, String *pqn, DagNodeBuildType build_type)
 	      newstr("findMatchingNode for build type %d is not implemented",
 		     build_type));
     }
-    if (!result) {
-	dbgSexp(pqn);
-	RAISE(TSORT_ERROR, newstr("No match for pqn: %s", pqn->value));
-	//dbgSexp(nodes_by_pqn);
-    }
-    dbgSexp(result);
     return NULL;
 }
 
@@ -732,7 +726,7 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
     xmlNode *depset_node;
     xmlNode *dep_node;
     Cons *deplist;
-    Cons *prev = NULL;
+    Cons *next;
 
     switch (node->build_type) {
     case BUILD_NODE: return addDepsForNode(node_entry, hashes);
@@ -766,19 +760,22 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 		RAISE(TSORT_ERROR, errstr);
 	    }
 	}
-/*
+
 	for (depset_node = findFirstChild(deps_node, "dependency-set");
 	     depset_node; 
 	     depset_node = findNextSibling(dep_node, "dependency-set")) 
 	{
-	    deplist = consNew(NULL, NULL);
+	    deplist = NULL;
 	    for (dep_node = findFirstChild(deps_node, "dependency");
 		 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	    {
-		deplist = addDepToNode(node, dep_node, (Cons *) hashes);
+		if (next = depsFromNode(node, dep_node, (Cons *) hashes)) {
+		    if (deplist) {
+			
+		    }
+		}
 	    }
 	}
-*/
     }
 
     return (Object *) node;
