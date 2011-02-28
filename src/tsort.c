@@ -1,3 +1,30 @@
+/* In process of refactoring pqn handling
+ * which is within refactoring of figuring out dependencies
+ * (also todo: remove the use of cons for single deps)
+ * have discovered that not all pqns being referenced are existant - 
+ * I suspect this is a bug in the pqn generation code.)
+ * Next:
+ *  1) fix pqn generation bug so regression_tests 1 and 2 pass
+ *
+ *  I think the solution is as follows:
+ *   It is permissable for a pqn not to be met but not for all pqns in a
+ *   dependency set.  So add the concept of a dependency-set which can
+ *   be a container for a set of dependencies.  At least one dependency in 
+ *   a dependency set must be found.  Dependency sets may apply to both
+ *   fqns and pqns.  Note that this allows fqns to have lists just as
+ *   pqns do, so we continue to use cons in all deps until check_dag has
+ *   been run.  This eliminates item 6 below, but check for anywhere we
+ *   have started to de-cons things, and remove all de-consing.
+ *
+ *  2) fix data for units tests to match whatever was discovered
+ *     for item 1.
+ *  3) complete refactoring of pqn handling
+ *  4) complete refactoring of dependency handling
+ *  5) any other todos in this file
+ *  6) remove use of cons where it is not needed.
+ *  7) Update copyright notice for 2011
+ */
+
 /**
  * @file   tsort.c
  * \code
@@ -47,8 +74,6 @@ dagnodesToHash(Object *this, Object *hash)
     DagNodeBuildType build_type;
     boolean both = FALSE;
     if (streq(node->node->name, "dbobject")) {
-	//dbgNode(node->node);
-	//dbgNode(node->node->parent);
 	diff = nodeAttribute(node->node, "diff");
 
 	if (diff) {
@@ -121,46 +146,54 @@ dagnodesFromDoc(Document *doc)
 }
 
 static Object *
-pqnsToHash(Object *this, Object *pqnhash)
+addPqnEntry(Cons *node_entry, Object *param)
 {
-    Node *node = (Node *) this;
-    xmlChar *pqn;
-    xmlChar *fqn;
-    String *key;
-    String *value;
-    Cons *list;
-    Cons *prev;
-    if (streq(node->node->name, "dbobject")) {
-	if (pqn  = xmlGetProp(node->node, "pqn")) {
-	    fqn = xmlGetProp(((Node *)node)->node, "fqn");
-	    key = stringNew(pqn);
-	    value = stringNew(fqn);
-	    xmlFree(pqn);
-	    xmlFree(fqn);
-	    list = consNew((Object *) value, NULL);
-	    if (prev = (Cons *) hashAdd((Hash *) pqnhash, 
-					(Object *) key, (Object *) list)) {
-		/* Append previous hash contents to list */
-		list->cdr = (Object *) prev;
-	    }
+    DagNode *node = (DagNode *) node_entry->cdr;
+    Hash *pqnhash = (Hash *) param;
+    xmlChar *base_pqn  = xmlGetProp(node->dbobject, "pqn");
+    String *pqn;
+    Cons *entry;
+
+    if (base_pqn) {
+	switch (node->build_type) {
+	case EXISTS_NODE:
+	    pqn = stringNewByRef(newstr("exists.%s", base_pqn));
+	    break;
+	case BUILD_NODE:
+	    pqn = stringNewByRef(newstr("build.%s", base_pqn));
+	    break;
+	case DROP_NODE:
+	    pqn = stringNewByRef(newstr("drop.%s", base_pqn));
+	    break;
+	case DIFF_NODE:
+	    pqn = stringNewByRef(newstr("diff.%s", base_pqn));
+	    break;
+	default:
+	    RAISE(TSORT_ERROR,
+		  newstr("Unexpected build_type for dagnode %s",
+			 node->fqn->value));
 	}
+
+	if (entry = (Cons *) hashGet(pqnhash, (Object *) pqn)) {
+	    dbgSexp(pqnhash);
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		      newstr("We have two nodes with matching pqns.  "
+			  "Add the new node to the match"));
+	}
+	else {
+	    entry = consNew((Object *) objRefNew((Object *) node), NULL);
+	    hashAdd(pqnhash, (Object *) pqn, (Object *) entry);
+	}
+	xmlFree(base_pqn);
     }
-    return NULL;
+    return (Object *) node;
 }
 
 static Hash *
-makePqnHash(Document *doc)
+makePqnHash(Hash *allnodes)
 {
     Hash *pqnhash = hashNew(TRUE);
-    
-    BEGIN {
-	(void) xmlTraverse(doc->doc->children, &pqnsToHash, 
-			   (Object *) pqnhash);
-    }
-    EXCEPTION(ex) {
-	objectFree((Object *) pqnhash, TRUE);
-    }
-    END;
+    hashEach(allnodes, &addPqnEntry, (Object *) pqnhash);
     return pqnhash;
 }
 
@@ -220,18 +253,18 @@ getPrefixedAttribute(xmlNodePtr node,
     return NULL;
 }
 
-static DagNode *
-findMatchingNode(Hash *dagnodes, String *fqn, ...)
+static Object *
+findNodeFromOptions(Hash *allnodes, String *fqn, ...)
 {
     va_list args;
     char *prefix;
     String *key;
-    DagNode *result;
+    Object *result = NULL;
 
     va_start(args, fqn);
     while (prefix = va_arg(args, char *)) {
 	key = stringNewByRef(newstr("%s.%s", prefix, fqn->value));
-	result = (DagNode *) hashGet(dagnodes, (Object *) key);
+	result = hashGet(allnodes, (Object *) key);
 	objectFree((Object *) key, TRUE);
 	if (result) {
 	    break;
@@ -241,41 +274,73 @@ findMatchingNode(Hash *dagnodes, String *fqn, ...)
     return result;
 }
 
+static DagNode *
+findByFqn(Hash *allnodes, String *fqn, DagNodeBuildType build_type)
+{
+    switch (build_type) {
+    case BUILD_NODE:
+    case DIFF_NODE:
+    case EXISTS_NODE:
+	return (DagNode *) findNodeFromOptions(allnodes, fqn, 
+					       "build", "exists", "diff", NULL);
+    case DROP_NODE:
+	return (DagNode *) findNodeFromOptions(allnodes, fqn, 
+					       "drop", "exists", "diff", NULL);
+    default:
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("findMatchingNode for build type %d is not implemented",
+		     build_type));
+    }
+}
+
+
+// TODO: Refactor findbyfqn and findbypqn to combine them into a single
+// function 
+static Cons *
+findByPqn(Hash *nodes_by_pqn, String *pqn, DagNodeBuildType build_type)
+{
+    Object *result;
+
+    switch (build_type) {
+    case BUILD_NODE:
+    case DIFF_NODE:
+    case EXISTS_NODE:
+	result = findNodeFromOptions(nodes_by_pqn, pqn, 
+				     "build", "exists", "diff", NULL);
+	break;
+    case DROP_NODE:
+	result = findNodeFromOptions(nodes_by_pqn, pqn, 
+				     "drop", "exists", "diff", NULL);
+	break;
+    default:
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("findMatchingNode for build type %d is not implemented",
+		     build_type));
+    }
+    if (!result) {
+	dbgSexp(pqn);
+	RAISE(TSORT_ERROR, newstr("No match for pqn: %s", pqn->value));
+	//dbgSexp(nodes_by_pqn);
+    }
+    dbgSexp(result);
+    return NULL;
+}
+
+/* Record the parent for a dagnode.  This is required primarily for
+ * figuring out navigation to and from nodes during a build.  Note
+ * that this parentage is quite distinct from any dependencies on
+ * parentage - the dependencies will be added later.
+ */
 static Object *
 addParentForNode(Cons *node_entry, Object *dagnodes)
 {
     DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *xmlnode = findAncestor(node->dbobject, "dbobject");
     String *fqn = NULL;
-    DagNode *parent;
     if (xmlnode) {
 	BEGIN {
 	    fqn  = nodeAttribute(xmlnode, "fqn");
-
-	    switch (node->build_type) {
-	    case BUILD_NODE:
-	    case DIFF_NODE:
-	    case EXISTS_NODE:
-		parent = findMatchingNode((Hash *) dagnodes, fqn, 
-					  "build", "exists", "diff", NULL);
-		break;
-	    case DROP_NODE:
-		parent = findMatchingNode((Hash *) dagnodes, fqn, 
-					  "drop", "exists", "diff", NULL);
-		break;
-	    default:
-		RAISE(NOT_IMPLEMENTED_ERROR,
-		      newstr("addParentForNode of type %d is not implemented",
-			     node->build_type));
-	    }
-	    if (parent) {
-		node->parent = parent;
-	    }
-	    else {
-		RAISE(TSORT_ERROR,
-		      newstr("addParentForNode: No parent found for %s",
-			  node->fqn->value));
-	    }
+	    node->parent = findByFqn((Hash *)dagnodes, fqn, node->build_type);
 	}
 	EXCEPTION(ex);
 	FINALLY {
@@ -483,7 +548,7 @@ addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
 	    fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
 	    objectFree((Object *) pqn, TRUE);
 	    pqn = NULL;
-	    /* fqnlist is nil, is the item given by the pqn does not exist. */
+	    /* fqnlist is nil, if the item given by the pqn does not exist. */
 	    if (fqnlist) {
 		dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
 		addDirectedDependency(node, dagnodelist);
@@ -506,7 +571,7 @@ processDependencies(DagNode *node, Cons *hashes)
     /* We cannot use xpath here as we have no appropriate context node.
      * Instead we should directly traverse to child nodes going to
      * <dependencies> and then <dependency> */
-    xmlNode *deps_node = node->dbobject->children;
+    xmlNode *deps_node;
     xmlNode *dep_node;
 
     for (deps_node = findFirstChild(node->dbobject, "dependencies");
@@ -559,8 +624,7 @@ getDepForDiff(xmlNode *dep, Cons *hashes, boolean is_old)
 
     if (fqn = nodeAttribute(dep, "fqn")) {
 	/* Now get an appropriate dependency record */
-	result = findMatchingNode(dagnodes, fqn, 
-				  "build", "exists", "diff", NULL);
+	result = findByFqn(dagnodes, fqn, DIFF_NODE);
     }
     else {
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -619,15 +683,6 @@ addDepsForDiffNode(DagNode *node, Cons *hashes)
     }
 }
 
-static void
-addDepsForDropNode(DagNode *node, Cons *hashes)
-{
-    processDependencies(node, hashes);
-    if (node->parent) {
-	addDependency(node->parent, consNode(node));
-    }
-}
-
 static Object *
 addDepsForNode(Cons *node_entry, Object *hashes)
 {
@@ -636,11 +691,6 @@ addDepsForNode(Cons *node_entry, Object *hashes)
     switch (node->build_type) {
     case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
     case DIFF_NODE:  addDepsForDiffNode(node, (Cons *) hashes); break;
-    case DROP_NODE:  addDepsForDropNode(node, (Cons *) hashes); break;
-    case EXISTS_NODE: 
-	/* No deps for this node as it already exists before we apply
-	 * diffs and continues to exist after. */
-	break;
     default: RAISE(NOT_IMPLEMENTED_ERROR,
 		   newstr("addDepsForNode of type %d is not implemented",
 			  node->build_type));
@@ -648,14 +698,99 @@ addDepsForNode(Cons *node_entry, Object *hashes)
     return (Object *) node;
 }
 
+static Cons *
+depsFromNode(DagNode *node, xmlNode *dep_defn, Cons *hashes)
+{
+    String *fqn = nodeAttribute(dep_defn, "fqn");
+    String *pqn;
+    DagNode *depnode = NULL;
+    Hash *allnodes = (Hash *) hashes->car;
+    Hash *pqnhash = (Hash *) hashes->cdr;
+
+    if (fqn) {
+	depnode = findByFqn(allnodes, fqn, node->build_type);
+	//addDirectedDependency(node, consNode(depnode));
+	objectFree((Object *) fqn, TRUE);
+	if (depnode) {
+	    return consNode(depnode);
+	}
+    }
+    else {
+	pqn = nodeAttribute(dep_defn, "pqn");
+	(void) findByPqn(pqnhash, pqn, node->build_type);
+	//TODO: deal properly with pqn dependencies
+	objectFree((Object *) pqn, TRUE);
+    }
+    return NULL;
+}
+
+static Object *
+addDepsForNode2(Cons *node_entry, Object *hashes)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
+    xmlNode *deps_node;
+    xmlNode *depset_node;
+    xmlNode *dep_node;
+    Cons *deplist;
+    Cons *prev = NULL;
+
+    switch (node->build_type) {
+    case BUILD_NODE: return addDepsForNode(node_entry, hashes);
+    case DIFF_NODE:  return addDepsForNode(node_entry, hashes);
+    case DROP_NODE:  break;
+    case EXISTS_NODE: 
+	/* No deps for this node as it already exists before we apply
+	 * diffs and continues to exist after. */
+	break;
+    default: RAISE(NOT_IMPLEMENTED_ERROR,
+		   newstr("addDepsForNode2 of type %d is not implemented",
+			  node->build_type));
+    }
+
+    if (node->parent) {
+	addDependency(node->parent, consNode(node));
+    }
+
+    deps_node = findFirstChild(node->dbobject, "dependencies");
+    if (deps_node) {
+	for (dep_node = findFirstChild(deps_node, "dependency");
+	     dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
+	{
+	    if (deplist = depsFromNode(node, dep_node, (Cons *) hashes)) {
+		addDirectedDependency(node, deplist);
+	    }
+	    else {
+		char *node_str = nodestr(dep_node);
+		char *errstr = newstr("No dep found for: %s", node_str);
+		skfree(node_str);
+		RAISE(TSORT_ERROR, errstr);
+	    }
+	}
+/*
+	for (depset_node = findFirstChild(deps_node, "dependency-set");
+	     depset_node; 
+	     depset_node = findNextSibling(dep_node, "dependency-set")) 
+	{
+	    deplist = consNew(NULL, NULL);
+	    for (dep_node = findFirstChild(deps_node, "dependency");
+		 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
+	    {
+		deplist = addDepToNode(node, dep_node, (Cons *) hashes);
+	    }
+	}
+*/
+    }
+
+    return (Object *) node;
+}
+
 static void
 identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
 {
     Cons *hashes = consNew((Object *) dagnodes, (Object *) pqnlist);
-
     BEGIN {
 	hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
-	hashEach(dagnodes, &addDepsForNode, (Object *) hashes);
+	hashEach(dagnodes, &addDepsForNode2, (Object *) hashes);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -967,11 +1102,12 @@ dependencyFromSet(
 
     *p_cycle = NULL;
     while (depset) {
-	dep = (DagNode *) dereference(depset->car);
+	dep = (DagNode *) dereference(((Cons *) depset)->car);
+	depset = (Cons *) depset->cdr;
+
 	node->cur_dep = dep;
 	if (cycle = visitNode(dep, allnodes)) {
 	    /* We have a cyclic dependency. */
-	    depset = (Cons *) depset->cdr;
 	    if (break_allowed) {
 		if (dep = attemptCycleBreak(node, dep)) {
 		    newfqn = stringNew(dep->fqn->value);
@@ -1034,8 +1170,7 @@ visitNode(DagNode *node, Hash *allnodes)
 	    /* Replace depset with the single dependency to
 	     * which we have successfully traversed.  */
 	    objectFree(node->dependencies->contents->vector[i], TRUE);
-	    depset = consNew((Object *) objRefNew((Object *) dep),
-			     NULL);
+	    depset = consNew((Object *) objRefNew((Object *) dep), NULL);
 	    node->dependencies->contents->vector[i] = (Object *) depset;
         }
     }
@@ -1062,6 +1197,7 @@ visitNodeInHash(Cons *entry, Object *allnodes)
     return (Object *) node;
 }
 
+// TODO: De-cons this
 static Object *
 depConsToDagNode(Cons *entry, Object *allnodes)
 {
@@ -1074,8 +1210,10 @@ depConsToDagNode(Cons *entry, Object *allnodes)
     if (node->dependencies) {
 	for (i = 0; i < node->dependencies->elems; i++) {
 	    cons = (Cons *) node->dependencies->contents->vector[i];
-	    node->dependencies->contents->vector[i] = cons->car;
-	    objectFree((Object *) cons, FALSE);
+	    if (cons->type == OBJ_CONS) {
+		node->dependencies->contents->vector[i] = cons->car;
+		objectFree((Object *) cons, FALSE);
+	    }
 	}
     }
     return (Object *) node;
@@ -1358,6 +1496,7 @@ gensort(Document *doc)
 {
     Hash *dagnodes = NULL;
     Hash *pqnhash = NULL;
+    Hash *pqnhash2 = NULL;
     Vector *sorted = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Symbol *simple_sort = symbolGet("simple-sort");
@@ -1367,7 +1506,9 @@ gensort(Document *doc)
     BEGIN {
 	//dbgSexp(doc);
 	dagnodes = dagnodesFromDoc(doc);
-	pqnhash = makePqnHash(doc);
+	pqnhash = makePqnHash(dagnodes);
+	//dbgSexp(dagnodes);
+	//dbgSexp(pqnhash);
 	identifyDependencies(doc, dagnodes, pqnhash);
 	//showAllDeps(dagnodes);
 	check_dag(dagnodes);

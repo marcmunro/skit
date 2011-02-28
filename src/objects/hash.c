@@ -94,9 +94,9 @@ hashLookup(Hash *hash, char *key)
 Object *
 hashAdd(Hash *hash_in, Object *key, Object *contents)
 {
-    // Make a string representation of the key object, and use that for
-    // the key.  The contents will be a Cons-cell containing the real
-    // key object and the real contents.
+    /* Make a string representation of the key object, and use that for
+     * the key.  The contents will be a Cons-cell containing the real
+     * key object and the real contents. */
     Hash *hash;
     char *keystr;
     Cons *cons;
