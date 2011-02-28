@@ -905,8 +905,8 @@ END_TEST
 
 START_TEST(cons_concat)
 {
-    Cons *list1 = (Cons *) evalSexp("(1 2 3)");
-    Cons *list2 = (Cons *) evalSexp("(4 5 6)");
+    Cons *list1 = (Cons *) objectFromStr("(1 2 3)");
+    Cons *list2 = (Cons *) objectFromStr("(4 5 6)");
     Cons *result = consConcat(list1, list2);
     char *resultstr = objectSexp((Object *) result);
     char *tmp;
@@ -918,6 +918,7 @@ START_TEST(cons_concat)
 			     resultstr));
     skfree(tmp);
     skfree(resultstr);
+    objectFree((Object *) result, TRUE);
     FREEMEMWITHCHECK;
 }
 END_TEST
