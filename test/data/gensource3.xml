@@ -259,9 +259,11 @@
             <dependencies>
               <dependency fqn="view.skittest.public.v2"/>
               <dependency fqn="role.cluster.marc"/>
-              <dependency pqn="grant.skittest.public.usage:public"/>
-              <dependency pqn="grant.skittest.public.usage:marc"/>
-              <dependency pqn="grant.skittest.public.usage:marc"/>
+	      <dependency-set>
+		<dependency pqn="grant.skittest.public.usage:public"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+	      </dependency-set>
             </dependencies>
             <view name="v1" schema="public" owner="marc">
               <source>SELECT v2.mykey FROM v2;</source>
@@ -274,9 +276,11 @@
             <dependencies>
               <dependency fqn="view.skittest.public.v1"/>
               <dependency fqn="role.cluster.marc"/>
-              <dependency pqn="grant.skittest.public.usage:public"/>
-              <dependency pqn="grant.skittest.public.usage:marc"/>
-              <dependency pqn="grant.skittest.public.usage:marc"/>
+	      <dependency-set>
+		<dependency pqn="grant.skittest.public.usage:public"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+	      </dependency-set>
             </dependencies>
             <view name="v2" schema="public" owner="marc">
               <source>SELECT v1.mykey FROM v1;</source>

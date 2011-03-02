@@ -434,6 +434,7 @@ START_TEST(check_cyclic_gensort)
 }
 END_TEST
 
+/* As check_cyclic_gensort but using smart sort */
 START_TEST(check_cyclic_gensort2)
 {
     Document *doc = NULL;

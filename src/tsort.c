@@ -16,6 +16,19 @@
  *   been run.  This eliminates item 6 below, but check for anywhere we
  *   have started to de-cons things, and remove all de-consing.
  *
+ * STATUS: 
+ * - Code for depsets done (for drop only - further refactoring is
+ *   required for build and diff).  
+ * - Test data for cyclic dep handling has been updated to add dep sets
+ *   where needed. 
+ * - Build code nearly done - unit test failure on check_cyclic_gensort2
+ *   when this code is enabled.
+ * NEXT:
+ * - debug build changes.  Try doing a before and after of showAllDeps.
+ * - complete code changes for build and diff
+ * - modify grants.xsl to add dependency-sets (use gensource2.xml as the
+ *   model for this)
+ *
  *  2) fix data for units tests to match whatever was discovered
  *     for item 1.
  *  3) complete refactoring of pqn handling
@@ -294,22 +307,47 @@ findByFqn(Hash *allnodes, String *fqn, DagNodeBuildType build_type)
 }
 
 
+static Cons *
+consCopy(Cons *in)
+{
+    Cons *result = NULL;
+    Cons *next;
+    Cons *prev;
+    Object *node;
+
+    while (in) {
+	node = dereference(in->car);
+	next = consNew((Object *) objRefNew(node), NULL);
+	if (result) {
+	    prev->cdr = (Object *) next;
+	}
+	else {
+	    result = next;
+	}
+	prev = next;
+	in = (Cons *) in->cdr;
+    }
+    return result;
+}
+
 // TODO: Refactor findbyfqn and findbypqn to combine them into a single
 // function 
 static Cons *
 findByPqn(Hash *nodes_by_pqn, String *pqn, DagNodeBuildType build_type)
 {
-    Object *result;
-
+    Object *found;
+    //printSexp(stderr, "LOOKING FOR: ", (Object *) pqn);
     switch (build_type) {
     case BUILD_NODE:
     case DIFF_NODE:
     case EXISTS_NODE:
-	result = findNodeFromOptions(nodes_by_pqn, pqn, 
+	//fprintf(stderr, "...in \"build\", \"exists\", \"diff\"\n");
+	found = findNodeFromOptions(nodes_by_pqn, pqn, 
 				     "build", "exists", "diff", NULL);
 	break;
     case DROP_NODE:
-	result = findNodeFromOptions(nodes_by_pqn, pqn, 
+	//fprintf(stderr, "...in \"drop\", \"exists\", \"diff\"\n");
+	found = findNodeFromOptions(nodes_by_pqn, pqn, 
 				     "drop", "exists", "diff", NULL);
 	break;
     default:
@@ -317,7 +355,8 @@ findByPqn(Hash *nodes_by_pqn, String *pqn, DagNodeBuildType build_type)
 	      newstr("findMatchingNode for build type %d is not implemented",
 		     build_type));
     }
-    return NULL;
+    //dbgSexp(found);
+    return consCopy((Cons *) found);
 }
 
 /* Record the parent for a dagnode.  This is required primarily for
@@ -388,11 +427,18 @@ addDependency(DagNode *node, Cons *deps)
 	node->dependencies = vectorNew(10);
     }
 
+    if (strchr(node->fqn->value, 'v')) {
+	dbgSexp(node);
+	dbgSexp(deps);
+    }
+
     if (! setPush(node->dependencies, (Object *) deps)) {
 	/* The dependency was already present, so just free up the cons
 	 * we were passed. */
 	freeConsNode(deps);
-	return;
+    }
+    if (strchr(node->fqn->value, 'v')) {
+	dbgSexp(node->dependencies);
     }
 }
 
@@ -700,10 +746,10 @@ depsFromNode(DagNode *node, xmlNode *dep_defn, Cons *hashes)
     DagNode *depnode = NULL;
     Hash *allnodes = (Hash *) hashes->car;
     Hash *pqnhash = (Hash *) hashes->cdr;
+    Cons *result = NULL;
 
     if (fqn) {
 	depnode = findByFqn(allnodes, fqn, node->build_type);
-	//addDirectedDependency(node, consNode(depnode));
 	objectFree((Object *) fqn, TRUE);
 	if (depnode) {
 	    return consNode(depnode);
@@ -711,11 +757,10 @@ depsFromNode(DagNode *node, xmlNode *dep_defn, Cons *hashes)
     }
     else {
 	pqn = nodeAttribute(dep_defn, "pqn");
-	(void) findByPqn(pqnhash, pqn, node->build_type);
-	//TODO: deal properly with pqn dependencies
+	result = findByPqn(pqnhash, pqn, node->build_type);
 	objectFree((Object *) pqn, TRUE);
     }
-    return NULL;
+    return result;
 }
 
 static Object *
@@ -727,9 +772,10 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
     xmlNode *dep_node;
     Cons *deplist;
     Cons *next;
+    Object *obj;
 
     switch (node->build_type) {
-    case BUILD_NODE: return addDepsForNode(node_entry, hashes);
+    case BUILD_NODE: break; obj = addDepsForNode(node_entry, hashes); break;
     case DIFF_NODE:  return addDepsForNode(node_entry, hashes);
     case DROP_NODE:  break;
     case EXISTS_NODE: 
@@ -741,8 +787,29 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 			  node->build_type));
     }
 
-    if (node->parent) {
-	addDependency(node->parent, consNode(node));
+    if (node->build_type == DROP_NODE) {
+	if (node->parent) {
+	    addDependency(node->parent, consNode(node));
+	}
+    }
+    else if (node->build_type == BUILD_NODE) {
+	/* Build nodes are dependent on their matching drop nodes, if
+	 * any exist.  This is so that drops happen before builds. */
+	char *base_fqn = strchr(node->fqn->value, '.');
+	char *depname = newstr("drop%s", base_fqn);
+	String *depkey = stringNewByRef(depname);
+	Hash *dagnodes = (Hash *) ((Cons *) hashes)->car;
+	DagNode *drop_node = (DagNode *) hashGet(dagnodes, (Object *) depkey);
+
+	if (drop_node) {
+	    addDependency(node, consNode(drop_node));
+	}
+
+	if (node->parent) {
+	    addDependency(node, consNode(node->parent));
+	}
+
+	objectFree((Object *) depkey, TRUE);
     }
 
     deps_node = findFirstChild(node->dbobject, "dependencies");
@@ -751,6 +818,9 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	     dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	{
 	    if (deplist = depsFromNode(node, dep_node, (Cons *) hashes)) {
+		if (strchr(node->fqn->value, 'v')) {
+		    dbgSexp(deplist);
+		}
 		addDirectedDependency(node, deplist);
 	    }
 	    else {
@@ -766,14 +836,39 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	     depset_node = findNextSibling(dep_node, "dependency-set")) 
 	{
 	    deplist = NULL;
+	    if (strchr(node->fqn->value, 'v')) {
+		printSexp(stderr, "Deplist after init: ", deplist);
+		tsortdebug("XX");
+	    }
 	    for (dep_node = findFirstChild(deps_node, "dependency");
 		 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	    {
 		if (next = depsFromNode(node, dep_node, (Cons *) hashes)) {
 		    if (deplist) {
-			
+			if (strchr(node->fqn->value, 'v')) {
+			    printSexp(stderr, "Deplist before: ", deplist);
+			    dbgSexp(next);
+			    printSexp(stderr, "Deplist now: ", deplist);
+			}
+			deplist = consConcat(deplist, next);
+		    }
+		    else {
+			deplist = next;
 		    }
 		}
+	    }
+	    if (deplist) {
+		//dbgSexp(deplist);
+		if (strchr(node->fqn->value, 'v')) {
+		    printSexp(stderr, "Deplist again: ", deplist);
+		}
+		addDirectedDependency(node, deplist);
+	    }
+	    else {
+		char *node_str = nodestr(depset_node);
+		char *errstr = newstr("No deps found for: %s", node_str);
+		skfree(node_str);
+		RAISE(TSORT_ERROR, errstr);
 	    }
 	}
     }
@@ -1510,7 +1605,7 @@ gensort(Document *doc)
 	//showAllDeps(dagnodes);
 	check_dag(dagnodes);
 	//fprintf(stderr, "\n\nXX\n\n");
-	//showAllDeps(dagnodes);
+	showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
 	}
