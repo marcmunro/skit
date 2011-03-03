@@ -111,10 +111,12 @@
 
 	<!-- Dependencies on usage of schema. -->
 	<xsl:if test="../@schema">
-	  <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
-		       ../@schema, '.usage:', @from)}"/>
-	  <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
-		       ../@schema, '.usage:public')}"/>
+	  <dependency-set>
+	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
+			     ../@schema, '.usage:', @from)}"/>
+	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
+			     ../@schema, '.usage:public')}"/>
+	  </dependency-set>
 	</xsl:if>
 	<!-- Dependencies on previous grant. -->
 	<xsl:choose>

@@ -10,18 +10,20 @@
   <xsl:template name="SchemaGrant">
     <xsl:param name="owner" select="@owner"/>
     <!-- Dependency on schema usage grant to owner, public or self -->
-    <dependency pqn="{concat('grant.', 
-		     ancestor::database/@name, '.', 
-		     ancestor::schema/@name, '.usage:public')}"/>
-    <dependency pqn="{concat('grant.', 
-		     ancestor::database/@name, '.', 
-		     ancestor::schema/@name, '.usage:', 
-		     //cluster/@username)}"/>
-    <xsl:if test="$owner">
+    <dependency-set>
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
-		       ancestor::schema/@name, '.usage:', $owner)}"/>
-    </xsl:if>
+		       ancestor::schema/@name, '.usage:public')}"/>
+      <dependency pqn="{concat('grant.', 
+		       ancestor::database/@name, '.', 
+		       ancestor::schema/@name, '.usage:', 
+		       //cluster/@username)}"/>
+      <xsl:if test="$owner">
+	<dependency pqn="{concat('grant.', 
+			 ancestor::database/@name, '.', 
+			 ancestor::schema/@name, '.usage:', $owner)}"/>
+      </xsl:if>
+    </dependency-set>
   </xsl:template>
 
   <!-- Table grant dependencies -->
@@ -31,19 +33,21 @@
     <xsl:param name="table" select="@table"/>
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
-    <dependency pqn="{concat('grant.', 
-		     ancestor::database/@name, '.', 
-		     $schema, '.', $table, '.', $priv, ':public')}"/>
-
-    <dependency pqn="{concat('grant.', 
-		     ancestor::database/@name, '.', 
-		     $schema, '.', $table, '.', $priv, ':', 
-		     //cluster/@username)}"/>
-    <xsl:if test="$owner">
+    <dependency-set>
       <dependency pqn="{concat('grant.', 
-		     ancestor::database/@name, '.', 
-		     $schema, '.', $table, '.', $priv, ':', $owner)}"/>
-    </xsl:if>
+		       ancestor::database/@name, '.', 
+		       $schema, '.', $table, '.', $priv, ':public')}"/>
+
+      <dependency pqn="{concat('grant.', 
+		       ancestor::database/@name, '.', 
+		       $schema, '.', $table, '.', $priv, ':', 
+		       //cluster/@username)}"/>
+      <xsl:if test="$owner">
+	<dependency pqn="{concat('grant.', 
+			 ancestor::database/@name, '.', 
+			 $schema, '.', $table, '.', $priv, ':', $owner)}"/>
+      </xsl:if>
+    </dependency-set>
   </xsl:template>
 
   <!-- Tables -->

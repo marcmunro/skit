@@ -253,6 +253,17 @@
         </dependencies>
         <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
           <comment>'standard public schema'</comment>
+          <dbobject type="grant" parent="schema.skittest.public" 
+		    name="usage:public" 
+		    pqn="grant.skittest.public.usage:public" 
+		    fqn="grant.skittest.public.usage:public:regress" 
+		    owner="regress" subtype="schema" on="public">
+            <context name="owner" value="regress" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
+            <grant from="regress" to="public" with_grant="no" priv="usage"/>
+          </dbobject>
           <dbobject type="view" fqn="view.skittest.public.v1" name="v1"
 		    qname="public.v1" cycle_breaker="viewbase">
             <context name="owner" value="marc" default="marc"/>

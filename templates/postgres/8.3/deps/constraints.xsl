@@ -42,7 +42,9 @@
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:for-each>
-	<xsl:call-template name="SchemaGrant"/>
+	<xsl:call-template name="SchemaGrant">
+	  <xsl:with-param name="owner" select="../@owner"/>
+	</xsl:call-template>
       </dependencies>
       <xsl:copy select=".">
 	<xsl:copy-of select="@*"/>

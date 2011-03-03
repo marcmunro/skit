@@ -21,13 +21,12 @@
  *   required for build and diff).  
  * - Test data for cyclic dep handling has been updated to add dep sets
  *   where needed. 
- * - Build code nearly done - unit test failure on check_cyclic_gensort2
- *   when this code is enabled.
+ * - Build code done.
+ * - drop code done
+ * - modify grants.xsl to add dependency-sets done
  * NEXT:
- * - debug build changes.  Try doing a before and after of showAllDeps.
- * - complete code changes for build and diff
- * - modify grants.xsl to add dependency-sets (use gensource2.xml as the
- *   model for this)
+ * - remove old build and drop code
+ * - complete code changes for diff
  *
  *  2) fix data for units tests to match whatever was discovered
  *     for item 1.
@@ -427,18 +426,10 @@ addDependency(DagNode *node, Cons *deps)
 	node->dependencies = vectorNew(10);
     }
 
-    if (strchr(node->fqn->value, 'v')) {
-	dbgSexp(node);
-	dbgSexp(deps);
-    }
-
     if (! setPush(node->dependencies, (Object *) deps)) {
 	/* The dependency was already present, so just free up the cons
 	 * we were passed. */
 	freeConsNode(deps);
-    }
-    if (strchr(node->fqn->value, 'v')) {
-	dbgSexp(node->dependencies);
     }
 }
 
@@ -818,9 +809,6 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	     dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	{
 	    if (deplist = depsFromNode(node, dep_node, (Cons *) hashes)) {
-		if (strchr(node->fqn->value, 'v')) {
-		    dbgSexp(deplist);
-		}
 		addDirectedDependency(node, deplist);
 	    }
 	    else {
@@ -836,20 +824,12 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	     depset_node = findNextSibling(dep_node, "dependency-set")) 
 	{
 	    deplist = NULL;
-	    if (strchr(node->fqn->value, 'v')) {
-		printSexp(stderr, "Deplist after init: ", deplist);
-		tsortdebug("XX");
-	    }
-	    for (dep_node = findFirstChild(deps_node, "dependency");
-		 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
+	    for (dep_node = findFirstChild(depset_node, "dependency");
+		 dep_node; dep_node = findNextSibling(dep_node, 
+						      "dependency")) 
 	    {
 		if (next = depsFromNode(node, dep_node, (Cons *) hashes)) {
 		    if (deplist) {
-			if (strchr(node->fqn->value, 'v')) {
-			    printSexp(stderr, "Deplist before: ", deplist);
-			    dbgSexp(next);
-			    printSexp(stderr, "Deplist now: ", deplist);
-			}
 			deplist = consConcat(deplist, next);
 		    }
 		    else {
@@ -859,14 +839,34 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	    }
 	    if (deplist) {
 		//dbgSexp(deplist);
-		if (strchr(node->fqn->value, 'v')) {
-		    printSexp(stderr, "Deplist again: ", deplist);
-		}
 		addDirectedDependency(node, deplist);
 	    }
 	    else {
-		char *node_str = nodestr(depset_node);
-		char *errstr = newstr("No deps found for: %s", node_str);
+		char *node_str = NULL;
+		char *pqn;
+		char *errstr;
+		for (dep_node = findFirstChild(depset_node, "dependency");
+		     dep_node; dep_node = findNextSibling(dep_node, 
+							  "dependency")) 
+		{
+		    dbgNode(dep_node);
+		    pqn = xmlGetProp(dep_node, "pqn");
+		    fprintf(stderr, "PQN: %s\n", pqn);
+		    dbgNode(depset_node->parent);
+		    dbgNode(depset_node->parent->parent);
+		    if (node_str) {
+			errstr = newstr("%s, %s", node_str, pqn);
+			skfree(node_str);
+			node_str = errstr;
+		    }
+		    else {
+			node_str = newstr(pqn);
+		    }
+		    xmlFree(pqn);
+		}
+
+
+		errstr = newstr("No deps found for: %s", node_str);
 		skfree(node_str);
 		RAISE(TSORT_ERROR, errstr);
 	    }
@@ -1605,7 +1605,7 @@ gensort(Document *doc)
 	//showAllDeps(dagnodes);
 	check_dag(dagnodes);
 	//fprintf(stderr, "\n\nXX\n\n");
-	showAllDeps(dagnodes);
+	//showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
 	}

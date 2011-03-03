@@ -42,7 +42,9 @@
 			      '.', @schema, '.', @table)}"/>
 	  </xsl:if>
 	</xsl:for-each>
-	<xsl:call-template name="SchemaGrant"/>
+	<xsl:call-template name="SchemaGrant">
+	  <xsl:with-param name="owner" select="@table_owner"/>
+	</xsl:call-template>
       </dependencies>
 
       <xsl:copy select=".">

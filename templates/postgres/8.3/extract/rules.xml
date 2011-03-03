@@ -13,6 +13,7 @@
 	<skit:attr name="name"/>
 	<skit:attr name="table"/>
 	<skit:attr name="schema"/>
+	<skit:attr name="table_owner"/>
 
 	<source>
 	  <skit:text expr="(select rule 'definition')"/>
