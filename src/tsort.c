@@ -1,40 +1,9 @@
-/* In process of refactoring pqn handling
- * which is within refactoring of figuring out dependencies
- * (also todo: remove the use of cons for single deps)
- * have discovered that not all pqns being referenced are existant - 
- * I suspect this is a bug in the pqn generation code.)
+/* Doing refactoring:
  * Next:
- *  1) fix pqn generation bug so regression_tests 1 and 2 pass
  *
- *  I think the solution is as follows:
- *   It is permissable for a pqn not to be met but not for all pqns in a
- *   dependency set.  So add the concept of a dependency-set which can
- *   be a container for a set of dependencies.  At least one dependency in 
- *   a dependency set must be found.  Dependency sets may apply to both
- *   fqns and pqns.  Note that this allows fqns to have lists just as
- *   pqns do, so we continue to use cons in all deps until check_dag has
- *   been run.  This eliminates item 6 below, but check for anywhere we
- *   have started to de-cons things, and remove all de-consing.
- *
- * STATUS: 
- * - Code for depsets done (for drop only - further refactoring is
- *   required for build and diff).  
- * - Test data for cyclic dep handling has been updated to add dep sets
- *   where needed. 
- * - Build code done.
- * - drop code done
- * - modify grants.xsl to add dependency-sets done
- * NEXT:
- * - remove old build and drop code
- * - complete code changes for diff
- *
- *  2) fix data for units tests to match whatever was discovered
- *     for item 1.
- *  3) complete refactoring of pqn handling
- *  4) complete refactoring of dependency handling
  *  5) any other todos in this file
  *  6) remove use of cons where it is not needed.
- *  7) Update copyright notice for 2011
+ *  7) Update copyright notices for 2011
  */
 
 /**
@@ -458,39 +427,10 @@ addAllDependents(Hash *allnodes)
     hashEach(allnodes, &addDependentsForNode, (Object *) allnodes);
 }
 
-/* We have not implemented the use of a list of alternate dependencies
- * for diffs.  It is not obvious to me that it is actually needed,
- * though I clearly thought so when implementing addDependency.  
- * TODO: Either add this or refactor addDependency to simplify it by
- * removing the use of lists. 
- */
 static void
 tsortdebug(char *x)
 {
     fprintf(stderr, "DEBGUG %s\n", x);
-}
-
-static void
-addDiffDependency(DagNode *node, DagNode *depnode, boolean old)
-{
-    if (old) {
-	//RAISE(NOT_IMPLEMENTED_ERROR, 
-	//      newstr("addDiffDependency not implemented for old deps"));
-    }
-    else {
-	switch (depnode->build_type) {
-	case BUILD_NODE: 
-	case DIFF_NODE: 
-	case EXISTS_NODE: 
-	    addDependency(node, consNode(depnode));
-	    break;
-	default:
-	    dbgSexp(node);
-	    tsortdebug("zz");
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("addDiffDependency not implemented for all types"));
-	}
-    }
 }
 
 /* Like addDependency but handles dependencies in the opposite direction
@@ -516,10 +456,14 @@ addDirectedDependency(DagNode *node, Cons *deps)
 {
     switch (node->build_type) {
     case BUILD_NODE: 
+    case DIFF_NODE: 
 	addDependency(node, deps);
 	break;
     case DROP_NODE: 
 	addInvertedDependencies(node, deps);
+	break;
+    case EXISTS_NODE:
+	dbgSexp(deps);
 	break;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -529,140 +473,98 @@ addDirectedDependency(DagNode *node, Cons *deps)
 }
 
 static Cons *
-dagnodeListFromFqnList(Cons *fqnlist, char *prefix, Hash *dagnodes)
+depsFromNode(xmlNode *dep_defn, DagNodeBuildType build_type, Cons *hashes)
 {
+    String *fqn = nodeAttribute(dep_defn, "fqn");
+    String *pqn;
+    DagNode *depnode = NULL;
+    Hash *allnodes = (Hash *) hashes->car;
+    Hash *pqnhash = (Hash *) hashes->cdr;
     Cons *result = NULL;
-    Cons *prev;
-    String *base_fqn;
-    String *key;
-    Object *node;
 
-    while (fqnlist) {
-	base_fqn = (String *) fqnlist->car;
-	key = stringNewByRef(newstr("%s.%s", prefix, base_fqn->value));
-	node = dereference(hashGet(dagnodes, (Object *) key));
-	objectFree((Object *) key, TRUE);
-	prev = result;
-	result = consNew((Object *) objRefNew(node), (Object *) prev);
-	fqnlist = (Cons *) fqnlist->cdr;
+    if (fqn) {
+	depnode = findByFqn(allnodes, fqn, build_type);
+	objectFree((Object *) fqn, TRUE);
+	if (depnode) {
+	    return consNode(depnode);
+	}
     }
+    else {
+	pqn = nodeAttribute(dep_defn, "pqn");
+	result = findByPqn(pqnhash, pqn, build_type);
+	objectFree((Object *) pqn, TRUE);
+    }
+
     return result;
 }
 
+/* Build nodes are dependent on their matching drop nodes, if
+ * any exist.  This is so that drops happen before builds. */
 static void
-addXmlnodeDependencies(DagNode *node, xmlNode *xmlnode, Cons *hashes)
-{
-    Hash *dagnodes = (Hash *) hashes->car;
-    String *fqn = NULL;
-    String *pqn = NULL;
-    DagNode *found;
-    char *prefix = nameForBuildType(node->build_type);
-    char *tmpstr;
-    Hash *pqnlist = (Hash *) hashes->cdr;
-    Cons *fqnlist;
-    Cons *dagnodelist = NULL;
-
-    BEGIN {
-	if (fqn = getPrefixedAttribute(xmlnode, prefix, "fqn")) {
-	    found = (DagNode *) hashGet(dagnodes, (Object *) fqn);
-	    if (!found) {
-		tmpstr = newstr("addXmlnodeDependencies: no dependency "
-				"found for %s in %s", fqn->value,
-		                node->fqn->value);
-		RAISE(GENERAL_ERROR, tmpstr);
-	    }
-	    /* addDirectedDependency must use or free the consNode
-	     * created below. */
-	    addDirectedDependency(node, consNode(found));
-	}
-	else if (pqn = nodeAttribute(xmlnode, "pqn")) {
-	    fqnlist = (Cons *) hashGet(pqnlist, (Object *) pqn);
-	    objectFree((Object *) pqn, TRUE);
-	    pqn = NULL;
-	    /* fqnlist is nil, if the item given by the pqn does not exist. */
-	    if (fqnlist) {
-		dagnodelist = dagnodeListFromFqnList(fqnlist, prefix, dagnodes);
-		addDirectedDependency(node, dagnodelist);
-	    }
-	}
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) fqn, TRUE);
-	objectFree((Object *) pqn, TRUE);
-    }
-    END;
-}
-
-/* Find all of the dependency elements and add their dependencies to the
- * DAG */
-static void
-processDependencies(DagNode *node, Cons *hashes)
-{
-    /* We cannot use xpath here as we have no appropriate context node.
-     * Instead we should directly traverse to child nodes going to
-     * <dependencies> and then <dependency> */
-    xmlNode *deps_node;
-    xmlNode *dep_node;
-
-    for (deps_node = findFirstChild(node->dbobject, "dependencies");
-	 deps_node;
-	 deps_node = findNextSibling(deps_node, "dependencies")) {
-	for (dep_node = findFirstChild(deps_node, "dependency");
-	     dep_node;
-	     dep_node = findNextSibling(dep_node, "dependency")) {
-	    addXmlnodeDependencies(node, dep_node, hashes);
-	}
-	break;
-    }
-}
-
-static void
-addDepsForBuildNode(DagNode *node, Cons *hashes)
+addDropNodeDependency(DagNode *node, Hash *allnodes)
 {
     char *base_fqn = strchr(node->fqn->value, '.');
     char *depname = newstr("drop%s", base_fqn);
     String *depkey = stringNewByRef(depname);
-    Hash *dagnodes = (Hash *) hashes->car;
-    DagNode *drop_node = (DagNode *) hashGet(dagnodes, (Object *) depkey);
-
-    BEGIN {
-	/* Build nodes are dependent on the equivalent drop node if it
-	 * exists (ie if we are doing a drop and build, the drop must
-	 * happen first) */
-	if (drop_node) {
-	    addDependency(node, consNode(drop_node));
-	}
-	processDependencies(node, hashes);
-	if (node->parent) {
-	    addDependency(node, consNode(node->parent));
-	}
+    DagNode *drop_node = (DagNode *) hashGet(allnodes, (Object *) depkey);
+    
+    if (drop_node) {
+	addDependency(node, consNode(drop_node));
     }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) depkey, TRUE);
-    }
-    END;
+    
+    objectFree((Object *) depkey, TRUE);
 }
 
-static DagNode *
-getDepForDiff(xmlNode *dep, Cons *hashes, boolean is_old)
+/* Report that no deps within a dependency set were found. */
+static void
+reportDepsetError(xmlNode *depset_node)
 {
-    String *fqn;
-    Hash *dagnodes = (Hash *) hashes->car;
-    DagNode *result = NULL;
-    String *key;
+    xmlNode *dep_node;
+    char *node_str = NULL;
+    char *pqn;
+    char *errstr;
+    for (dep_node = findFirstChild(depset_node, "dependency");
+	 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
+    {
+	dbgNode(dep_node);
+	pqn = xmlGetProp(dep_node, "pqn");
+	fprintf(stderr, "PQN: %s\n", pqn);
+	dbgNode(depset_node->parent);
+	dbgNode(depset_node->parent->parent);
+	if (node_str) {
+	    errstr = newstr("%s, %s", node_str, pqn);
+	    skfree(node_str);
+	    node_str = errstr;
+	}
+	else {
+	    node_str = newstr(pqn);
+	}
+	xmlFree(pqn);
+    }
+    
+    errstr = newstr("No deps found for: %s", node_str);
+    skfree(node_str);
+    RAISE(TSORT_ERROR, errstr);
+}
 
-    if (fqn = nodeAttribute(dep, "fqn")) {
-	/* Now get an appropriate dependency record */
-	result = findByFqn(dagnodes, fqn, DIFF_NODE);
+static void
+reportDepError(xmlNode *dep_node)
+{
+    char *node_str = nodestr(dep_node);
+    char *errstr = newstr("No dep found for: %s", node_str);
+    skfree(node_str);
+    RAISE(TSORT_ERROR, errstr);
+}
+
+static boolean
+isOldDep(xmlNode *dep_node)
+{
+    xmlChar *old = xmlGetProp(dep_node, "old");
+    if (old) {
+	xmlFree(old);
+	return TRUE;
     }
-    else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("getDepForDiff pqn handling not implemented"));
-    }
-    objectFree((Object *) fqn, TRUE);
-    return result;
+    return FALSE;
 }
 
 /* These are the rules for diff dependencies:     
@@ -681,81 +583,8 @@ getDepForDiff(xmlNode *dep, Cons *hashes, boolean is_old)
  *   - otherwise there is an error.
  * 
  */
-static void
-addDepsForDiffNode(DagNode *node, Cons *hashes)
-{
-    xmlNode *deps_node;
-    xmlNode *dep_node;
-    String *old;
-    boolean is_old;
-    DagNode *dependency;
-    
-    if (node->parent) {
-	addDiffDependency(node, node->parent, FALSE);
-    }
-
-    for (deps_node = findFirstChild(node->dbobject, "dependencies");
-	 deps_node;
-	 deps_node = findNextSibling(deps_node, "dependencies")) {
-	for (dep_node = findFirstChild(deps_node, "dependency");
-	     dep_node;
-	     dep_node = findNextSibling(dep_node, "dependency")) 
-	{
-	    old = nodeAttribute(dep_node, "old");
-	    if (is_old = (old && TRUE)) {
-		objectFree((Object *) old, TRUE);
-	    }
-
-	    if (dependency = getDepForDiff(dep_node, hashes, is_old)) {
-		addDiffDependency(node, dependency, is_old);
-	    }
-	}
-	break;
-    }
-}
-
 static Object *
 addDepsForNode(Cons *node_entry, Object *hashes)
-{
-    DagNode *node = (DagNode *) node_entry->cdr;
-
-    switch (node->build_type) {
-    case BUILD_NODE: addDepsForBuildNode(node, (Cons *) hashes); break;
-    case DIFF_NODE:  addDepsForDiffNode(node, (Cons *) hashes); break;
-    default: RAISE(NOT_IMPLEMENTED_ERROR,
-		   newstr("addDepsForNode of type %d is not implemented",
-			  node->build_type));
-    }
-    return (Object *) node;
-}
-
-static Cons *
-depsFromNode(DagNode *node, xmlNode *dep_defn, Cons *hashes)
-{
-    String *fqn = nodeAttribute(dep_defn, "fqn");
-    String *pqn;
-    DagNode *depnode = NULL;
-    Hash *allnodes = (Hash *) hashes->car;
-    Hash *pqnhash = (Hash *) hashes->cdr;
-    Cons *result = NULL;
-
-    if (fqn) {
-	depnode = findByFqn(allnodes, fqn, node->build_type);
-	objectFree((Object *) fqn, TRUE);
-	if (depnode) {
-	    return consNode(depnode);
-	}
-    }
-    else {
-	pqn = nodeAttribute(dep_defn, "pqn");
-	result = findByPqn(pqnhash, pqn, node->build_type);
-	objectFree((Object *) pqn, TRUE);
-    }
-    return result;
-}
-
-static Object *
-addDepsForNode2(Cons *node_entry, Object *hashes)
 {
     DagNode *node = (DagNode *) node_entry->cdr;
     xmlNode *deps_node;
@@ -763,44 +592,23 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
     xmlNode *dep_node;
     Cons *deplist;
     Cons *next;
-    Object *obj;
 
     switch (node->build_type) {
-    case BUILD_NODE: break; obj = addDepsForNode(node_entry, hashes); break;
-    case DIFF_NODE:  return addDepsForNode(node_entry, hashes);
-    case DROP_NODE:  break;
     case EXISTS_NODE: 
-	/* No deps for this node as it already exists before we apply
-	 * diffs and continues to exist after. */
-	break;
-    default: RAISE(NOT_IMPLEMENTED_ERROR,
-		   newstr("addDepsForNode2 of type %d is not implemented",
-			  node->build_type));
-    }
-
-    if (node->build_type == DROP_NODE) {
+	return (Object *) node;
+    case DROP_NODE: 
 	if (node->parent) {
 	    addDependency(node->parent, consNode(node));
 	}
-    }
-    else if (node->build_type == BUILD_NODE) {
-	/* Build nodes are dependent on their matching drop nodes, if
-	 * any exist.  This is so that drops happen before builds. */
-	char *base_fqn = strchr(node->fqn->value, '.');
-	char *depname = newstr("drop%s", base_fqn);
-	String *depkey = stringNewByRef(depname);
-	Hash *dagnodes = (Hash *) ((Cons *) hashes)->car;
-	DagNode *drop_node = (DagNode *) hashGet(dagnodes, (Object *) depkey);
-
-	if (drop_node) {
-	    addDependency(node, consNode(drop_node));
-	}
-
+	break;
+    case BUILD_NODE: 
+	addDropNodeDependency(node, (Hash *) ((Cons *) hashes)->car);
+	/* No break: this is deliberate */
+    case DIFF_NODE:
+	/* Note this code executes for build and diff nodes */
 	if (node->parent) {
 	    addDependency(node, consNode(node->parent));
 	}
-
-	objectFree((Object *) depkey, TRUE);
     }
 
     deps_node = findFirstChild(node->dbobject, "dependencies");
@@ -808,14 +616,17 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 	for (dep_node = findFirstChild(deps_node, "dependency");
 	     dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	{
-	    if (deplist = depsFromNode(node, dep_node, (Cons *) hashes)) {
+	    if (isOldDep(dep_node)) {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("addDepsForNode not implemented for old deps"));
+	    }
+
+	    if (deplist = depsFromNode(dep_node, node->build_type, 
+				       (Cons *) hashes)) {
 		addDirectedDependency(node, deplist);
 	    }
 	    else {
-		char *node_str = nodestr(dep_node);
-		char *errstr = newstr("No dep found for: %s", node_str);
-		skfree(node_str);
-		RAISE(TSORT_ERROR, errstr);
+		reportDepError(dep_node);
 	    }
 	}
 
@@ -828,7 +639,13 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 		 dep_node; dep_node = findNextSibling(dep_node, 
 						      "dependency")) 
 	    {
-		if (next = depsFromNode(node, dep_node, (Cons *) hashes)) {
+		if (isOldDep(dep_node)) {
+		    RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("addDepsForNode not implemented "
+				 "for old deps(2)"));
+		}
+		if (next = depsFromNode(dep_node, node->build_type,
+					(Cons *) hashes)) {
 		    if (deplist) {
 			deplist = consConcat(deplist, next);
 		    }
@@ -838,37 +655,10 @@ addDepsForNode2(Cons *node_entry, Object *hashes)
 		}
 	    }
 	    if (deplist) {
-		//dbgSexp(deplist);
 		addDirectedDependency(node, deplist);
 	    }
 	    else {
-		char *node_str = NULL;
-		char *pqn;
-		char *errstr;
-		for (dep_node = findFirstChild(depset_node, "dependency");
-		     dep_node; dep_node = findNextSibling(dep_node, 
-							  "dependency")) 
-		{
-		    dbgNode(dep_node);
-		    pqn = xmlGetProp(dep_node, "pqn");
-		    fprintf(stderr, "PQN: %s\n", pqn);
-		    dbgNode(depset_node->parent);
-		    dbgNode(depset_node->parent->parent);
-		    if (node_str) {
-			errstr = newstr("%s, %s", node_str, pqn);
-			skfree(node_str);
-			node_str = errstr;
-		    }
-		    else {
-			node_str = newstr(pqn);
-		    }
-		    xmlFree(pqn);
-		}
-
-
-		errstr = newstr("No deps found for: %s", node_str);
-		skfree(node_str);
-		RAISE(TSORT_ERROR, errstr);
+		reportDepsetError(depset_node);
 	    }
 	}
     }
@@ -882,7 +672,7 @@ identifyDependencies(Document *doc, Hash *dagnodes, Hash *pqnlist)
     Cons *hashes = consNew((Object *) dagnodes, (Object *) pqnlist);
     BEGIN {
 	hashEach(dagnodes, &addParentForNode, (Object *) dagnodes);
-	hashEach(dagnodes, &addDepsForNode2, (Object *) hashes);
+	hashEach(dagnodes, &addDepsForNode, (Object *) hashes);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1294,17 +1084,17 @@ static Object *
 depConsToDagNode(Cons *entry, Object *allnodes)
 {
     DagNode *node = (DagNode *) entry->cdr;
-    Cons *cons;
+    Object *deps;
     int i;
     /* Now replace each list in the dependencies with the single
      * dependency that makes the DAG. */
     //return (Object *) node;
     if (node->dependencies) {
 	for (i = 0; i < node->dependencies->elems; i++) {
-	    cons = (Cons *) node->dependencies->contents->vector[i];
-	    if (cons->type == OBJ_CONS) {
-		node->dependencies->contents->vector[i] = cons->car;
-		objectFree((Object *) cons, FALSE);
+	    deps = node->dependencies->contents->vector[i];
+	    if (deps->type == OBJ_CONS) {
+		node->dependencies->contents->vector[i] = ((Cons *) deps)->car;
+		objectFree(deps, FALSE);
 	    }
 	}
     }
