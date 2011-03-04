@@ -1,9 +1,13 @@
 /* Doing refactoring:
  * Next:
  *
- *  5) any other todos in this file
- *  6) remove use of cons where it is not needed.
- *  7) Update copyright notices for 2011
+ *  1) Refactor addDirectedDependencies:
+ *     - need to deal with is_old_dep (see notes on dep handling for
+ *       diffs somewhere in this file)
+ *     - need to eliminate use of cons where it is not needed.
+ *  2) remove use of cons where it is not needed.
+ *  3) any other todos in this file
+ *  4) Update copyright notices for 2011
  */
 
 /**
@@ -387,7 +391,7 @@ addDependent(DagNode *node, DagNode *dep)
 }
 
 static void
-addDependency(DagNode *node, Cons *deps)
+addDependencies(DagNode *node, Cons *deps)
 {
     assert(node->type == OBJ_DAGNODE,
 	"addDependency: node must be a dagnode");
@@ -442,7 +446,7 @@ addInvertedDependencies(DagNode *node, Cons *deps)
     DagNode *dep;
     while (deps) {
 	dep = (DagNode *) dereference(deps->car);
-	addDependency(dep, consNode(node));
+	addDependencies(dep, consNode(node));
 	prev = deps;
 	deps = (Cons *) deps->cdr;
 	objectFree(prev->car, FALSE);
@@ -452,12 +456,15 @@ addInvertedDependencies(DagNode *node, Cons *deps)
 
 /* Must use or free the deps object! */
 static void
-addDirectedDependency(DagNode *node, Cons *deps)
+addDirectedDependencies(DagNode *node, Cons *deps, boolean is_old_dep)
 {
+    // Inverted deps where there is a list of options is a little
+    // tricky!  Need to think about this.
+
     switch (node->build_type) {
     case BUILD_NODE: 
     case DIFF_NODE: 
-	addDependency(node, deps);
+	addDependencies(node, deps);
 	break;
     case DROP_NODE: 
 	addInvertedDependencies(node, deps);
@@ -509,7 +516,7 @@ addDropNodeDependency(DagNode *node, Hash *allnodes)
     DagNode *drop_node = (DagNode *) hashGet(allnodes, (Object *) depkey);
     
     if (drop_node) {
-	addDependency(node, consNode(drop_node));
+	addDependencies(node, consNode(drop_node));
     }
     
     objectFree((Object *) depkey, TRUE);
@@ -517,7 +524,7 @@ addDropNodeDependency(DagNode *node, Hash *allnodes)
 
 /* Report that no deps within a dependency set were found. */
 static void
-reportDepsetError(xmlNode *depset_node)
+reportDepsetError(const char *msg, xmlNode *depset_node)
 {
     xmlNode *dep_node;
     char *node_str = NULL;
@@ -542,16 +549,7 @@ reportDepsetError(xmlNode *depset_node)
 	xmlFree(pqn);
     }
     
-    errstr = newstr("No deps found for: %s", node_str);
-    skfree(node_str);
-    RAISE(TSORT_ERROR, errstr);
-}
-
-static void
-reportDepError(xmlNode *dep_node)
-{
-    char *node_str = nodestr(dep_node);
-    char *errstr = newstr("No dep found for: %s", node_str);
+    errstr = newstr("%s for: %s", msg, node_str);
     skfree(node_str);
     RAISE(TSORT_ERROR, errstr);
 }
@@ -583,6 +581,61 @@ isOldDep(xmlNode *dep_node)
  *   - otherwise there is an error.
  * 
  */
+
+static void
+handleSimpleDep(DagNode *dagnode, xmlNode *dep_node, Cons *hashes)
+{
+    Cons *deplist;
+
+    if (isOldDep(dep_node)) {
+	dbgNode(dep_node);
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("handleSimpleDep not implemented for old deps"));
+    }
+    
+    if (deplist = depsFromNode(dep_node, dagnode->build_type, 
+			       (Cons *) hashes)) {
+	addDirectedDependencies(dagnode, deplist, isOldDep(dep_node));
+    }
+    else {
+	char *node_str = nodestr(dep_node);
+	char *errstr = newstr("No dep found for: %s", node_str);
+	skfree(node_str);
+	RAISE(TSORT_ERROR, errstr);
+    }
+}
+
+static void
+handleDepSet(DagNode *dagnode, xmlNode *depset_node, Cons *hashes)
+{
+    xmlNode *dep_node;
+    Cons *deplist = NULL;
+    Cons *next;
+
+    for (dep_node = findFirstChild(depset_node, "dependency");
+	 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
+    {
+	if (isOldDep(dep_node)) {
+	    reportDepsetError("Old dep handling not implemented", depset_node);
+	}
+	if (next = depsFromNode(dep_node, dagnode->build_type,
+				(Cons *) hashes)) {
+	    if (deplist) {
+		deplist = consConcat(deplist, next);
+	    }
+	    else {
+		deplist = next;
+	    }
+	}
+    }
+    if (deplist) {
+	addDirectedDependencies(dagnode, deplist, FALSE);
+    }
+    else {
+	reportDepsetError("No deps found", depset_node);
+    }
+}
+
 static Object *
 addDepsForNode(Cons *node_entry, Object *hashes)
 {
@@ -590,15 +643,13 @@ addDepsForNode(Cons *node_entry, Object *hashes)
     xmlNode *deps_node;
     xmlNode *depset_node;
     xmlNode *dep_node;
-    Cons *deplist;
-    Cons *next;
 
     switch (node->build_type) {
     case EXISTS_NODE: 
 	return (Object *) node;
     case DROP_NODE: 
 	if (node->parent) {
-	    addDependency(node->parent, consNode(node));
+	    addDependencies(node->parent, consNode(node));
 	}
 	break;
     case BUILD_NODE: 
@@ -607,7 +658,7 @@ addDepsForNode(Cons *node_entry, Object *hashes)
     case DIFF_NODE:
 	/* Note this code executes for build and diff nodes */
 	if (node->parent) {
-	    addDependency(node, consNode(node->parent));
+	    addDependencies(node, consNode(node->parent));
 	}
     }
 
@@ -616,50 +667,14 @@ addDepsForNode(Cons *node_entry, Object *hashes)
 	for (dep_node = findFirstChild(deps_node, "dependency");
 	     dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
 	{
-	    if (isOldDep(dep_node)) {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("addDepsForNode not implemented for old deps"));
-	    }
-
-	    if (deplist = depsFromNode(dep_node, node->build_type, 
-				       (Cons *) hashes)) {
-		addDirectedDependency(node, deplist);
-	    }
-	    else {
-		reportDepError(dep_node);
-	    }
+	    handleSimpleDep(node, dep_node, (Cons *) hashes);
 	}
 
 	for (depset_node = findFirstChild(deps_node, "dependency-set");
 	     depset_node; 
 	     depset_node = findNextSibling(dep_node, "dependency-set")) 
 	{
-	    deplist = NULL;
-	    for (dep_node = findFirstChild(depset_node, "dependency");
-		 dep_node; dep_node = findNextSibling(dep_node, 
-						      "dependency")) 
-	    {
-		if (isOldDep(dep_node)) {
-		    RAISE(NOT_IMPLEMENTED_ERROR, 
-			  newstr("addDepsForNode not implemented "
-				 "for old deps(2)"));
-		}
-		if (next = depsFromNode(dep_node, node->build_type,
-					(Cons *) hashes)) {
-		    if (deplist) {
-			deplist = consConcat(deplist, next);
-		    }
-		    else {
-			deplist = next;
-		    }
-		}
-	    }
-	    if (deplist) {
-		addDirectedDependency(node, deplist);
-	    }
-	    else {
-		reportDepsetError(depset_node);
-	    }
+	    handleDepSet(node, depset_node, (Cons *) hashes);
 	}
     }
 
@@ -900,7 +915,7 @@ copyDeps(DagNode *target, DagNode *src, DagNode *do_not_copy)
 		src_cons = (Cons *) src_cons->cdr;
 	    }
 	    if (target_cons) {
-		addDependency(target, target_cons);
+		addDependencies(target, target_cons);
 	    }
 	}
     }
