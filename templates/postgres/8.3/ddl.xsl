@@ -19,37 +19,64 @@
        using xsl:apply-templates from within the template for the 
        current dbobject -->
   
-  <xsl:template match="comment">
+  <xsl:template name="comment">
+    <xsl:param name="objnode"/>
+    <xsl:param name="text"/>
     <xsl:text>&#x0A;comment on </xsl:text>
     <xsl:choose>
-      <xsl:when test="contains(name(..), '_')">
-	<xsl:value-of select="substring-before(name(..), '_')" />
+      <xsl:when test="contains(name($objnode), '_')">
+	<xsl:value-of select="substring-before(name($objnode), '_')" />
 	<xsl:text> </xsl:text>
-	<xsl:value-of select="substring-after(name(..), '_')" />
+	<xsl:value-of select="substring-after(name($objnode), '_')" />
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="name(..)"/>
+	<xsl:value-of select="name($objnode)"/>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> </xsl:text>
     <xsl:choose>
-      <xsl:when test="(name(..) = 'constraint') or (name(..) = 'trigger')">
-	<xsl:value-of select="skit:dbquote(../@name)"/>
+      <xsl:when test="(name($objnode) = 'constraint') or (name($objnode) = 'trigger')">
+	<xsl:value-of select="skit:dbquote($objnode/@name)"/>
 	<xsl:text> on </xsl:text>
-	<xsl:value-of select="../../@table_qname"/>
+	<xsl:value-of select="$objnode/../@table_qname"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="../../@qname"/>
-	<xsl:if test="../@method">
+	<xsl:value-of select="$objnode/../@qname"/>
+	<xsl:if test="$objnode/@method">
 	  <xsl:text> using </xsl:text>
-	  <xsl:value-of select="../@method"/>
+	  <xsl:value-of select="$objnode/@method"/>
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> is&#x0A;</xsl:text>
-    <xsl:value-of select="text()"/>
+    <xsl:value-of select="$text"/>
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
+
+  <xsl:template match="comment">
+    <xsl:call-template name="comment">
+      <xsl:with-param name="objnode" select=".."/>
+      <xsl:with-param name="text" select="text()"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template match="element[@type='comment']">
+    <xsl:call-template name="comment">
+      <xsl:with-param name="objnode" select="../../*[name() = ../@type]"/>
+      <xsl:with-param name="text">
+	<xsl:choose>
+	  <xsl:when test="@status = 'Gone'">
+	    <xsl:value-of select="'null'"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of select="comment/text()"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:with-param>
+    </xsl:call-template>
+
+  </xsl:template>
+
 
   <xsl:template name="set_owner">
     <xsl:if test="skit:eval('ignore-contexts') = 't'">

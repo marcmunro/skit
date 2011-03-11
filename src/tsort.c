@@ -569,7 +569,7 @@ isOldDep(xmlNode *dep_node)
  * - for standard dependencies:
  *   - if there is an exists node, all is well and there is no
  *     dependency
- *   - if there is s build node we depend on that
+ *   - if there is a build node we depend on that
  *   - if there is a diff node, we depend on the diff
  *   - otherwise we have an error
  * - handle parents the same as standard dependencies
@@ -587,12 +587,6 @@ handleSimpleDep(DagNode *dagnode, xmlNode *dep_node, Cons *hashes)
 {
     Cons *deplist;
 
-    if (isOldDep(dep_node)) {
-	dbgNode(dep_node);
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("handleSimpleDep not implemented for old deps"));
-    }
-    
     if (deplist = depsFromNode(dep_node, dagnode->build_type, 
 			       (Cons *) hashes)) {
 	addDirectedDependencies(dagnode, deplist, isOldDep(dep_node));

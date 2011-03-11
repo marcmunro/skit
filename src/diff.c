@@ -452,19 +452,19 @@ text_diff(xmlChar *str1, xmlChar *str2)
 	return NULL;
     }
 
-    old = xmlNewNode(NULL, BAD_CAST "oldxxx");
+    old = xmlNewNode(NULL, BAD_CAST "old");
     text =  xmlNewText(str1);
     xmlAddChild(old, text);
 
-    new = xmlNewNode(NULL, BAD_CAST "newxxx");
+    new = xmlNewNode(NULL, BAD_CAST "new");
     text =  xmlNewText(str2);
     xmlAddChild(new, text);
     old->next = new;
 
-    textnode = xmlNewNode(NULL, BAD_CAST "textxxx");
+    textnode = xmlNewNode(NULL, BAD_CAST "text");
     xmlAddChildList(textnode, old);
 
-    diffs = xmlNewNode(NULL, BAD_CAST "diffsxxx");
+    diffs = xmlNewNode(NULL, BAD_CAST "diffs");
     xmlAddChild(diffs, textnode);
     return diffs;
 }
@@ -532,10 +532,6 @@ handleNewElem(Cons *entry, Object *param)
 				DIFFNEW, key? key->value: NULL);
     if (diff) {
 	if (results) {
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("handleNewElem appending diffs not implemented"));
-	    // Actually, I think the implementation should be as
-	    // follows, but I have no tests for it yet.
 	    diff->next = results->node;
 	    results->node = diff;
  	}
@@ -551,13 +547,21 @@ handleNewElem(Cons *entry, Object *param)
 }
 
 static xmlNode *
+getLastSibling(xmlNode *node)
+{
+    if (node) {
+	while (node->next) {
+	    node = node->next;
+	}
+    }
+    return node;
+}
+
+static xmlNode *
 getLastKid(xmlNode *node)
 {
     if (node) {
-	node = node->children;
-    }
-    while (node->next) {
-	node = node->next;
+	node = getLastSibling(node->children);
     }
     return node;
 }
@@ -573,11 +577,13 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 {
     xmlNode *diff = NULL;
     xmlNode *prev = NULL;
+    xmlNode *kid;
     String *elem_type = nodeAttribute(rule, "type");
     String *key_type = nodeAttribute(rule, "key");
     String *key;
     xmlNode *elem1 = content1->children;
     xmlNode *elem2 = content2->children;
+    xmlNode *elem_diffs;
     Hash *elems2 = hashNew(TRUE);
     Node *node;
     Object *obj;
@@ -599,9 +605,9 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 		/* There was already a matching element */
 		objectFree(obj, TRUE);
 		RAISE(XML_PROCESSING_ERROR, 
-		      newstr("diff rule for element \"%s\" in <%s/> "
-			     "has multiple matches", elem_type->value,
-			     content2->name));
+		      newstr("diff rule for element %s in <%s/> "
+			     "has multiple matches for \"%s\"", 
+			     elem_type->value, content2->name, key->value));
 	    }
 	    elem2 = elem2->next;
 	}
@@ -620,12 +626,23 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 
 	    if (node) {
 		elem2 = node->node;
+		//dbgNode(elem1);
+		//dbgNode(elem2);
 		objectFree((Object *) node, TRUE);
-		diff = diffElement(elem2, elem_type->value, 
-				   DIFFDIFF, key_type? key_type->value: NULL);
-		prev = getLastKid(diff);
-		prev->next = elementDiffs(elem1, elem2, 
-					     getElement(rule->children));
+		elem_diffs = elementDiffs(elem1, elem2, 
+					  getElement(rule->children));
+		if (elem_diffs) {
+		    //dbgNode(elem_diffs);
+		    diff = diffElement(elem2, elem_type->value, 
+				       DIFFDIFF, key_type? key_type->value: NULL);
+		    //printList("DIFFDIFF: ", diff);
+		    //dbgNode(diff->children);
+		    kid = getLastKid(diff);
+		    kid->next = elem_diffs;
+		}
+		else {
+		    diff = NULL;
+		}
 	    }
 	    else {
 		diff = diffElement(elem1, elem_type->value, 
@@ -658,6 +675,7 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 	node = (Node *) results.cdr;
 	diff = node->node;
 	objectFree((Object *) node, TRUE);
+	
 	return diff;
     }
 
@@ -665,6 +683,15 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 }
 
 
+printList(char *name, xmlNode *node)
+{
+    char *tmp = newstr("%s elem: ", name);
+    while (node) {
+	printNode(stderr, tmp, node);
+	node=node->next;
+    }
+    skfree(tmp);
+}
 /* Check the differences between two elements (these may be the
  * contents nodes of two dbobjects, or elements within such contents
  * nodes) returning a list of diffs if any exist. */
@@ -673,7 +700,8 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 	     xmlNode *rule)
 {
     xmlNode *diff;
-    xmlNode *prev = NULL;
+    xmlNode *result = NULL;
+    xmlNode *last_sibling;
 
     while (rule) {
 	if (streq(rule->name, "attribute")) {
@@ -690,14 +718,18 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 	}
 	
 	if (diff) {
-	    diff->next = prev;
-	    prev = diff;
+	    if (result) {
+		last_sibling = getLastSibling(result);
+		last_sibling->next = diff;
+	    }
+	    else {
+		result = diff;
+	    }
 	}
 	rule = getElement(rule->next);
     }
-    return prev;
+    return result;
 }
-
 static void
 diffdebug()
 {

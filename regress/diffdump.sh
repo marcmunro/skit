@@ -14,6 +14,7 @@ sort_attributes()
 
 sort_attributes < $1 >$1.tmp
 sort_attributes < $2 >$2.tmp
+echo "=== RUNNING DIFF $1 $2"
 diff -b $1.tmp $2.tmp; status=$?
 rm -f $1.tmp
 if [ ${status} -ne 0 ]; then

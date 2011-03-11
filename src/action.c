@@ -709,7 +709,6 @@ executePrint(Object *params)
 
     doc = (Document *) docStackHead();
     has_deps = docHasDeps(doc);
-    //dbgSexp(doc);
 
     if (print_full) {
 	if (!has_deps) {

@@ -4,6 +4,8 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
+	
+
   <!-- <skit:exception text="EXCEPTION TEST IN ROLES.XML"/> -->
   <skit:let>
     <skit:var name="role_roles"/>
@@ -15,6 +17,24 @@
 	<skit:attr name="password"/>
 	<skit:attr name="expires"/>
 	<skit:attr name="max_connections"/>
+
+	<skit:if test="(select role 'config')">
+	  <!-- The regexp below removes the braces around the config 
+	       string. -->
+	  <skit:var name="config_list"
+		    expr="(split (replace (select role 'config') 
+		          /\\{(.*)\\}/ '\1') ',')"/>
+	  <skit:foreach from="config_list" var="config_str">
+	    <skit:let>
+	      <skit:var name="confinfo" expr="(split config_str '=')"/>
+	      <config>
+		<skit:attr name="type" expr="(select confinfo 0)"/>
+		<skit:attr name="value" expr="(select confinfo 1)"/>
+	      </config>
+	    </skit:let>
+	  </skit:foreach>
+	</skit:if>
+
 	<skit:if test="(select role 'comment')">
 	  <comment>
 	    <skit:text expr="(select role 'comment')"/>

@@ -98,7 +98,12 @@ gendiff()
     echo ......generating diff... 1>&2
     echo "==== RUNNING SKIT DIFF $1 $2 -> $3 ===="
     ./skit --diff ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
-	--generate >${REGRESS_DIR}/$3
+	--generate >${REGRESS_DIR}/tmp
+    errexit
+
+    echo .........editing diff script to enable dangerous drop statements... 1>&2
+    sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
+	    ${REGRESS_DIR}/tmp >${REGRESS_DIR}/$3
     errexit
     echo ==== FINISHED DIFF $1 $2 ==== 
 }

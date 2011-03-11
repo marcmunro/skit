@@ -15,8 +15,11 @@ create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "wibble" valid until '2007-03-01 00:00:00-08';
 alter role "wibble" noinherit;
+comment on role wibble is 'after';
+
 alter role "regress" with superuser;
 alter role "regress" set client_min_messages = 'warning';
+comment on role regress is 'new comment';
 
 create role "keep2";
 

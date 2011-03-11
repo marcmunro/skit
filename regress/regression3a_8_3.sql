@@ -9,10 +9,12 @@ create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "wibble" valid until '2007-03-02 00:00:00-08';
 alter role "wibble" noinherit;
+comment on role wibble is 'before';
 
 create role "keep" with login;
 alter role "keep" password 'md5a6e3dfe729e3efdf117eeb1059051f77';
 alter role "keep" noinherit;
+comment on role keep is 'keep';
 
 create role "lose" with login;
 
