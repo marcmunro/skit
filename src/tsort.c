@@ -1086,19 +1086,28 @@ static Cons *visitNode(DagNode *node, Hash *allnodes);
 static DagNode *
 dependencyFromSet(
     DagNode *node,
-    Cons *depset, 
+    Object *deps, 
     Hash *allnodes,
     boolean break_allowed,
     Cons **p_cycle)
 {
-    DagNode *dep;
+    // TODO: Handle optional deps.
+    DagNode *dep = NULL;
     Cons *cycle;
     String *newfqn;
 
     *p_cycle = NULL;
-    while (depset) {
-	dep = (DagNode *) dereference(((Cons *) depset)->car);
-	depset = (Cons *) depset->cdr;
+    while (deps) {
+	if (deps->type == OBJ_CONS) {
+	    dep = (DagNode *) dereference(deps);
+	    deps = NULL;
+	}
+	else {
+	    dep = (DagNode *) dereference(((Cons *) deps)->car);
+	    deps = ((Cons *) deps)->cdr;
+	}
+	dbgSexp(dep);
+	dbgSexp(deps);
 
 	node->cur_dep = dep;
 	if (cycle = visitNode(dep, allnodes)) {
@@ -1114,7 +1123,7 @@ dependencyFromSet(
 		*p_cycle = cycle;
 		return NULL;
 	    }
-	    if (depset) {
+	    if (deps) {
 		/* We have another way to satisfy this dependency, so
 		 * let's try it. */ 
 		objectFree((Object *) cycle, TRUE);
@@ -1135,7 +1144,7 @@ static Cons *
 visitNode(DagNode *node, Hash *allnodes)
 {
     int i;
-    Cons *depset;
+    Object *deps;
     DagNode *dep;
     Cons *result = NULL;
     switch (node->status) {
@@ -1147,13 +1156,13 @@ visitNode(DagNode *node, Hash *allnodes)
     node->status = VISITING;
     if (node->dependencies) {
         for (i = 0; i < node->dependencies->elems; i++) {
-            depset = (Cons *) node->dependencies->contents->vector[i];
-	    dep = dependencyFromSet(node, depset, allnodes, FALSE, &result);
+            deps = node->dependencies->contents->vector[i];
+	    dep = dependencyFromSet(node, deps, allnodes, FALSE, &result);
 	    if (!dep) {
 		/* We have an unhandled cyclic dependency.  Attempt a
 		 * retry, allowing it to be handled. */
 		objectFree((Object *) result, TRUE);
-		dep = dependencyFromSet(node, depset, allnodes, TRUE, &result);
+		dep = dependencyFromSet(node, deps, allnodes, TRUE, &result);
 		if (!dep) {
 		    result = consNew((Object *) objRefNew((Object *) node),
 				     (Object *) result);
@@ -1165,8 +1174,9 @@ visitNode(DagNode *node, Hash *allnodes)
 	    /* Replace depset with the single dependency to
 	     * which we have successfully traversed.  */
 	    objectFree(node->dependencies->contents->vector[i], TRUE);
-	    depset = consNew((Object *) objRefNew((Object *) dep), NULL);
-	    node->dependencies->contents->vector[i] = (Object *) depset;
+	    // TODO: Eliminate the cons below
+	    deps = (Object *) consNew((Object *) objRefNew((Object *) dep), NULL);
+	    node->dependencies->contents->vector[i] = (Object *) deps;
         }
     }
     node->status = VISITED;
