@@ -350,7 +350,7 @@ START_TEST(check_cyclic_gensort)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	//showMalloc(1104);
+	//owMalloc(3412);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);

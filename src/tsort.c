@@ -1005,7 +1005,7 @@ copyDeps(DagNode *target, DagNode *src, DagNode *do_not_copy)
 	    else {
 		src_dagnode = (DagNode *) dereference(src_deps);
 		if (src_dagnode != do_not_copy) {
-		    target_deps = (Object *) objRefNew((Object *) src_dagnode);
+		    target_deps = (Object *) src_dagnode;
 		}
 		else {
 		    target_deps = NULL;
