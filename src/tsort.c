@@ -1099,15 +1099,13 @@ dependencyFromSet(
     *p_cycle = NULL;
     while (deps) {
 	if (deps->type == OBJ_CONS) {
-	    dep = (DagNode *) dereference(deps);
-	    deps = NULL;
-	}
-	else {
 	    dep = (DagNode *) dereference(((Cons *) deps)->car);
 	    deps = ((Cons *) deps)->cdr;
 	}
-	dbgSexp(dep);
-	dbgSexp(deps);
+	else {
+	    dep = (DagNode *) dereference(deps);
+	    deps = NULL;
+	}
 
 	node->cur_dep = dep;
 	if (cycle = visitNode(dep, allnodes)) {
