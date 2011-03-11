@@ -1,11 +1,13 @@
 /* Doing refactoring:
+ * Removing necessity for each dep to be a cons.  Deps should be allowed
+ * to be DagNodes or Cons lists.
  * Next:
  *
- *  1) Refactor addDirectedDependencies:
+ *  1)* remove use of cons where it is not needed.
+ *  2) Refactor addDirectedDependencies:
  *     - need to deal with is_old_dep (see notes on dep handling for
  *       diffs somewhere in this file)
  *     - need to eliminate use of cons where it is not needed.
- *  2) remove use of cons where it is not needed.
  *  3) any other todos in this file
  *  4) Update copyright notices for 2011
  */
@@ -302,6 +304,7 @@ consCopy(Cons *in)
     return result;
 }
 
+// TODO: Make findbypqn return Object *
 // TODO: Refactor findbyfqn and findbypqn to combine them into a single
 // function 
 static Cons *
@@ -390,19 +393,84 @@ addDependent(DagNode *node, DagNode *dep)
     }
 }
 
-static void
-addDependencies(DagNode *node, Cons *deps)
+static boolean
+depExists(DagNode *node, Object *dep)
 {
+    Object *actual = dereference(dep);
+    Vector *vec = node->dependencies;
+    int i;
+    if (vec) {
+	for (i = 0; i < vec->elems; i++) {
+	    if (dereference(vec->contents->vector[i]) == actual) {
+		return TRUE;
+	    }
+	}
+    }
+    return FALSE;
+}
+
+static void
+addDependencies(DagNode *node, Object *deps)
+{
+    Cons *cons;
+    Cons *tmp;
+    Cons *prev = NULL;
+    Object *this;
+
     assert(node->type == OBJ_DAGNODE,
 	"addDependency: node must be a dagnode");
+
     if (!(node->dependencies)) {
 	node->dependencies = vectorNew(10);
     }
 
-    if (! setPush(node->dependencies, (Object *) deps)) {
-	/* The dependency was already present, so just free up the cons
-	 * we were passed. */
-	freeConsNode(deps);
+    if (deps->type == OBJ_CONS) {
+	cons = (Cons *) deps;
+	while (cons) {
+	    if (this = cons->car) {
+		/* The above condition is needed in case we have
+		 * optional deps. */
+		if (depExists(node, this)) {
+		    /* Remove this entry from the list */
+		    if (prev) {
+			RAISE(NOT_IMPLEMENTED_ERROR,
+			      newstr("Need to check this code path(1)"));
+			prev->cdr = cons->cdr;
+		    }
+		    else {
+			RAISE(NOT_IMPLEMENTED_ERROR,
+			      newstr("Need to check this code path(2)"));
+			deps = cons->cdr;
+		    }
+		    tmp = cons;
+		    cons = (Cons *) cons->cdr;
+		    freeConsNode(tmp);
+		    continue;
+		}
+	    }
+	    prev = cons;
+	    cons = (Cons *) cons->cdr;
+	}
+	vectorPush(node->dependencies, deps);
+	return;
+    }
+    else {
+	if (depExists(node, deps)) {
+	    /* This dependency is already recorded, so nothing else to do. */
+	    return;
+	}
+	vectorPush(node->dependencies, (Object *) objRefNew(deps));
+	return;
+
+	cons = consNode((DagNode *) deps);
+
+	if (! setPush(node->dependencies, (Object *) cons)) {
+	    /* The dependency was already present, so just free up the cons
+	     * we were passed. */
+	    // TODO: REPLACE THE ABOVE WITH VECTORPUSH once we have 
+	    // Non-cons dependencies properly sorted out.
+	    freeConsNode(cons);
+	}
     }
 }
 
@@ -440,15 +508,33 @@ tsortdebug(char *x)
 /* Like addDependency but handles dependencies in the opposite direction
  * (eg for drops) */
 static void
-addInvertedDependencies(DagNode *node, Cons *deps)
+addInvertedDependencies(DagNode *node, Object *deps)
 {
+    // TODO:
+    // Inverted deps where there is a list of options is a little
+    // tricky!  Need to think about this.
+    // I think the solution is to make each inverted dep, itself
+    // optional.  An optional dep would be allowed to not be satisfied
+    // when traversing the dag (and would be the last dep checked for a
+    // node).  To mark a dep optional I think having a list with an
+    // initial nil would work.
+
+    Cons *cons;
     Cons *prev;
     DagNode *dep;
-    while (deps) {
-	dep = (DagNode *) dereference(deps->car);
-	addDependencies(dep, consNode(node));
-	prev = deps;
-	deps = (Cons *) deps->cdr;
+
+    if (deps->type != OBJ_CONS) {
+	cons = consNode((DagNode *) deps);
+    }
+    else {
+	cons = (Cons *) deps;
+    }
+
+    while (cons) {
+	dep = (DagNode *) dereference(cons->car);
+	addDependencies(dep, (Object *) node);
+	prev = cons;
+	cons= (Cons *) cons->cdr;
 	objectFree(prev->car, FALSE);
 	objectFree((Object *) prev, FALSE);
     }
@@ -456,11 +542,8 @@ addInvertedDependencies(DagNode *node, Cons *deps)
 
 /* Must use or free the deps object! */
 static void
-addDirectedDependencies(DagNode *node, Cons *deps, boolean is_old_dep)
+addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 {
-    // Inverted deps where there is a list of options is a little
-    // tricky!  Need to think about this.
-
     switch (node->build_type) {
     case BUILD_NODE: 
     case DIFF_NODE: 
@@ -470,7 +553,6 @@ addDirectedDependencies(DagNode *node, Cons *deps, boolean is_old_dep)
 	addInvertedDependencies(node, deps);
 	break;
     case EXISTS_NODE:
-	dbgSexp(deps);
 	break;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -479,7 +561,7 @@ addDirectedDependencies(DagNode *node, Cons *deps, boolean is_old_dep)
     }
 }
 
-static Cons *
+static Object *
 depsFromNode(xmlNode *dep_defn, DagNodeBuildType build_type, Cons *hashes)
 {
     String *fqn = nodeAttribute(dep_defn, "fqn");
@@ -487,18 +569,18 @@ depsFromNode(xmlNode *dep_defn, DagNodeBuildType build_type, Cons *hashes)
     DagNode *depnode = NULL;
     Hash *allnodes = (Hash *) hashes->car;
     Hash *pqnhash = (Hash *) hashes->cdr;
-    Cons *result = NULL;
+    Object *result = NULL;
 
     if (fqn) {
 	depnode = findByFqn(allnodes, fqn, build_type);
 	objectFree((Object *) fqn, TRUE);
 	if (depnode) {
-	    return consNode(depnode);
+	    return (Object *) depnode;
 	}
     }
     else {
 	pqn = nodeAttribute(dep_defn, "pqn");
-	result = findByPqn(pqnhash, pqn, build_type);
+	result = (Object *) findByPqn(pqnhash, pqn, build_type);
 	objectFree((Object *) pqn, TRUE);
     }
 
@@ -516,7 +598,7 @@ addDropNodeDependency(DagNode *node, Hash *allnodes)
     DagNode *drop_node = (DagNode *) hashGet(allnodes, (Object *) depkey);
     
     if (drop_node) {
-	addDependencies(node, consNode(drop_node));
+	addDependencies(node, (Object *) drop_node);
     }
     
     objectFree((Object *) depkey, TRUE);
@@ -585,11 +667,11 @@ isOldDep(xmlNode *dep_node)
 static void
 handleSimpleDep(DagNode *dagnode, xmlNode *dep_node, Cons *hashes)
 {
-    Cons *deplist;
+    Object *deps;
 
-    if (deplist = depsFromNode(dep_node, dagnode->build_type, 
-			       (Cons *) hashes)) {
-	addDirectedDependencies(dagnode, deplist, isOldDep(dep_node));
+    if (deps = depsFromNode(dep_node, dagnode->build_type, 
+			    (Cons *) hashes)) {
+	addDirectedDependencies(dagnode, deps, isOldDep(dep_node));
     }
     else {
 	char *node_str = nodestr(dep_node);
@@ -603,8 +685,8 @@ static void
 handleDepSet(DagNode *dagnode, xmlNode *depset_node, Cons *hashes)
 {
     xmlNode *dep_node;
-    Cons *deplist = NULL;
-    Cons *next;
+    Object *deps = NULL;
+    Object *next;
 
     for (dep_node = findFirstChild(depset_node, "dependency");
 	 dep_node; dep_node = findNextSibling(dep_node, "dependency")) 
@@ -614,16 +696,22 @@ handleDepSet(DagNode *dagnode, xmlNode *depset_node, Cons *hashes)
 	}
 	if (next = depsFromNode(dep_node, dagnode->build_type,
 				(Cons *) hashes)) {
-	    if (deplist) {
-		deplist = consConcat(deplist, next);
+	    if (deps) {
+		if (deps->type != OBJ_CONS) {
+		    deps = (Object *) consNode((DagNode *) deps);
+		}
+		if (next->type != OBJ_CONS) {
+		    next = (Object *) consNode((DagNode *) next);
+		}
+		deps = (Object *) consConcat((Cons *) deps, (Cons *) next);
 	    }
 	    else {
-		deplist = next;
+		deps = next;
 	    }
 	}
     }
-    if (deplist) {
-	addDirectedDependencies(dagnode, deplist, FALSE);
+    if (deps) {
+	addDirectedDependencies(dagnode, deps, FALSE);
     }
     else {
 	reportDepsetError("No deps found", depset_node);
@@ -643,7 +731,7 @@ addDepsForNode(Cons *node_entry, Object *hashes)
 	return (Object *) node;
     case DROP_NODE: 
 	if (node->parent) {
-	    addDependencies(node->parent, consNode(node));
+	    addDependencies(node->parent, (Object *) node);
 	}
 	break;
     case BUILD_NODE: 
@@ -652,7 +740,7 @@ addDepsForNode(Cons *node_entry, Object *hashes)
     case DIFF_NODE:
 	/* Note this code executes for build and diff nodes */
 	if (node->parent) {
-	    addDependencies(node, consNode(node->parent));
+	    addDependencies(node, (Object *) node->parent);
 	}
     }
 
@@ -891,25 +979,41 @@ copyDeps(DagNode *target, DagNode *src, DagNode *do_not_copy)
 {
     DagNode *ignore = src->cur_dep;
     Cons *src_cons;
+    Object *src_deps;
+    Object *target_deps;
     Cons *target_cons;
     DagNode *src_dagnode;
     int i;
 
     if (src->dependencies) {
 	for (i = 0; i < src->dependencies->elems; i++) {
-	    src_cons = (Cons *) src->dependencies->contents->vector[i];
-	    target_cons = NULL;
-	    while (src_cons) {
-		src_dagnode = (DagNode *) dereference(src_cons->car);
-		if (src_dagnode != do_not_copy) {
-		    target_cons = consNew((Object *) objRefNew(
-					      (Object *) src_dagnode), 
-					  (Object *) target_cons); 
+	    src_deps = src->dependencies->contents->vector[i];
+	    if (src_deps->type == OBJ_CONS) {
+		src_cons = (Cons *) src_deps;
+		target_cons = NULL;
+		while (src_cons) {
+		    src_dagnode = (DagNode *) dereference(src_cons->car);
+		    if (src_dagnode != do_not_copy) {
+			target_cons = consNew((Object *) objRefNew(
+						  (Object *) src_dagnode), 
+					      (Object *) target_cons); 
+		    }
+		    src_cons = (Cons *) src_cons->cdr;
 		}
-		src_cons = (Cons *) src_cons->cdr;
+		target_deps = (Object *) target_cons;
 	    }
-	    if (target_cons) {
-		addDependencies(target, target_cons);
+	    else {
+		src_dagnode = (DagNode *) dereference(src_deps);
+		if (src_dagnode != do_not_copy) {
+		    target_deps = (Object *) objRefNew((Object *) src_dagnode);
+		}
+		else {
+		    target_deps = NULL;
+		}
+	    }
+	    
+	    if (target_deps) {
+		addDependencies(target, target_deps);
 	    }
 	}
     }

@@ -10,6 +10,7 @@
     <attribute name="password"/>
     <attribute name="expires"/>
     <attribute name="login"/>
+
     <element type="config" key="type">
       <attribute name="value"/>
     </element>
@@ -20,12 +21,5 @@
       <text/>
     </element>
 
-
-    <!-- Still TODO....
-    <element type="profile" match="param">
-      <attribute name="value"/>
-    </element>
-
-    -->
   </dbobject>
 </skit:inclusion>  
