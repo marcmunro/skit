@@ -1,21 +1,7 @@
-/* Doing refactoring:
- * Removing necessity for each dep to be a cons.  Deps should be allowed
- * to be DagNodes or Cons lists.
- * Next:
- *
- *  1)* remove use of cons where it is not needed.
- *  2) Refactor addDirectedDependencies:
- *     - need to deal with is_old_dep (see notes on dep handling for
- *       diffs somewhere in this file)
- *     - need to eliminate use of cons where it is not needed.
- *  3) any other todos in this file
- *  4) Update copyright notices for 2011
- */
-
 /**
  * @file   tsort.c
  * \code
- *     Copyright (c) 2010 Marc Munro
+ *     Copyright (c) 2010, 2011 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -261,25 +247,6 @@ findNodeFromOptions(Hash *allnodes, String *fqn, ...)
     return result;
 }
 
-static DagNode *
-findByFqn(Hash *allnodes, String *fqn, DagNodeBuildType build_type)
-{
-    switch (build_type) {
-    case BUILD_NODE:
-    case DIFF_NODE:
-    case EXISTS_NODE:
-	return (DagNode *) findNodeFromOptions(allnodes, fqn, 
-					       "build", "exists", "diff", NULL);
-    case DROP_NODE:
-	return (DagNode *) findNodeFromOptions(allnodes, fqn, 
-					       "drop", "exists", "diff", NULL);
-    default:
-	RAISE(NOT_IMPLEMENTED_ERROR,
-	      newstr("findMatchingNode for build type %d is not implemented",
-		     build_type));
-    }
-}
-
 
 static Cons *
 consCopy(Cons *in)
@@ -304,34 +271,32 @@ consCopy(Cons *in)
     return result;
 }
 
-// TODO: Make findbypqn return Object *
-// TODO: Refactor findbyfqn and findbypqn to combine them into a single
-// function 
-static Cons *
-findByPqn(Hash *nodes_by_pqn, String *pqn, DagNodeBuildType build_type)
+static Object *
+findNodesByName(Hash *hash, String *name, DagNodeBuildType build_type)
 {
-    Object *found;
-    //printSexp(stderr, "LOOKING FOR: ", (Object *) pqn);
+    Object *result;
     switch (build_type) {
     case BUILD_NODE:
     case DIFF_NODE:
     case EXISTS_NODE:
-	//fprintf(stderr, "...in \"build\", \"exists\", \"diff\"\n");
-	found = findNodeFromOptions(nodes_by_pqn, pqn, 
+	result = findNodeFromOptions(hash, name, 
 				     "build", "exists", "diff", NULL);
 	break;
     case DROP_NODE:
-	//fprintf(stderr, "...in \"drop\", \"exists\", \"diff\"\n");
-	found = findNodeFromOptions(nodes_by_pqn, pqn, 
+	result = findNodeFromOptions(hash, name, 
 				     "drop", "exists", "diff", NULL);
 	break;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR,
-	      newstr("findMatchingNode for build type %d is not implemented",
+	      newstr("findNodesByName for build type %d is not implemented",
 		     build_type));
     }
-    //dbgSexp(found);
-    return consCopy((Cons *) found);
+    if (result) {
+	if (result->type == OBJ_CONS) {
+	    return (Object *) consCopy((Cons *) result);
+	}
+    }
+    return result;
 }
 
 /* Record the parent for a dagnode.  This is required primarily for
@@ -348,7 +313,8 @@ addParentForNode(Cons *node_entry, Object *dagnodes)
     if (xmlnode) {
 	BEGIN {
 	    fqn  = nodeAttribute(xmlnode, "fqn");
-	    node->parent = findByFqn((Hash *)dagnodes, fqn, node->build_type);
+	    node->parent = (DagNode *) findNodesByName((Hash *) dagnodes, 
+						       fqn, node->build_type);
 	}
 	EXCEPTION(ex);
 	FINALLY {
@@ -452,7 +418,6 @@ addDependencies(DagNode *node, Object *deps)
 	    cons = (Cons *) cons->cdr;
 	}
 	vectorPush(node->dependencies, deps);
-	return;
     }
     else {
 	if (depExists(node, deps)) {
@@ -460,17 +425,6 @@ addDependencies(DagNode *node, Object *deps)
 	    return;
 	}
 	vectorPush(node->dependencies, (Object *) objRefNew(deps));
-	return;
-
-	cons = consNode((DagNode *) deps);
-
-	if (! setPush(node->dependencies, (Object *) cons)) {
-	    /* The dependency was already present, so just free up the cons
-	     * we were passed. */
-	    // TODO: REPLACE THE ABOVE WITH VECTORPUSH once we have 
-	    // Non-cons dependencies properly sorted out.
-	    freeConsNode(cons);
-	}
     }
 }
 
@@ -540,10 +494,29 @@ addInvertedDependencies(DagNode *node, Object *deps)
     }
 }
 
-/* Must use or free the deps object! */
+/* These are the rules for diff dependencies:     
+ * - for standard dependencies:
+ *   - if there is an exists node, all is well and there is no
+ *     dependency
+ *   - if there is a build node we depend on that
+ *   - if there is a diff node, we depend on the diff
+ *   - otherwise we have an error
+ * - handle parents the same as standard dependencies
+ * - when there are old dependencies:
+ *   - if the old dependency's node is a drop, it depends on this diff
+ *     (ie the drop may not happen until the diff has been performed)
+ *   - if the old dependency's node is a diff, the same applies
+ *   - if the old dep is an exists node, it can be ignored
+ *   - otherwise there is an error.
+ * 
+ */
 static void
 addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 {
+    if (is_old_dep) {
+	RAISE(NOT_IMPLEMENTED_ERROR,
+	      newstr("Need to implement handling of old dependencies"));
+    }
     switch (node->build_type) {
     case BUILD_NODE: 
     case DIFF_NODE: 
@@ -566,25 +539,24 @@ depsFromNode(xmlNode *dep_defn, DagNodeBuildType build_type, Cons *hashes)
 {
     String *fqn = nodeAttribute(dep_defn, "fqn");
     String *pqn;
-    DagNode *depnode = NULL;
+    Object *depnode = NULL;
     Hash *allnodes = (Hash *) hashes->car;
     Hash *pqnhash = (Hash *) hashes->cdr;
-    Object *result = NULL;
 
     if (fqn) {
-	depnode = findByFqn(allnodes, fqn, build_type);
+	depnode = findNodesByName(allnodes, fqn, build_type);
 	objectFree((Object *) fqn, TRUE);
 	if (depnode) {
-	    return (Object *) depnode;
+	    return depnode;
 	}
     }
     else {
 	pqn = nodeAttribute(dep_defn, "pqn");
-	result = (Object *) findByPqn(pqnhash, pqn, build_type);
+	depnode = (Object *) findNodesByName(pqnhash, pqn, build_type);
 	objectFree((Object *) pqn, TRUE);
     }
 
-    return result;
+    return depnode;
 }
 
 /* Build nodes are dependent on their matching drop nodes, if
@@ -646,23 +618,6 @@ isOldDep(xmlNode *dep_node)
     }
     return FALSE;
 }
-
-/* These are the rules for diff dependencies:     
- * - for standard dependencies:
- *   - if there is an exists node, all is well and there is no
- *     dependency
- *   - if there is a build node we depend on that
- *   - if there is a diff node, we depend on the diff
- *   - otherwise we have an error
- * - handle parents the same as standard dependencies
- * - when there are old dependencies:
- *   - if the old dependency's node is a drop, it depends on this diff
- *     (ie the drop may not happen until the diff has been performed)
- *   - if the old dependency's node is a diff, the same applies
- *   - if the old dep is an exists node, it can be ignored
- *   - otherwise there is an error.
- * 
- */
 
 static void
 handleSimpleDep(DagNode *dagnode, xmlNode *dep_node, Cons *hashes)
@@ -1091,7 +1046,6 @@ dependencyFromSet(
     boolean break_allowed,
     Cons **p_cycle)
 {
-    // TODO: Handle optional deps.
     DagNode *dep = NULL;
     Cons *cycle;
     String *newfqn;
@@ -1101,6 +1055,11 @@ dependencyFromSet(
 	if (deps->type == OBJ_CONS) {
 	    dep = (DagNode *) dereference(((Cons *) deps)->car);
 	    deps = ((Cons *) deps)->cdr;
+	    if (!dep) {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("Need to implement handling of optional "
+			     "dependencies"));
+	    }
 	}
 	else {
 	    dep = (DagNode *) dereference(deps);
@@ -1172,8 +1131,7 @@ visitNode(DagNode *node, Hash *allnodes)
 	    /* Replace depset with the single dependency to
 	     * which we have successfully traversed.  */
 	    objectFree(node->dependencies->contents->vector[i], TRUE);
-	    // TODO: Eliminate the cons below
-	    deps = (Object *) consNew((Object *) objRefNew((Object *) dep), NULL);
+	    deps = (Object *) objRefNew((Object *) dep);
 	    node->dependencies->contents->vector[i] = (Object *) deps;
         }
     }
@@ -1200,36 +1158,12 @@ visitNodeInHash(Cons *entry, Object *allnodes)
     return (Object *) node;
 }
 
-// TODO: De-cons this
-static Object *
-depConsToDagNode(Cons *entry, Object *allnodes)
-{
-    DagNode *node = (DagNode *) entry->cdr;
-    Object *deps;
-    int i;
-    /* Now replace each list in the dependencies with the single
-     * dependency that makes the DAG. */
-    //return (Object *) node;
-    if (node->dependencies) {
-	for (i = 0; i < node->dependencies->elems; i++) {
-	    deps = node->dependencies->contents->vector[i];
-	    if (deps->type == OBJ_CONS) {
-		node->dependencies->contents->vector[i] = ((Cons *) deps)->car;
-		objectFree(deps, FALSE);
-	    }
-	}
-    }
-    return (Object *) node;
-}
-
-
 /* Converts the almost DAG into a DAG.  It resolves cyclic dependencies,
  * and replaces lists of dependencies with single dependencies */
 static void
 check_dag(Hash *allnodes)
 {
     hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
-    hashEach(allnodes, &depConsToDagNode, (Object *) allnodes);
 }
 
 static Object *
