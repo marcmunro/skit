@@ -293,7 +293,14 @@ findNodesByName(Hash *hash, String *name, DagNodeBuildType build_type)
     }
     if (result) {
 	if (result->type == OBJ_CONS) {
-	    return (Object *) consCopy((Cons *) result);
+	    if (((Cons *) result)->cdr) {
+		return (Object *) consCopy((Cons *) result);
+	    }
+	    else {
+		/* Although the result is a list, it has only one
+		 * member, so return it as a single DagNode */
+		result = (Object *) dereference(((Cons *) result)->car);
+	    }
 	}
     }
     return result;
@@ -459,41 +466,6 @@ tsortdebug(char *x)
     fprintf(stderr, "DEBGUG %s\n", x);
 }
 
-/* Like addDependency but handles dependencies in the opposite direction
- * (eg for drops) */
-static void
-addInvertedDependencies(DagNode *node, Object *deps)
-{
-    // TODO:
-    // Inverted deps where there is a list of options is a little
-    // tricky!  Need to think about this.
-    // I think the solution is to make each inverted dep, itself
-    // optional.  An optional dep would be allowed to not be satisfied
-    // when traversing the dag (and would be the last dep checked for a
-    // node).  To mark a dep optional I think having a list with an
-    // initial nil would work.
-
-    Cons *cons;
-    Cons *prev;
-    DagNode *dep;
-
-    if (deps->type != OBJ_CONS) {
-	cons = consNode((DagNode *) deps);
-    }
-    else {
-	cons = (Cons *) deps;
-    }
-
-    while (cons) {
-	dep = (DagNode *) dereference(cons->car);
-	addDependencies(dep, (Object *) node);
-	prev = cons;
-	cons= (Cons *) cons->cdr;
-	objectFree(prev->car, FALSE);
-	objectFree((Object *) prev, FALSE);
-    }
-}
-
 /* These are the rules for diff dependencies:     
  * - for standard dependencies:
  *   - if there is an exists node, all is well and there is no
@@ -510,27 +482,76 @@ addInvertedDependencies(DagNode *node, Object *deps)
  *   - otherwise there is an error.
  * 
  */
+// Inverted deps where there is a list of options is a little
+// tricky!  Need to think about this.
+// I think the solution is to make each inverted dep, itself
+// optional.  An optional dep would be allowed to not be satisfied
+// when traversing the dag (and would be the last dep checked for a
+// node).  To mark a dep optional I think having a list with an
+// initial nil would work.
 static void
 addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 {
-    if (is_old_dep) {
-	RAISE(NOT_IMPLEMENTED_ERROR,
-	      newstr("Need to implement handling of old dependencies"));
+    boolean inverted = is_old_dep || (node->build_type == DROP_NODE);
+    DagNode *this;
+    Cons *next;
+    Object *this_dep;
+
+    if (inverted) {
+	if (deps->type == OBJ_CONS) {
+	    this = (DagNode *) dereference(((Cons *) deps)->car);
+	    next = (Cons *) ((Cons *) deps)->cdr;
+	    dbgSexp(deps);
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+	          newstr("Need to implement handling of inverted "
+	                 "optional dependencies"));
+	    this_dep = (Object *) 
+		consNew(NULL, (Object *) objRefNew((Object *) node));
+	}
+	else {
+	    this = (DagNode *) deps;
+	    next = NULL;
+	    this_dep = (Object *) node;
+	}
+	while (this) {
+	    assert(this->type == OBJ_DAGNODE, "Node is not a dagnode");
+	    switch (this->build_type) {
+	    case EXISTS_NODE: break;
+	    case BUILD_NODE:
+		RAISE(TSORT_ERROR,
+		      newstr("Old dependency on a build node.  "
+			     "Something is very wrong"));
+	    case DIFF_NODE:
+	    case DROP_NODE:
+		addDependencies(this, this_dep);
+		break;
+	    default:
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("addDirectedDependency does not handle this: %d",
+			     this->build_type));
+	    }
+	    if (next) {
+		this = (DagNode *) dereference(next->car);
+		next  = (Cons *) next->cdr;
+	    }
+	    else {
+		break;
+	    }
+	}
     }
-    switch (node->build_type) {
-    case BUILD_NODE: 
-    case DIFF_NODE: 
-	addDependencies(node, deps);
-	break;
-    case DROP_NODE: 
-	addInvertedDependencies(node, deps);
-	break;
-    case EXISTS_NODE:
-	break;
-    default:
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("addDirectedDependency does not handle this: %d",
-		     node->build_type));
+    else {
+	switch (node->build_type) {
+	case EXISTS_NODE: break;
+	case BUILD_NODE:
+	case DIFF_NODE:
+	case DROP_NODE:
+	    addDependencies(node, deps);
+	    break;
+	default:
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("addDirectedDependency does not handle this(2): %d",
+			 node->build_type));
+	}
     }
 }
 
