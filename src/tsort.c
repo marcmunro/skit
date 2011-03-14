@@ -502,11 +502,14 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 	    this = (DagNode *) dereference(((Cons *) deps)->car);
 	    next = (Cons *) ((Cons *) deps)->cdr;
 	    dbgSexp(deps);
-	    RAISE(NOT_IMPLEMENTED_ERROR,
-	          newstr("Need to implement handling of inverted "
-	                 "optional dependencies"));
 	    this_dep = (Object *) 
-		consNew(NULL, (Object *) objRefNew((Object *) node));
+		consNew(NULL, 
+			(Object *) consNew((Object *) 
+					   objRefNew((Object *) node), NULL));
+	    dbgSexp(this_dep);
+	    //RAISE(NOT_IMPLEMENTED_ERROR,
+	    //      newstr("Need to implement handling of inverted "
+	    //             "optional dependencies"));
 	}
 	else {
 	    this = (DagNode *) deps;
@@ -1077,6 +1080,7 @@ dependencyFromSet(
 	    dep = (DagNode *) dereference(((Cons *) deps)->car);
 	    deps = ((Cons *) deps)->cdr;
 	    if (!dep) {
+	dbgSexp(dep);
 		RAISE(NOT_IMPLEMENTED_ERROR, 
 		      newstr("Need to implement handling of optional "
 			     "dependencies"));
@@ -1135,6 +1139,7 @@ visitNode(DagNode *node, Hash *allnodes)
     if (node->dependencies) {
         for (i = 0; i < node->dependencies->elems; i++) {
             deps = node->dependencies->contents->vector[i];
+	dbgSexp(deps);
 	    dep = dependencyFromSet(node, deps, allnodes, FALSE, &result);
 	    if (!dep) {
 		/* We have an unhandled cyclic dependency.  Attempt a
