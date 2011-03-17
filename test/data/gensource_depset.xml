@@ -4,58 +4,34 @@
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.3.14" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
       <dbobject type="role" name="r1" qname="r1" fqn="role.cluster.r1">
         <dependencies>
-          <dependency fqn="cluster"/>
-	  <dependency fqn="thing.cluster.thing1"/>
+	  <dependency fqn="role.cluster.r3"/>
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r2" qname="r2" fqn="role.cluster.r2">
         <dependencies>
-	  <dependency fqn="role.cluster.r1"/>
-          <dependency fqn="cluster"/>
+	  <dependency fqn="role.cluster.r3"/>
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r3" qname="r3" fqn="role.cluster.r3">
         <dependencies>
-	  <dependency fqn="role.cluster.r1"/>
+	  <dependency-set>
+	    <dependency fqn="role.cluster.r1"/>
+	    <dependency fqn="role.cluster.r2"/>
+	    <dependency fqn="role.cluster.r4"/>
+	  </dependency-set>
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r4" qname="r4" fqn="role.cluster.r4">
-        <dependencies>
-	  <dependency fqn="role.cluster.r3"/>
-          <dependency fqn="cluster"/>
-        </dependencies>
-      </dbobject>
-      <dbobject type="role" name="r5" qname="r5" fqn="role.cluster.r5">
-        <dependencies>
-	  <dependency fqn="role.cluster.r4"/>
-          <dependency fqn="cluster"/>
-        </dependencies>
-      </dbobject>
-      <dbobject type="role" name="r6" qname="r6" fqn="role.cluster.r6">
-        <dependencies>
-          <dependency fqn="cluster"/>
-	  <dependency fqn="role.cluster.r5"/>
-	  <dependency fqn="thing.cluster.thing1"/>
-        </dependencies>
-      </dbobject>
-      <dbobject type="role" name="r7" qname="r7" fqn="role.cluster.r7">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-      </dbobject>
-      <dbobject type="thing" name="thing1" qname="thing1" fqn="thing.cluster.thing1">
         <dependencies>
           <dependency fqn="cluster"/>
 	  <dependency-set>
 	    <dependency fqn="role.cluster.r1"/>
 	    <dependency fqn="role.cluster.r2"/>
-	    <dependency fqn="role.cluster.r3"/>
-	    <dependency fqn="role.cluster.r4"/>
 	    <dependency fqn="role.cluster.r5"/>
-	    <dependency fqn="role.cluster.r6"/>
-	    <dependency fqn="role.cluster.r7"/>
 	  </dependency-set>
         </dependencies>
+      </dbobject>
+      <dbobject type="role" name="r5" qname="r5" fqn="role.cluster.r5">
       </dbobject>
     </cluster>
   </dbobject>

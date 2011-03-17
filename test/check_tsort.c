@@ -594,7 +594,6 @@ START_TEST(diff)
 	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(1104);
-
 	doc = getDoc("test/data/gensource_diff.xml");
 	simple_sort = symbolNew("simple-sort");    
 	results = gensort(doc);
@@ -638,7 +637,8 @@ START_TEST(depset)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(1104);
+	//showMalloc(947);
+	//showFree(806);
 
 	doc = getDoc("test/data/gensource_depset.xml");
 	simple_sort = symbolNew("simple-sort");    

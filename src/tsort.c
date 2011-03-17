@@ -382,6 +382,28 @@ depExists(DagNode *node, Object *dep)
     return FALSE;
 }
 
+static depType
+dependencyType(Object *deps)
+{
+    char *sexp;
+    char *msg;
+    if (deps->type == OBJ_DAGNODE) {
+	return DEP_SINGLE;
+    }
+    else if (deps->type == OBJ_CONS) {
+	if (((Cons *) deps)->car->type == OBJ_INT4) {
+	    return DEP_OPTIONAL;
+	}
+	else {
+	    return DEP_LIST;
+	}
+    }
+    sexp = objectSexp(deps);
+    msg = newstr("Unexpected dependency type: %s", sexp);
+    skfree(sexp);
+    RAISE(TSORT_ERROR, msg);
+}
+
 static void
 addDependencies(DagNode *node, Object *deps)
 {
@@ -389,6 +411,7 @@ addDependencies(DagNode *node, Object *deps)
     Cons *tmp;
     Cons *prev = NULL;
     Object *this;
+    depType dep_type = dependencyType(deps);
 
     assert(node->type == OBJ_DAGNODE,
 	"addDependency: node must be a dagnode");
@@ -397,12 +420,22 @@ addDependencies(DagNode *node, Object *deps)
 	node->dependencies = vectorNew(10);
     }
 
+    # EDITING THIS.
+
+
     if (deps->type == OBJ_CONS) {
 	cons = (Cons *) deps;
 	while (cons) {
 	    if (this = cons->car) {
 		/* The above condition is needed in case we have
-		 * optional deps. */
+		 * optional deps.  We can ignore the NULL entry in that
+		 * case.  */
+
+		if (this->type == OBJ_INT4) {
+		    vectorPush(node->dependencies, (Object *) cons);
+		    return;
+		}
+		
 		if (depExists(node, this)) {
 		    /* Remove this entry from the list */
 		    if (prev) {
@@ -489,6 +522,9 @@ tsortdebug(char *x)
 // when traversing the dag (and would be the last dep checked for a
 // node).  To mark a dep optional I think having a list with an
 // initial nil would work.
+
+static int depset_id = 0;
+
 static void
 addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 {
@@ -496,20 +532,13 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
     DagNode *this;
     Cons *next;
     Object *this_dep;
+    static int depset_id = 0;
 
     if (inverted) {
 	if (deps->type == OBJ_CONS) {
 	    this = (DagNode *) dereference(((Cons *) deps)->car);
 	    next = (Cons *) ((Cons *) deps)->cdr;
-	    dbgSexp(deps);
-	    this_dep = (Object *) 
-		consNew(NULL, 
-			(Object *) consNew((Object *) 
-					   objRefNew((Object *) node), NULL));
-	    dbgSexp(this_dep);
-	    //RAISE(NOT_IMPLEMENTED_ERROR,
-	    //      newstr("Need to implement handling of inverted "
-	    //             "optional dependencies"));
+	    depset_id++;
 	}
 	else {
 	    this = (DagNode *) deps;
@@ -526,6 +555,11 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 			     "Something is very wrong"));
 	    case DIFF_NODE:
 	    case DROP_NODE:
+		if (deps->type == OBJ_CONS) {
+		    this_dep = (Object *) 
+			consNew((Object *) int4New(depset_id), 
+				(Object *) objRefNew((Object *) node));
+		}
 		addDependencies(this, this_dep);
 		break;
 	    default:
@@ -1079,11 +1113,18 @@ dependencyFromSet(
 	if (deps->type == OBJ_CONS) {
 	    dep = (DagNode *) dereference(((Cons *) deps)->car);
 	    deps = ((Cons *) deps)->cdr;
-	    if (!dep) {
-	dbgSexp(dep);
+	    if ((!dep) || (dep->type == OBJ_INT4)) {
 		RAISE(NOT_IMPLEMENTED_ERROR, 
 		      newstr("Need to implement handling of optional "
 			     "dependencies"));
+		// First, we should ensure that there are no
+		// non-optional deps that we could examine instead.
+		// We should do that by sorting the deps vector before
+		// this function is called.
+		// Then, we need to implement some sort of backtracking
+		// error recovery for the case when the optional dep is
+		// not satisfied.  In that case we need one of the other
+		// optional deps to be satisfied. 
 	    }
 	}
 	else {
@@ -1139,7 +1180,6 @@ visitNode(DagNode *node, Hash *allnodes)
     if (node->dependencies) {
         for (i = 0; i < node->dependencies->elems; i++) {
             deps = node->dependencies->contents->vector[i];
-	dbgSexp(deps);
 	    dep = dependencyFromSet(node, deps, allnodes, FALSE, &result);
 	    if (!dep) {
 		/* We have an unhandled cyclic dependency.  Attempt a
@@ -1473,7 +1513,7 @@ gensort(Document *doc)
 	//dbgSexp(dagnodes);
 	//dbgSexp(pqnhash);
 	identifyDependencies(doc, dagnodes, pqnhash);
-	//showAllDeps(dagnodes);
+	showAllDeps(dagnodes);
 	check_dag(dagnodes);
 	//fprintf(stderr, "\n\nXX\n\n");
 	//showAllDeps(dagnodes);
@@ -1486,6 +1526,7 @@ gensort(Document *doc)
     }
     EXCEPTION(ex);
     FINALLY {
+	dbgSexp(dagnodes);
 	objectFree((Object *) dagnodes, TRUE);
 	objectFree((Object *) pqnhash, TRUE);
     }

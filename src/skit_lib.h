@@ -227,6 +227,12 @@ typedef enum {
     VISITED
 } DagNodeStatus;
 
+typedef enum {
+    DEP_LIST = 101,
+    DEP_SINGLE,
+    DEP_OPTIONAL
+} depType;
+
 typedef struct DagNode {
     ObjType          type;
     String          *fqn;
