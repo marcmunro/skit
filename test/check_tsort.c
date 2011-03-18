@@ -602,8 +602,8 @@ START_TEST(diff)
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
 			  "'diff.role.cluster.regress')");
 
-	check_build_order(results, "('diff.database.cluster.regressdb'"
-			  "'build.role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose'"
+			  "'exists.cluster')");
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -645,8 +645,8 @@ START_TEST(diff2)
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
 			  "'diff.role.cluster.regress')");
 
-	check_build_order(results, "('diff.database.cluster.regressdb'"
-			  "'build.role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose'"
+			  "'exists.cluster')");
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -684,7 +684,7 @@ START_TEST(depset)
 	//showFree(806);
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	//simple_sort = symbolNew("simple-sort");    
+	simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
@@ -723,6 +723,8 @@ tsort_suite(void)
     Suite *s = suite_create("tsort");
     TCase *tc_core = tcase_create("tsort");
 
+    /* The tests with a 2 suffix use smart_tsort rather than standard
+     * tsort */
     ADD_TEST(tc_core, check_gensort);
     ADD_TEST(tc_core, check_gensort2);
     ADD_TEST(tc_core, navigation);
@@ -732,6 +734,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, check_cyclic_exception);
     ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, diff2);
+    // When this passes, try it with smart_tsort
     ADD_TEST(tc_core, depset);
 				
     suite_add_tcase(s, tc_core);

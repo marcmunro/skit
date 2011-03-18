@@ -353,6 +353,9 @@ addDependent(DagNode *node, DagNode *dep)
     Object *new;
     assert(node->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode nodes");
+    if (dep->type != OBJ_DAGNODE) {
+	dbgSexp(dep);
+    }
     assert(dep->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode dependent");
     
@@ -1135,27 +1138,21 @@ dependencyFromSet(
     boolean break_allowed,
     Cons **p_cycle)
 {
+    Int4 *depset_id = NULL;
     DagNode *dep = NULL;
     Cons *cycle;
     String *newfqn;
 
     *p_cycle = NULL;
     while (deps) {
+	depset_id = NULL;
 	if (deps->type == OBJ_CONS) {
 	    dep = (DagNode *) dereference(((Cons *) deps)->car);
 	    deps = ((Cons *) deps)->cdr;
 	    if ((!dep) || (dep->type == OBJ_INT4)) {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("Need to implement handling of optional "
-			     "dependencies"));
-		// First, we should ensure that there are no
-		// non-optional deps that we could examine instead.
-		// We should do that by sorting the deps vector before
-		// this function is called.
-		// Then, we need to implement some sort of backtracking
-		// error recovery for the case when the optional dep is
-		// not satisfied.  In that case we need one of the other
-		// optional deps to be satisfied. 
+		depset_id = (Int4 *) dep;
+		dep = (DagNode *) dereference(deps);
+		deps = NULL;
 	    }
 	}
 	else {
@@ -1174,6 +1171,15 @@ dependencyFromSet(
 		    return dep;
 		}
 
+		if (depset_id) {
+		    /* We have retried the dependency and been unable to 
+		     * satisfy it, but as it is an optional dependency
+		     * we can ignore it.  Only one dependency from each
+		     * set *must* be satisfied, and we will check for
+		     * that later. */
+		    objectFree((Object *) cycle, TRUE);
+		    cycle = NULL;
+		}
 		*p_cycle = cycle;
 		return NULL;
 	    }
@@ -1188,6 +1194,14 @@ dependencyFromSet(
 	    }
 	}
 	else {
+	    if (depset_id) {
+		dbgSexp(dep);
+		optionalDepIsSatisifed(depset_id);
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("Check this code path(2)"));
+		// Still have to check all optional deps have been
+		// satisfied when the dag has been fully set up.
+	    }
 	    return dep;
 	}
     }
@@ -1218,6 +1232,12 @@ visitNode(DagNode *node, Hash *allnodes)
 		objectFree((Object *) result, TRUE);
 		dep = dependencyFromSet(node, deps, allnodes, TRUE, &result);
 		if (!dep) {
+		    if (!result) {
+			continue;
+			// Part of ongoing work to refactor for optional deps
+			RAISE(NOT_IMPLEMENTED_ERROR, 
+			      newstr("Check this code path(1)"));
+		    }
 		    result = consNew((Object *) objRefNew((Object *) node),
 				     (Object *) result);
 		    node->status = UNVISITED;
@@ -1347,9 +1367,9 @@ initDagNodeTree(Hash *allnodes)
     /* Now initialise and add each node into it's rightful place in the
      * tree */
     for (i = 0; i < nodelist->elems; i++) {
+	node = (DagNode *) nodelist->contents->vector[i];
 	node->status = UNBUILDABLE;
 	node->buildable_kids = 0;
-	node = (DagNode *) nodelist->contents->vector[i];
 	if (node->parent) {
 	    linkToParent(node);
 	}
@@ -1510,7 +1530,6 @@ smart_tsort(Hash *allnodes)
 
     next = nextBuildable(root);
     while (next) {
-	dbgSexp(next);
 	(void) vectorPush(results, (Object *) next);
 	markAsSelected(next);
 	buildable = removeNodeGetNewCandidates(next, allnodes);
