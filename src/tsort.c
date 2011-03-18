@@ -404,6 +404,52 @@ dependencyType(Object *deps)
     RAISE(TSORT_ERROR, msg);
 }
 
+static boolean
+optionalDepIsSatisifed(Int4 *dep)
+{
+    static Symbol *optional_deps = NULL;
+    Hash *hash;
+    Object *result;
+
+    if (!optional_deps) {
+	optional_deps = symbolGet("optional-deps");
+    }
+    hash = (Hash *) symGet(optional_deps);
+    result = hashGet(hash, (Object *) dep);
+    return (result != NULL);
+}
+
+static void
+optionalDepSetSatisifed(Int4 *dep)
+{
+    static Symbol *optional_deps = NULL;
+    static Symbol *t;
+    Hash *hash;
+    Object *result;
+
+    if (!optional_deps) {
+	optional_deps = symbolGet("optional-deps");
+	t = symbolGet("t");
+    }
+    hash = (Hash *) symGet(optional_deps);
+    (void) hashAdd(hash, (Object *) dep, (Object *) t);
+}
+
+static int
+defineOptionalDep()
+{
+    static int depset_id = 0;
+    static Symbol *optional_deps = NULL;
+    Int4 *key;
+    if (!optional_deps) {
+	optional_deps = symbolNew("optional-deps");
+	symSet(optional_deps, (Object *) hashNew(TRUE));
+    }
+ 
+    depset_id++;
+    return depset_id;
+}
+
 static void
 addDependencies(DagNode *node, Object *deps)
 {
@@ -411,61 +457,44 @@ addDependencies(DagNode *node, Object *deps)
     Cons *tmp;
     Cons *prev = NULL;
     Object *this;
+    Int4 *depno;
     depType dep_type = dependencyType(deps);
 
     assert(node->type == OBJ_DAGNODE,
 	"addDependency: node must be a dagnode");
 
-    if (!(node->dependencies)) {
-	node->dependencies = vectorNew(10);
-    }
-
-    # EDITING THIS.
-
-
-    if (deps->type == OBJ_CONS) {
+    switch (dep_type) {
+    case DEP_LIST:
+	/* If any item in the dependency set already exists as a
+	 * dependency, we can ignore the dependency entirely. */
 	cons = (Cons *) deps;
 	while (cons) {
-	    if (this = cons->car) {
-		/* The above condition is needed in case we have
-		 * optional deps.  We can ignore the NULL entry in that
-		 * case.  */
-
-		if (this->type == OBJ_INT4) {
-		    vectorPush(node->dependencies, (Object *) cons);
-		    return;
-		}
-		
-		if (depExists(node, this)) {
-		    /* Remove this entry from the list */
-		    if (prev) {
-			RAISE(NOT_IMPLEMENTED_ERROR,
-			      newstr("Need to check this code path(1)"));
-			prev->cdr = cons->cdr;
-		    }
-		    else {
-			RAISE(NOT_IMPLEMENTED_ERROR,
-			      newstr("Need to check this code path(2)"));
-			deps = cons->cdr;
-		    }
-		    tmp = cons;
-		    cons = (Cons *) cons->cdr;
-		    freeConsNode(tmp);
-		    continue;
-		}
+	    this = cons->car;
+	    if (depExists(node, this)) {
+		objectFree(deps, TRUE);
+		return;
 	    }
-	    prev = cons;
 	    cons = (Cons *) cons->cdr;
 	}
-	vectorPush(node->dependencies, deps);
-    }
-    else {
+
+	this = deps;
+	break;
+    case DEP_OPTIONAL:
+	this = deps;
+	break;
+    case DEP_SINGLE:
 	if (depExists(node, deps)) {
 	    /* This dependency is already recorded, so nothing else to do. */
 	    return;
 	}
-	vectorPush(node->dependencies, (Object *) objRefNew(deps));
+	this = (Object *) objRefNew(deps);
     }
+
+    if (!(node->dependencies)) {
+	node->dependencies = vectorNew(10);
+    }
+
+    vectorPush(node->dependencies, this);
 }
 
 static Object *
@@ -532,13 +561,13 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
     DagNode *this;
     Cons *next;
     Object *this_dep;
-    static int depset_id = 0;
+    int depset_id;
 
     if (inverted) {
 	if (deps->type == OBJ_CONS) {
 	    this = (DagNode *) dereference(((Cons *) deps)->car);
 	    next = (Cons *) ((Cons *) deps)->cdr;
-	    depset_id++;
+	    depset_id = defineOptionalDep();
 	}
 	else {
 	    this = (DagNode *) deps;
@@ -868,7 +897,9 @@ removeDependency(DagNode *from, DagNode *dependency)
     DagNode *dep;
 
     if (from->dependencies) {
-	for (i = 0; i < from->dependencies->elems; i++) {
+	/* Loop backwards as vectorRemove will reposition all elements
+ 	 * following the removed item.  This is both faster and safer. */
+	for (i = from->dependencies->elems - 1; i >= 0; i--) {
 	    dep = (DagNode *) from->dependencies->contents->vector[i];
 	    if (dereference((Object *) dep) == (Object *) dependency) {
 		objectFree((Object *) dep, TRUE);
@@ -1297,11 +1328,12 @@ linkToParent(DagNode *node)
     }
 }
 
-/* Create a sorted tree, reflecting the hierarchy of DagNodes.  At each
+/* Create a sorted tree, reflecting the hierarchy of DagNodes, and
+ * intitialise the status and buildable_kids counts.  At each
  * level of the tree, the nodes are sorted in fqn order.
  */
 static DagNode *
-sortedTree(Hash *allnodes)
+initDagNodeTree(Hash *allnodes)
 {
     Vector *nodelist = nodeList(allnodes);
     DagNode *root = NULL;
@@ -1312,8 +1344,11 @@ sortedTree(Hash *allnodes)
     qsort((void *) nodelist->contents->vector,
 	  nodelist->elems, sizeof(Object *), fqnCmp);
 
-    /* Now add each node into it's rightful place in the tree */
+    /* Now initialise and add each node into it's rightful place in the
+     * tree */
     for (i = 0; i < nodelist->elems; i++) {
+	node->status = UNBUILDABLE;
+	node->buildable_kids = 0;
 	node = (DagNode *) nodelist->contents->vector[i];
 	if (node->parent) {
 	    linkToParent(node);
@@ -1337,7 +1372,7 @@ static void
 markAsBuildable(DagNode *node)
 {
     DagNode *up = node->parent;
-    node->is_buildable = TRUE;
+    node->status = BUILDABLE;
     while (up) {
 	up->buildable_kids++;
 	up = up->parent;
@@ -1347,10 +1382,10 @@ markAsBuildable(DagNode *node)
 /* Remove node as a build candidate (after it has been selected for
  * building), taking care of its ancestors' counts of buildable_kids */
 static void
-unmarkBuildable(DagNode *node)
+markAsSelected(DagNode *node)
 {
     DagNode *up = node->parent;
-    node->is_buildable = FALSE;
+    node->status = SELECTED_FOR_BUILD;
     while (up) {
 	up->buildable_kids--;
 	up = up->parent;
@@ -1365,7 +1400,7 @@ nextBuildable(DagNode *node)
     if (!node) {
 	return NULL;
     }
-    if (node->is_buildable) {
+    if (node->status == BUILDABLE) {
 	return node;
     }
     if (node->buildable_kids) {
@@ -1373,7 +1408,7 @@ nextBuildable(DagNode *node)
     }
     if (sibling = node->next) {
 	while (sibling != node) {
-	    if (sibling->is_buildable) {
+	    if (sibling->status == BUILDABLE) {
 		return sibling;
 	    }
 	    if (sibling->buildable_kids) {
@@ -1433,8 +1468,9 @@ markAllBuildable(Vector *buildable)
  *   tree := create sorted tree from all_nodes
  *           -- This tree is sorted by fqn and structured by node
  *           --   parentage.  Each node in the tree has fields:
- *           --   boolean: is_buildable, integer: buildable_kids
- *           -- initialised to false and 0 respectively
+ *           --   status: (unbuildable, buildable, selected_for_build),
+ *           --   integer: buildable_kids
+ *           -- initialised to unbuildable and 0 respectively
  *  candidates := unordered list of all buildable nodes from all_nodes
  *  for each candidate in candidates loop
  *    mark the node as buildable in tree
@@ -1462,20 +1498,21 @@ markAllBuildable(Vector *buildable)
 static Vector *
 smart_tsort(Hash *allnodes)
 {
-    DagNode *root = sortedTree(allnodes);
+    DagNode *root = initDagNodeTree(allnodes);
     DagNode *next;
     int i;
-    Vector *buildable = get_build_candidates(allnodes);
     Vector *results = vectorNew(hashElems(allnodes));
+    Vector *buildable = get_build_candidates(allnodes);
 
-    addAllDependents(allnodes);
     //showAllDeps(allnodes);
-    markAllBuildable(buildable);
+    addAllDependents(allnodes);
+    markAllBuildable(buildable);  /* Frees the buildable vector */
 
     next = nextBuildable(root);
     while (next) {
+	dbgSexp(next);
 	(void) vectorPush(results, (Object *) next);
-	unmarkBuildable(next);
+	markAsSelected(next);
 	buildable = removeNodeGetNewCandidates(next, allnodes);
 	markAllBuildable(buildable);
 	next = nextBuildable(next);
@@ -1513,7 +1550,7 @@ gensort(Document *doc)
 	//dbgSexp(dagnodes);
 	//dbgSexp(pqnhash);
 	identifyDependencies(doc, dagnodes, pqnhash);
-	showAllDeps(dagnodes);
+	//showAllDeps(dagnodes);
 	check_dag(dagnodes);
 	//fprintf(stderr, "\n\nXX\n\n");
 	//showAllDeps(dagnodes);
@@ -1526,7 +1563,6 @@ gensort(Document *doc)
     }
     EXCEPTION(ex);
     FINALLY {
-	dbgSexp(dagnodes);
 	objectFree((Object *) dagnodes, TRUE);
 	objectFree((Object *) pqnhash, TRUE);
     }

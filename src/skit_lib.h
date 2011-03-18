@@ -224,7 +224,10 @@ typedef enum {
 typedef enum {
     UNVISITED = 27,
     VISITING,
-    VISITED
+    VISITED,
+    UNBUILDABLE,
+    BUILDABLE,
+    SELECTED_FOR_BUILD
 } DagNodeStatus;
 
 typedef enum {
@@ -232,6 +235,8 @@ typedef enum {
     DEP_SINGLE,
     DEP_OPTIONAL
 } depType;
+
+
 
 typedef struct DagNode {
     ObjType          type;
@@ -242,7 +247,6 @@ typedef struct DagNode {
     DagNodeStatus    status;
     Vector          *dependencies;
     Vector          *dependents;
-    boolean          is_buildable;
     int              buildable_kids;
     struct DagNode  *cur_dep;
     struct DagNode  *parent;

@@ -24,6 +24,7 @@
       <dbobject type="role" name="r4" qname="r4" fqn="role.cluster.r4">
         <dependencies>
           <dependency fqn="cluster"/>
+          <dependency fqn="cluster"/>
 	  <dependency-set>
 	    <dependency fqn="role.cluster.r1"/>
 	    <dependency fqn="role.cluster.r2"/>

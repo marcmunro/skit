@@ -625,6 +625,49 @@ START_TEST(diff)
 }
 END_TEST
 
+START_TEST(diff2)
+{
+    Document *doc = NULL;
+    Vector *results = NULL;
+    Object *ignore;
+    char *tmp;
+    int result;
+    Symbol *simple_sort;
+    boolean failed = FALSE;
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(1104);
+	doc = getDoc("test/data/gensource_diff.xml");
+	results = gensort(doc);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
+
+	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
+			  "'diff.role.cluster.regress')");
+
+	check_build_order(results, "('diff.database.cluster.regressdb'"
+			  "'build.role.cluster.keep2')");
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
 START_TEST(depset)
 {
     Document *doc = NULL;
@@ -641,7 +684,7 @@ START_TEST(depset)
 	//showFree(806);
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	simple_sort = symbolNew("simple-sort");    
+	//simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
@@ -688,6 +731,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, check_cyclic_gensort2);
     ADD_TEST(tc_core, check_cyclic_exception);
     ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diff2);
     ADD_TEST(tc_core, depset);
 				
     suite_add_tcase(s, tc_core);

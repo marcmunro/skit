@@ -226,7 +226,7 @@ vectorRemove(Vector *vec, int index)
 {
     Object *result;
     assert(vec->type == OBJ_VECTOR, 
-	   "vectorRemove arg is not a vector");
+	   "vectorRemove: arg is not a vector");
     if (index >= vec->elems) {
 	return NULL;
     }
