@@ -1196,9 +1196,9 @@ dependencyFromSet(
 	else {
 	    if (depset_id) {
 		dbgSexp(dep);
-		optionalDepIsSatisifed(depset_id);
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("Check this code path(2)"));
+		//optionalDepSetSatisifed(depset_id);
+		//RAISE(NOT_IMPLEMENTED_ERROR, 
+		//      newstr("Check this code path(2)"));
 		// Still have to check all optional deps have been
 		// satisfied when the dag has been fully set up.
 	    }
@@ -1223,7 +1223,7 @@ visitNode(DagNode *node, Hash *allnodes)
     }
     node->status = VISITING;
     if (node->dependencies) {
-        for (i = 0; i < node->dependencies->elems; i++) {
+        for (i = node->dependencies->elems - 1; i >= 0; i--) {
             deps = node->dependencies->contents->vector[i];
 	    dep = dependencyFromSet(node, deps, allnodes, FALSE, &result);
 	    if (!dep) {
@@ -1232,24 +1232,31 @@ visitNode(DagNode *node, Hash *allnodes)
 		objectFree((Object *) result, TRUE);
 		dep = dependencyFromSet(node, deps, allnodes, TRUE, &result);
 		if (!dep) {
-		    if (!result) {
-			continue;
-			// Part of ongoing work to refactor for optional deps
-			RAISE(NOT_IMPLEMENTED_ERROR, 
-			      newstr("Check this code path(1)"));
+		    if (result) {
+			result = consNew((Object *) objRefNew((Object *) node),
+					 (Object *) result);
+			node->status = UNVISITED;
+			return result;
 		    }
-		    result = consNew((Object *) objRefNew((Object *) node),
-				     (Object *) result);
-		    node->status = UNVISITED;
-		    return result;
+		    if (!result) {
+			// Part of ongoing work to refactor for optional deps
+			//RAISE(NOT_IMPLEMENTED_ERROR, 
+			//      newstr("Check this code path(1)"));
+		    }
 		}
 	    }
 
-	    /* Replace depset with the single dependency to
-	     * which we have successfully traversed.  */
+	    /* Replace depset with the single dependency to which we
+	     * have successfully traversed, or remove the depset if
+	     * it was an unused optional dep. */ 
 	    objectFree(node->dependencies->contents->vector[i], TRUE);
-	    deps = (Object *) objRefNew((Object *) dep);
-	    node->dependencies->contents->vector[i] = (Object *) deps;
+	    if (dep) {
+		deps = (Object *) objRefNew((Object *) dep);
+		node->dependencies->contents->vector[i] = (Object *) deps;
+	    }
+	    else {
+		vectorRemove(node->dependencies, i);
+	    }
         }
     }
     node->status = VISITED;
@@ -1275,12 +1282,27 @@ visitNodeInHash(Cons *entry, Object *allnodes)
     return (Object *) node;
 }
 
+static Object *
+check_optional_deps(Cons *entry, Object *param)
+{
+    Object *this = entry->cdr;
+    dbgSexp(entry);
+
+    return this;
+}
+
 /* Converts the almost DAG into a DAG.  It resolves cyclic dependencies,
  * and replaces lists of dependencies with single dependencies */
 static void
 check_dag(Hash *allnodes)
 {
+    Symbol *optional_deps;
+    Hash *optional_hash;
     hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
+    optional_deps = symbolGet("optional-deps");
+    if (optional_hash = (Hash *) symGet(optional_deps)) {
+	hashEach(optional_hash, &check_optional_deps, NULL);
+    }
 }
 
 static Object *

@@ -90,21 +90,40 @@ check_build_order(Vector *results, char *list_str)
 }
 
 static void
-check_build_order_or(Vector *results, char *list1_str, char *list2_str)
+check_build_order_or(Vector *results, ...)
 {
-    char *err1 = test_build_order(results, list1_str); 
-    char *err2;
-    char *tmp;
+    va_list args;
+    char *list;
+    char *err;
+    char *msg = NULL;
+    char *prev;
 
-    if (err1) {
-	err2 = test_build_order(results, list2_str);
-	if (err2) {
-	    tmp = newstr("NEITHER TEST PASSED: %s; OR %s", err1, err2);
-	    skfree(err1);
-	    skfree(err2);
-	    fail(tmp);
+    va_start(args, results);
+    while (list = va_arg(args, char *)) {
+	if (!(err = test_build_order(results, list))) {
+	    if (msg) {
+		skfree(msg);
+		msg = NULL;
+	    }
+	    break;
 	}
-	skfree(err1);
+	if (msg) {
+	    prev = msg;
+	    msg = newstr("%s or %s", prev, err);
+	    skfree(prev);
+	    skfree(err);
+	}
+	else {
+	    msg = err;
+	}
+	
+    }
+    va_end(args);
+    if (msg) {
+	prev = msg;
+	msg = newstr("NO TEST PASSED: %s", prev);
+	skfree(prev);
+	fail(msg);
     }
 }
 
@@ -396,23 +415,31 @@ START_TEST(check_cyclic_gensort)
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
+			     "('drop.viewbase.skittest.public.v1' "
+			     "'build.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'build.viewbase.skittest.public.v2')");
+			     "'build.viewbase.skittest.public.v1')",
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'drop.view.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop.view.skittest.public.v2')");
+			     "'drop.view.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
 			     "'build.view.skittest.public.v1')",
 			     "('build.viewbase.skittest.public.v2' "
-			     "'build.view.skittest.public.v2')");
+			      "'build.view.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
 			     "'build.view.skittest.public.v2')",
 			     "('build.viewbase.skittest.public.v2' "
-			     "'build.view.skittest.public.v1')");
+			     "'build.view.skittest.public.v1')",
+			      NULL);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -495,23 +522,31 @@ START_TEST(check_cyclic_gensort2)
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
+			     "('drop.viewbase.skittest.public.v1' "
+			     "'build.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'build.viewbase.skittest.public.v2')");
+			     "'build.viewbase.skittest.public.v1')",
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'drop.view.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop.view.skittest.public.v2')");
+			     "'drop.view.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
 			     "'build.view.skittest.public.v1')",
 			     "('build.viewbase.skittest.public.v2' "
-			     "'build.view.skittest.public.v2')");
+			      "'build.view.skittest.public.v2')",
+			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
 			     "'build.view.skittest.public.v2')",
 			     "('build.viewbase.skittest.public.v2' "
-			     "'build.view.skittest.public.v1')");
+			     "'build.view.skittest.public.v1')",
+			      NULL);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -680,7 +715,7 @@ START_TEST(depset)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(947);
+	showMalloc(770);
 	//showFree(806);
 
 	doc = getDoc("test/data/gensource_depset.xml");
