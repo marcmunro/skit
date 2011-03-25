@@ -113,7 +113,9 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 
     assert(isHash(hash), "hashAdd: hash is not a Hash");
     assert(isObject(key), "hashAdd: key is not an object");
-    assert(isObject(contents), "hashAdd: contents is not an object");
+    if (contents) {
+	assert(isObject(contents), "hashAdd: contents is not an object");
+    }
     keystr = objectSexp(key);
 
     already_exists = g_hash_table_lookup_extended(

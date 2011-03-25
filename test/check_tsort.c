@@ -715,8 +715,8 @@ START_TEST(depset)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	showMalloc(770);
-	//showFree(806);
+	//showMalloc(23);
+	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");
 	simple_sort = symbolNew("simple-sort");    
@@ -728,7 +728,53 @@ START_TEST(depset)
 	skfree(tmp);
 
 	results = gensort(doc);
-	printSexp(stderr, "RESULTS: ", (Object *) results);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
+
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+START_TEST(depset2)
+{
+    Document *doc = NULL;
+    Vector *results = NULL;
+    Object *ignore;
+    char *tmp;
+    int result;
+    boolean failed = FALSE;
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	doc = getDoc("test/data/gensource_depset.xml");
+	ignore = evalSexp(tmp = newstr("(setq build t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+	ignore = evalSexp(tmp = newstr("(setq drop t)"));
+	objectFree(ignore, TRUE);
+	skfree(tmp);
+
+	results = gensort(doc);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
 	objectFree((Object *) results, TRUE);
@@ -769,8 +815,8 @@ tsort_suite(void)
     ADD_TEST(tc_core, check_cyclic_exception);
     ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, diff2);
-    // When this passes, try it with smart_tsort
     ADD_TEST(tc_core, depset);
+    ADD_TEST(tc_core, depset2);
 				
     suite_add_tcase(s, tc_core);
 

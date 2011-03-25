@@ -114,7 +114,7 @@ regexpFree(Regexp *re)
 boolean
 isObject(Object *obj)
 {
-    return (obj->type > OBJ_UNDEFINED) && 
+    return (obj != NULL) && (obj->type > OBJ_UNDEFINED) && 
 	(obj->type < OBJ_NOTOBJECT);
 }
 

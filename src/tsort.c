@@ -353,9 +353,6 @@ addDependent(DagNode *node, DagNode *dep)
     Object *new;
     assert(node->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode nodes");
-    if (dep->type != OBJ_DAGNODE) {
-	dbgSexp(dep);
-    }
     assert(dep->type == OBJ_DAGNODE,
 	"addDependent: Cannot handle non-dagnode dependent");
     
@@ -407,51 +404,68 @@ dependencyType(Object *deps)
     RAISE(TSORT_ERROR, msg);
 }
 
-static boolean
-optionalDepIsSatisifed(Int4 *dep)
+static Hash *
+optionalDepsHash()
 {
     static Symbol *optional_deps = NULL;
     Hash *hash;
-    Object *result;
-
     if (!optional_deps) {
-	optional_deps = symbolGet("optional-deps");
+	optional_deps = symbolNew("optional-deps");
+	hash = hashNew(TRUE);
+	symSet(optional_deps, (Object *) hash);
+	return hash;
     }
-    hash = (Hash *) symGet(optional_deps);
-    result = hashGet(hash, (Object *) dep);
-    return (result != NULL);
+    return (Hash *) symGet(optional_deps);
 }
 
-static void
-optionalDepSetSatisifed(Int4 *dep)
-{
-    static Symbol *optional_deps = NULL;
-    static Symbol *t;
-    Hash *hash;
-    Object *result;
 
-    if (!optional_deps) {
-	optional_deps = symbolGet("optional-deps");
-	t = symbolGet("t");
-    }
-    hash = (Hash *) symGet(optional_deps);
-    (void) hashAdd(hash, (Object *) dep, (Object *) t);
+static void
+optionalDepSetSatisfied(Int4 *dep)
+{
+    Hash *hash = optionalDepsHash();
+    Int4 *key = int4New(dep->value);
+    Symbol *t = symbolGet("t");
+    ObjReference *ref = objRefNew((Object *) t);
+    (void) hashAdd(hash, (Object *) key, (Object *) ref);
 }
 
 static int
 defineOptionalDep()
 {
     static int depset_id = 0;
-    static Symbol *optional_deps = NULL;
+    Hash *hash = optionalDepsHash();
     Int4 *key;
-    if (!optional_deps) {
-	optional_deps = symbolNew("optional-deps");
-	symSet(optional_deps, (Object *) hashNew(TRUE));
-    }
- 
+
     depset_id++;
+    key = int4New(depset_id);
+    (void) hashAdd(hash, (Object *) key, NULL);
     return depset_id;
 }
+
+static Object *
+checkOptionalDep(Cons *node_entry, Object *param)
+{
+    Object *satisfied = node_entry->cdr;
+
+    if (!satisfied) {
+	/* If this error starts looking likely we should somehow record
+	 * details of the dependency set (which dagnode, which elements
+	 * in the set). */
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("Unsatisfied optional dependency set"));
+    }
+    return satisfied;
+}
+
+
+static void
+check_optional_deps()
+{
+    Hash *hash = optionalDepsHash();
+    hashEach(hash, &checkOptionalDep, NULL);
+}
+
+
 
 static void
 addDependencies(DagNode *node, Object *deps)
@@ -561,6 +575,7 @@ static void
 addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 {
     boolean inverted = is_old_dep || (node->build_type == DROP_NODE);
+    boolean free_deps = FALSE;
     DagNode *this;
     Cons *next;
     Object *this_dep;
@@ -571,6 +586,7 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 	    this = (DagNode *) dereference(((Cons *) deps)->car);
 	    next = (Cons *) ((Cons *) deps)->cdr;
 	    depset_id = defineOptionalDep();
+	    free_deps = TRUE;
 	}
 	else {
 	    this = (DagNode *) deps;
@@ -606,6 +622,9 @@ addDirectedDependencies(DagNode *node, Object *deps, boolean is_old_dep)
 	    else {
 		break;
 	    }
+	}
+	if (free_deps) {
+	    objectFree(deps, TRUE);
 	}
     }
     else {
@@ -726,6 +745,8 @@ handleSimpleDep(DagNode *dagnode, xmlNode *dep_node, Cons *hashes)
     }
 }
 
+static void *chunk = NULL;
+
 static void
 handleDepSet(DagNode *dagnode, xmlNode *depset_node, Cons *hashes)
 {
@@ -747,6 +768,7 @@ handleDepSet(DagNode *dagnode, xmlNode *depset_node, Cons *hashes)
 		}
 		if (next->type != OBJ_CONS) {
 		    next = (Object *) consNode((DagNode *) next);
+		    chunk = next;
 		}
 		deps = (Object *) consConcat((Cons *) deps, (Cons *) next);
 	    }
@@ -1195,12 +1217,7 @@ dependencyFromSet(
 	}
 	else {
 	    if (depset_id) {
-		dbgSexp(dep);
-		//optionalDepSetSatisifed(depset_id);
-		//RAISE(NOT_IMPLEMENTED_ERROR, 
-		//      newstr("Check this code path(2)"));
-		// Still have to check all optional deps have been
-		// satisfied when the dag has been fully set up.
+		optionalDepSetSatisfied(depset_id);
 	    }
 	    return dep;
 	}
@@ -1282,27 +1299,13 @@ visitNodeInHash(Cons *entry, Object *allnodes)
     return (Object *) node;
 }
 
-static Object *
-check_optional_deps(Cons *entry, Object *param)
-{
-    Object *this = entry->cdr;
-    dbgSexp(entry);
-
-    return this;
-}
-
 /* Converts the almost DAG into a DAG.  It resolves cyclic dependencies,
  * and replaces lists of dependencies with single dependencies */
 static void
 check_dag(Hash *allnodes)
 {
-    Symbol *optional_deps;
-    Hash *optional_hash;
     hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
-    optional_deps = symbolGet("optional-deps");
-    if (optional_hash = (Hash *) symGet(optional_deps)) {
-	hashEach(optional_hash, &check_optional_deps, NULL);
-    }
+    check_optional_deps();
 }
 
 static Object *
