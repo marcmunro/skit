@@ -159,7 +159,7 @@ catcher3(int i)
 	RAISE();
     }
     WHEN(21) {
-	RAISE(22);
+	RAISE(22, newstr("22"));
     }
     WHEN(115) {
 	RAISE();

@@ -27,21 +27,27 @@ static char *
 exceptionName(int e)
 {
     switch (e) {
-    case SIGTERM:	        return "SIGTERM";
-    case LIST_ERROR:		return "LIST_ERROR";
-    case TYPE_MISMATCH:		return "TYPE_MISMATCH";
-    case UNKNOWN_TOKEN:         return "UNKNOWN_TOKEN";
-    case UNHANDLED_OBJECT_TYPE: return "UNHANDLED_OBJECT_TYPE";
-    case FILEPATH_ERROR:        return "FILEPATH_ERROR";
-    case MISSING_VALUE_ERROR:   return "MISSING_VALUE_ERROR";
-    case OUT_OF_BOUNDS:         return "OUT_OF_BOUNDS";
-    case PARAMETER_ERROR:       return "PARAMETER_ERROR";
-    case NOT_IMPLEMENTED_ERROR: return "NOT_IMPLEMENTED_ERROR";
-    case XML_PROCESSING_ERROR:  return "XML_PROCESSING_ERROR";
-    case GENERAL_ERROR:         return "GENERAL_ERROR";
-    case REGEXP_ERROR:          return "REGEXP_ERROR";
-    case SQL_ERROR:             return "SQL_ERROR";
-    case UNPROCESSED_INCLUSION: return "UNPROCESSED_INCLUSION";
+    case SIGTERM:	          return "SIGTERM";
+    case LIST_ERROR:		  return "LIST_ERROR";
+    case TYPE_MISMATCH:		  return "TYPE_MISMATCH";
+    case UNKNOWN_TOKEN:           return "UNKNOWN_TOKEN";
+    case UNHANDLED_OBJECT_TYPE:   return "UNHANDLED_OBJECT_TYPE";
+    case FILEPATH_ERROR:          return "FILEPATH_ERROR";
+    case MISSING_VALUE_ERROR:     return "MISSING_VALUE_ERROR";
+    case OUT_OF_BOUNDS:           return "OUT_OF_BOUNDS";
+    case PARAMETER_ERROR:         return "PARAMETER_ERROR";
+    case NOT_IMPLEMENTED_ERROR:   return "NOT_IMPLEMENTED_ERROR";
+    case XML_PROCESSING_ERROR:    return "XML_PROCESSING_ERROR";
+    case GENERAL_ERROR:           return "GENERAL_ERROR";
+    case REGEXP_ERROR:            return "REGEXP_ERROR";
+    case SQL_ERROR:               return "SQL_ERROR";
+    case UNPROCESSED_INCLUSION:   return "UNPROCESSED_INCLUSION";
+    case MEMORY_ERROR: 	          return "MEMORY_ERROR";
+    case ASSERTION_FAILURE: 	  return "ASSERTION_FAILURE";
+    case XPATH_EXCEPTION: 	  return "XPATH_EXCEPTION";
+    case INDEX_ERROR:        	  return "INDEX_ERROR";
+    case TSORT_ERROR:        	  return "TSORT_ERROR";
+    case TSORT_CYCLIC_DEPENDENCY: return "TSORT_CYCLIC_DEPENDENCY";
     default: return "UNKNOWN EXCEPTION";
     }
 }
@@ -157,12 +163,13 @@ unhandled_exception(char *msg, int signal, char *file, int line, char *txt)
 /* Raise a new exception.  Called indirectly from the RAISE() macro.
  */
 static void 
-doRaise(char *file, int line, int signal, char *txt)
+doRaise(char *file, int line, int signal, char *txt, Object *param)
 {
     Exception *exhandler = exceptionCurHandler();
     if (exhandler) {
 	exhandler->signal = signal;
 	exhandler->text = txt;
+	exhandler->param = param;
 	exhandler->file_raised = newstr("%s", file);
 	exhandler->line_raised = line;
 	exhandler->backtrace = backtraceStr(exhandler, NULL);
@@ -193,6 +200,7 @@ doReRaise(char *file, int line)
 	    new_handler->text = newstr("%s", ex->text);
 	    new_handler->backtrace = backtraceStr(new_handler, ex);
 	}
+	new_handler->param = ex->param;
 	exceptionPop();
 
 	longjmp(new_handler->handler, signal);
@@ -219,11 +227,17 @@ exceptionRaise(char *file, int line, ...)
     int signal;
     char *txt;
     va_list params;
+    Object *exparam = NULL;
     Exception *exhandler = exceptionCurHandler();
 
     va_start(params, line);
     if (signal = va_arg(params, int)) {
 	txt = (char *) va_arg(params, char *);
+	exparam = (Object *) va_arg(params, Object *);
+	if (exparam) {
+	    fprintf(stderr, "EXCEPTION TEXT: %s\n", txt);
+	    dbgSexp(exparam);
+	}
     }
     va_end(params);
 
@@ -234,7 +248,7 @@ exceptionRaise(char *file, int line, ...)
 		/* We are in the EXCEPTION block */
 		exceptionPop();
 	    }
-	    doRaise(file, line, signal, txt);
+	    doRaise(file, line, signal, txt, exparam);
 	}
 	else {
 	    if (exhandler->signal) {
@@ -242,7 +256,7 @@ exceptionRaise(char *file, int line, ...)
 	    }
 	    doRaise(file, line, UNKNOWN_EXCEPTION, 
 		    newstr("Stupid attempt to re-raise an exception outside "
-			   "of an exception block."));
+			   "of an exception block."), NULL);
 	}
     }
     else {

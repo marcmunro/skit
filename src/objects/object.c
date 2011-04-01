@@ -421,6 +421,7 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
     new->status = UNVISITED;
     new->dependencies = NULL;
     new->dependents = NULL;   // TODO: Figure out if we can lose this!
+    new->chosen_options = NULL;
     new->cur_dep = NULL;
     new->parent = NULL;
     new->kids = NULL;

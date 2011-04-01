@@ -42,7 +42,7 @@
  * regardless of whether exceptions have occurred or not.  This must be
  * the final clause before END.
  *
- * The current implementation of the macors is quite complex, made worse
+ * The current implementation of the macros is quite complex, made worse
  * by the wish to allow a FINALLY clause.  Prior to the FINALLY clause
  * being implemented, the following code:
  * 
@@ -57,7 +57,7 @@
  *     END;
  * }
  * 
- * Would have expanded as follows:
+ * would have expanded as follows:
  * {
  *     exceptionPush(exceptionNew(__FILE__, __LINE__));
  *     if (sigsetjmp(exceptionCurHandler()->handler, 1) == 0) {

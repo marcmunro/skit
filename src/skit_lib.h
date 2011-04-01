@@ -123,6 +123,7 @@ typedef struct Exception{
     int     depth;
     int     signal;
     char   *text;
+    Object *param;
     boolean caught;
     boolean re_raise;
     jmp_buf handler;
@@ -248,6 +249,8 @@ typedef struct DagNode {
     Vector          *dependencies;
     Vector          *dependents;
     int              buildable_kids;
+    Cons            *chosen_options;
+    int              cur_dep_idx;
     struct DagNode  *cur_dep;
     struct DagNode  *parent;
     struct DagNode  *kids;
