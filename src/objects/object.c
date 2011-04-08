@@ -437,6 +437,7 @@ dagnodeFree(DagNode *node)
     objectFree((Object *) node->object_type, TRUE);
     objectFree((Object *) node->dependencies, TRUE);
     objectFree((Object *) node->dependents, TRUE);
+    objectFree((Object *) node->chosen_options, TRUE);
     skfree(node);
 }
 

@@ -234,10 +234,6 @@ exceptionRaise(char *file, int line, ...)
     if (signal = va_arg(params, int)) {
 	txt = (char *) va_arg(params, char *);
 	exparam = (Object *) va_arg(params, Object *);
-	if (exparam) {
-	    fprintf(stderr, "EXCEPTION TEXT: %s\n", txt);
-	    dbgSexp(exparam);
-	}
     }
     va_end(params);
 

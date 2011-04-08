@@ -1322,58 +1322,7 @@ report_cycle(DagNode *node)
     skfree(str);
 }
 
-typedef struct DepTracker {
-    ObjType  type;
-    Object  *deps;
-    Cons    *next;
-    boolean  break_attempted;
-} DepTracker;
-
-DagNode *
-first_dep(Object *deps, DepTracker *tracker)
-{
-    DagNode *dep;
-    Cons *list;
-
-    tracker->deps = deps;
-    tracker->break_attempted = FALSE;
-    if (deps->type == OBJ_CONS) {
-	list = (Cons *) deps;
-	if (list->car->type == OBJ_INT4) {
-	    tracker->type = OBJ_INT4;
-	    dep = (DagNode *) dereference(list->cdr);
-	    list = NULL;
-	}
-	else {
-	    tracker->type = OBJ_CONS;
-	    dep = (DagNode *) dereference(list->car);
-	    list = (Cons *) list->cdr;
-	}
-    }
-    else {
-	tracker->type = OBJ_DAGNODE;
-	dep = (DagNode *) dereference(deps);
-	list = NULL;
-    }
-    tracker->next = list;
-    return dep;
-}
-
-DagNode *
-next_dep(DepTracker *tracker)
-{
-    DagNode *dep;
-    tracker->break_attempted = FALSE;
-    if (tracker->next) {
-	dep = (DagNode *) dereference(tracker->next->car);
-	tracker->next = (Cons *) tracker->next->cdr;
-    }
-    else {
-	dep = NULL;
-    }
-    return dep;
-}
-
+#ifdef WASSIS
 Object *
 update_node_deps(DagNode *node, int i, DepTracker *tracker)
 {
@@ -1385,7 +1334,6 @@ update_node_deps(DagNode *node, int i, DepTracker *tracker)
     }
 }
 
-#ifdef WASSIS
 void
 attempt_cycle_break(DagNode *node, int i, DagNode *dep, DepTracker *tracker)
 {
@@ -1428,6 +1376,98 @@ attempt_cycle_break(DagNode *node, int i, DagNode *dep, DepTracker *tracker)
 }
 #endif
 
+
+typedef struct DepTracker {
+    ObjType  type;
+    Object  *deps;
+    Cons    *next;
+    boolean  break_attempted;
+} DepTracker;
+
+static DagNode *
+first_dep(Object *deps, DepTracker *tracker)
+{
+    DagNode *dep;
+    Cons *list;
+
+    tracker->deps = deps;
+    tracker->break_attempted = FALSE;
+    if (deps->type == OBJ_CONS) {
+	list = (Cons *) deps;
+	if (list->car->type == OBJ_INT4) {
+	    tracker->type = OBJ_INT4;
+	    dep = (DagNode *) dereference(list->cdr);
+	    list = NULL;
+	}
+	else {
+	    tracker->type = OBJ_CONS;
+	    dep = (DagNode *) dereference(list->car);
+	    list = (Cons *) list->cdr;
+	}
+    }
+    else {
+	tracker->type = OBJ_DAGNODE;
+	dep = (DagNode *) dereference(deps);
+	list = NULL;
+    }
+    tracker->next = list;
+    return dep;
+}
+
+static DagNode *
+next_dep(DepTracker *tracker)
+{
+    DagNode *dep;
+    tracker->break_attempted = FALSE;
+    if (tracker->next) {
+	dep = (DagNode *) dereference(tracker->next->car);
+	tracker->next = (Cons *) tracker->next->cdr;
+    }
+    else {
+	dep = NULL;
+    }
+    return dep;
+}
+
+/* The current dep being evaluated (as described in tracker) was
+ * successfully visited, so if this dep is in some way optional, record
+ * this so that we can later convert our almost DAG into a true DAG.
+ */
+static void
+record_success(DagNode *node, DepTracker *tracker)
+{
+    Cons *record;
+    Int4 *idx;
+    if (tracker->type == OBJ_DAGNODE) {
+	/* Nothing to do here. */
+	return;
+    }
+    idx = int4New(node->cur_dep_idx);
+    record = consNew((Object *) idx, NULL);
+    if (tracker->type == OBJ_CONS) {
+	record->cdr = (Object *) objRefNew((Object *) node->cur_dep);
+    }
+    else {
+	dbgSexp(node->cur_dep);
+    }
+    dbgSexp(record);
+    node->chosen_options = consNew((Object *) record, 
+				   (Object *) node->chosen_options);
+}
+
+/* Remove nodes that were apparantly sucessfully visited from the
+ * visited vector, resetting them to unvisited.  This is called in the
+ * event of a cyclic dependency exception beig detected, so that we may
+ * attempt some remedial actions. */
+static void
+unvisit_nodes(Vector *visited, int elems)
+{
+    if (visited->elems > elems) {
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("Have not yet implemented unvisit_nodes"));
+    }
+}
+
 /* Breaking cyclic dependencies:
  * We use recursion to traverse the dag.  When we reach a node that has
  * no unvisited dependencies, we mark that node as visited and add it to
@@ -1444,75 +1484,135 @@ attempt_cycle_break(DagNode *node, int i, DagNode *dep, DepTracker *tracker)
  *   3) If this node has a "cycle_breaker" attribute, we can use it.
  *      This should only be done when all other mechanisms have been
  *      unsuccessfully explored.
+ *   4) Ignore it
+ *      This will only be an option if the allow_cycles parameter has
+ *      been defined (TODO: create this parameter and make it usable).
  * When a cyclic dependency is detected, we immediately raise a 
  * TSORT_CYCLIC_DEPENDENCY exception.  This will be trapped by each
  * preceding level of recursion and will either be handled or re-raised.
  * When we are unable to handle the cyclic dependency, we reset any
  * nodes added to our result vector during our visit to the current
  * node.
- * The try_harder parameter is normally false.  When it is true, we can
- * try mechanism 3 for dependency resolution.  It will be passed as
- * true, when a TSORT_CYCLIC_DEPENDENCY exception propagates back to the
- * node at which the cycle was detected and a retry is performed, or
- * when the parameter passed in is true, and the exception is trapped.
- * What this means, is that we retry with try_harder = true only after
- * completely failing to resolve the cycle using methods 1 and 2, and
- * then only when methods 1 and 2 have failed again during our
- * rescursion.  This means that if the cycle can be broken only by a
- * combination of methods, that combination is more likely to use
- * multiple methods 1 and 2, and single method 3, rather than multiple
- * method 3s.
- * I doubt that will make sense to anyone but I write it down now, so
- * that I can remember it during implementation. 
+ * The how_hard_to_try parameter is normally 1.   When it is 1, we will
+ * only attempt method 1 above.  When it is 2, we will try methods 1 and
+ * 2, and when 3, we will try all 3.
+ * When recursing, the value of how_hard_to_try that is passed to
+ * recursed function will be 1.  If a cyclic dependency exception is
+ * raised, we may retry with an incremented value.  We can never
+ * increment beyond the value we were called with.
+ * If we are at the cycle node (the node at which he cycle was detected,
+ * we can retry with an incremented how_hard_to_try parameter.
+ * This mechanism is meant to ensure that we try harder to use method 1,
+ * and only if that fails use method 2.  Similarly for method 3.
+ * This is an inefficient and exhaustive method for resolving cycles but
+ * simpler methods have not so far worked.
+ * Possible future optimisations:
+ * 1 Sort dependency lists so that dependency sets appear last, then
+ *   optional dependencies.
+ * 2 Check for the presence of optional dependencies and cycle_breakers
+ *   along the cyclic path (which we can determine using node->cur_dep)
+ *   before incrementing the how_hard_to_try parameter.
  */
-
 static void
-eliminate_cycles(DagNode *node, Hash *allnodes, Vector *visited)
+eliminate_cycles(DagNode *node, Hash *allnodes, 
+		 Vector *visited, int how_hard_to_try)
 {
     int i;
+    int cur_elems = visited->elems;
     Object *deps;
     DagNode *dep;
-    Cons *list;
     DepTracker tracker;
+    int how_hard_to_retry = 1;
 
     switch (node->status) {
     case VISITED:
         return;
     case VISITING:
 	/* We have detected a cycle */
-	report_cycle(node);
+	//report_cycle(node);
 	RAISE(TSORT_CYCLIC_DEPENDENCY, newstr(""), node);
     }
     node->status = VISITING;
     if (node->dependencies) {
+	printSexp(stderr, "Visiting: ", (Object *) node);
+	fprintf(stderr, "Visited nodes = %d, how_hard_to_try = %d\n", 
+		cur_elems, how_hard_to_try);
+
         for (i = node->dependencies->elems - 1; i >= 0; i--) {
             deps = node->dependencies->contents->vector[i];
 	    dbgSexp(deps);
 	    dep = first_dep(deps, &tracker);
-
+	    node->cur_dep_idx = i;
 	    while (dep) {
 		node->cur_dep = dep;
 		BEGIN {
-		    eliminate_cycles(dep, allnodes, visited);
+		    eliminate_cycles(dep, allnodes, visited, how_hard_to_retry);
+		    record_success(node, &tracker);
+		    dep = NULL;
 		}
 		EXCEPTION(ex);
 		WHEN(TSORT_CYCLIC_DEPENDENCY) {
-		    fprintf(stderr, "EXCEPTION TRAPPED - MOVING ON\n");
-		    dbgSexp(ex->param);
+		    boolean fail = FALSE;
+		    fprintf(stderr, "EXCEPTION TRAPPED...\n");
 		    dbgSexp(node);
-		    RAISE();
+		    dbgSexp(dep);
+		    unvisit_nodes(visited, cur_elems);
+
+		    if (tracker.type == OBJ_CONS) {
+			/* We are in a dependency set, let's try the
+			 * next entry in the set. */
+			if (dep = next_dep(&tracker)) {
+			    fprintf(stderr, "TRYING THE NEXT IN THE SET\n");
+			}
+			else {
+			    fail = TRUE;
+			}
+		    }
+		    else if ((how_hard_to_try > 1) &&
+			     (tracker.type == OBJ_INT4)) {
+			/* That was an optional dependency, so let's try
+			 * ignoring it. */
+			printSexp(stderr, "IGNORING OPTIONAL DEP", 
+				  (Object *) node->cur_dep);
+			dep = NULL;
+		    }
+		    else if (how_hard_to_try > how_hard_to_retry) {
+			/* We are allowed to retry a little harder */
+			//RAISE(GENERAL_ERROR,
+			//      newstr("Hoping for a test case for this"));
+			how_hard_to_retry++;
+			fprintf(stderr, "TRYING HARDER: %d\n", 
+				how_hard_to_retry);
+		    }
+		    else if ((DagNode *) ex->param == node) {
+			/* We are allowed to increment the
+			 * how_hard_to_retry parameter as we are the
+			 * cycle_node. */
+			how_hard_to_retry++;
+			fail = (how_hard_to_retry > 3);
+		    }
+		    else {
+			fail = TRUE;
+		    }
+
+		    if (fail) {
+			node->status = UNVISITED;
+			printSexp(stderr, "Unvisiting: ", (Object *) node);
+			RAISE();
+		    }
 		}
 		WHEN_OTHERS {
 		    fprintf(stderr, "ANOTHER EXCEPTION TRAPPED - MOVING ON\n");
 		    dbgSexp(ex->param);
 		    dbgSexp(node);
+		    node->status = UNVISITED;
 		    RAISE();
 		}
 		END;
-		dep = next_dep(&tracker);
 	    }
         }
     }
+    printSexp(stderr, "Visited: ", (Object *) node);
     node->status = VISITED;
     return;
 }
@@ -1523,7 +1623,7 @@ eliminateCycles(Cons *entry, Object *allnodes)
     Vector *visited = vectorNew(20);
     DagNode *node = (DagNode *) entry->cdr;
     BEGIN {
-	eliminate_cycles(node, (Hash *) allnodes, visited);
+	eliminate_cycles(node, (Hash *) allnodes, visited, 1);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1533,6 +1633,48 @@ eliminateCycles(Cons *entry, Object *allnodes)
     return (Object *) node;
 }
 
+static void
+solidify_options(DagNode *node)
+{
+    Cons *list;
+    Cons *entry;
+    int idx;
+
+    //TODO: record when optional deps have been satisfied.
+    if (list = node->chosen_options) {
+	while (list) {
+	    entry = (Cons *) list->car;
+	    idx = ((Int4 *) entry->car)->value;
+	    dbgSexp(entry);
+	    list = (Cons *) list->cdr;
+	    if (entry->cdr) {
+		Cons *depset = (Cons *) node->dependencies->contents->
+		    vector[idx];
+		node->dependencies->contents->vector[idx] = entry->cdr;
+		entry->cdr = NULL;
+		objectFree((Object *) depset, TRUE);
+	    }
+	    else {
+		Cons *option = (Cons *) node->dependencies->contents->
+		    vector[idx];
+		node->dependencies->contents->vector[idx] = option->cdr;
+		option->cdr = NULL;
+		objectFree((Object *) option, TRUE);
+	    }
+	}
+    }
+}
+
+
+static Object *
+solidifyOptions(Cons *entry, Object *ignore)
+{
+    DagNode *node = (DagNode *) entry->cdr;
+    solidify_options(node);
+    return (Object *) node;
+}
+
+// TODO: Remove this
 static Object *
 resetStatus(Cons *entry, Object *allnodes)
 {
@@ -1550,15 +1692,20 @@ check_dag(Hash *allnodes)
 {
     BEGIN {
 	hashEach(allnodes, &eliminateCycles, (Object *) allnodes);
+	/* We get here if we have successfully traversed the near-dag.
+	 * Having done so, we now have enough information in the nodes'
+	 * chosen_options entries, to convert the near-dag into a true
+	 * dag. */
+	hashEach(allnodes, &solidifyOptions, NULL);
     }
     EXCEPTION(ex);
     WHEN(TSORT_CYCLIC_DEPENDENCY) {
 	fprintf(stderr, "UNFIXED CYCLIC DEPS EXIST...\n");
+	RAISE();
     }
     END;
     hashEach(allnodes, &resetStatus, (Object *) allnodes);
     hashEach(allnodes, &visitNodeInHash, (Object *) allnodes);
-    showAllDeps(allnodes);
     check_optional_deps();
 }
 
