@@ -81,6 +81,7 @@ typedef enum {
     OBJ_CONNECTION,
     OBJ_CURSOR,
     OBJ_TUPLE,
+    OBJ_DEPSET,
     OBJ_DAGNODE,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
@@ -216,9 +217,10 @@ typedef enum {
     BUILD_NODE = 53,
     DROP_NODE,
     DIFF_NODE,
+    EXISTS_NODE,
+    BUILD_AND_DROP_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
-    EXISTS_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
 
@@ -237,6 +239,18 @@ typedef enum {
     DEP_OPTIONAL
 } depType;
 
+
+typedef struct Depset {
+    ObjType        type;
+    boolean        is_optional;		/* Iff an optional simple dep */
+    boolean        is_set;		/* Iff not a dependency-set */
+    boolean        satisfies_depset;	/* Iff is_optional and this is 
+  		 			 * the first dep from the
+					 * originating depset that has
+					 * been successfully traversed */
+    struct Depset *depset_origin;	/* Iff is_optional */
+    Cons          *deps;
+} Depset;
 
 
 typedef struct DagNode {
@@ -323,6 +337,7 @@ extern Object *consNext(Cons *list, Object **p_placeholder);
 extern Object *consAppend(Cons *list, Object *item);
 extern Cons *consConcat(Cons *list, Cons *list2);
 extern boolean checkCons(Cons *cons, void *chunk);
+extern boolean consIn(Cons *cons, Object *obj);
 
 // object.c
 extern Tuple *tupleNew(Cursor *cursor);
@@ -594,7 +609,13 @@ extern String *sqlDBQuote(String *first, String *second);
 extern void registerPGSQL();
 extern void pgsqlFreeMem();
 
+// deps.c
+extern void recordParentage(Document *doc, Hash *dagnodes);
+extern void recordDependencies(Document *doc, Hash *dagnodes, Hash *pqnhash);
+
+
 // tsort.c
+extern Vector *gensort2(Document *doc);
 extern Vector *gensort(Document *doc);
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
 extern char *applyParams(char *qrystr, Object *params);

@@ -2134,6 +2134,7 @@ gensort(Document *doc)
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Symbol *simple_sort = symbolGet("simple-sort");
     
+    (void) gensort2(doc);
     handling_context = (ignore_contexts == NULL);
 
     BEGIN {

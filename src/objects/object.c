@@ -441,6 +441,16 @@ dagnodeFree(DagNode *node)
     skfree(node);
 }
 
+void
+depsetFree(Depset *depset)
+{
+    objectFree((Object *) depset->deps, TRUE);
+    if (depset->satisfies_depset) {
+	objectFree((Object *) depset->depset_origin, TRUE);
+    }
+    skfree(depset);
+}
+
 /* Free a dynamically allocated object. */
 void
 objectFree(Object *obj, boolean free_contents)
@@ -481,6 +491,8 @@ objectFree(Object *obj, boolean free_contents)
 	    cursorFree((Cursor *) obj); break;
 	case OBJ_DAGNODE:
 	    dagnodeFree((DagNode *) obj); break;
+	case OBJ_DEPSET:
+	    depsetFree((Depset *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -508,6 +520,39 @@ nameForBuildType(DagNodeBuildType build_type)
     case EXISTS_NODE: return "exists";
     }
     return "UNKNOWNBUILDTYPE";
+}
+
+char *
+depSetStr(Depset *depset)
+{
+    char *deps = objectSexp((Object *) depset->deps);
+    char *result;
+    char *tmp;
+    char *options = NULL;
+
+    if (depset->is_set) {
+	options = newstr("set");
+    }
+    else {
+	options = newstr("single");
+    }
+
+    if (depset->is_optional) {
+	tmp = options;
+	options = newstr("%s %s", tmp, "optional");
+	skfree(tmp);
+    }
+
+    if (depset->satisfies_depset) {
+	tmp = options;
+	options = newstr("%s %s", tmp, "satisfies-depset");
+	skfree(tmp);
+    }
+
+    result = newstr("(==>[%s] %s)", options, deps);
+    skfree(deps);
+    skfree(options);
+    return result;
 }
 
 /* Return dynamically-created string representation of object. 
@@ -562,6 +607,8 @@ objectSexp(Object *obj)
 	return tupleStr((Tuple *) obj);
     case OBJ_REGEXP:
 	return newstr("/%s/", ((Regexp *) obj)->src_str);
+    case OBJ_DEPSET:
+	return depSetStr((Depset *) obj);
     default: 
 	// TODO: improve this string.
 	return newstr("{BROKEN OBJECT: %x}", obj);

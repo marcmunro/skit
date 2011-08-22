@@ -423,6 +423,19 @@ consConcat(Cons *list, Cons *list2)
     return list;
 }
 
+boolean
+consIn(Cons *cons, Object *obj)
+{
+    Cons *next = cons;
+    while (next) {
+	if (obj == dereference(next->car)) {
+	    return TRUE;
+	}
+	next = (Cons *) next->cdr;
+    }
+    return FALSE;
+}
+
 boolean 
 checkCons(Cons *cons, void *chunk)
 {
