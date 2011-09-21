@@ -233,8 +233,7 @@ copyDepset(Depset *dep)
     new = depsetNew();
     if (dep->actual) {
 	/* Simple copy of only the "actual" reference. */
-	new->actual = (DagNode *) 
-	    objRefNew(dereference((Object *) dep->actual));
+	new->actual = dep->actual;
     }
     else {
 	/* Copy the whole depset list */
@@ -276,7 +275,7 @@ copyDagNodeDeps(DagNode *target, DagNode *src)
 static Depset *
 removeDepset(Depset *depset, DagNode *remove_dep)
 {
-    DagNode *node = (DagNode *) dereference((Object *) depset->actual);
+    DagNode *node = depset->actual;
     Cons *start;
     Cons *next;
 
@@ -348,8 +347,8 @@ addActualDep(DagNode *from, DagNode *to)
     Depset *depset = depsetNew();
     Cons *deps = consNew(NULL, NULL);
     Cons *depsets = consNew((Object *) depset, (Object *) from->deps);
-    depset->actual = (DagNode *) objRefNew((Object *) to);
-    deps->car = (Object *) depset->actual;
+    depset->actual = to;
+    deps->car = (Object *) objRefNew((Object *) depset->actual);
     depset->deps = deps;
     from->deps = depsets;
 }
