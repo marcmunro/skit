@@ -412,6 +412,7 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
     char *errmsg = NULL;
     char *tmp;
     boolean optional;
+    boolean more;
 
     while (nextdep) {
 	/* Although this is a loop, we only have to successfully process
@@ -467,35 +468,39 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
 		return break_node;
 	    }
 	}
-    }
 
-    /* We have failed to find a dep we can safely follow.  Let's make
-     * this the caller's problem - maybe they will have a solution. */
-    if (cycle_node) {
-	if (node == cycle_node) {
-	    /* We are at the start of the cyclic dependency.  Set errmsg
-	     * to describe this, and reset cycle_node for the RAISE
-	     * below. */ 
-	    tmp = newstr("Cyclic dependency detected: %s->%s", 
-			 node->fqn->value, errmsg);
-	    cycle_node = NULL;
-	}
-	else {
-	    /* We are somewhere in the cycle of deps.  Add the current
-	     * node to the error message. */ 
-	    tmp = newstr("%s->%s", node->fqn->value, errmsg);
-	}
-    }
-    else {
-	/* We are outside of the cyclic deps.  Add this node to
-	 * the error message so we can see how we got here.  */
-	tmp = newstr("%s from %s", errmsg, node->fqn->value);
-    }
-    skfree(errmsg);
-    errmsg = tmp;
+        more = nextdep && TRUE;
+        if (!more) {
+	    /* We have failed to find a dep we can safely follow.  Let's
+	     * make this the caller's problem - maybe they will have a
+	     * solution. */ 
+	    if (cycle_node) {
+		if (node == cycle_node) {
+		    /* We are at the start of the cyclic dependency.
+		     * Set errmsg to describe this, and reset cycle_node
+		     * for the RAISE below. */ 
+		    tmp = newstr("Cyclic dependency detected: %s->%s", 
+				 node->fqn->value, errmsg);
+		    cycle_node = NULL;
+		}
+		else {
+		    /* We are somewhere in the cycle of deps.  Add the current
+		     * node to the error message. */ 
+		    tmp = newstr("%s->%s", node->fqn->value, errmsg);
+		}
+	    }
+	    else {
+		/* We are outside of the cyclic deps.  Add this node to
+		 * the error message so we can see how we got here.  */
+		tmp = newstr("%s from %s", errmsg, node->fqn->value);
+	    }
+	    skfree(errmsg);
+	    errmsg = tmp;
     
-    /* Unable to resolve cycle.  Defer the issue to the caller */
-    RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg, cycle_node);
+	    /* Unable to resolve cycle.  Defer the issue to the caller */
+	    RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg, cycle_node);
+	}
+    }
 }
 
 static DagNode *
