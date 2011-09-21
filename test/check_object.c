@@ -923,6 +923,66 @@ START_TEST(cons_concat)
 }
 END_TEST
 
+START_TEST(cons_remove1)
+{
+    Cons *list = (Cons *) objectFromStr("(1 2 3)");
+    Cons *first = list;
+    char *resultstr;
+    char *tmp;
+    initBuiltInSymbols();
+
+    list = consRemove(list, first);
+    resultstr = objectSexp((Object *) list);
+    fail_unless(streq(resultstr, "(2 3)"),
+		tmp = newstr("consRemove: incorrect removal result (1): %s", 
+			     resultstr));
+    skfree(tmp);
+    skfree(resultstr);
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(cons_remove2)
+{
+    Cons *list = (Cons *) objectFromStr("(1 2 3)");
+    Cons *second = (Cons *) list->cdr;
+    char *resultstr;
+    char *tmp;
+    initBuiltInSymbols();
+
+    list = consRemove(list, second);
+    resultstr = objectSexp((Object *) list);
+    fail_unless(streq(resultstr, "(1 3)"),
+		tmp = newstr("consRemove: incorrect removal result (2): %s", 
+			     resultstr));
+    skfree(tmp);
+    skfree(resultstr);
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(cons_remove3)
+{
+    Cons *list = (Cons *) objectFromStr("(1 2 3)");
+    Cons *third = (Cons *) ((Cons *) list->cdr)->cdr;
+    char *resultstr;
+    char *tmp;
+    initBuiltInSymbols();
+
+    list = consRemove(list, third);
+    resultstr = objectSexp((Object *) list);
+    fail_unless(streq(resultstr, "(1 2)"),
+		tmp = newstr("consRemove: incorrect removal result (3): %s", 
+			     resultstr));
+    skfree(tmp);
+    skfree(resultstr);
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 Suite *
 objects_suite(void)
 {
@@ -978,6 +1038,9 @@ objects_suite(void)
     ADD_TEST(tc_core, vectorsort);
     ADD_TEST(tc_core, concat);
     ADD_TEST(tc_core, cons_concat);
+    ADD_TEST(tc_core, cons_remove1);
+    ADD_TEST(tc_core, cons_remove2);
+    ADD_TEST(tc_core, cons_remove3);
     suite_add_tcase(s, tc_core);
 
     return s;

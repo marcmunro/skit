@@ -227,30 +227,19 @@ typedef enum {
 typedef enum {
     UNVISITED = 27,
     VISITING,
+    VISITED_ONCE,
     VISITED,
-    UNBUILDABLE,
-    BUILDABLE,
-    SELECTED_FOR_BUILD
+    UNBUILDABLE,	// Used in original tsort.c
+    BUILDABLE,		// ditto
+    SELECTED_FOR_BUILD	// ditto
 } DagNodeStatus;
 
+/* DEPRECATE THIS */
 typedef enum {
     DEP_LIST = 101,
     DEP_SINGLE,
     DEP_OPTIONAL
 } depType;
-
-
-typedef struct Depset {
-    ObjType        type;
-    boolean        is_optional;		/* Iff an optional simple dep */
-    boolean        is_set;		/* Iff not a dependency-set */
-    boolean        satisfies_depset;	/* Iff is_optional and this is 
-  		 			 * the first dep from the
-					 * originating depset that has
-					 * been successfully traversed */
-    struct Depset *depset_origin;	/* Iff is_optional */
-    Cons          *deps;
-} Depset;
 
 
 typedef struct DagNode {
@@ -260,8 +249,11 @@ typedef struct DagNode {
     xmlNode         *dbobject;    // Reference only - not to be freed from here
     DagNodeBuildType build_type;
     DagNodeStatus    status;
-    Vector          *dependencies;
-    Vector          *dependents;
+    boolean          is_xnode;
+    Cons            *deps;
+    Cons            *optional_deps;
+    Vector          *dependencies;//DEPRECATED - REMOVE ASAP
+    Vector          *dependents;//DEPRECATED - REMOVE ASAP
     int              buildable_kids;
     Cons            *chosen_options;
     int              cur_dep_idx;
@@ -271,6 +263,16 @@ typedef struct DagNode {
     struct DagNode  *next;
     struct DagNode  *prev;
 } DagNode;
+
+typedef struct Depset {
+    ObjType        type;
+    boolean        is_set;		/* If a dependency-set */
+    boolean        is_optional;		/* If a dependency-set or an
+					 * optional dep. */
+    DagNode       *actual;
+    Cons          *deps;
+} Depset;
+
 
 /* Used to conveniently pass around multiple nodes as parameters to
  * hashEach.  This type is only ever allocated statically. */
@@ -338,6 +340,7 @@ extern Object *consAppend(Cons *list, Object *item);
 extern Cons *consConcat(Cons *list, Cons *list2);
 extern boolean checkCons(Cons *cons, void *chunk);
 extern boolean consIn(Cons *cons, Object *obj);
+extern Cons *consRemove(Cons *cons, Cons *remove);
 
 // object.c
 extern Tuple *tupleNew(Cursor *cursor);
@@ -366,6 +369,7 @@ extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
 extern DagNode *dagnodeNew(Node *node, DagNodeBuildType build_type);
+extern DagNode *xnodeNew(DagNode *source);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
 
@@ -625,3 +629,7 @@ extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);
 
 //diff.c
 extern xmlNode *doDiff(String *diffrules, boolean swap);
+
+
+// deps.c
+extern Depset *depsetNew();

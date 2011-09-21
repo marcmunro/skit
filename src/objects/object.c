@@ -46,6 +46,7 @@ objTypeName(Object *obj)
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
+    case OBJ_DEPSET: return "OBJ_DEPSET";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -403,23 +404,15 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
-DagNode *
-dagnodeNew(Node *node, DagNodeBuildType build_type)
+static DagNode *
+basicDagNode()
 {
-    // TODO: Ensure source_fqn is provided and raise an exception if not.
     DagNode *new = skalloc(sizeof(DagNode));
-    String *source_fqn = nodeAttribute(node->node, "fqn");
-    String *actual_fqn = stringNewByRef(newstr("%s.%s", 
-					       nameForBuildType(build_type), 
-					       source_fqn->value));
-    objectFree((Object *) source_fqn, TRUE);
     new->type = OBJ_DAGNODE;
-    new->fqn = actual_fqn;
-    new->object_type = nodeAttribute(node->node, "type");
-    new->dbobject = node->node;
-    new->build_type = build_type;
     new->status = UNVISITED;
-    new->dependencies = NULL;
+    new->deps = NULL;
+    new->optional_deps = NULL;  // For new dep handling.  Once working
+    new->dependencies = NULL;   // we can lose the following 3 fields.
     new->dependents = NULL;   // TODO: Figure out if we can lose this!
     new->chosen_options = NULL;
     new->cur_dep = NULL;
@@ -427,8 +420,45 @@ dagnodeNew(Node *node, DagNodeBuildType build_type)
     new->kids = NULL;
     new->next = NULL;
     new->prev = NULL;
+
+    new->fqn = NULL;
+    new->object_type = NULL;
+    new->dbobject = NULL;
+    new->build_type = UNSPECIFIED_NODE;
+
     return new;
 }
+
+DagNode *
+dagnodeNew(Node *node, DagNodeBuildType build_type)
+{
+    // TODO: Ensure source_fqn is provided and raise an exception if not.
+    DagNode *new = basicDagNode();
+    String *source_fqn = nodeAttribute(node->node, "fqn");
+    String *actual_fqn = stringNewByRef(newstr("%s.%s", 
+					       nameForBuildType(build_type), 
+					       source_fqn->value));
+    objectFree((Object *) source_fqn, TRUE);
+    new->fqn = actual_fqn;
+    new->object_type = nodeAttribute(node->node, "type");
+    new->dbobject = node->node;
+    new->build_type = build_type;
+    new->is_xnode = FALSE;
+    return new;
+}
+
+DagNode *
+xnodeNew(DagNode *source)
+{
+    // TODO: Ensure source_fqn is provided and raise an exception if not.
+    DagNode *new = basicDagNode();
+    String *fqn = stringNewByRef(newstr("%s.XNODE", source->fqn->value));
+    new->fqn = fqn;
+    new->build_type = source->build_type;
+    new->is_xnode = TRUE;
+    return new;
+}
+
 
 void
 dagnodeFree(DagNode *node)
@@ -437,6 +467,8 @@ dagnodeFree(DagNode *node)
     objectFree((Object *) node->object_type, TRUE);
     objectFree((Object *) node->dependencies, TRUE);
     objectFree((Object *) node->dependents, TRUE);
+    objectFree((Object *) node->deps, TRUE);
+    objectFree((Object *) node->optional_deps, TRUE);
     objectFree((Object *) node->chosen_options, TRUE);
     skfree(node);
 }
@@ -444,10 +476,8 @@ dagnodeFree(DagNode *node)
 void
 depsetFree(Depset *depset)
 {
+    Depset *origin;
     objectFree((Object *) depset->deps, TRUE);
-    if (depset->satisfies_depset) {
-	objectFree((Object *) depset->depset_origin, TRUE);
-    }
     skfree(depset);
 }
 
@@ -525,28 +555,27 @@ nameForBuildType(DagNodeBuildType build_type)
 char *
 depSetStr(Depset *depset)
 {
-    char *deps = objectSexp((Object *) depset->deps);
+    char *deps;
     char *result;
-    char *tmp;
     char *options = NULL;
 
-    if (depset->is_set) {
-	options = newstr("set");
+    if (depset->actual) {
+	options = newstr("actual");
+	deps = objectSexp((Object *) depset->actual);
     }
     else {
-	options = newstr("single");
-    }
-
-    if (depset->is_optional) {
-	tmp = options;
-	options = newstr("%s %s", tmp, "optional");
-	skfree(tmp);
-    }
-
-    if (depset->satisfies_depset) {
-	tmp = options;
-	options = newstr("%s %s", tmp, "satisfies-depset");
-	skfree(tmp);
+	deps = objectSexp((Object *) depset->deps);
+	if (depset->is_set) {
+	    options = newstr("set");
+	}
+	else {
+	    if (depset->is_optional) {
+		options = newstr("optional");
+	    }
+	    else {
+		options = newstr("single");
+	    }
+	}
     }
 
     result = newstr("(==>[%s] %s)", options, deps);

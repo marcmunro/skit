@@ -200,6 +200,13 @@
 	return result;					\
     }
 
+/* Return from within an exception block, closing off the exception */
+#define RETURN_VOID					\
+    {							\
+	exceptionEnd(__FILE__, __LINE__);		\
+	return;						\
+    }
+
 /* Raise an exception.  The args are exception_number and a dynamically
  * allocated text string to provide more information about the exception.
  */

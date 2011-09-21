@@ -2131,10 +2131,13 @@ gensort(Document *doc)
     Hash *pqnhash = NULL;
     Hash *pqnhash2 = NULL;
     Vector *sorted = NULL;
+    Vector *sorted2 = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Symbol *simple_sort = symbolGet("simple-sort");
     
-    (void) gensort2(doc);
+    if (simple_sort) {
+	sorted2 = gensort2(doc);
+    }
     handling_context = (ignore_contexts == NULL);
 
     BEGIN {
@@ -2150,6 +2153,9 @@ gensort(Document *doc)
 	//showAllDeps(dagnodes);
 	if (simple_sort) {
 	    sorted = simple_tsort(dagnodes);
+	    objectFree((Object *) sorted, TRUE);
+	    sorted = sorted2;
+	    sorted2 = NULL;
 	}
 	else {
 	    sorted = smart_tsort(dagnodes);
@@ -2157,6 +2163,7 @@ gensort(Document *doc)
     }
     EXCEPTION(ex);
     FINALLY {
+	objectFree((Object *) sorted2, TRUE);
 	objectFree((Object *) dagnodes, TRUE);
 	objectFree((Object *) pqnhash, TRUE);
     }

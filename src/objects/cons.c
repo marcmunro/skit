@@ -449,3 +449,34 @@ checkCons(Cons *cons, void *chunk)
     }
     return checkChunk(cons, chunk) || found;
 }
+
+Cons *
+consRemove(Cons *cons, Cons *remove)
+{
+    Cons *start = cons;
+    Cons *cur = cons;
+    Cons *tmp;
+    Cons *prev = NULL;
+    while (cur) {
+	if (cur == remove) {
+	    tmp = cur;
+	    cur = (Cons *) cur->cdr;
+	    if (prev) {
+		/* This is not the first element - unlink from prev */
+		prev->cdr = (Object *) cur;
+	    }
+	    else {
+		/* This is the first element - skip it*/
+		start = cur;
+	    }
+	    tmp->cdr = NULL;
+	    objectFree((Object *) tmp, TRUE);
+	    return start;
+	}
+	else {
+	    prev = cur;
+	    cur = (Cons *) cur->cdr;
+	}
+    }
+    return start;
+}
