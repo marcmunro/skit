@@ -411,7 +411,6 @@ basicDagNode()
     new->type = OBJ_DAGNODE;
     new->status = UNVISITED;
     new->deps = NULL;
-    new->optional_deps = NULL;  // For new dep handling.  Once working
     new->dependencies = NULL;   // we can lose the following 3 fields.
     new->dependents = NULL;   // TODO: Figure out if we can lose this!
     new->chosen_options = NULL;
@@ -466,9 +465,8 @@ dagnodeFree(DagNode *node)
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->object_type, TRUE);
     objectFree((Object *) node->dependencies, TRUE);
-    objectFree((Object *) node->dependents, TRUE);
+    objectFree((Object *) node->dependents, FALSE); /* !!!!! */
     objectFree((Object *) node->deps, TRUE);
-    objectFree((Object *) node->optional_deps, TRUE);
     objectFree((Object *) node->chosen_options, TRUE);
     skfree(node);
 }

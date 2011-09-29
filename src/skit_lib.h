@@ -227,8 +227,8 @@ typedef enum {
 typedef enum {
     UNVISITED = 27,
     VISITING,
-    VISITED_ONCE,
-    VISITED,
+    VISITED_ONCE,       /* Node has been checked by dagify_node, etc */
+    VISITED,            /* Node has been visited by tsort */
     UNBUILDABLE,	// Used in original tsort.c
     BUILDABLE,		// ditto
     SELECTED_FOR_BUILD	// ditto
@@ -251,9 +251,8 @@ typedef struct DagNode {
     DagNodeStatus    status;
     boolean          is_xnode;
     Cons            *deps;
-    Cons            *optional_deps;
-    Vector          *dependencies;//DEPRECATED - REMOVE ASAP
-    Vector          *dependents;//DEPRECATED - REMOVE ASAP
+    Vector          *dependencies;//DEPRECATED - REMOVE ASAP (or rename deps)
+    Vector          *dependents;
     int              buildable_kids;
     Cons            *chosen_options;
     int              cur_dep_idx;
@@ -336,7 +335,7 @@ extern Cons *alistExtract(Cons **p_alist, Object *key);
 extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
 extern Object *consNext(Cons *list, Object **p_placeholder);
-extern Object *consAppend(Cons *list, Object *item);
+extern Cons *consAppend(Cons *list, Object *item);
 extern Cons *consConcat(Cons *list, Cons *list2);
 extern boolean checkCons(Cons *cons, void *chunk);
 extern boolean consIn(Cons *cons, Object *obj);
@@ -358,7 +357,6 @@ extern boolean isObject(Object *obj);
 extern Object *objectCopy(Object *obj);
 extern Object *objectEval(Object *obj);
 extern void traceOn(boolean on);
-extern boolean tracing();
 extern Object *evalSexp(char *str);
 extern ObjReference *objRefNew(Object *obj);
 extern Regexp *regexpNew(char *str);

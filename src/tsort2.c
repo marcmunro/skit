@@ -250,26 +250,30 @@ copyDepset(Depset *dep)
     return new;
 }
 
+/* Create a copy of a DepSet list, in the same order as the original.
+ */
 static Cons *
 copyDeps(Cons *deps)
 {
-    Cons *new = NULL;
+    Cons *result = NULL;
+    Cons *prev = NULL;
+    Cons *new;
     Cons *next = deps;
     Depset *dep;
     while (next) {
 	if (dep = copyDepset((Depset *) next->car)) {
-	    new = consNew((Object *) dep, (Object *) new);
+	    new = consNew((Object *) dep, NULL);
+	    if (prev) {
+		prev->cdr = (Object *) new;
+	    }
+	    else {
+		result = new;
+	    }
+	    prev = new;
 	}
 	next = (Cons *) next->cdr;
     }
-    return new;
-}
-
-static void
-copyDagNodeDeps(DagNode *target, DagNode *src)
-{
-    target->deps = copyDeps(src->deps);
-    target->optional_deps = copyDeps(src->optional_deps);
+    return result;
 }
 
 static Depset *
@@ -331,13 +335,6 @@ removeDeps(Cons *deps, DagNode *remove_dep)
     return start;
 }
 
-static void
-removeDagNodeDeps(DagNode *from, DagNode *dep)
-{
-    from->deps = removeDeps(from->deps, dep);
-    from->optional_deps = removeDeps(from->optional_deps, dep);
-}
-
 /* Note: we need to add to the depset->deps field as well as the actual
  * field, in order for the objref to be freed.
  */
@@ -372,7 +369,7 @@ breakCycle(DagNode *node, DagNode *dep, Hash *dagnodes)
 	if (!breaker) {
 	    BEGIN {
 		breaker = makeBreakerNode(node, breaker_type);
-		copyDagNodeDeps(breaker, node);
+		breaker->deps = copyDeps(node->deps);
 		breaker_key = stringNewByRef(newstr("%s", breaker->fqn->value));
 		(void) hashAdd(dagnodes, (Object *) breaker_key, 
 			       (Object *) breaker);
@@ -383,7 +380,7 @@ breakCycle(DagNode *node, DagNode *dep, Hash *dagnodes)
 	    }
 	    END;
 	}
-	removeDagNodeDeps(breaker, dep);
+	breaker->deps = removeDeps(breaker->deps, dep);
 	/* And finally, we add a dependency from node to breaker */
 	addActualDep(node, breaker);
     }
@@ -417,7 +414,6 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
 	/* Although this is a loop, we only have to successfully process
 	 * a single element. */
 	dep = (DagNode *) dereference(nextdep->car);
-
 	BEGIN {
 	    depset->actual = NULL; /* Reset this in case we are retrying
 				    * after recursing around some cyclic
@@ -425,16 +421,7 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
 				    * want this value to be set
 				    * improperly. */
 	    break_node = dagify_node(dep, dagnodes);
-	    if (break_node == dep) {
-		depset->actual = dep;  /* Record which dep to use for this
-					* depset. */
-	    }
-	    else {
-		/* Our dependency on dep needs to be replaced by a
-		 * dependency on break_node. */
-		removeDagNodeDeps(node, dep);
-		addActualDep(node, break_node);
-	    }
+	    depset->actual = break_node;
 	    RETURN(node);
 	}
 	EXCEPTION(ex);
@@ -459,10 +446,13 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
 	nextdep = (Cons *) nextdep->cdr;
 
 	if (cycle_node) {
-	    /* Attempt to break the cylce with help from a cycle-breaker 
+	    /* Attempt to break the cycle with help from a cycle-breaker 
 	     * node.  This is only possible if nodes of this type
 	     * provide a  cycle breaking mechanism. */
 	    if (break_node = breakCycle(node, dep, dagnodes)) {
+		/* We have a break node.  We replace the current dep
+		 * with an actual dep on the break_node. */
+		depset->actual = break_node;
 		skfree(errmsg);
 		return break_node;
 	    }
@@ -500,6 +490,7 @@ dagify_depset(DagNode *node, Depset *depset, Hash *dagnodes)
 	    RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg, cycle_node);
 	}
     }
+    return node;
 }
 
 static DagNode *
@@ -508,12 +499,18 @@ dagify_deps(DagNode *node, Cons *deps, Hash *dagnodes)
     Cons *next = deps;
     DagNode *result = node;
     DagNode *break_node;
+    Depset *depset;
     while (next) {
-	break_node = dagify_depset(node, (Depset *) next->car, dagnodes);
-	if (break_node != node) {
-	    result = break_node;
+	depset = (Depset *) next->car;
+	next = (Cons *) next->cdr;  /* Identify the next depset before 
+				     * dagifying, as the list may be
+				     * modified */
+	if (!depset->actual) {
+	    break_node = dagify_depset(node, depset, dagnodes);
+	    if (break_node != node) {
+		result = break_node;
+	    }
 	}
-	next = (Cons *) next->cdr;
     }
     return result;
 }
@@ -522,7 +519,8 @@ static DagNode *
 dagify_node(DagNode *node, Hash *dagnodes)
 {
     DagNode *result = node;
-    DagNode *result2 = node;
+    DagNode *result2;
+
     if (node->status == VISITING) {
 	/* Create a simple string to describe the cyclic dependency.
 	 * This will be modified and extended further up the stack (in
@@ -531,35 +529,28 @@ dagify_node(DagNode *node, Hash *dagnodes)
 	 */
 	RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("%s", node->fqn->value), node);
     }
+
     if (node->status != VISITED_ONCE) {
 	node->status = VISITING;
-	if (node->is_xnode) {
-	    /* In an xnode, we must try the optional deps first.  See
-	     * comments elsewhere in this file for a description of
-	     * xnodes and how they work. */
-	    result = dagify_deps(node, node->optional_deps, dagnodes);
-	    result2 = dagify_deps(node, node->deps, dagnodes);
-	}
-	else {
-	    result = dagify_deps(node, node->deps, dagnodes);
-	    result2 = dagify_deps(node, node->optional_deps, dagnodes);
-	}
+	result = dagify_deps(node, node->deps, dagnodes);
 	node->status = VISITED_ONCE;
-    }
-    if (result2 != node) {
-	return result2;
+
+	if (result != node) {
+	    /* A new (cycle breaking node has been added to our set of
+	     * nodes.  Like all others, it must be dagified, so let's do
+	     * it now. */
+	    result2 = dagify_node(result, dagnodes);
+	    if (result2 != result) {
+		/* There is no reason at all why dagifying a cycle
+		 * breaking node should cause another node to be
+		 * created - so raise an error. */
+		RAISE(TSORT_ERROR,
+		      newstr("Failed to dagify cycle breaking node %s",
+			     result->fqn->value));
+	    }
+	}
     }
     return result;
-}
-
-/* A HashEachFn that...
- */
-static Object *
-dagify(Cons *node_entry, Object *dagnodes_object)
-{
-    DagNode *node = (DagNode *) node_entry->cdr;
-    dagify_node(node, (Hash *) dagnodes_object);
-    return (Object *) node;
 }
 
 /* Our dagnodes hash currently contains optional dependencies and
@@ -568,12 +559,20 @@ dagify(Cons *node_entry, Object *dagnodes_object)
  * dependencies are to be used.  Once we have done this, we will have a
  * true Directed Acyclic Graph (DAG) which we can traverse using a
  * tsort algorithm.
+ * Note that we can't use hashEach to explore dagnodes, as we may be
+ * adding cycle breaker nodes to the hash as we go, and modifying the
+ * hash as we iterate through it is a definite no-no.
  */
 static void
 makeIntoDag(Hash *dagnodes)
 {
     //showAllDeps(dagnodes);
-    hashEach(dagnodes, &dagify, (Object *) dagnodes);
+    Vector *vector = vectorFromHash(dagnodes);
+    int i;
+    for (i = 0; i < vector->elems; i++) {
+	(void) dagify_node((DagNode *) vector->contents->vector[i], dagnodes);
+    }
+    objectFree((Object *) vector, FALSE);
     return;
 }
 
@@ -606,7 +605,6 @@ tsort_node(DagNode *node, Vector *results)
     case VISITED_ONCE: 
 	node->status = VISITING;
 	tsort_deps(node->deps, results);
-	tsort_deps(node->optional_deps, results);
 	vectorPush(results, (Object *) node);
 	node->status = VISITED;
 	break;
@@ -652,6 +650,384 @@ simple_tsort(Hash *dagnodes)
     return results;
 }
 
+
+/* hashEach function to append nodes to a vector, creating a vector from
+ * a hash of nodes. */
+static Object *
+appendToVec(Cons *node_entry, Object *results)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
+    Vector *vector = (Vector *) results;
+    String *parent_name;
+
+    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
+    vectorPush(vector, (Object *) node);
+    return (Object *) node;
+}
+
+/* Create a vector from a hash of nodes. */
+static Vector *
+nodeList(Hash *allnodes)
+{
+    int elems;
+    Vector *list;
+    elems = hashElems(allnodes);
+    list = vectorNew(elems);
+    hashEach(allnodes, &appendToVec, (Object *) list);
+
+    return list;
+}
+
+
+/* Comparison function for qsort, for sorting by fqn.
+ */
+static int 
+fqnCmp(const void *item1, const void *item2)
+{
+    DagNode *node1 = *((DagNode **) item1);
+    DagNode *node2 = *((DagNode  **) item2);
+    assert(node1 && node1->type == OBJ_DAGNODE,
+	   newstr("fqnCmp: node1 is not a dagnode (%d)", node1->type));
+    assert(node2 && node2->type == OBJ_DAGNODE,
+	   newstr("fqnCmp: node2 is not a dagnode (%d)", node2->type));
+    return strcmp(node1->fqn->value, node2->fqn->value);
+}
+
+
+/* Maintain an ordered, cyclic list of DagNode siblings */
+static void
+linkToSibling(DagNode *first, DagNode *node)
+{
+    if (first->next) {
+	node->prev = first->prev;
+	first->prev->next = node;
+    }
+    else {
+	first->next = node;
+	node->prev = first;
+    }
+    node->next = first;
+    first->prev = node;
+}
+
+/* Create linkages between parent and child in a DagNode tree. */
+static void
+linkToParent(DagNode *node)
+{
+    DagNode *parent = node->parent;
+    DagNode *first_sib = parent->kids;
+    if (first_sib) {
+	linkToSibling(first_sib, node);
+    }
+    else {
+	parent->kids = node;
+    }
+}
+
+/* Create a sorted tree, reflecting the hierarchy of DagNodes, and
+ * intitialise the status and buildable_kids counts.  At each
+ * level of the tree, the nodes are sorted in fqn order.
+ */
+static DagNode *
+initDagNodeTree(Hash *allnodes)
+{
+    Vector *nodelist = nodeList(allnodes);
+    DagNode *root = NULL;
+    DagNode *node;
+    int i;
+
+    /* Make a vector of the contents of allnodes, sorted by fqn. */
+    qsort((void *) nodelist->contents->vector,
+	  nodelist->elems, sizeof(Object *), fqnCmp);
+
+    /* Now initialise and add each node into it's rightful place in the
+     * tree */
+    for (i = 0; i < nodelist->elems; i++) {
+	node = (DagNode *) nodelist->contents->vector[i];
+	node->status = UNBUILDABLE;
+	node->buildable_kids = 0;
+	if (node->parent) {
+	    linkToParent(node);
+	}
+	else {
+	    if (root) {
+		linkToSibling(root, node);
+	    }
+	    else {
+		root = node;
+	    }
+	}
+    }
+    objectFree((Object *) nodelist, FALSE);
+
+    return root;
+}
+
+static Object *
+addCandidateToBuild(Cons *node_entry, Object *results)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
+    Vector *vector = (Vector *) results;
+    String *parent_name;
+
+    assert(node->type == OBJ_DAGNODE, "Node is not a dagnode");
+    if ((node->status == UNBUILDABLE) && !node->deps) {
+	vectorPush(vector, (Object *) node);
+    }
+    return (Object *) node;
+}
+
+/* Return a vector of all nodes without dependencies */
+static Vector *
+getBuildCandidates(Hash *allnodes)
+{
+    int elems = hashElems(allnodes);
+    Vector *results = vectorNew(elems);
+    BEGIN {
+	hashEach(allnodes, &addCandidateToBuild, (Object *) results);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, FALSE);
+    }
+    END
+    return results;
+}
+
+
+/* Mark this node as buildable, and update the counts of buildable_kids
+ * in all ancestors. */
+static void
+markAsBuildable(DagNode *node)
+{
+    DagNode *up = node->parent;
+    node->status = BUILDABLE;
+    while (up) {
+	up->buildable_kids++;
+	up = up->parent;
+    }
+}
+
+/* Takes a vector of buildable nodes, and marks them as buildable within
+ * our DagNodeTree, updating counts as necessary */
+static void
+markAllBuildable(Vector *buildable)
+{
+    // TODO: REMOVE THIS
+    DagNode *next;
+    int i;
+
+    for (i = 0; i < buildable->elems; i++) {
+	next = (DagNode *) buildable->contents->vector[i];
+	markAsBuildable(next);
+    }
+    objectFree((Object *) buildable, FALSE);
+}
+
+static void
+markBuildCandidates(Hash *allnodes)
+{
+    Vector *candidates = getBuildCandidates(allnodes);
+    DagNode *next;
+    int i;
+
+    for (i = 0; i < candidates->elems; i++) {
+	next = (DagNode *) candidates->contents->vector[i];
+	markAsBuildable(next);
+    }
+    objectFree((Object *) candidates, FALSE);
+}
+
+/* Remove node as a build candidate (after it has been selected for
+ * building), taking care of its ancestors' counts of buildable_kids */
+static void
+markAsSelected(DagNode *node)
+{
+    DagNode *up = node->parent;
+    node->status = SELECTED_FOR_BUILD;
+    while (up) {
+	up->buildable_kids--;
+	up = up->parent;
+    }
+}
+
+/* Find the next buildable node in the DagNodeTree, from a given starting
+ * point.   If we are unable to find a node at or below our starting
+ * point, we move up to our parent and look from there.  This means
+ * that we may be checking some nodes more than once - that is
+ * considered too bad.  */
+static DagNode *
+nextBuildable(DagNode *node)
+{
+    DagNode *sibling;
+    if (!node) {
+	return NULL;
+    }
+    dbgSexp(node);
+    fprintf(stderr, "status: %d\n", node->status);
+    if (node->status == BUILDABLE) {
+	return node;
+    }
+    if (node->buildable_kids) {
+	return nextBuildable(node->kids);
+    }
+    if (sibling = node->next) {
+	while (sibling != node) {
+	    if (sibling->status == BUILDABLE) {
+		return sibling;
+	    }
+	    if (sibling->buildable_kids) {
+		return nextBuildable(sibling->kids);
+	    }
+	    sibling = sibling->next;
+	}
+    }
+    return nextBuildable(node->parent);
+}
+
+/* node has been selected for building.  We remove it from the
+ * DagNodeTree, and by removing dependencies on it, we possibly make
+ * some more nodes buildable.
+ */
+static Vector *
+removeNodeGetNewCandidates(DagNode *node, Hash *allnodes)
+{
+    Vector *results = vectorNew(64);
+    Vector *deps;
+    DagNode *next;
+    Object *ref;
+#ifdef wibble
+TODO: add dependents vectors to the dagnode tree so that we can do what this 
+function is supposed to
+    if (deps = node->dependents) {
+	while (ref = vectorPop(deps)) {
+	    next = (DagNode *) dereference(ref);
+	    removeDependency(next, node);
+	    if (!next->dependencies) {
+		(void) vectorPush(results, (Object *) next);
+	    }
+	    objectFree(ref, FALSE);
+	}
+    }
+#endif
+    /* Finally, we remove node from our hash. */
+    (void) hashDel(allnodes, (Object *) node->fqn);
+    return results;
+}
+
+static void
+addDependent(DagNode *node, DagNode *dependent)
+{
+    if (!node->dependents) {
+	node->dependents = vectorNew(10);
+    }
+    setPush(node->dependents, (Object *) dependent);
+}
+
+/* HashEach function to add dependents entries as the inverse of
+ * dependencies. */
+static Object *
+addDependents(Cons *node_entry, Object *param)
+{
+    DagNode *node = (DagNode *) node_entry->cdr;
+    Hash *allnodes = (Hash *) param;
+    Cons *this = node->deps;
+    Depset *dep;
+    while (this) {
+	dep = (Depset *) this->car;
+	if (!dep->actual) {
+	    /* Why/how did this happen? */
+	    RAISE(TSORT_ERROR,
+		  newstr("Missing actual dep for node %s", node->fqn->value));
+	}
+	
+	addDependent(dep->actual, node);
+	this = (Cons *) this->cdr;
+	
+    }
+    return (Object *) node;
+}
+
+static void
+removeDependency(DagNode *node, DagNode *dep)
+{
+    Cons *deps = node->deps;
+    Cons *prev = NULL;
+    Depset *depset;
+    while (deps) {
+	depset = (Depset *) deps->car;
+	if (depset->actual == dep) {
+	    /* Found the depset entry for dep.  Now we remove it from
+	     * node->deps */
+	    if (prev) {
+		/* Unlink from prev */
+		prev->cdr = deps->cdr;
+	    }
+	    else {
+		/* Unlink from node->deps */
+		node->deps = (Cons *) deps->cdr;
+	    }
+	    objectFree((Object *) depset, TRUE);
+	    objectFree((Object *) deps, FALSE);
+	    break;
+	}
+	prev = deps;
+	deps = (Cons *) deps->cdr;
+    }
+}
+
+static void
+unlinkDependents(DagNode *node, Hash *allnodes)
+{
+    Vector *dependents = node->dependents;
+    DagNode *depnode;
+    while (depnode = (DagNode *) vectorPop(dependents)) {
+	removeDependency(depnode, node);
+    }
+}
+
+static Vector *
+smart_tsort(Hash *allnodes)
+{
+    DagNode *root = initDagNodeTree(allnodes);
+    DagNode *next;
+    Vector *results;
+    Vector *buildable;
+
+    hashEach(allnodes, &addDependents, (Object *) allnodes);
+    results = vectorNew(hashElems(allnodes));
+    markBuildCandidates(allnodes);
+
+    next = root;
+    while (next = nextBuildable(next)) {
+	dbgSexp(next);
+	(void) vectorPush(results, (Object *) next);
+	markAsSelected(next);
+	unlinkDependents(next, allnodes);
+	markBuildCandidates(allnodes);
+    }
+ 
+
+    dbgSexp(results);
+    RAISE(NOT_IMPLEMENTED_ERROR,
+	  newstr("new smart_tsort is not implemented"));
+
+    if (hashElems(allnodes)) {
+	char *nodes = objectSexp((Object *) allnodes);
+	char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
+			      nodes);
+	skfree(nodes);
+	RAISE(GENERAL_ERROR, errmsg);
+    }
+
+    dbgSexp(buildable);
+    //showAllDeps(allnodes);
+    RAISE(NOT_IMPLEMENTED_ERROR,
+	  newstr("new smart_tsort is not implemented"));
+    return results;
+}
+
+
+
 /* Do the sort. 
  * This is going to be an eventual replacement for gensort.  For now it
  * is run before the real gensort.
@@ -674,8 +1050,7 @@ gensort2(Document *doc)
 	    results = simple_tsort(dagnodes);
 	}
 	else {
-	    RAISE(NOT_IMPLEMENTED_ERROR,
-		  newstr("new smart_tsort is not implemented"));
+	    results = smart_tsort(dagnodes);
 	}
 	/* If we reach this point, our results vector contains the same
 	 * elements as our dagnodes hash.  We resolve this by freeing
@@ -694,10 +1069,16 @@ gensort2(Document *doc)
     /* Note that we copy the actual nodes from dagnodes into
      * our results vector, so we don't need to free the contents of
      * dagnodes below. */
-    //dbgSexp(results);
     objectFree((Object *) dagnodes, TRUE);
     objectFree((Object *) pqnhash, TRUE);
     
     return results;
 }
 
+#ifdef wibble
+NEXT:
+- remove original gensort calls
+- add navigation 
+- remove deprecated depset fields
+- add back the smart_tsort
+#endif

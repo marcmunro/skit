@@ -398,17 +398,23 @@ consNext(Cons *list, Object **p_placeholder)
     return NULL;
 }
 
-Object *
+Cons *
 consAppend(Cons *list, Object *item)
 {
     Cons *prev = list;
-    Cons *next;
+    Cons *next = list;
     Cons *new = consNew(item, NULL);
-    while (next = (Cons *) prev->cdr) {
+    while (next) {
 	prev = next;
+	next = (Cons *) prev->cdr;
     }
-    prev->cdr = (Object *) new;
-    return item;
+    if (prev) {
+	prev->cdr = (Object *) new;
+	return list;
+    }
+    else {
+	return new;
+    }
 }
 
 Cons *

@@ -357,7 +357,7 @@ markAllBuildable(Vector *buildable)
     objectFree((Object *) buildable, FALSE);
 }
 
-int 
+static int 
 fqnCmp(const void *item1, const void *item2)
 {
     DagNode *node1 = *((DagNode **) item1);
@@ -2135,9 +2135,8 @@ gensort(Document *doc)
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Symbol *simple_sort = symbolGet("simple-sort");
     
-    if (simple_sort) {
-	sorted2 = gensort2(doc);
-    }
+    sorted2 = gensort2(doc);
+
     handling_context = (ignore_contexts == NULL);
 
     BEGIN {

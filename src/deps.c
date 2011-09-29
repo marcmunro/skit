@@ -21,7 +21,6 @@ showDeps(DagNode *node)
 {
     printSexp(stderr, "NODE: ", (Object *) node);
     printSexp(stderr, "-->", (Object *) node->deps);
-    printSexp(stderr, "-?>", (Object *) node->optional_deps);
 }
 
 static Object *
@@ -533,13 +532,18 @@ static void
 addDepset(DagNode *node, Depset *depset)
 {
     if (depset->is_optional) {
-	node->optional_deps = consNew((Object *) depset, 
-				      (Object *) node->optional_deps);
-    }
-    else {
+	/* We must add optional dependencies at the start of our deps
+	 * list.  This is because of the way that cyclic dependencies
+	 * are resolved, particularly when xnodes are added.  See
+	 * addInvertedDepSet() for more information. */
+
 	node->deps = consNew((Object *) depset, (Object *) node->deps);
     }
+    else {
+	node->deps = consAppend(node->deps, (Object *) depset);
+    }
 }
+
 
 /* Inverted deps are mostly what they sound like: we simply invert the
  * direction of a dependency.  Dependency sets are a problem however.
