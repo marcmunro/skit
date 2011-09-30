@@ -862,8 +862,6 @@ nextBuildable(DagNode *node)
     if (!node) {
 	return NULL;
     }
-    dbgSexp(node);
-    fprintf(stderr, "status: %d\n", node->status);
     if (node->status == BUILDABLE) {
 	return node;
     }
@@ -952,26 +950,29 @@ removeDependency(DagNode *node, DagNode *dep)
 {
     Cons *deps = node->deps;
     Cons *prev = NULL;
+    Cons *next;
     Depset *depset;
     while (deps) {
 	depset = (Depset *) deps->car;
+	next = (Cons *) deps->cdr;
 	if (depset->actual == dep) {
 	    /* Found the depset entry for dep.  Now we remove it from
 	     * node->deps */
 	    if (prev) {
 		/* Unlink from prev */
-		prev->cdr = deps->cdr;
+		prev->cdr = (Object *) next;
 	    }
 	    else {
 		/* Unlink from node->deps */
-		node->deps = (Cons *) deps->cdr;
+		node->deps = next;
 	    }
 	    objectFree((Object *) depset, TRUE);
 	    objectFree((Object *) deps, FALSE);
-	    break;
 	}
-	prev = deps;
-	deps = (Cons *) deps->cdr;
+	else {
+	    prev = deps;
+	}
+	deps = next;
     }
 }
 
@@ -980,8 +981,10 @@ unlinkDependents(DagNode *node, Hash *allnodes)
 {
     Vector *dependents = node->dependents;
     DagNode *depnode;
-    while (depnode = (DagNode *) vectorPop(dependents)) {
-	removeDependency(depnode, node);
+    if (dependents) {
+	while (depnode = (DagNode *) vectorPop(dependents)) {
+	    removeDependency(depnode, node);
+	}
     }
 }
 
@@ -999,9 +1002,9 @@ smart_tsort(Hash *allnodes)
 
     next = root;
     while (next = nextBuildable(next)) {
-	dbgSexp(next);
 	(void) vectorPush(results, (Object *) next);
 	markAsSelected(next);
+	dbgSexp(next);
 	unlinkDependents(next, allnodes);
 	markBuildCandidates(allnodes);
     }
