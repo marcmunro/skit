@@ -553,6 +553,35 @@ dagify_node(DagNode *node, Hash *dagnodes)
     return result;
 }
 
+static void
+remove_optional_deps(DagNode *node)
+{
+    Cons *next = node->deps;
+    Cons *this;
+    Cons *prev = NULL;
+    Depset *dep;
+    while (next) {
+	this = next;
+	dep = (Depset *) this->car;
+	next = (Cons *) this->cdr;
+	
+	if (!dep->actual && dep->is_optional) {
+	    /* We have found an optional dep.  Now we remove it. */
+	    if (prev) {
+		prev->cdr = (Object *) next;
+	    }
+	    else {
+		node->deps = next;
+	    }
+	    this->cdr = NULL;
+	    objectFree((Object *) this, TRUE);
+	}
+	else {
+	    prev = next;
+	}
+    }
+}
+
 /* Our dagnodes hash currently contains optional dependencies and
  * dependency sets.  What we must do now is identify a single simple
  * dependency for a dependency set, and identify which of our optional
@@ -569,10 +598,20 @@ makeIntoDag(Hash *dagnodes)
     //showAllDeps(dagnodes);
     Vector *vector = vectorFromHash(dagnodes);
     int i;
-    for (i = 0; i < vector->elems; i++) {
-	(void) dagify_node((DagNode *) vector->contents->vector[i], dagnodes);
+    BEGIN {
+	for (i = 0; i < vector->elems; i++) {
+	    (void) dagify_node((DagNode *) vector->contents->vector[i], 
+			       dagnodes);
+	}
+	for (i = 0; i < vector->elems; i++) {
+	    remove_optional_deps((DagNode *) vector->contents->vector[i]);
+	}
     }
-    objectFree((Object *) vector, FALSE);
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) vector, FALSE);
+    }
+    END;
     return;
 }
 
@@ -807,22 +846,6 @@ markAsBuildable(DagNode *node)
     }
 }
 
-/* Takes a vector of buildable nodes, and marks them as buildable within
- * our DagNodeTree, updating counts as necessary */
-static void
-markAllBuildable(Vector *buildable)
-{
-    // TODO: REMOVE THIS
-    DagNode *next;
-    int i;
-
-    for (i = 0; i < buildable->elems; i++) {
-	next = (DagNode *) buildable->contents->vector[i];
-	markAsBuildable(next);
-    }
-    objectFree((Object *) buildable, FALSE);
-}
-
 static void
 markBuildCandidates(Hash *allnodes)
 {
@@ -833,6 +856,7 @@ markBuildCandidates(Hash *allnodes)
     for (i = 0; i < candidates->elems; i++) {
 	next = (DagNode *) candidates->contents->vector[i];
 	markAsBuildable(next);
+	(void) hashDel(allnodes, (Object *) next->fqn);
     }
     objectFree((Object *) candidates, FALSE);
 }
@@ -882,36 +906,6 @@ nextBuildable(DagNode *node)
     return nextBuildable(node->parent);
 }
 
-/* node has been selected for building.  We remove it from the
- * DagNodeTree, and by removing dependencies on it, we possibly make
- * some more nodes buildable.
- */
-static Vector *
-removeNodeGetNewCandidates(DagNode *node, Hash *allnodes)
-{
-    Vector *results = vectorNew(64);
-    Vector *deps;
-    DagNode *next;
-    Object *ref;
-#ifdef wibble
-TODO: add dependents vectors to the dagnode tree so that we can do what this 
-function is supposed to
-    if (deps = node->dependents) {
-	while (ref = vectorPop(deps)) {
-	    next = (DagNode *) dereference(ref);
-	    removeDependency(next, node);
-	    if (!next->dependencies) {
-		(void) vectorPush(results, (Object *) next);
-	    }
-	    objectFree(ref, FALSE);
-	}
-    }
-#endif
-    /* Finally, we remove node from our hash. */
-    (void) hashDel(allnodes, (Object *) node->fqn);
-    return results;
-}
-
 static void
 addDependent(DagNode *node, DagNode *dependent)
 {
@@ -932,13 +926,16 @@ addDependents(Cons *node_entry, Object *param)
     Depset *dep;
     while (this) {
 	dep = (Depset *) this->car;
-	if (!dep->actual) {
+	if (dep->actual) {
+	    addDependent(dep->actual, node);
+	}
+	else if (!dep->is_optional) {
 	    /* Why/how did this happen? */
+	    showDeps(node);
 	    RAISE(TSORT_ERROR,
 		  newstr("Missing actual dep for node %s", node->fqn->value));
 	}
 	
-	addDependent(dep->actual, node);
 	this = (Cons *) this->cdr;
 	
     }
@@ -994,38 +991,36 @@ smart_tsort(Hash *allnodes)
     DagNode *root = initDagNodeTree(allnodes);
     DagNode *next;
     Vector *results;
-    Vector *buildable;
 
     hashEach(allnodes, &addDependents, (Object *) allnodes);
     results = vectorNew(hashElems(allnodes));
-    markBuildCandidates(allnodes);
-
-    next = root;
-    while (next = nextBuildable(next)) {
-	(void) vectorPush(results, (Object *) next);
-	markAsSelected(next);
-	dbgSexp(next);
-	unlinkDependents(next, allnodes);
+    BEGIN {
 	markBuildCandidates(allnodes);
+
+	next = root;
+	while (next = nextBuildable(next)) {
+	    (void) vectorPush(results, (Object *) next);
+	    markAsSelected(next);
+	    unlinkDependents(next, allnodes);
+	    markBuildCandidates(allnodes);
+	}
+	if (hashElems(allnodes)) {
+	    char *nodes = objectSexp((Object *) allnodes);
+	    char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
+				  nodes);
+	    skfree(nodes);
+	    showAllDeps(allnodes);
+	    RAISE(GENERAL_ERROR, errmsg);
+	}
     }
- 
-
-    dbgSexp(results);
-    RAISE(NOT_IMPLEMENTED_ERROR,
-	  newstr("new smart_tsort is not implemented"));
-
-    if (hashElems(allnodes)) {
-	char *nodes = objectSexp((Object *) allnodes);
-	char *errmsg = newstr("gensort: unsorted nodes remain:\n\"%s\"\n",
-			      nodes);
-	skfree(nodes);
-	RAISE(GENERAL_ERROR, errmsg);
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	RAISE();
     }
+    END;
 
-    dbgSexp(buildable);
     //showAllDeps(allnodes);
-    RAISE(NOT_IMPLEMENTED_ERROR,
-	  newstr("new smart_tsort is not implemented"));
     return results;
 }
 
@@ -1078,10 +1073,358 @@ gensort2(Document *doc)
     return results;
 }
 
+/* Predicate identifying whether a node is of a specific type.
+ */
+static boolean
+xmlnodeMatch(xmlNode *node, char *name)
+{
+    return node && (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
+}
+
+
+/* Find the next (xml document) sibling of the given node type. */
+static xmlNode *
+findNextSibling(xmlNode *start, char *name)
+{
+    xmlNode *result = start;
+    if (result) {
+	while (result = (xmlNode *) result->next) {
+	    if (xmlnodeMatch(result, name)) {
+		return result;
+	    }
+	}
+    }
+    return NULL;
+}
+
+/* Find the first (xml document) child of the given node type. */
+static xmlNode *
+findFirstChild(xmlNode *parent, char *name)
+{
+    if (xmlnodeMatch(parent->children, name)) {
+	return parent->children;
+    }
+    return findNextSibling(parent->children, name);
+}
+
+
+static int
+generationCount(DagNode *node)
+{
+    int count = 0;
+    while (node) {
+	count++;
+	node = node->parent;
+    }
+    return count;
+}
+
+static boolean
+nodeEq(DagNode *node1, DagNode *node2)
+{
+    if (node1 && node2) {
+	return node1->dbobject == node2->dbobject;
+    }
+    if (node1 || node2) {
+	return FALSE;
+    }
+    return TRUE;
+}
+
+/* Identify whether it is necessary to navigate to/from node */
+static boolean
+requiresNavigation(xmlNode *node)
+{
+    String *visit = nodeAttribute(node, "visit");
+    if (visit) {
+	objectFree((Object *) visit, TRUE);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+static DagNode *
+getCommonRoot(DagNode *current, DagNode *target)
+{
+    int cur_depth = generationCount(current);
+    int target_depth = generationCount(target);
+
+    while (cur_depth > target_depth) {
+	current = current->parent;
+	cur_depth = generationCount(current);
+    }
+    while (target_depth > cur_depth) {
+	target = target->parent;
+	target_depth = generationCount(target);
+    }
+    while (!nodeEq(current, target)) {
+	current = current->parent;
+	target = target->parent;
+    }
+    return current;
+}
+
+/* Depart the current node, returning a navigation DagNode if
+ * appropriate
+ */
+static DagNode *
+departNode(DagNode *current)
+{
+    DagNode *navigation = NULL;
+    Node node = {OBJ_XMLNODE, NULL};
+    if (requiresNavigation(current->dbobject)) {
+	node.node = current->dbobject;
+	navigation = dagnodeNew(&node, DEPART_NODE);
+    }
+    return navigation;
+}
+
+/* Arrive at the target node, returning a navigation DagNode if
+ * appropriate
+ */
+static DagNode *
+arriveNode(DagNode *target)
+{
+    DagNode *navigation = NULL;
+    Node node = {OBJ_XMLNODE, NULL};
+    if (requiresNavigation(target->dbobject)) {
+	node.node = target->dbobject;
+	navigation = dagnodeNew(&node, ARRIVE_NODE);
+    }
+    return navigation;
+}
+
+/* Return the node in to's ancestry that is the direct descendant of
+ * from */
+static DagNode *
+nextNodeFrom(DagNode *from, DagNode *to)
+{
+    DagNode *cur = to;
+    DagNode *prev = NULL;
+    while (!nodeEq(from, cur)) {
+	prev = cur;
+	cur = cur->parent;
+    }
+    return prev;
+}
+
+static Cons *
+getContexts(DagNode *node)
+{
+    xmlNode *context_node;
+    Cons *cell;
+    Cons *contexts = NULL;
+    String *name;
+    String *value;
+    String *dflt;
+
+    if (node) {
+	for (context_node = findFirstChild(node->dbobject, "context");
+	     context_node;
+	     context_node = findNextSibling(context_node, "context")) {
+	    name = nodeAttribute(context_node, "name");
+	    value = nodeAttribute(context_node, "value");
+	    dflt = nodeAttribute(context_node, "default");
+	    cell = consNew((Object *) name, 
+			   (Object *) consNew((Object *) value, 
+					      (Object *) dflt));
+	    contexts = consNew((Object *) cell, (Object *) contexts);
+	}
+    }
+    return contexts;
+}
+
+static xmlNode *
+dbobjectNode(char *type, char *name)
+{
+    xmlNode *xmlnode = xmlNewNode(NULL, BAD_CAST "dbobject");
+    char *fqn = newstr("context.%s.%s", type, name);
+    xmlNewProp(xmlnode, BAD_CAST "type", BAD_CAST "context");
+    xmlNewProp(xmlnode, BAD_CAST "subtype", BAD_CAST type);
+    xmlNewProp(xmlnode, BAD_CAST "name", BAD_CAST name);
+    xmlNewProp(xmlnode, BAD_CAST "qname", BAD_CAST name);
+    xmlNewProp(xmlnode, BAD_CAST "fqn", BAD_CAST fqn);
+    skfree(fqn);
+    return xmlnode;
+}
+
+static DagNode *
+arriveContextNode(String *name, String *value)
+{
+    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
+    return dagnodeNew(&dbobject, ARRIVE_NODE);
+}
+
+static DagNode *
+departContextNode(String *name, String *value)
+{
+    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
+    return dagnodeNew(&dbobject, DEPART_NODE);
+}
+
+static void
+addArriveContext(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DagNode *context_node;
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = arriveContextNode(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+	//fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
+	//	((String *) cell2->car)->value);
+    }
+}
+
+static void
+addDepartContext(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DagNode *context_node;
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = departContextNode(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+	//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
+	//	((String *) cell2->car)->value);
+    }
+}
+
+static Cons *
+getContextNavigation(DagNode *from, DagNode *target)
+{
+    Cons *from_contexts;
+    Cons *target_contexts;
+    Cons *this;
+    Cons *this2;
+    Cons *match;
+    Cons *match2;
+    String *name;
+    Vector *departures = vectorNew(10);
+    Vector *arrivals = vectorNew(10);
+    Cons *result = consNew((Object *) departures, (Object *) arrivals);
+
+    /* Contexts are lists of the form: (name value default) */
+    from_contexts = getContexts(from);
+    target_contexts = getContexts(target);
+    while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
+	name = (String *) this->car;
+	if (from_contexts &&
+	    (match = (Cons *) alistExtract(&from_contexts, 
+					   (Object *) name))) {
+	    /* We have the same context for both dagnodes. */
+	    this2 = (Cons *) this->cdr;
+	    match2 = (Cons *) match->cdr;
+	    if (objectCmp(this2->car, match2->car) != 0) {
+		/* Depart the old context, and arrive at the new. */
+		addDepartContext(departures, match);
+		addArriveContext(arrivals, this);
+	    }
+	    objectFree((Object *) match, TRUE);
+	}
+	else {
+	    /* This is a new context. */
+	    addArriveContext(arrivals, this);
+	}
+	objectFree((Object *) this, TRUE);
+    }
+    while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
+	/* Close the final contexts.  Unless we are in a default
+	 * context. */ 
+	addDepartContext(departures, this);
+	objectFree((Object *) this, TRUE);
+    }
+    return result;
+}
+
+/* Return a vector of DagNodes containing the navigation to get from
+ * start to target */
+Vector *
+navigationToNode(DagNode *start, DagNode *target)
+{
+    Cons *context_nav;
+    Vector *results;
+    Vector *context_arrivals = NULL;
+    Object *elem;
+    DagNode *current = NULL;
+    DagNode *next = NULL;
+    DagNode *common_root = NULL;
+    DagNode *navigation = NULL;
+    Symbol *ignore_contexts = symbolGet("ignore-contexts");
+    boolean handling_context = (ignore_contexts == NULL);
+
+    BEGIN {
+	if (handling_context) {
+	    context_nav = getContextNavigation(start, target);
+	    /* Context departures must happen before any other
+	     * departures and arrivals after */
+	    results = (Vector *) context_nav->car;
+	    context_arrivals = (Vector *) context_nav->cdr;
+	    objectFree((Object *) context_nav, FALSE);
+	}
+	else
+	{
+	    results = vectorNew(10);
+	}
+	if (start) {
+	    common_root = getCommonRoot(start, target);
+	    current = start;
+	    while (!nodeEq(current, common_root)) {
+		if ((current == start) &&
+		    (current->build_type == DROP_NODE)) {
+		    /* We don't need to depart from a drop node as
+		     * the drop must perform the departure for us. */ 
+		}
+		else {
+		    if (navigation = departNode(current)) {
+			vectorPush(results, (Object *) navigation);
+		    }
+		}
+		current = current->parent;
+	    }
+	}
+	/* Now navigate from common root towards target */
+	current = common_root;
+	while (!nodeEq(current, target)) {
+	    current = nextNodeFrom(current, target);
+	    if ((current == target) &&
+		(current->build_type == BUILD_NODE)) {
+		/* We don't need to arrive at a build node as the build
+		 * must perform the arrival for us. */
+	    }
+	    else {
+		if (navigation = arriveNode(current)) {
+		    vectorPush(results, (Object *) navigation);
+		}
+	    }
+	}
+	if (context_arrivals) {
+	    /* Although this reverses the order of context departures,
+	     * this should not be an issue as the order of contexts is
+	     * expected to be irrelevant. */
+	    while (elem = vectorPop(context_arrivals)) {
+		vectorPush(results, elem);
+	    }
+	    objectFree((Object *) context_arrivals, FALSE);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, TRUE);
+    }
+    END;
+    //dbgSexp(results);
+    return results;
+}
+
+
+
 #ifdef wibble
 NEXT:
+- rename gensort2 to gensort
+- rename tsort2 to tsort
+- move navigation code into its own compilation unit
 - remove original gensort calls
-- add navigation 
 - remove deprecated depset fields
-- add back the smart_tsort
 #endif
