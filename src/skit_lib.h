@@ -234,14 +234,6 @@ typedef enum {
     SELECTED_FOR_BUILD	// ditto
 } DagNodeStatus;
 
-/* DEPRECATE THIS */
-typedef enum {
-    DEP_LIST = 101,
-    DEP_SINGLE,
-    DEP_OPTIONAL
-} depType;
-
-
 typedef struct DagNode {
     ObjType          type;
     String          *fqn;
@@ -250,13 +242,9 @@ typedef struct DagNode {
     DagNodeBuildType build_type;
     DagNodeStatus    status;
     boolean          is_xnode;
-    Cons            *deps;
-    Vector          *dependencies;//DEPRECATED - REMOVE ASAP (or rename deps)
+    Cons            *dependencies;
     Vector          *dependents;
     int              buildable_kids;
-    Cons            *chosen_options;
-    int              cur_dep_idx;
-    struct DagNode  *cur_dep;
     struct DagNode  *parent;
     struct DagNode  *kids;
     struct DagNode  *next;
@@ -269,7 +257,7 @@ typedef struct Depset {
     boolean        is_optional;		/* If a dependency-set or an
 					 * optional dep. */
     DagNode       *actual;
-    Cons          *deps;
+    Cons          *dependencies;
 } Depset;
 
 
@@ -617,8 +605,9 @@ extern void recordDependencies(Document *doc, Hash *dagnodes, Hash *pqnhash);
 
 
 // tsort.c
-extern Vector *gensort2(Document *doc);
 extern Vector *gensort(Document *doc);
+
+// navigation.c
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
 extern char *applyParams(char *qrystr, Object *params);
 

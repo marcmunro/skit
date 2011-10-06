@@ -20,7 +20,7 @@ void
 showDeps(DagNode *node)
 {
     printSexp(stderr, "NODE: ", (Object *) node);
-    printSexp(stderr, "-->", (Object *) node->deps);
+    printSexp(stderr, "-->", (Object *) node->dependencies);
 }
 
 static Object *
@@ -337,7 +337,7 @@ depsetNew()
     depset->type = OBJ_DEPSET;
     depset->is_set = FALSE;
     depset->is_optional = FALSE;
-    depset->deps = NULL;
+    depset->dependencies = NULL;
     depset->actual = NULL;
 
     return depset;
@@ -527,7 +527,7 @@ makeDepset(Cons *deps)
 {
     Depset *depset = depsetNew();
     depset->is_optional = depset->is_set = deps->cdr && TRUE;
-    depset->deps = deps;
+    depset->dependencies = deps;
     return depset;
 }
 
@@ -540,10 +540,11 @@ addDepset(DagNode *node, Depset *depset)
 	 * are resolved, particularly when xnodes are added.  See
 	 * addInvertedDepSet() for more information. */
 
-	node->deps = consNew((Object *) depset, (Object *) node->deps);
+	node->dependencies = consNew((Object *) depset, 
+				     (Object *) node->dependencies );
     }
     else {
-	node->deps = consAppend(node->deps, (Object *) depset);
+	node->dependencies = consAppend(node->dependencies, (Object *) depset);
     }
 }
 
@@ -630,7 +631,7 @@ addInvertedDepSet(DagNode *node, Depset *depset, Hash *dagnodes)
 			  NULL);
 	new_depset = makeDepset(new_dep);
 	addDepset(xnode, new_depset); /* Add dep on node to xnode */
-	next = (Cons *) depset->deps;
+	next = (Cons *) depset->dependencies;
 	while (next) {
 	    depnode = (DagNode *) dereference(next->car);
 	    new_dep = consNew((Object *) 
@@ -645,12 +646,12 @@ addInvertedDepSet(DagNode *node, Depset *depset, Hash *dagnodes)
     }
     else {
 	/* Do simple dependency inversion. */
-	depnode = (DagNode *) dereference(depset->deps->car);
+	depnode = (DagNode *) dereference(depset->dependencies->car);
 	new_dep = consNew((Object *) 
 			  objRefNew((Object *) dereference((Object *) node)), 
 			  NULL);
-	objectFree((Object *) depset->deps, TRUE);
-	depset->deps = new_dep;
+	objectFree((Object *) depset->dependencies, TRUE);
+	depset->dependencies = new_dep;
 	addDepset(depnode, depset);
     }
 }

@@ -20,22 +20,6 @@
 #include "../src/exceptions.h"
 #include "suites.h"
 
-static Object *
-showDeps(Object *node_entry, Object *dagnodes)
-{
-    DagNode *node = (DagNode *) ((Cons *) node_entry)->cdr;
-    int i;
-    printSexp(stderr, "NODE: ", (Object *) node);
-    if (node->dependencies) {
-	for (i = 0; i < node->dependencies->elems; i++) {
-	    printSexp(stderr, "   --> ", 
-		      node->dependencies->contents->vector[i]);
-	}
-    }
-
-    return (Object *) node;
-}
-
 static char *
 test_build_order(Vector *results, char *list_str)
 {
@@ -149,7 +133,7 @@ START_TEST(check_gensort)
 	
 	doc = getDoc("test/data/gensource1.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
@@ -227,7 +211,7 @@ START_TEST(check_gensort2)
     skfree(tmp);
 
     doc = getDoc("test/data/gensource1.xml");
-    results = gensort2(doc);
+    results = gensort(doc);
     //printSexp(stderr, "RESULTS: ", (Object *) results);
 
     check_build_order(results, "('drop.database.cluster.skittest' "
@@ -294,7 +278,7 @@ START_TEST(navigation)
 
     src_doc = getDoc("test/data/gensource1.xml");
     simple_sort = symbolNew("simple-sort");    
-    sorted = gensort2(src_doc);
+    sorted = gensort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -335,7 +319,7 @@ START_TEST(navigation2)
     skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
-    sorted = gensort2(src_doc);
+    sorted = gensort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -376,7 +360,7 @@ START_TEST(check_cyclic_gensort)
 	
 	doc = getDoc("test/data/gensource2.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
@@ -483,7 +467,7 @@ START_TEST(check_cyclic_gensort2)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
@@ -589,7 +573,7 @@ START_TEST(check_cyclic_exception)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource3.xml");
-	results = gensort2(doc);
+	results = gensort(doc);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -631,7 +615,7 @@ START_TEST(diff)
 	//showMalloc(1104);
 	doc = getDoc("test/data/gensource_diff.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -674,7 +658,7 @@ START_TEST(diff2)
 	initTemplatePath(".");
 	//showMalloc(1104);
 	doc = getDoc("test/data/gensource_diff.xml");
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -727,7 +711,7 @@ START_TEST(depset)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -773,7 +757,7 @@ START_TEST(depset2)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 

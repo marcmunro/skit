@@ -1095,7 +1095,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = docStackPop();
 	}
-	sorted = gensort2(source_doc);
+	sorted = gensort(source_doc);
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);

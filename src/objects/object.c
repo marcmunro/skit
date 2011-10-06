@@ -410,11 +410,8 @@ basicDagNode()
     DagNode *new = skalloc(sizeof(DagNode));
     new->type = OBJ_DAGNODE;
     new->status = UNVISITED;
-    new->deps = NULL;
-    new->dependencies = NULL;   // we can lose the following 3 fields.
+    new->dependencies = NULL;
     new->dependents = NULL;   // TODO: Figure out if we can lose this!
-    new->chosen_options = NULL;
-    new->cur_dep = NULL;
     new->parent = NULL;
     new->kids = NULL;
     new->next = NULL;
@@ -464,10 +461,8 @@ dagnodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->object_type, TRUE);
-    objectFree((Object *) node->dependencies, TRUE);
     objectFree((Object *) node->dependents, FALSE); /* !!!!! */
-    objectFree((Object *) node->deps, TRUE);
-    objectFree((Object *) node->chosen_options, TRUE);
+    objectFree((Object *) node->dependencies, TRUE);
     skfree(node);
 }
 
@@ -475,7 +470,7 @@ void
 depsetFree(Depset *depset)
 {
     Depset *origin;
-    objectFree((Object *) depset->deps, TRUE);
+    objectFree((Object *) depset->dependencies, TRUE);
     skfree(depset);
 }
 
@@ -562,7 +557,7 @@ depSetStr(Depset *depset)
 	deps = objectSexp((Object *) depset->actual);
     }
     else {
-	deps = objectSexp((Object *) depset->deps);
+	deps = objectSexp((Object *) depset->dependencies);
 	if (depset->is_set) {
 	    options = newstr("set");
 	}
@@ -870,7 +865,7 @@ checkDagnode(DagNode *node, void *chunk)
 	printSexp(stderr, "...within object_type of ", (Object *) node);
 	found = TRUE;
     }
-    if (checkVector(node->dependencies, chunk)) {
+    if (checkCons(node->dependencies, chunk)) {
 	printSexp(stderr, "...within dependencies of ", (Object *) node);
 	found = TRUE;
     }
