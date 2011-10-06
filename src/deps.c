@@ -179,10 +179,13 @@ findNextSibling(xmlNode *start, char *name)
 static xmlNode *
 findFirstChild(xmlNode *parent, char *name)
 {
-    if (xmlnodeMatch(parent->children, name)) {
-	return parent->children;
+    if (parent) {
+	if (xmlnodeMatch(parent->children, name)) {
+	    return parent->children;
+	}
+	return findNextSibling(parent->children, name);
     }
-    return findNextSibling(parent->children, name);
+    return NULL;
 }
 
 static Cons *
@@ -219,7 +222,7 @@ makeCons(Object *obj)
 static Object *
 typedNodesFromHash(Hash *hash, String *qn, Cons *prefices)
 {
-    Object *result;
+    Object *result = NULL;
     Cons *next = prefices;
     String *prefix;
     String *key;
