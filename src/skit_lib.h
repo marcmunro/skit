@@ -593,6 +593,7 @@ extern boolean checkDbtypeIsRegistered(String *dbtype);
 extern Tuple *cursorGet(Cursor *cursor, Object *key);
 extern void *cursorIndex(Cursor *cursor, String *fieldname);
 extern String *sqlDBQuote(String *first, String *second);
+extern char *applyParams(char *qrystr, Object *params);
 
 
 // pgsql.c
@@ -609,7 +610,6 @@ extern Vector *gensort(Document *doc);
 
 // navigation.c
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
-extern char *applyParams(char *qrystr, Object *params);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

@@ -13,12 +13,6 @@ AC_CONFIG_HEADER([src/skit_config.h])
 # Checks for programs.
 AC_PROG_CC
 
-# Checks for libraries.
-AC_CHECK_LIB(xslt, xsltCompilePattern)
-AC_CHECK_LIB(xml2, xmlGetProp)
-AC_CHECK_LIB(glib2, g_hash_table_lookup_extended)
-
-
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
@@ -168,12 +162,7 @@ POSTGRESQL_CHECKS
 PKG_CHECK_MODULES(GLIB, glib-2.0)
 PKG_CHECK_MODULES(XML, [libxml-2.0 >= 2.5])
 PKG_CHECK_MODULES(XSLT, [libxslt >= 1.1])
-PKG_CHECK_MODULES(CHECK, [libcheck >= 0.9.6], [], 
-  echo			 [
-  echo "  Assuming that you have a locally compiled version of check"
-  echo "  that incorporates marc's fixes.  If not, ask marc for a copy"
-  CHECK_LIBS="`pwd`/test/libcheck.a"
-])
+PKG_CHECK_MODULES(CHECK, [check >= 0.9.6])
 
 
 
