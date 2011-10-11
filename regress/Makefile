@@ -22,11 +22,15 @@
 
 
 REGRESS_DIR = regress
+REGRESS_RUN = $(REGRESS_DIR)/regress_run.sh
 REGRESS_LOG = $(REGRESS_DIR)/regress.log
 REGRESSDB_PORT = 54325
+# This should probably be discovered rather thean hard-coded;
+# suggestions are welcomed to marc@bloodnok.com
 REGRESSDB_HOST = /var/run/postgresql
 
-PGBIN = $(shell $(REGRESS_DIR)/regress_run.sh pgbin)
+PGBIN = $(shell $(REGRESS_RUN) pgbin)
+PGLIB = $(shell $(REGRESS_RUN) pglib)
 PSQL = psql -p $(REGRESSDB_PORT) -h $(REGRESSDB_HOST) -v home=$(top_builddir) 
 PG_DUMP = pg_dump -p $(REGRESSDB_PORT)
 
@@ -72,9 +76,15 @@ rdbstop:
 	    echo "Regression test database stopped"; fi; \
         else echo "database is already down"; fi
 
+check_pglibs:
+	@if [ ! -f $(PGLIB)/seg.so ]; then\
+	    echo "ERROR: seg library (from contrib) is not installed!"; \
+	    exit 2; \
+	 fi
+
 
 # Regression test targets.
-regress_cluster: 
+regress_cluster: check_pglibs
 	@if [ -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    echo Error: database files already exist.; exit 1; fi
 	@echo Creating new cluster for regression tests...
@@ -108,7 +118,7 @@ regression_test1: skit drop_regress_db
 	 export REGRESS_DIR=$(REGRESS_DIR); \
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP="$(PG_DUMP)"; \
-	 regress/regress_run.sh 1
+	 $(REGRESS_RUN) 1
 
 regression_test2: skit drop_regress_db \
 		$(REGRESS_DIR)/scratch/regressdb_both1.sql
@@ -119,7 +129,7 @@ regression_test2: skit drop_regress_db \
 	 export REGRESS_DIR=$(REGRESS_DIR); \
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP="$(PG_DUMP)"; \
-	 regress/regress_run.sh 2
+	 $(REGRESS_RUN) 2
 
 regression_test3: skit drop_regress_db \
 		$(REGRESS_DIR)/scratch/regressdb_both1.sql
@@ -130,7 +140,7 @@ regression_test3: skit drop_regress_db \
 	 export REGRESS_DIR=$(REGRESS_DIR); \
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP="$(PG_DUMP)"; \
-	 regress/regress_run.sh 3
+	 $(REGRESS_RUN) 3
 
 
 regress: skit regress_cluster regression_test1 regression_test2 \
@@ -153,4 +163,5 @@ regress_help:
 	@echo "regress_cluster      - Create regression test database cluster"
 	@echo "regression_test1     - Regression test 1 (extract/generate)"
 	@echo "regression_test2     - Regression test 2 (scatter/gather)"
+	@echo "regression_test3     - Regression test 3 (diffs)"
 	@echo "drop_regress_cluster - Drop regression test database cluster"

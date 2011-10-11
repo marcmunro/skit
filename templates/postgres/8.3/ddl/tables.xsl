@@ -134,6 +134,8 @@
     <xsl:if test="../@action='drop'">
       <print>
 	<xsl:call-template name="set_owner"/>
+        <xsl:text>&#x0A;\echo drop table </xsl:text>
+        <xsl:value-of select="../@qname"/>
         <xsl:text>&#x0A;drop table </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;&#x0A;</xsl:text>

@@ -388,7 +388,10 @@ doIdentifyDeps(DagNode *owner, xmlNode *dep_node, Cons *hashes)
     Cons *this;
     xmlNode *next = NULL;
     boolean found = FALSE;
-    char *errmsg;
+
+    if (streq(owner->fqn->value, "drop.trigger.regressdb.schema2.keys2.mytrigger1")) {
+	this = NULL;
+    }
 
     if (streq(dep_node->name, DEPENDENCY_SET_STR)) {
 	/* Call recursively to deal with contents of depset */
@@ -407,9 +410,22 @@ doIdentifyDeps(DagNode *owner, xmlNode *dep_node, Cons *hashes)
 	    }
 	}
 	if (!found) {
+	    char *tmp1;
+	    char *tmp2;
+	    char *errmsg = newstr("");
+	    next = NULL;
+	    while (next = nextDependencyInSet(dep_node, next)) {
+		tmp1 = nodestr(next);
+		tmp2 = errmsg;
+		errmsg = newstr("%s\n  %s", tmp2, tmp1);
+		skfree(tmp1);
+		skfree(tmp2);
+	    }
 	    objectFree((Object *) result, TRUE);
-	    errmsg = newstr("No dependencies found for dependency set in %s",
-			    owner->fqn->value);
+	    tmp2 = errmsg;
+	    errmsg = newstr("No dependencies found for dependency set in:\n"
+			    "  %s\nelems:%s", owner->fqn->value, tmp2);
+	    skfree(tmp2);
 	    RAISE(TSORT_ERROR, errmsg);
 	}
     }
@@ -674,6 +690,7 @@ doAddDeps(DagNode *node, Cons *deps, Cons *hashes)
     char *tmp;
 
     BEGIN {
+	dbgSexp(node);
 	while (next) {
 	    depnode = (DagNode *) dereference(next->car);
 	    next = (Cons *) next->cdr;

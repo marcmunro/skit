@@ -56,8 +56,8 @@ scatter()
 gendrop()
 {
     echo ......drop... 1>&2
-    ./skit --generate --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
-    errexit
+    echo ./skit --generate --drop $3 ${REGRESS_DIR}/$1 1>&2
+    exitonfail ./skit --generate --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
     echo .........editing drop script to enable dangerous drop statements... 1>&2
     sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
 	    ${REGRESS_DIR}/tmp >${REGRESS_DIR}/$2
@@ -66,8 +66,7 @@ gendrop()
 genbuild()
 {
     echo ......build... 1>&2
-    ./skit --generate --build $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
-    errexit
+    exitonfail ./skit --generate --build $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
     echo .........editing build script to not create role `whoami`... 1>&2
     sed -e  "/create role \"`whoami`\"/ s/^/-- /" \
 	    ${REGRESS_DIR}/tmp > ${REGRESS_DIR}/$2
@@ -76,8 +75,7 @@ genbuild()
 genboth()
 {
     echo ......both... 1>&2
-    ./skit --generate --build --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/$2
-    errexit
+    exitonfail ./skit --generate --build --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/$2
 }
 
 execdrop()
@@ -124,6 +122,24 @@ execbuild()
     errexit
 }
 
+# This should be used in place of cmd; errexit as it gives better feedback.
+# Usage: exitonfail cmd params...
+#
+exitonfail()
+{
+    $*
+    status=$?
+    if [ ${status} != 0 ]; then
+	echo "FAILED, EXECUTING:" 1>&2
+	echo $* 1>&2
+	echo "EXITING" 1>&2
+	exit ${status}
+    fi
+}
+
+# Deprecate this following a command in favour of exitonfail running the
+# command.
+#
 errexit()
 {
     status=$?
@@ -135,22 +151,19 @@ errexit()
 diffdump()
 {
     echo ......comparing pg_dump snapshots... 1>&2
-    regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
-    errexit
+    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
 }
 
 diffglobals()
 {
     echo ......comparing pg_dumpall snapshots... 1>&2
-    regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
-    errexit
+    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
 }
 
 diffextract()
 {
     echo ......checking results of extracts... 1>&2
-    regress/diffcheck.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
-    errexit
+    exitonfail regress/diffcheck.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
 }
 
 regression_test1()
@@ -307,6 +320,11 @@ export MYPID=$$
 
 if [ "x$1" = "xpgbin" ]; then
     pgbin
+    exit
+fi
+
+if [ "x$1" = "xpglib" ]; then
+    `pgbin`/pg_config --pkglibdir
     exit
 fi
 

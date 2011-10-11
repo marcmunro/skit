@@ -14,11 +14,11 @@
     <dbobject type="trigger" fqn="{$trigger_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@name)}"
 	      table_qname="{skit:dbquote(../@schema, ../@name)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
       <xsl:if test="@function">
+	<xsl:variable name="schema_name" select="@schema"/>
+	<xsl:variable name="table_name" select="@table"/>
+	<xsl:variable name="table_owner" 
+		      select="//schema[@name=$schema_name]/table[@name=$table_name]/@owner"/>
 	<dependencies>
 	  <dependency fqn="{concat('function.', 
 			            ancestor::database/@name, '.', 
@@ -28,10 +28,11 @@
 	  </xsl:call-template>
 	  <xsl:call-template name="TableGrant">
 	    <xsl:with-param name="priv" select="'trigger'"/>
+	    <xsl:with-param name="owner" select="$table_owner"/>
 	  </xsl:call-template>
 	</dependencies>
       </xsl:if>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

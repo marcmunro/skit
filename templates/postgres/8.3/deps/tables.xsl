@@ -13,15 +13,15 @@
     <dependency-set>
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
-		       ancestor::schema/@name, '.usage:public')}"/>
+		       ancestor::schema/@name, '.create:public')}"/>
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
-		       ancestor::schema/@name, '.usage:', 
+		       ancestor::schema/@name, '.create:', 
 		       //cluster/@username)}"/>
       <xsl:if test="$owner">
 	<dependency pqn="{concat('grant.', 
 			 ancestor::database/@name, '.', 
-			 ancestor::schema/@name, '.usage:', $owner)}"/>
+			 ancestor::schema/@name, '.create:', $owner)}"/>
       </xsl:if>
     </dependency-set>
   </xsl:template>
