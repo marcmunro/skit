@@ -21,6 +21,10 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<!-- owner -->
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	</xsl:if>
 
 	<!-- operators -->
 	<!-- The following is copied from oerator_classes.xsl

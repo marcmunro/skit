@@ -45,7 +45,7 @@
 	  </xsl:otherwise>
 	</xsl:choose>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="@name"/>
@@ -110,14 +110,23 @@
 	</xsl:if>
 
 	<!-- Dependencies on usage of schema. -->
+	<!--
+	<xsl:call-template name="SchemaGrant">
+	  <xsl:with-param name="owner" select="@from"/>
+	</xsl:call-template>-->
 	<xsl:if test="../@schema">
 	  <dependency-set>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
 			     ../@schema, '.usage:', @from)}"/>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
 			     ../@schema, '.usage:public')}"/>
+	    <dependency pqn="{concat('grant.', 
+			 ancestor::database/@name, '.', 
+			 ancestor::schema/@name, '.create:', @from)}"/>
+	    <dependency fqn="{concat('privilege.cluster.', @from, '.superuser')}"/>
 	  </dependency-set>
 	</xsl:if>
+
 	<!-- Dependencies on previous grant. -->
 	<xsl:choose>
 	  <xsl:when test="@from=../@owner">
@@ -147,7 +156,7 @@
 				    parent::function/handler-for-type/@name)}"/>
 	</xsl:if>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="@name"/>

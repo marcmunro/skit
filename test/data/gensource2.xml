@@ -285,7 +285,7 @@
               qname="public.v2" cycle_breaker="viewbase">
             <context name="owner" value="marc" default="marc"/>
             <dependencies>
-	      <dependency fqn="view.skittest.public.v1"/>
+	      <dependency fqn="view.skittest.public.v3"/>
               <dependency fqn="role.cluster.marc"/>
 	      <dependency-set>
 		<dependency pqn="grant.skittest.public.usage:public"/>
@@ -294,6 +294,23 @@
 	      </dependency-set>
             </dependencies>
             <view name="v2" schema="public" owner="marc">
+              <source>SELECT v3.mykey FROM v1;</source>
+              <depends schema="public" view="v3"/>
+            </view>
+          </dbobject>
+          <dbobject type="view" fqn="view.skittest.public.v3" name="v3"
+              qname="public.v3" cycle_breaker="viewbase">
+            <context name="owner" value="marc" default="marc"/>
+            <dependencies>
+	      <dependency fqn="view.skittest.public.v1"/>
+              <dependency fqn="role.cluster.marc"/>
+	      <dependency-set>
+		<dependency pqn="grant.skittest.public.usage:public"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+		<dependency pqn="grant.skittest.public.usage:marc"/>
+	      </dependency-set>
+            </dependencies>
+            <view name="v3" schema="public" owner="marc">
               <source>SELECT v1.mykey FROM v1;</source>
               <depends schema="public" view="v1"/>
             </view>

@@ -907,7 +907,7 @@ START_TEST(cons_concat)
 {
     Cons *list1 = (Cons *) objectFromStr("(1 2 3)");
     Cons *list2 = (Cons *) objectFromStr("(4 5 6)");
-    Cons *result = consConcat(list1, list2);
+    Cons *result = consConcat(list1, (Object *) list2);
     char *resultstr = objectSexp((Object *) result);
     char *tmp;
 

@@ -33,12 +33,15 @@ typedef unsigned char boolean;
 typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, 
 	      IS_UNKNOWN, HAS_DIFFKIDS} DiffType;
 
-#define DIFFNEW     "New"
-#define DIFFGONE    "Gone"
-#define DIFFDIFF    "Diff"
-#define DIFFSAME    "None"
-#define DIFFUNKNOWN "UNKNOWN"
-#define DIFFKIDS    "Diffkids"
+#define DIFFNEW       "New"
+#define DIFFGONE      "Gone"
+#define DIFFDIFF      "Diff"
+#define DIFFSAME      "None"
+#define DIFFUNKNOWN   "UNKNOWN"
+#define DIFFKIDS      "Diffkids"
+#define ACTIONBUILD   "build"
+#define ACTIONDROP    "drop"
+#define ACTIONREBUILD "rebuild"
 
 
 typedef enum {
@@ -81,7 +84,6 @@ typedef enum {
     OBJ_CONNECTION,
     OBJ_CURSOR,
     OBJ_TUPLE,
-    OBJ_DEPSET,
     OBJ_DAGNODE,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
@@ -214,20 +216,34 @@ typedef struct Cursor {
 } Cursor;
 
 typedef enum {
-    BUILD_NODE = 53,
+    BUILD_NODE = 0,
     DROP_NODE,
     DIFF_NODE,
     EXISTS_NODE,
-    BUILD_AND_DROP_NODE,
+    DROP_AND_BUILD_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
+    BUILD_AND_DROP_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
+
+#define BUILD_NODE_BIT 1
+#define DROP_NODE_BIT 2
+#define DIFF_NODE_BIT 4
+#define EXISTS_NODE_BIT 8
+#define DROP_AND_BUILD_NODE_BIT 16
+#define ARRIVE_NODE_BIT 32
+#define DEPART_NODE_BIT 64
+#define BUILD_AND_DROP_NODE_BIT 128
+
+typedef int BuildTypeBitSet;
+#define inBuildTypeBitSet(btbs, bt)		\
+    ((btbs & (1 << (int) bt)) != 0)
 
 typedef enum {
     UNVISITED = 27,
     VISITING,
-    VISITED_ONCE,       /* Node has been checked by dagify_node, etc */
+    RESOLVED,           /* Node has been resolved by resolving_tsort */
     VISITED,            /* Node has been visited by tsort */
     UNBUILDABLE,	// Used in original tsort.c
     BUILDABLE,		// ditto
@@ -237,28 +253,19 @@ typedef enum {
 typedef struct DagNode {
     ObjType          type;
     String          *fqn;
-    String          *object_type;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
     DagNodeBuildType build_type;
     DagNodeStatus    status;
-    boolean          is_xnode;
-    Cons            *dependencies;
-    Vector          *dependents;
-    int              buildable_kids;
-    struct DagNode  *parent;
-    struct DagNode  *kids;
-    struct DagNode  *next;
-    struct DagNode  *prev;
+    int              dep_idx;
+    Vector          *dependencies;   // use objectFree(obj, FALSE);
+    Vector          *dependents;     // use objectFree(obj, FALSE);
+    Vector          *original_dependencies;
+    struct DagNode  *breaker_for;    // Reference only
+    struct DagNode  *xnode_for; // Reference only
+    struct DagNode  *fallback;  // Reference only
+    struct DagNode  *duplicate_node; // Reference only
+    struct DagNode  *parent;    // Reference only
 } DagNode;
-
-typedef struct Depset {
-    ObjType        type;
-    boolean        is_set;		/* If a dependency-set */
-    boolean        is_optional;		/* If a dependency-set or an
-					 * optional dep. */
-    DagNode       *actual;
-    Cons          *dependencies;
-} Depset;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to
@@ -285,10 +292,11 @@ typedef struct TokenStr {
 #undef MEM_DEBUG
 
 #ifdef WITH_CASSERT
-#define assert(cond,str)						\
-    do { if (!(cond)) { RAISE(ASSERTION_FAILURE, newstr(str));}} while (FALSE)
+#define assert(cond,...)						\
+    do { if (!(cond)) { RAISE(ASSERTION_FAILURE, newstr(__VA_ARGS__));} \
+    } while (FALSE)
 #else
-#define assert(cond,str) 
+#define assert(cond,...) 
 #endif
 
 
@@ -324,10 +332,11 @@ extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
 extern Object *consNext(Cons *list, Object **p_placeholder);
 extern Cons *consAppend(Cons *list, Object *item);
-extern Cons *consConcat(Cons *list, Cons *list2);
+extern Cons *consConcat(Cons *list, Object *list2);
 extern boolean checkCons(Cons *cons, void *chunk);
 extern boolean consIn(Cons *cons, Object *obj);
 extern Cons *consRemove(Cons *cons, Cons *remove);
+extern Cons *consCopy(Cons *list);
 
 // object.c
 extern Tuple *tupleNew(Cursor *cursor);
@@ -354,7 +363,7 @@ extern Object *objSelect(Object *collection, Object *key);
 extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
-extern DagNode *dagnodeNew(Node *node, DagNodeBuildType build_type);
+extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern DagNode *xnodeNew(DagNode *source);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
@@ -369,6 +378,7 @@ extern void vectorFree(Vector *vector, boolean free_contents);
 extern void vectorStringSort(Vector *vector);
 extern String *vectorConcat(Vector *vector);
 extern void vectorAppend(Vector *vector1, Vector *vector2);
+extern Vector *vectorCopy(Vector *vector);
 extern Object *vectorGet(Vector *vec, Object *key);
 extern Object *vectorRemove(Vector *vec, int index);
 extern Object *vectorDel(Vector *vec, Object *obj);
@@ -382,6 +392,14 @@ extern boolean checkVector(Vector *vec, void *chunk);
 #define setRemove vectorRemove
 #define setDel vectorDel
 #define setSearch vectorSearch
+
+#define EACH(vector, idx) 			\
+    for (idx = 0; idx < vector->elems; idx++)
+
+#define ELEM(vec, idx)				\
+    vec->contents->vector[idx]
+
+
 
 
 // hash.c
@@ -543,6 +561,7 @@ extern Document *processTemplate(Document *template);
 extern void addParamsNode(Document *doc, Object *params);
 extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
+extern xmlNode *firstElement(xmlNode *start);
 
 // document.c
 extern char *nodestr(xmlNode *node);
@@ -601,11 +620,21 @@ extern void registerPGSQL();
 extern void pgsqlFreeMem();
 
 // deps.c
-extern void recordParentage(Document *doc, Hash *dagnodes);
-extern void recordDependencies(Document *doc, Hash *dagnodes, Hash *pqnhash);
+extern void showDeps(DagNode *node);
+extern void showHashDeps(Hash *nodes);
+extern void showVectorDeps(Vector *nodes);
+
+extern void addDependent(DagNode *node, DagNode *dep);
+extern void addDep(DagNode *node, DagNode *dep);
+
+extern Vector *nodesFromDoc(Document *doc);
+extern Hash *hashByFqn(Vector *vector);
+extern void prepareDagForBuild(Vector **p_nodes);
+
 
 
 // tsort.c
+extern Vector *simple_tsort(Vector *nodes);
 extern Vector *gensort(Document *doc);
 
 // navigation.c
@@ -617,6 +646,3 @@ extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);
 //diff.c
 extern xmlNode *doDiff(String *diffrules, boolean swap);
 
-
-// deps.c
-extern Depset *depsetNew();

@@ -44,7 +44,7 @@
 	<xsl:if test="not(privilege/@priv='inherit')">
           <xsl:text>alter role </xsl:text>
           <xsl:value-of select="../@qname"/>
-          <xsl:text> noinherit;&#x0A;</xsl:text>
+          <xsl:text> with noinherit;&#x0A;</xsl:text>
 	</xsl:if>
 	<xsl:for-each select="config">
           <xsl:text>alter role </xsl:text>
@@ -56,13 +56,11 @@
           <xsl:text>;&#x0A;</xsl:text>
 	</xsl:for-each>
 	<xsl:for-each select="privilege">
-	  <xsl:if test="@priv != 'inherit'">
-            <xsl:text>alter role </xsl:text>
-            <xsl:value-of select="../../@qname"/>
-            <xsl:text> with </xsl:text>
-            <xsl:value-of select="@priv"/>
-            <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:if>
+	  <xsl:text>alter role </xsl:text>
+	  <xsl:value-of select="../../@qname"/>
+	  <xsl:text> with </xsl:text>
+	  <xsl:value-of select="@priv"/>
+	  <xsl:text>;&#x0A;</xsl:text>
 	</xsl:for-each>
 	<xsl:for-each select="profile">
           <xsl:text>alter role </xsl:text>

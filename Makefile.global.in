@@ -3,27 +3,38 @@
 # 
 #       Autoconf input file for Makefile.global
 # 
-#       Copyright (c) 2008 Marc Munro
+#       Copyright (c) 2008 - 2011 Marc Munro
 #       Author:  Marc Munro
 # 	License: GLP V3
 #  
-#  $Id$
 #  ----------
 #
 
 #location substitutions
 
-PACKAGE_NAME=		FULL-PACKAGE-NAME
-VERSION=		VERSION
+PACKAGE_NAME=		@PACKAGE_NAME@
+VERSION=		@PACKAGE_VERSION@
+DEBUG=                  @DEBUG@
 
 #build tools
 CC=			gcc
 
 #build tool flags
-#CFLAGS=			-g -O2
-# Turn off optimisation as it makes gdb harder to use
+
+ifeq "$(DEBUG)" "yes"
+# Debug settings for flags
 CFLAGS=			-ggdb3 -O0
-LDFLAGS=			-ggdb3 -O0
+LDFLAGS=		-ggdb3 -O0
+else
+# Non-debug settings for flags
+CFLAGS=			-g -O2
+LDLAGS=			-g -O2
+endif
+
+
+# Turn off optimisation as it makes gdb harder to use
+
+
 
 override CPPFLAGS := -I ./test \
          @GLIB_CFLAGS@ \
@@ -34,6 +45,8 @@ override LDFLAGS := @GLIB_LIBS@ @PQLIB@ @XML_LIBS@ \
 	 @XSLT_LIBS@ $(LDFLAGS)
 
 LIBCHECK = @CHECK_LIBS@
+
+XSLTPROC = @XSLTPROC@
 
 ifeq ($(GCC), yes)
 	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations

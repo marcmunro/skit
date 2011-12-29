@@ -111,6 +111,14 @@ drop_regress_db:
 	@$(PSQL) -d postgres -f $(REGRESS_DIR)/drop_cluster_objects.sql \
 		>/dev/null 2>&1 || true
 
+regression_env: 
+	@echo "export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP=\"$(PG_DUMP)\"; "
+
 regression_test1: skit drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
@@ -161,6 +169,7 @@ regress_distclean: regress_clean
 regress_help:
 	@echo "regress              - Run full regression test suite"
 	@echo "regress_cluster      - Create regression test database cluster"
+	@echo "regression_env       - Show env variables used for regression"
 	@echo "regression_test1     - Regression test 1 (extract/generate)"
 	@echo "regression_test2     - Regression test 2 (scatter/gather)"
 	@echo "regression_test3     - Regression test 3 (diffs)"

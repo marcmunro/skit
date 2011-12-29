@@ -44,10 +44,13 @@ findNextSibling(xmlNode *start, char *name)
 static xmlNode *
 findFirstChild(xmlNode *parent, char *name)
 {
-    if (xmlnodeMatch(parent->children, name)) {
-	return parent->children;
+    if (parent) {
+	if (xmlnodeMatch(parent->children, name)) {
+	    return parent->children;
+	}
+	return findNextSibling(parent->children, name);
     }
-    return findNextSibling(parent->children, name);
+    return NULL;
 }
 
 
@@ -114,10 +117,8 @@ static DagNode *
 departNode(DagNode *current)
 {
     DagNode *navigation = NULL;
-    Node node = {OBJ_XMLNODE, NULL};
     if (requiresNavigation(current->dbobject)) {
-	node.node = current->dbobject;
-	navigation = dagnodeNew(&node, DEPART_NODE);
+	navigation = dagnodeNew(current->dbobject, DEPART_NODE);
     }
     return navigation;
 }
@@ -129,10 +130,8 @@ static DagNode *
 arriveNode(DagNode *target)
 {
     DagNode *navigation = NULL;
-    Node node = {OBJ_XMLNODE, NULL};
     if (requiresNavigation(target->dbobject)) {
-	node.node = target->dbobject;
-	navigation = dagnodeNew(&node, ARRIVE_NODE);
+	navigation = dagnodeNew(target->dbobject, ARRIVE_NODE);
     }
     return navigation;
 }
@@ -194,15 +193,15 @@ dbobjectNode(char *type, char *name)
 static DagNode *
 arriveContextNode(String *name, String *value)
 {
-    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
-    return dagnodeNew(&dbobject, ARRIVE_NODE);
+    xmlNode *dbobject = dbobjectNode(name->value, value->value);
+    return dagnodeNew(dbobject, ARRIVE_NODE);
 }
 
 static DagNode *
 departContextNode(String *name, String *value)
 {
-    Node dbobject = {OBJ_XMLNODE, dbobjectNode(name->value, value->value)};
-    return dagnodeNew(&dbobject, DEPART_NODE);
+    xmlNode *dbobject = dbobjectNode(name->value, value->value);
+    return dagnodeNew(dbobject, DEPART_NODE);
 }
 
 static void

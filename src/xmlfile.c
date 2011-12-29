@@ -139,7 +139,7 @@ static xmlNode *processChildren(xmlNode *template_node,
 static xmlNode *processRemaining(xmlNode *template_node, 
 				 xmlNode *parent_node, int depth);
 
-static xmlNode *
+xmlNode *
 firstElement(xmlNode *start)
 {
     xmlNode *result;
@@ -1011,18 +1011,7 @@ copyObjectNode(xmlNode *source)
 static char *
 actionName(DagNode *node)
 {
-    /* Fastest test is againt the 4th character of the fqn */
-    switch (node->fqn->value[3]) {
-    case 'i': return "arrive";
-    case 'l': return "build";
-    case 'p': return "drop";
-    case 'a': return "depart";
-    case 'f': return "diff";
-    case 's': return "exists";
-    }
-    RAISE(GENERAL_ERROR,
-	  newstr("actionName: cannot identify action from fqn \"%s\"", 
-		 node->fqn->value));
+    return nameForBuildType(node->build_type);
 }
 
 static void

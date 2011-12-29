@@ -264,6 +264,7 @@ main(int argc, char *argv[])
 	ADD_SUITE(params);
 	ADD_SUITE(relaxng);
 	ADD_SUITE(tsort);
+	ADD_SUITE(deps);
     }
 
     if (!reporting_only) {

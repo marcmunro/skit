@@ -13,14 +13,30 @@
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('role.', $role_name)}">
       <dependencies>
+	<!-- THIS IS PROBABLY UNNECESSARY:  TODO - REMOVE THIS!!! -->
 	<dependency fqn="cluster"/>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="$role_name"/>
 	</xsl:apply-templates>
+	<xsl:for-each select="privilege">
+	  <xsl:copy>
+	    <xsl:copy-of select="@*"/>
+	  </xsl:copy>
+	</xsl:for-each>
       </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
+  <xsl:template match="privilege">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>
+    <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@name)}"
+	      fqn="{concat('privilege.', $priv_name)}">
+      <!-- No need for any contents, these nodes exist only to record
+           whether dependent privileges exist. -->
     </dbobject>
   </xsl:template>
 

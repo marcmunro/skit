@@ -24,8 +24,15 @@ Document *
 getDoc(char *name)
 {
     String *docname = stringNew(name);
-    Document *doc = findDoc(docname);
-    objectFree((Object *) docname, TRUE);
+    Document *doc;
+    BEGIN {
+	doc = findDoc(docname);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) docname, TRUE);
+    }
+    END;
     return doc;
 }
 

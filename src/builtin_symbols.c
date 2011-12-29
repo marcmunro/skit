@@ -836,6 +836,8 @@ initBaseSymbols()
     defineVar("dbver", NULL);
     defineVar("templates-dir",  (Object *) stringNew("templates"));
 
+    defineVar("xnode_seq", (Object *) int4New(1));
+
     //evalStr("(setq dbtype 'postgres')");
     //evalStr("(setq dbver nil)");
     //evalStr("(setq templates-dir 'templates')");
@@ -851,6 +853,6 @@ initBuiltInSymbols()
 	initBaseSymbols();
     }
 
-    done = TRUE;
+    //done = TRUE;
 }
   

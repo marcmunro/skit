@@ -1,0 +1,703 @@
+/**
+ * @file   check_deps.c
+ * \code
+ *     Author:       Marc Munro
+ *     Fileset:	skit - a database schema management toolset
+ *     Author:  Marc Munro
+ *     License: GPL V3
+ * $Id$
+ * \endcode
+ * @brief  
+ * Unit tests for checking dependency management
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <check.h>
+#include <regex.h>
+#include "../src/skit_lib.h"
+#include "../src/exceptions.h"
+#include "suites.h"
+
+static
+void eval(char *str)
+{
+    Object *ignore;
+    char *tmp;
+
+    ignore = evalSexp(tmp = newstr(str));
+    objectFree(ignore, TRUE);
+    skfree(tmp);
+}
+
+static boolean
+hasDependency(DagNode *node, DagNode *dep)
+{
+    Vector *vector = node->dependencies;
+    int i;
+    if (vector) {
+	for (i = 0; i < vector->elems; i++) {
+	    if (dep == (DagNode *) vector->contents->vector[i]) {
+		return TRUE;
+	    }
+	}
+    }
+    return FALSE;
+}
+
+static boolean
+hasDep(Hash *hash, char *from, char *to)
+{
+    String *key = stringNewByRef(newstr(from));
+    DagNode *fnode = (DagNode *) hashGet(hash, (Object *) key);
+    DagNode *tnode;
+    objectFree((Object *) key, TRUE);
+
+    key = stringNewByRef(newstr(to));
+    tnode = (DagNode *) hashGet(hash, (Object *) key);
+    
+    objectFree((Object *) key, TRUE);
+    return hasDependency(fnode, tnode);
+}
+
+static void
+requireDep(Hash *hash, char *from, char *to)
+{
+    if (!hasDep(hash, from, to)) {
+	fail("No dep exists from %s to %s", from, to);
+    }
+}
+
+static void
+requireNoDep(Hash *hash, char *from, char *to)
+{
+    if (hasDep(hash, from, to)) {
+	fail("Unwanted dep exists from %s to %s", from, to);
+    }
+}
+
+static void
+requireDeps(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DagNode *fromnode;
+    String *key;
+    int dep_elems;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	requireDep(hash, from, to);
+	count++;
+    }
+    va_end(params);
+    key = stringNewByRef(from);
+    fromnode = (DagNode *) hashGet(hash, (Object *) key);
+    objectFree((Object *) key, FALSE);
+    
+    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
+	
+    if (dep_elems != count) {
+	fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
+	     fromnode->fqn->value, count, fromnode->dependencies->elems);
+    }
+}
+
+
+static char *
+xnodeName(char *basename, Vector *nodes)
+{
+    DagNode *node;
+    int i;
+    for (i = 0; i < nodes->elems; i++) {
+	node = (DagNode *) nodes->contents->vector[i];
+	if (strncmp(basename, node->fqn->value, strlen(basename)) == 0) {
+	    return node->fqn->value;
+	}
+    }
+    return NULL;
+}
+
+
+START_TEST(build_type_bitsets)
+{
+    BuildTypeBitSet btbs = BUILD_NODE_BIT + DIFF_NODE_BIT;
+
+    if (inBuildTypeBitSet(btbs, DROP_NODE)) {
+	fail("Unexpected DROP_NODE found in bitset");
+    }
+    if (inBuildTypeBitSet(btbs, DEPART_NODE)) {
+	fail("Unexpected DEPART_NODE found in bitset");
+    }
+    if (!inBuildTypeBitSet(btbs, BUILD_NODE)) {
+	fail("Failed to find BUILD_NODE in bitset");
+    }
+    if (!inBuildTypeBitSet(btbs, DIFF_NODE)) {
+	fail("Failed to find DIFF_NODE in bitset");
+    }
+    btbs += DEPART_NODE_BIT;
+    if (!inBuildTypeBitSet(btbs, DEPART_NODE)) {
+	fail("Failed to find DEPART_NODE in bitset");
+    }
+}
+END_TEST
+
+/* Test basic dependencies, using dependency sets, with xnodes in place, */
+START_TEST(depset_deps1)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    Hash *nodes_by_fqn;
+    char *xnode_name;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource_depset.xml");
+	nodes = nodesFromDoc(doc);
+	nodes_by_fqn = hashByFqn(nodes);
+
+	requireDeps(nodes_by_fqn, "role.cluster.r1", "cluster", 
+		    "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", "cluster", 
+		    "role.cluster.r3", NULL);
+
+	xnode_name = xnodeName("role.cluster.r3.", nodes);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", "cluster", 
+		    xnode_name, NULL);
+	requireNoDep(nodes_by_fqn, xnode_name, "cluster"); 
+	requireDeps(nodes_by_fqn, xnode_name, "role.cluster.r1", 
+		    "role.cluster.r2", "role.cluster.r4", NULL);
+
+
+	xnode_name = xnodeName("role.cluster.r4.", nodes);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", "cluster", 
+		    xnode_name, NULL);
+	requireNoDep(nodes_by_fqn, xnode_name, "cluster"); 
+	requireDeps(nodes_by_fqn, xnode_name, "role.cluster.r1", 
+		    "role.cluster.r2", "role.cluster.r5", NULL);
+	
+	requireDeps(nodes_by_fqn, "role.cluster.r5", "cluster", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+/* Test basic build dependencies, using dependency sets, after
+ * processing xnodes. */ 
+START_TEST(depset_dag1_build)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource_depset.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	//showVectorDeps(nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+
+	requireDeps(nodes_by_fqn, "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", "cluster", 
+		    "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", 
+		    "role.cluster.r3", "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", 
+		    "role.cluster.r4", "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", 
+		    "role.cluster.r5", "cluster", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+/* Test basic (inverted) drop dependencies, using dependency sets, after
+ * processing xnodes. */ 
+START_TEST(depset_dag1_drop)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	eval("(setq drop t)");
+	doc = getDoc("test/data/gensource_depset.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	//showVectorDeps(nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+
+	requireDeps(nodes_by_fqn, "cluster", "role.cluster.r5", 
+		    "role.cluster.r4", "role.cluster.r3", 
+		    "role.cluster.r2", "role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", 
+		    "role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", 
+		    "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", 
+		    "role.cluster.r2", "role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+/* Test dependency handling for rebuilds. */ 
+START_TEST(depset_dag2_rebuild)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(572);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource_depset_rebuild.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps(nodes_by_fqn, "cluster", 
+		    "drop.role.cluster.r1", "drop.role.cluster.r2", 
+		    "drop.role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", 
+		    "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", 
+		    "cluster", "role.cluster.r5", 
+		    "drop.role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", 
+		    "cluster", "role.cluster.r4", 
+		    "drop.role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", 
+		    "cluster", "role.cluster.r3", 
+		    "drop.role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", 
+		    "cluster", "role.cluster.r3", 
+		    "drop.role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
+		    "drop.role.cluster.r1", "drop.role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", 
+		    "cluster", "role.cluster.r3", 
+		    "drop.role.cluster.r1", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+/* Test dependency handling for rebuilds, with a default action of drop. */ 
+START_TEST(depset_dag2_rebuild2)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(813);
+	//showFree(572);
+	eval("(setq drop t)");
+	doc = getDoc("test/data/gensource_depset_rebuild.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	
+	//showVectorDeps(nodes);
+
+	requireDeps(nodes_by_fqn, "cluster", 
+		    "drop.cluster", "role.cluster.r1",
+		    "role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", 
+		    "cluster", "drop.role.cluster.r5", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", 
+		    "cluster", "role.cluster.r5", 
+		    "drop.role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", 
+		    "cluster", "role.cluster.r4", 
+		    "drop.role.cluster.r3", "role.cluster.r2",
+		    "role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
+		    "role.cluster.r1", "role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "drop.cluster", 
+		    "role.cluster.r1", "role.cluster.r2", 
+		    "drop.role.cluster.r3", "drop.role.cluster.r4", 
+		    "drop.role.cluster.r5", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r4", 
+		    "drop.role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r5", 
+		    "drop.role.cluster.r4", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+START_TEST(cyclic_build)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(813);
+	//showFree(572);
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource2.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	
+	/* The following assumes that v1 will be the node that gets a
+	 * cycle breaker.  This does not have to be the case, and 
+	 * other sets of options should be allowed and checked for by
+	 * these tests.  TODO: Add those extra tests */
+
+	requireDeps(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "view.skittest.public.v3",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "view.skittest.public.v2",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL);
+
+	//showVectorDeps(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+START_TEST(cyclic_drop)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(813);
+	//showFree(572);
+	eval("(setq drop t)");
+	doc = getDoc("test/data/gensource2.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	
+	//showVectorDeps(nodes);
+
+	/* The following assumes that v1 will be the node that gets a
+	 * cycle breaker.  This does not have to be the case, and 
+	 * other sets of options should be allowed and checked for by
+	 * these tests.  TODO: Add those extra tests */
+
+	requireDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1", 
+		    NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
+		    "drop.viewbase.skittest.public.v1", 
+		    "view.skittest.public.v2", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "drop.viewbase.skittest.public.v1", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "drop.viewbase.skittest.public.v1", 
+		    "view.skittest.public.v3", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+START_TEST(cyclic_both)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(813);
+	//showFree(572);
+	eval("(setq drop t)");
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource2.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	
+	/* The following assumes that v1 will be the node that gets a
+	 * cycle breaker.  This does not have to be the case, and 
+	 * other sets of options should be allowed and checked for by
+	 * these tests.  TODO: Add those extra tests */
+
+	requireDeps(nodes_by_fqn, "drop and build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", 
+		    "drop.viewbase.skittest.public.v1", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", 
+		    "drop and build.viewbase.skittest.public.v1", 
+		    "drop.view.skittest.public.v3", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "schema.skittest.public", "view.skittest.public.v3",
+		    "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", 
+		    "drop and build.viewbase.skittest.public.v1", 
+		    "drop.view.skittest.public.v2", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "schema.skittest.public", "view.skittest.public.v2",
+		    "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", 
+		    "drop and build.viewbase.skittest.public.v1", 
+		    "drop.view.skittest.public.v1", NULL);
+
+	requireDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1", 
+		    NULL);
+	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3", 
+		    "drop.viewbase.skittest.public.v1", 
+		    "drop.view.skittest.public.v2", NULL);
+	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2", 
+		    "drop.viewbase.skittest.public.v1", NULL);
+
+	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1", 
+		    "drop.viewbase.skittest.public.v1", 
+		    "drop.view.skittest.public.v3", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+Suite *
+deps_suite(void)
+{
+    Suite *s = suite_create("deps");
+    TCase *tc_core = tcase_create("deps");
+
+    ADD_TEST(tc_core, build_type_bitsets);
+    ADD_TEST(tc_core, depset_deps1);
+    ADD_TEST(tc_core, depset_dag1_build);
+    ADD_TEST(tc_core, depset_dag1_drop);
+    ADD_TEST(tc_core, depset_dag2_rebuild);
+    ADD_TEST(tc_core, depset_dag2_rebuild2);
+    ADD_TEST(tc_core, cyclic_build);
+    ADD_TEST(tc_core, cyclic_drop);
+    ADD_TEST(tc_core, cyclic_both);
+				
+    suite_add_tcase(s, tc_core);
+
+    return s;
+}
+
+

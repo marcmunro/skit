@@ -181,6 +181,22 @@ vectorConcat(Vector *vector)
     return stringNewByRef(result);
 }
 
+Vector *
+vectorCopy(Vector *vector)
+{
+    Vector *result = NULL;
+    Object *elem;
+    int i;
+    if (vector) {
+	result = vectorNew(vector->elems);
+	for (i = 0; i < vector->elems; i++) {
+	    elem = vector->contents->vector[i];
+	    result->contents->vector[i] = elem;
+	}
+    }
+    return result;
+}
+
 void
 vectorAppend(Vector *vector1, Vector *vector2)
 {
@@ -255,10 +271,12 @@ vectorDel(Vector *vec, Object *obj)
     Object *deref = dereference(obj);
     Object *this;
     int i;
-    for (i = 0; i < vec->elems; i++) {
-	this = dereference(vec->contents->vector[i]);
-	if (this == obj) {
-	    return vectorRemove(vec, i);
+    if (vec) {
+	for (i = 0; i < vec->elems; i++) {
+	    this = dereference(vec->contents->vector[i]);
+	    if (this == obj) {
+		return vectorRemove(vec, i);
+	    }
 	}
     }
     return NULL;
@@ -273,17 +291,19 @@ vectorSearch(Vector *vector, Object *obj, int *p_index)
     int i;
     char *objstr = objectSexp(obj);
     char *vecstr;
-    for (i = 0; i < vector->elems; i++) {
-	vecstr = objectSexp(vector->contents->vector[i]);
-	if (streq(vecstr, objstr)) {
-	    skfree(vecstr);
-	    skfree(objstr);
-	    if (p_index) {
-		*p_index = i;
+    if (vector) {
+	for (i = 0; i < vector->elems; i++) {
+	    vecstr = objectSexp(vector->contents->vector[i]);
+	    if (streq(vecstr, objstr)) {
+		skfree(vecstr);
+		skfree(objstr);
+		if (p_index) {
+		    *p_index = i;
+		}
+		return TRUE;
 	    }
-	    return TRUE;
+	    skfree(vecstr);
 	}
-	skfree(vecstr);
     }
     skfree(objstr);
     return FALSE;

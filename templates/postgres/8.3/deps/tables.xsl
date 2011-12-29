@@ -22,6 +22,7 @@
 	<dependency pqn="{concat('grant.', 
 			 ancestor::database/@name, '.', 
 			 ancestor::schema/@name, '.create:', $owner)}"/>
+	<dependency fqn="{concat('privilege.cluster.', $owner, '.superuser')}"/>
       </xsl:if>
     </dependency-set>
   </xsl:template>

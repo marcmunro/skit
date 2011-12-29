@@ -56,7 +56,6 @@ scatter()
 gendrop()
 {
     echo ......drop... 1>&2
-    echo ./skit --generate --drop $3 ${REGRESS_DIR}/$1 1>&2
     exitonfail ./skit --generate --drop $3 ${REGRESS_DIR}/$1 >${REGRESS_DIR}/tmp
     echo .........editing drop script to enable dangerous drop statements... 1>&2
     sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \

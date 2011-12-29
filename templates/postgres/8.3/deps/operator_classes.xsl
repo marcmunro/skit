@@ -21,6 +21,11 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<!-- owner -->
+	<xsl:if test="@owner != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	</xsl:if>
+
 	<!-- operator family -->
 	<dependency fqn="{concat('operator_family.', 
 			  ancestor::database/@name, '.', 

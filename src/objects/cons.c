@@ -417,16 +417,25 @@ consAppend(Cons *list, Object *item)
     }
 }
 
+/* Append a list or an element to a list.  Either parameter may be
+ * NULL. */
 Cons *
-consConcat(Cons *list, Cons *list2)
+consConcat(Cons *list, Object *list2)
 {
     Cons *prev = list;
     Cons *next;
-    while (next = (Cons *) prev->cdr) {
-	prev = next;
+    if (list2 && (list2->type != OBJ_CONS)) {
+	list2 = (Object *) consNew(list2, NULL);
     }
-    prev->cdr = (Object *) list2;
-    return list;
+
+    if (prev) {
+	while (next = (Cons *) prev->cdr) {
+	    prev = next;
+	}
+	prev->cdr = list2;
+	return list;
+    }
+    return (Cons *) list2;
 }
 
 boolean
@@ -485,4 +494,30 @@ consRemove(Cons *cons, Cons *remove)
 	}
     }
     return start;
+}
+
+/* Create a new list as a copy of the old, with each element in the list
+ * represented by an ObjReference.  This is so that the new list may be
+ * unconditionally freed in safety. */
+Cons *
+consCopy(Cons *list)
+{
+    Cons *from = list;
+    Cons *to;
+    Cons *new;
+    Cons *result = NULL;
+
+    while (from) {
+	new = consNew((Object *) objRefNew((Object *) from->car), NULL);
+	if (result) {
+	    to->cdr = (Object *) new;
+	}
+	else {
+	    result = new;
+	}
+
+	to = new;
+	from = (Cons *) from->cdr;
+    }
+    return result;
 }

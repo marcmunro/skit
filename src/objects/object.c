@@ -46,7 +46,6 @@ objTypeName(Object *obj)
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
-    case OBJ_DEPSET: return "OBJ_DEPSET";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -409,49 +408,70 @@ basicDagNode()
 {
     DagNode *new = skalloc(sizeof(DagNode));
     new->type = OBJ_DAGNODE;
-    new->status = UNVISITED;
-    new->dependencies = NULL;
-    new->dependents = NULL;   // TODO: Figure out if we can lose this!
-    new->parent = NULL;
-    new->kids = NULL;
-    new->next = NULL;
-    new->prev = NULL;
-
     new->fqn = NULL;
-    new->object_type = NULL;
     new->dbobject = NULL;
     new->build_type = UNSPECIFIED_NODE;
+    new->status = UNVISITED;
+    new->dep_idx = -1;
+    new->dependencies = NULL;
+    new->original_dependencies = NULL;
+    new->dependents = NULL;
+    new->breaker_for = NULL;
+    new->xnode_for = NULL;
+    new->fallback = NULL;
+    new->duplicate_node = NULL;
+    new->parent = NULL;
 
     return new;
 }
 
 DagNode *
-dagnodeNew(Node *node, DagNodeBuildType build_type)
+dagnodeNew(xmlNode *node, DagNodeBuildType build_type)
 {
-    // TODO: Ensure source_fqn is provided and raise an exception if not.
     DagNode *new = basicDagNode();
-    String *source_fqn = nodeAttribute(node->node, "fqn");
-    String *actual_fqn = stringNewByRef(newstr("%s.%s", 
-					       nameForBuildType(build_type), 
-					       source_fqn->value));
-    objectFree((Object *) source_fqn, TRUE);
+    String *source_fqn;
+    String *actual_fqn;
+
+    assert(node, "dagnodeNew: node not provided");
+
+    source_fqn = nodeAttribute(node, "fqn");
+
+    if (build_type == UNSPECIFIED_NODE) {
+	actual_fqn = source_fqn;
+    }
+    else {
+	actual_fqn = stringNewByRef(newstr("%s.%s", 
+					   nameForBuildType(build_type), 
+					   source_fqn->value));
+	objectFree((Object *) source_fqn, TRUE);
+    }
     new->fqn = actual_fqn;
-    new->object_type = nodeAttribute(node->node, "type");
-    new->dbobject = node->node;
+    new->dbobject = node;
     new->build_type = build_type;
-    new->is_xnode = FALSE;
     return new;
 }
 
 DagNode *
 xnodeNew(DagNode *source)
 {
-    // TODO: Ensure source_fqn is provided and raise an exception if not.
     DagNode *new = basicDagNode();
-    String *fqn = stringNewByRef(newstr("%s.XNODE", source->fqn->value));
+    String *fqn;
+    static Int4 *xnode_seq = NULL;
+
+    assert(source, "xnodeNew: source not provided");
+    assert(source->fqn, "xnodeNew: source has no fqn");
+
+    if (!xnode_seq) {
+	xnode_seq = (Int4 *) symbolGetValue("xnode_seq");
+    }
+
+    fqn = stringNewByRef(newstr("%s.XNODE_%d", source->fqn->value, 
+				(xnode_seq->value)++));
     new->fqn = fqn;
     new->build_type = source->build_type;
-    new->is_xnode = TRUE;
+    new->dbobject = source->dbobject;
+    new->parent = source->parent;
+    new->xnode_for = source;
     return new;
 }
 
@@ -460,18 +480,10 @@ void
 dagnodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
-    objectFree((Object *) node->object_type, TRUE);
-    objectFree((Object *) node->dependents, FALSE); /* !!!!! */
-    objectFree((Object *) node->dependencies, TRUE);
+    objectFree((Object *) node->dependencies, FALSE);
+    objectFree((Object *) node->original_dependencies, FALSE);
+    objectFree((Object *) node->dependents, FALSE);
     skfree(node);
-}
-
-void
-depsetFree(Depset *depset)
-{
-    Depset *origin;
-    objectFree((Object *) depset->dependencies, TRUE);
-    skfree(depset);
 }
 
 /* Free a dynamically allocated object. */
@@ -514,8 +526,6 @@ objectFree(Object *obj, boolean free_contents)
 	    cursorFree((Cursor *) obj); break;
 	case OBJ_DAGNODE:
 	    dagnodeFree((DagNode *) obj); break;
-	case OBJ_DEPSET:
-	    depsetFree((Depset *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -541,41 +551,12 @@ nameForBuildType(DagNodeBuildType build_type)
     case ARRIVE_NODE: return "arrive";
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
+    case DROP_AND_BUILD_NODE: return "drop and build";
+    case BUILD_AND_DROP_NODE: return "build and drop";
     }
     return "UNKNOWNBUILDTYPE";
 }
 
-char *
-depSetStr(Depset *depset)
-{
-    char *deps;
-    char *result;
-    char *options = NULL;
-
-    if (depset->actual) {
-	options = newstr("actual");
-	deps = objectSexp((Object *) depset->actual);
-    }
-    else {
-	deps = objectSexp((Object *) depset->dependencies);
-	if (depset->is_set) {
-	    options = newstr("set");
-	}
-	else {
-	    if (depset->is_optional) {
-		options = newstr("optional");
-	    }
-	    else {
-		options = newstr("single");
-	    }
-	}
-    }
-
-    result = newstr("(==>[%s] %s)", options, deps);
-    skfree(deps);
-    skfree(options);
-    return result;
-}
 
 /* Return dynamically-created string representation of object. 
  * The full argument allows more information to be returned about the
@@ -621,7 +602,8 @@ objectSexp(Object *obj)
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_DAGNODE:
-	return newstr("<%s %s>", objTypeName(obj), 
+	return newstr("<%s (%s) %s>", objTypeName(obj), 
+		      nameForBuildType(((DagNode *) obj)->build_type), 
 		      ((DagNode *) obj)->fqn->value); 
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
@@ -629,8 +611,6 @@ objectSexp(Object *obj)
 	return tupleStr((Tuple *) obj);
     case OBJ_REGEXP:
 	return newstr("/%s/", ((Regexp *) obj)->src_str);
-    case OBJ_DEPSET:
-	return depSetStr((Depset *) obj);
     default: 
 	// TODO: improve this string.
 	return newstr("{BROKEN OBJECT: %x}", obj);
@@ -861,11 +841,7 @@ checkDagnode(DagNode *node, void *chunk)
     if (found = checkString(node->fqn, chunk)) {
 	printSexp(stderr, "...within fqn of ", (Object *) node);
     }
-    if (checkString(node->object_type, chunk)) {
-	printSexp(stderr, "...within object_type of ", (Object *) node);
-	found = TRUE;
-    }
-    if (checkCons(node->dependencies, chunk)) {
+    if (checkVector(node->dependencies, chunk)) {
 	printSexp(stderr, "...within dependencies of ", (Object *) node);
 	found = TRUE;
     }

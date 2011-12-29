@@ -10,8 +10,8 @@ select c.oid as oid,
        i.indisclustered as clustered,
        i.indisvalid as valid,
        i.indkey as colnums,
-       '1978 86328' as operator_classes, 
-       --i.indclass as operator_classes,
+       --'1978 86328' as operator_classes, 
+       i.indclass as operator_classes,
        pg_catalog.pg_get_indexdef(i.indexrelid) as indexdef,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
        --indpred, indexprs

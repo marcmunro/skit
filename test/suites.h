@@ -31,6 +31,7 @@ extern Suite *filepaths_suite(void);
 extern Suite *xmlfile_suite(void);
 extern Suite *relaxng_suite(void);
 extern Suite *tsort_suite(void);
+extern Suite *deps_suite(void);
 
 // Utility functions
 extern Object *objectFromStr(char *instr);
