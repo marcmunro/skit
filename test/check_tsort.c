@@ -905,3 +905,19 @@ tsort_suite(void)
     return s;
 }
 
+// TODO:
+// Check why qname of dbobject for privs is not provided.  Maybe
+// eliminate qnames that are not being used.
+
+// check privs required for creation of all objects:
+// schema
+// table
+// sequence
+// operator
+// operator class
+// operator family
+// conversion
+// cast
+// function
+// view
+// comments

@@ -20,7 +20,7 @@
 			   @owner)}"/>
 	</xsl:if>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core"

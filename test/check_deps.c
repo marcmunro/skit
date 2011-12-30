@@ -595,6 +595,8 @@ START_TEST(cyclic_drop)
     }
 }
 END_TEST
+
+
 START_TEST(cyclic_both)
 {
     Document *doc = NULL;
@@ -679,6 +681,51 @@ START_TEST(cyclic_both)
 END_TEST
 
 
+START_TEST(fallback)
+{
+    Document *doc = NULL;
+    boolean failed = FALSE;
+    Vector *nodes = NULL;
+    char *xnode_name;
+    Hash *nodes_by_fqn;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(642);
+	//showFree(5641);
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource_fallback.xml");
+	//doc = getDoc("tmp.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild(&nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	
+	showVectorDeps(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
 Suite *
 deps_suite(void)
 {
@@ -694,6 +741,7 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
+    //ADD_TEST(tc_core, fallback);
 				
     suite_add_tcase(s, tc_core);
 

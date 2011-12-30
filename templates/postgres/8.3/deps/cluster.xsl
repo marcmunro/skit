@@ -21,7 +21,7 @@
   <xsl:template match="cluster">
     <dbobject type="cluster" visit="true"
 	      name="cluster" fqn="cluster">
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="'cluster'"/>
@@ -47,7 +47,7 @@
 			   '.', @owner)}"/>
 	</xsl:if>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:copy-of select="comment"/>
       </xsl:copy>

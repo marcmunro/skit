@@ -18,7 +18,7 @@
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</dependencies>
       </xsl:if>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core"

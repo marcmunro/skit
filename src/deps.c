@@ -437,11 +437,10 @@ addExplicitDepsForNode(
     String *new;
     Vector *deps;
     String *xnode_key;
+    DagNode *fallback_node;
     DagNode *this;
+    char *errmsg;
 
-    if (streq(node->fqn->value, "table.regressdb.public.thing")) {
-	deps = NULL;
-    }
     assert(node, "addExplicitDepsForNode: no node provided");
     if (node->xnode_for) {
 	/* Deps have already been added */
@@ -453,11 +452,19 @@ addExplicitDepsForNode(
 	 dep_node = nextDependency(dep_node);
 	 dep_node = dep_node->next) 
     {
-	fallback = NULL;
+	fallback_node = NULL;
 	if (isDependencySet(dep_node)) {
-	    if (fallback = nodeAttribute(dep_node, "fallback")) {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("fallback handling not implemented"));
+	    fallback = nodeAttribute(dep_node, "fallback");
+	    if (fallback) {
+		fallback_node = (DagNode *) hashGet(nodes_by_fqn, 
+						    (Object *) fallback);
+		if (!fallback_node) {
+		    errmsg = newstr("Fallback node %s not found", 
+				    fallback->value);
+		    objectFree((Object *) fallback, TRUE);
+		    RAISE(TSORT_ERROR, errmsg);
+		}
+		objectFree((Object *) fallback, TRUE);
 	    }
 	}
 	if (old = nodeAttribute(dep_node, "old")) {
@@ -470,24 +477,34 @@ addExplicitDepsForNode(
 	}
 	deps = explicitDepsForNode(dep_node, nodes_by_fqn, nodes_by_pqn);
 
-	if (fallback || (deps && (deps->elems > 1))) {
-	    /* Have optional deps, so create an xnode */
+	this = node;  /* this is the node to which we will add deps */
+
+	if (fallback_node || (deps && (deps->elems > 1))) {
+	    /* Create an xnode. */
 	    this = xnodeNew(node);
 	    xnode_key = stringNew(this->fqn->value);
 	    hashAdd(nodes_by_fqn, (Object *) xnode_key, (Object *) this);
 	    vectorPush(nodes, (Object *) this);
 	    addDep(node, this);
-	    if (fallback) {
-		this->fallback = (DagNode *) hashGet(nodes_by_fqn, 
-						     (Object *) fallback);
+	    
+	    if (fallback_node) {
+		this->fallback = fallback_node;
+	    }
+	}	
+	else {
+	    if (!deps) {
+		RAISE(TSORT_ERROR, 
+		      newstr("Unable to find any dependency for dependency "
+			     "set in %s\n(Perhaps a fallback needs to be "
+			     "defined by the skit template developer)", 
+			     node->fqn->value));
 	    }
 	}
-	else {
-	    this = node;
-	}
 
-	addDepsVector(this, deps);
-	objectFree((Object *) deps, FALSE);
+	if (deps) {
+	    addDepsVector(this, deps);
+	    objectFree((Object *) deps, FALSE);
+	}
     }
 }
 
@@ -505,7 +522,11 @@ buildTypeForNode(Node *node)
 
     if (fallback = nodeAttribute(node->node , "fallback")) {
 	objectFree((Object *) fallback, TRUE);
-	build_type = BUILD_AND_DROP_NODE;
+	/* By default, we don't want to do anything for a fallback
+ 	 * node.  Marking it as an exists node achieves that.  The
+ 	 * build_type will be modified if anything needs to actually
+ 	 * reference the fallback node.  */
+	build_type = EXISTS_NODE;
     }
     else if (diff = nodeAttribute(node->node , "diff")) {
 	if (streq(diff->value, DIFFSAME)) {
@@ -725,14 +746,23 @@ nodesFromDoc(Document *doc)
     return nodes;
 }
 
+#define CURDEP(node) ELEM(node->dependencies, node->dep_idx)
+
+
 static void
 replaceXnodeRefs(DagNode *xnode)
 {
     DagNode *node = xnode->xnode_for;
-    DagNode *dependency = (DagNode *) xnode->dependencies->contents->
-	    vector[xnode->dep_idx];
+    DagNode *dependency;
     DagNode *dep;
     int i;
+
+    if (!xnode->dependencies) {
+	dbgSexp(xnode);
+	RAISE(TSORT_ERROR, 
+	      newstr("No realised dependency for Xnode %s", xnode->fqn->value));
+    }
+    dependency = (DagNode *) CURDEP(xnode);    
 
     /* Remove all references to our xnode */
     EACH(xnode->dependents, i) {
@@ -913,13 +943,13 @@ getRedirectionAction(DagNode *node, DagNode *dep)
     RedirectAction result;
     static RedirectAction redirect_action[4][4] = {
 	{REDIRECT_RETAIN, REDIRECT_RETAIN,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED}, /* BUILD_NODE */
+	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* BUILD_NODE */
 	{REDIRECT_INVERT, REDIRECT_INVERT,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED}, /* DROP_NODE */
+	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DROP_NODE */
 	{REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED}, /* DIFF_NODE */
-	{REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED}  /* EXISTS_NODE */
+	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DIFF_NODE */
+	{REDIRECT_DROP, REDIRECT_DROP,
+	 REDIRECT_DROP, REDIRECT_DROP}                    /* EXISTS_NODE */
     };
 
     assert(node->type == OBJ_DAGNODE, 
@@ -1097,8 +1127,9 @@ redirectDependencies(Vector *nodes)
 		    /* Deliberate flow-thru to the next case. */
 		case REDIRECT_RETAIN:
 		    setPush(node->dependencies, (Object *) depnode);
-		    break;
+		    /* Deliberate flow-thru to the next case. */
 		case REDIRECT_DROP:
+		    break;
 		case REDIRECT_UNIMPLEMENTED:
 		    nodestr = objectSexp((Object *) node);
 		    depstr = objectSexp((Object *) depnode);
@@ -1126,6 +1157,32 @@ redirectDependencies(Vector *nodes)
 	node->dependents = NULL;
     }
 }
+
+static DagNode *
+getFallbackDropNode(Vector *nodes, DagNode *fallback)
+{
+    if (fallback->build_type == EXISTS_NODE) {
+	/* We have not yet activated this fallback node.  We activate it
+	 * by resetting it to a BUILD_AND_DROP node, and then creating
+	 * the equivalent DROP_NODE for it. */
+	fallback->build_type = BUILD_NODE;
+	fallback->duplicate_node = dagnodeNew(fallback->dbobject, DROP_NODE);
+	vectorPush(nodes, (Object*) fallback->duplicate_node);
+    }
+    return fallback->duplicate_node;
+}
+
+static void
+activateFallback(Vector *nodes, DagNode *xnode)
+{
+    DagNode *fallback = xnode->fallback;
+    DagNode *fallback_drop = getFallbackDropNode(nodes, fallback);
+    DagNode *node = xnode->xnode_for;
+    addDep(xnode, fallback);
+    addDep(fallback_drop, node);
+    xnode->fallback = NULL;
+}
+
 
 static DagNode *
 makeBreakerNode(DagNode *from_node, String *breaker_type)
@@ -1169,8 +1226,6 @@ getBreakerFor(DagNode *node)
     }
     return breaker;
 }
-
-#define CURDEP(node) ELEM(node->dependencies, node->dep_idx)
 
 /* Put breaker into the DAG
  */
@@ -1286,9 +1341,32 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 	    }
 	    if (node->xnode_for) {
 		/* We have successfully traversed a dependency - there
-		 * is nothing more to do. */
-		break;
+		 * is nothing more to do.  */
+		return;
 	    }
+	}
+    }
+    if (node->xnode_for) {
+	/* We only reach this point if this is an xnode and we have not
+	 * found a suitable dependency.  */
+	RAISE(TSORT_ERROR, 
+	      newstr("Fallback handling is not fully implemented"));
+	// The stuff below appears to work, but more needs to be done
+	// fallback handling.  I believe that there need to be different
+	// fallback nodes for build and drop wth interdependencies
+	// between them.  The reason I think this is that we may need
+	// superuser access for a drop and a build, and the underlying
+	// cluster may be dropped between those times of need (thereby
+	// eliminating the superuser rights).  Tricky.
+	if (node->fallback) {
+	    activateFallback(nodes, node);
+	    /* And try one more time... */
+	    tsort_deps(nodes, node, results);
+	}
+	else {
+	    RAISE(TSORT_ERROR, 
+		  newstr("No realised dependency for Xnode %s", 
+			 node->fqn->value));
 	}
     }
 }

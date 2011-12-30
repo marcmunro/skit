@@ -12,10 +12,6 @@
     <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('role.', $role_name)}">
-      <dependencies>
-	<!-- THIS IS PROBABLY UNNECESSARY:  TODO - REMOVE THIS!!! -->
-	<dependency fqn="cluster"/>
-      </dependencies>
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
