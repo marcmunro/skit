@@ -52,10 +52,18 @@ hasDep(Hash *hash, char *from, char *to)
     String *key = stringNewByRef(newstr(from));
     DagNode *fnode = (DagNode *) hashGet(hash, (Object *) key);
     DagNode *tnode;
+    if (!fnode) {
+	fail("Cannot find source node %s ", key->value);
+    }
+
     objectFree((Object *) key, TRUE);
 
     key = stringNewByRef(newstr(to));
     tnode = (DagNode *) hashGet(hash, (Object *) key);
+
+    if (!tnode) {
+	fail("Cannot find dependency %s ", key->value);
+    }
     
     objectFree((Object *) key, TRUE);
     return hasDependency(fnode, tnode);
@@ -95,6 +103,10 @@ requireDeps(Hash *hash, char *from, ...)
     va_end(params);
     key = stringNewByRef(from);
     fromnode = (DagNode *) hashGet(hash, (Object *) key);
+
+    if (!fromnode) {
+	fail("Cannot find %s ", key->value);
+    }
     objectFree((Object *) key, FALSE);
     
     dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
@@ -234,15 +246,11 @@ START_TEST(depset_dag1_build)
 	nodes_by_fqn = hashByFqn(nodes);
 
 	requireDeps(nodes_by_fqn, "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", "cluster", 
-		    "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", 
-		    "role.cluster.r3", "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "role.cluster.r4", "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", 
-		    "role.cluster.r5", "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", "role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r5", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -291,13 +299,9 @@ START_TEST(depset_dag1_drop)
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", "role.cluster.r5", 
-		    "role.cluster.r4", "role.cluster.r3", 
-		    "role.cluster.r2", "role.cluster.r1", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", 
-		    "role.cluster.r4", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", 
-		    "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", "role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r3", 
 		    "role.cluster.r2", "role.cluster.r1", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
@@ -350,28 +354,20 @@ START_TEST(depset_dag2_rebuild)
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", 
-		    "drop.role.cluster.r1", "drop.role.cluster.r2", 
-		    "drop.role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", 
-		    "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", 
-		    "cluster", "role.cluster.r5", 
+	requireDeps(nodes_by_fqn, "cluster", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r5", 
 		    "drop.role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "cluster", "role.cluster.r4", 
-		    "drop.role.cluster.r3", NULL);
+		    "role.cluster.r4", "drop.role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r1", 
-		    "cluster", "role.cluster.r3", 
-		    "drop.role.cluster.r1", NULL);
+		    "role.cluster.r3", "drop.role.cluster.r1", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", 
-		    "cluster", "role.cluster.r3", 
-		    "drop.role.cluster.r2", NULL);
+		    "role.cluster.r3", "drop.role.cluster.r2", NULL);
 	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
 		    "drop.role.cluster.r1", "drop.role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", 
-		    "cluster", "role.cluster.r3", 
-		    "drop.role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "drop.role.cluster.r2", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -419,26 +415,19 @@ START_TEST(depset_dag2_rebuild2)
 	
 	//showVectorDeps(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", 
-		    "drop.cluster", "role.cluster.r1",
-		    "role.cluster.r2", NULL);
+	requireDeps(nodes_by_fqn, "cluster", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r5", 
-		    "cluster", "drop.role.cluster.r5", NULL);
+		    "drop.role.cluster.r5", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r4", 
-		    "cluster", "role.cluster.r5", 
-		    "drop.role.cluster.r4", NULL);
+		    "role.cluster.r5", "drop.role.cluster.r4", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "cluster", "role.cluster.r4", 
-		    "drop.role.cluster.r3", "role.cluster.r2",
-		    "role.cluster.r1", NULL);
+		    "role.cluster.r4", "drop.role.cluster.r3",
+		    "role.cluster.r1", "role.cluster.r2", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
+
 	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
 		    "role.cluster.r1", "role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "drop.cluster", 
-		    "role.cluster.r1", "role.cluster.r2", 
-		    "drop.role.cluster.r3", "drop.role.cluster.r4", 
-		    "drop.role.cluster.r5", NULL);
 	requireDeps(nodes_by_fqn, "drop.role.cluster.r4", 
 		    "drop.role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "drop.role.cluster.r5", 
@@ -617,32 +606,33 @@ START_TEST(cyclic_both)
 
 	prepareDagForBuild(&nodes);
 	nodes_by_fqn = hashByFqn(nodes);
+	//showVectorDeps(nodes);
 	
 	/* The following assumes that v1 will be the node that gets a
 	 * cycle breaker.  This does not have to be the case, and 
 	 * other sets of options should be allowed and checked for by
 	 * these tests.  TODO: Add those extra tests */
 
-	requireDeps(nodes_by_fqn, "drop and build.viewbase.skittest.public.v1", 
+	requireDeps(nodes_by_fqn, "rebuild.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
 		    "grant.skittest.public.usage:public:regress", 
 		    "drop.viewbase.skittest.public.v1", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
 		    "schema.skittest.public", "role.cluster.marc",
 		    "grant.skittest.public.usage:public:regress", 
-		    "drop and build.viewbase.skittest.public.v1", 
+		    "rebuild.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v3", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
 		    "schema.skittest.public", "view.skittest.public.v3",
 		    "role.cluster.marc",
 		    "grant.skittest.public.usage:public:regress", 
-		    "drop and build.viewbase.skittest.public.v1", 
+		    "rebuild.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v2", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
 		    "schema.skittest.public", "view.skittest.public.v2",
 		    "role.cluster.marc",
 		    "grant.skittest.public.usage:public:regress", 
-		    "drop and build.viewbase.skittest.public.v1", 
+		    "rebuild.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v1", NULL);
 
 	requireDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1", 
@@ -702,7 +692,27 @@ START_TEST(fallback)
 	prepareDagForBuild(&nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
-	showVectorDeps(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+		    "role.cluster.x", NULL);
+	requireDeps(nodes_by_fqn, "table.x.public.x", 
+		    "schema.x.public", "role.cluster.x",
+		    "tablespace.cluster.pg_default", 
+		    "fallback.grant.x.superuser", NULL);
+	requireDeps(nodes_by_fqn, "grant.x.public.x.trigger:x:x",
+		    "table.x.public.x", "role.cluster.x",
+		    "fallback.grant.x.superuser", NULL);
+	requireDeps(nodes_by_fqn, "drop.fallback.grant.x.superuser", 
+		    "role.cluster.x", 
+		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
+		    "grant.x.public.x.references:x:x", 
+		    "grant.x.public.x.rule:x:x", 
+		    "grant.x.public.x.select:x:x", 
+		    "grant.x.public.x.insert:x:x",
+		    "grant.x.public.x.update:x:x",
+		    "grant.x.public.x.delete:x:x", NULL);
+
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -741,7 +751,9 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
-    //ADD_TEST(tc_core, fallback);
+    ADD_TEST(tc_core, fallback);
+    //ADD_TEST(tc_core, fallback_drop);
+    //ADD_TEST(tc_core, fallback_rebuild);
 				
     suite_add_tcase(s, tc_core);
 

@@ -4,7 +4,8 @@
        dbobject definitions for v1 and v2 have cyclic dependencies
        on each other. -->
 
-  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster"
+	    action="none">
     <cluster type="postgres" version="8.3.7" username="marc">
       <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep">
         <dependencies>

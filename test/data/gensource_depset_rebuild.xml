@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20110312163615" dbname2="regressdb" time2="20110312163611" retain_deps="true">
-  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster" 
+	    action="none">
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.3.14" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
       <dbobject type="role" name="r1" qname="r1" fqn="role.cluster.r1">
         <dependencies>

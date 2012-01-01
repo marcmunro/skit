@@ -42,6 +42,7 @@ typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME,
 #define ACTIONBUILD   "build"
 #define ACTIONDROP    "drop"
 #define ACTIONREBUILD "rebuild"
+#define ACTIONNONE    "none"
 
 
 typedef enum {
@@ -220,7 +221,7 @@ typedef enum {
     DROP_NODE,
     DIFF_NODE,
     EXISTS_NODE,
-    DROP_AND_BUILD_NODE,
+    REBUILD_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
     BUILD_AND_DROP_NODE,
@@ -255,6 +256,7 @@ typedef struct DagNode {
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
     DagNodeBuildType build_type;
+    DagNodeBuildType fallback_build_type;
     DagNodeStatus    status;
     int              dep_idx;
     Vector          *dependencies;   // use objectFree(obj, FALSE);

@@ -411,6 +411,7 @@ basicDagNode()
     new->fqn = NULL;
     new->dbobject = NULL;
     new->build_type = UNSPECIFIED_NODE;
+    new->fallback_build_type = UNSPECIFIED_NODE;
     new->status = UNVISITED;
     new->dep_idx = -1;
     new->dependencies = NULL;
@@ -551,7 +552,7 @@ nameForBuildType(DagNodeBuildType build_type)
     case ARRIVE_NODE: return "arrive";
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
-    case DROP_AND_BUILD_NODE: return "drop and build";
+    case REBUILD_NODE: return "rebuild";
     case BUILD_AND_DROP_NODE: return "build and drop";
     }
     return "UNKNOWNBUILDTYPE";

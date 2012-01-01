@@ -116,7 +116,7 @@
  * issue.
  *
  * Node duplication, allowing for both build and drop actions within the
- * same DAG is performed by duplicateDropAndBuildNodes().  This is then
+ * same DAG is performed by duplicateRebuildNodes().  This is then
  * followed by redirectDependencies() which inverts the initially
  * provided dependencies so that thwy reflect the actions being
  * performed at each node.
@@ -562,7 +562,10 @@ buildTypeForNode(Node *node)
 	    build_type = DROP_NODE;
 	}
 	else if (streq(action->value, ACTIONREBUILD)) {
-	    build_type = DROP_AND_BUILD_NODE;
+	    build_type = REBUILD_NODE;
+	}
+	else if (streq(action->value, ACTIONNONE)) {
+	    build_type = EXISTS_NODE;
 	}
 	else {
 	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
@@ -574,7 +577,7 @@ buildTypeForNode(Node *node)
     else {
 	if (dereference(symbolGetValue("build"))) {
 	    if (dereference(symbolGetValue("drop"))) {
-		build_type = DROP_AND_BUILD_NODE;
+		build_type = REBUILD_NODE;
 	    }
 	    else {
 		build_type = BUILD_NODE;
@@ -801,10 +804,10 @@ eliminateXnodes(Vector *nodes)
     nodes->elems = write_idx;
 }
 
-static void recordDropAndBuildNode(DagNode *node, Vector *nodelist);
+static void recordRebuildNode(DagNode *node, Vector *nodelist);
 
 static void
-findDropAndBuildNodesInVector(
+findRebuildNodesInVector(
     Vector *vector, 
     BuildTypeBitSet looking_for,
     Vector *foundlist)
@@ -816,7 +819,7 @@ findDropAndBuildNodesInVector(
 	    node = (DagNode *) ELEM(vector, i);
 	    if (node->status == RESOLVED) {
 		if (inBuildTypeBitSet(looking_for, node->build_type)) {
-		    recordDropAndBuildNode(node, foundlist);
+		    recordRebuildNode(node, foundlist);
 		}
 	    }
 	}
@@ -824,15 +827,25 @@ findDropAndBuildNodesInVector(
 }
 
 static void
-recordDropAndBuildNode(DagNode *node, Vector *nodelist)
+recordRebuildNode(DagNode *node, Vector *nodelist)
 {
     node->status = UNVISITED;
     vectorPush(nodelist, (Object *) node);
-    findDropAndBuildNodesInVector(node->dependents, BUILD_NODE_BIT + 
+    findRebuildNodesInVector(node->dependents, BUILD_NODE_BIT + 
 				  DIFF_NODE_BIT + EXISTS_NODE_BIT,
 				  nodelist);
-    findDropAndBuildNodesInVector(node->dependencies, DROP_NODE_BIT,
+    findRebuildNodesInVector(node->dependencies, DROP_NODE_BIT,
 				  nodelist);
+}
+
+static void
+checkRebuildParent(DagNode *node)
+{
+    if (node->parent && (node->parent->build_type == BUILD_NODE)) {
+	RAISE(TSORT_ERROR, 
+	      newstr("Cannot rebuild %s when parent (%s) is designated "
+		     "for build", node->fqn->value, node->parent->fqn->value));
+    }
 }
 
 /* Return a vector of nodes that must be dropped and built.  Such nodes
@@ -840,22 +853,23 @@ recordDropAndBuildNode(DagNode *node, Vector *nodelist)
  * promoted due to their dependencies on other such nodes. 
  */
 static Vector *
-identifyDropAndBuildNodes(Vector *nodes)
+identifyRebuildNodes(Vector *nodes)
 {
-    Vector *drop_and_build_nodes = vectorNew(nodes->elems);
+    Vector *rebuild_nodes = vectorNew(nodes->elems);
     DagNode *node;
     int i;
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 	if (node->status == RESOLVED) {
-	    if (node->build_type == DROP_AND_BUILD_NODE) {
-		recordDropAndBuildNode(node, drop_and_build_nodes);
+	    if (node->build_type == REBUILD_NODE) {
+		checkRebuildParent(node);
+		recordRebuildNode(node, rebuild_nodes);
 	    }
 	}
     }
     
-    return drop_and_build_nodes;
+    return rebuild_nodes;
 }
 
 /* We duplicate both the dependencies and dependents of each primary to
@@ -863,7 +877,7 @@ identifyDropAndBuildNodes(Vector *nodes)
  * other, since addDup creates both dependencies and dependents, it is
  * not possible to use either just the dependencies or just the
  * dependents as source data.  This is because when we propagated our
- * drop_and_build_nodes some will have been done in the dependency
+ * rebuild_nodes some will have been done in the dependency
  * direction and some in the dependent direction.
  */
 static void
@@ -902,22 +916,22 @@ duplicateDeps(DagNode *primary, DagNode *dup)
  * and set the build_type for each node of the pair.
  */
 static void
-duplicateDropAndBuildNodes(Vector *nodes, Vector *drop_and_build_nodes)
+duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 {
     DagNode *primary;
     DagNode *dup;
     DagNode *node_for_breaker;
     int i;
 
-    EACH(drop_and_build_nodes, i) {
-	primary = (DagNode *) ELEM(drop_and_build_nodes, i);
+    EACH(rebuild_nodes, i) {
+	primary = (DagNode *) ELEM(rebuild_nodes, i);
 	dup = dagnodeNew(primary->dbobject, DROP_NODE);
 	primary->build_type = BUILD_NODE;
 	primary->duplicate_node = dup;
 	vectorPush(nodes, (Object *) dup);
     }
-    EACH(drop_and_build_nodes, i) {
-	primary = (DagNode *) ELEM(drop_and_build_nodes, i);
+    EACH(rebuild_nodes, i) {
+	primary = (DagNode *) ELEM(rebuild_nodes, i);
 	dup = primary->duplicate_node;
 	duplicateDeps(primary, dup);
 	addDep(primary, dup);
@@ -948,7 +962,7 @@ getRedirectionAction(DagNode *node, DagNode *dep)
 	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DROP_NODE */
 	{REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED,
 	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DIFF_NODE */
-	{REDIRECT_DROP, REDIRECT_DROP,
+	{REDIRECT_ERROR, REDIRECT_ERROR,
 	 REDIRECT_DROP, REDIRECT_DROP}                    /* EXISTS_NODE */
     };
 
@@ -977,6 +991,11 @@ getRedirectionAction(DagNode *node, DagNode *dep)
 	     * performed before the  normal operations in both cases.
 	     */
 	    return REDIRECT_CHECK_CYCLE;
+	}
+	if (node->fallback_build_type != UNSPECIFIED_NODE) {
+	    /* This is a fallback node.  We don't invert the
+	     * dependencies from this node. */
+	    return REDIRECT_RETAIN;
 	}
     }
     return result;
@@ -1158,29 +1177,65 @@ redirectDependencies(Vector *nodes)
     }
 }
 
-static DagNode *
-getFallbackDropNode(Vector *nodes, DagNode *fallback)
+static void
+promoteFallback(Vector *nodes, DagNode *instigator, DagNodeBuildType build_type)
 {
-    if (fallback->build_type == EXISTS_NODE) {
-	/* We have not yet activated this fallback node.  We activate it
-	 * by resetting it to a BUILD_AND_DROP node, and then creating
-	 * the equivalent DROP_NODE for it. */
-	fallback->build_type = BUILD_NODE;
-	fallback->duplicate_node = dagnodeNew(fallback->dbobject, DROP_NODE);
-	vectorPush(nodes, (Object*) fallback->duplicate_node);
+    int i;
+    DagNode *dep;
+    DagNode *closer;
+
+    instigator->fallback_build_type = build_type;
+    instigator->build_type = BUILD_NODE;
+    closer = dagnodeNew(instigator->dbobject, DROP_NODE);
+    closer->fallback_build_type = build_type;
+    vectorPush(nodes, (Object*) closer);
+    instigator->duplicate_node = closer;
+
+    EACH(instigator->dependencies, i) {
+	dep = (DagNode *) ELEM(instigator->dependencies, i);
+	addDep(closer, dep);
     }
-    return fallback->duplicate_node;
 }
 
+static DagNode *
+getFallbackInstigator(Vector *nodes, DagNode *xnode)
+{
+    DagNode *fallback = xnode->fallback;
+    if (fallback->fallback_build_type == UNSPECIFIED_NODE) {
+	/* We have not yet instantiated the fallback node. */
+	promoteFallback(nodes, fallback, xnode->build_type);
+	return fallback;
+    }
+    else {
+	if (fallback->fallback_build_type == xnode->build_type) {
+	    /* Our instigator is the fallback node */
+	    return fallback;
+	}
+	else {
+	    RAISE(NOT_IMPLEMENTED_ERROR, newstr("ARG"));
+	}
+    }
+}
+
+
+/* Activate a fallback node and add it as a dependency to the xnode.  
+ * Note that fallback nodes come in pairs, one to instigate the fallback
+ * and one to close it down.  The xnode will depend on the instigator,
+ * and the closer will depend on the xnode.
+ */
 static void
 activateFallback(Vector *nodes, DagNode *xnode)
 {
-    DagNode *fallback = xnode->fallback;
-    DagNode *fallback_drop = getFallbackDropNode(nodes, fallback);
-    DagNode *node = xnode->xnode_for;
-    addDep(xnode, fallback);
-    addDep(fallback_drop, node);
-    xnode->fallback = NULL;
+    DagNode *instigator = getFallbackInstigator(nodes, xnode);
+    DagNode *closer = instigator->duplicate_node;
+
+    addDep(xnode, instigator);
+    /* Since xnode can only be given one dependency, we place the closer
+     * dependency on the node for which this is an xnode.   Note that
+     * the normal inversion which would be performed on this
+     * dependency will not happen as fallback nodes are handled
+     * specially.  */
+    addDep(closer, xnode->xnode_for);
 }
 
 
@@ -1349,15 +1404,6 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
     if (node->xnode_for) {
 	/* We only reach this point if this is an xnode and we have not
 	 * found a suitable dependency.  */
-	RAISE(TSORT_ERROR, 
-	      newstr("Fallback handling is not fully implemented"));
-	// The stuff below appears to work, but more needs to be done
-	// fallback handling.  I believe that there need to be different
-	// fallback nodes for build and drop wth interdependencies
-	// between them.  The reason I think this is that we may need
-	// superuser access for a drop and a build, and the underlying
-	// cluster may be dropped between those times of need (thereby
-	// eliminating the superuser rights).  Tricky.
 	if (node->fallback) {
 	    activateFallback(nodes, node);
 	    /* And try one more time... */
@@ -1450,13 +1496,24 @@ void
 prepareDagForBuild(Vector **p_nodes)
 {
     Vector *sorted = resolving_tsort(*p_nodes);
-    Vector *drop_and_build_nodes = NULL;
+    Vector *rebuild_nodes = NULL;
     objectFree((Object *) *p_nodes, FALSE);
     *p_nodes = sorted;
 
+    //fprintf(stderr, "\n\n1\n\n");
+    //showVectorDeps(sorted);
     eliminateXnodes(sorted);
-    drop_and_build_nodes = identifyDropAndBuildNodes(sorted);
-    duplicateDropAndBuildNodes(sorted, drop_and_build_nodes);
-    objectFree((Object *) drop_and_build_nodes, FALSE);
+    //fprintf(stderr, "\n\n2\n\n");
+    //showVectorDeps(sorted);
+    rebuild_nodes = identifyRebuildNodes(sorted);
+    //fprintf(stderr, "\n\n3\n\n");
+    //dbgSexp(rebuild_nodes);
+    //showVectorDeps(sorted);
+    duplicateRebuildNodes(sorted, rebuild_nodes);
+    //fprintf(stderr, "\n\n4\n\n");
+    //showVectorDeps(sorted);
+    objectFree((Object *) rebuild_nodes, FALSE);
     redirectDependencies(sorted);
+    //fprintf(stderr, "\n\n5\n\n");
+    //showVectorDeps(sorted);
 }
