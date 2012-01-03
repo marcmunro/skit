@@ -139,4 +139,5 @@
   <xsl:include href="skitfile:ddl/rules.xsl"/>
   <xsl:include href="skitfile:ddl/views.xsl"/>
   <xsl:include href="skitfile:ddl/conversions.xsl"/>
+  <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>

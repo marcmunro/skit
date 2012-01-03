@@ -29,7 +29,7 @@
   <!-- This template handles copy-only mode.  This is used when we
        discover that a document already has dependencies defined -->
   <xsl:template match="*" mode="copy">
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates mode="copy"/>
     </xsl:copy>
@@ -39,7 +39,7 @@
        This handles db objects, dependencies, etc -->
   <xsl:template match="*">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates>
         <xsl:with-param name="parent_core" select="$parent_core"/>

@@ -32,7 +32,7 @@
 
   <!-- The dbincluster object (responsible for actual database creation) -->
   <xsl:template match="database">
-    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:param name="parent_core" select="'cluster'"/>
     <xsl:variable name="fqn" select="concat('dbincluster.', 
 				     $parent_core, '.', @name)"/>
     <dbobject type="dbincluster" name="{@name}" 
@@ -70,6 +70,13 @@
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="@name"/>
 	</xsl:apply-templates>
+
+	<!-- Add fallback object for roles.  This will temprarily grant
+	     superuser privilege to the role -->
+	<xsl:for-each select="//cluster/role">
+	  <dbobject type="fallback" subtype="grant" fallback="yes" 
+		    fqn="{concat('fallback.grant.', @name, '.superuser')}"/>
+	</xsl:for-each>
       </database>
     </dbobject>
   </xsl:template>

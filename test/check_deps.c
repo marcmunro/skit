@@ -692,7 +692,7 @@ START_TEST(fallback)
 	prepareDagForBuild(&nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
-	//showVectorDeps(nodes);
+	showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);

@@ -561,6 +561,7 @@ extern void parseXSLStylesheet(Document *doc);
 extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
 extern void addParamsNode(Document *doc, Object *params);
+extern void rmParamsNode(Document *doc);
 extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
 extern xmlNode *firstElement(xmlNode *start);

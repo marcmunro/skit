@@ -678,6 +678,7 @@ preprocessSourceDocs(int sources, Object *params)
 	else {
 	    result_doc = src_doc;
 	}
+	rmParamsNode(result_doc);
 	addParamsNode(result_doc, params);
 	cons->car = (Object *) result_doc;
     }
@@ -759,6 +760,7 @@ executeTemplate(Object *params)
     preprocessSourceDocs(sources->value, params);
     
     if (result = processTemplate(template)) {
+	rmParamsNode(result);
 	if (retain_deps) {
 	    root = xmlDocGetRootElement(result->doc);
 	    (void) xmlNewProp(root, (const xmlChar *) "retain_deps", 

@@ -110,12 +110,15 @@
 	</xsl:if>
 
 	<!-- Dependencies on usage of schema. -->
+	
 	<!--
 	<xsl:call-template name="SchemaGrant">
 	  <xsl:with-param name="owner" select="@from"/>
 	</xsl:call-template>-->
+
 	<xsl:if test="../@schema">
-	  <dependency-set>
+	  <dependency-set
+	      fallback="{concat('fallback.grant.', @from, '.superuser')}">>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
 			     ../@schema, '.usage:', @from)}"/>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',

@@ -370,18 +370,18 @@ START_TEST(check_cyclic_gensort)
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.cluster.skittest')");
-	check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
-		      "'cluster' 'role.cluster.keep')");
-	check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
-		      "'cluster' 'role.cluster.keep2')");
-	check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
-		      "'cluster' 'role.cluster.lose')");
-	check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
-		      "'cluster' 'role.cluster.marc')");
-	check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
-		      "'cluster' 'role.cluster.marco')");
-	check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
-		      "'cluster' 'role.cluster.wibble')");
+	check_build_order(results, "('drop.role.cluster.keep' "
+			  "'role.cluster.keep')");
+	check_build_order(results, "('drop.role.cluster.keep2' "
+		      "'role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose' "
+		      "'role.cluster.lose')");
+	check_build_order(results, "('drop.role.cluster.marc' "
+		      "'role.cluster.marc')");
+	check_build_order(results, "('drop.role.cluster.marco' "
+		      "'role.cluster.marco')");
+	check_build_order(results, "('drop.role.cluster.wibble' "
+		      "'role.cluster.wibble')");
 	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
 		      "'role.cluster.lose' "
 		      "'grant.cluster.lose.keep:keep')");
@@ -389,25 +389,23 @@ START_TEST(check_cyclic_gensort)
 		      "'grant.cluster.lose.keep:keep')");
 	check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
 		      "'role.cluster.regress' "
-		      "'tablespace.cluster.tbs2' "
 	              "'grant.cluster.tbs2.create:keep2:regress')");
 	check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
-		      "'role.cluster.keep2' "
 		      "'tablespace.cluster.tbs2' "
 	              "'grant.cluster.tbs2.create:keep2:regress')");
+
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'drop and build.viewbase.skittest.public.v1')",
+			     "'rebuild.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'drop and build.viewbase.skittest.public.v2')",
+			     "'rebuild.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop and build.viewbase.skittest.public.v1')",
+			     "'rebuild.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop and build.viewbase.skittest.public.v2')",
+			     "'rebuild.viewbase.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
@@ -416,15 +414,15 @@ START_TEST(check_cyclic_gensort)
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('drop and build.viewbase.skittest.public.v1' "
+			     "('rebuild.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v1')",
-			     "('drop and build.viewbase.skittest.public.v2' "
+			     "('rebuild.viewbase.skittest.public.v2' "
 			      "'view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('drop and build.viewbase.skittest.public.v1' "
+			     "('rebuild.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v2')",
-			     "('drop and build.viewbase.skittest.public.v2' "
+			     "('rebuild.viewbase.skittest.public.v2' "
 			     "'view.skittest.public.v1')",
 			      NULL);
 
@@ -477,18 +475,18 @@ START_TEST(check_cyclic_gensort2)
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.cluster.skittest')");
-	check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
-		      "'cluster' 'role.cluster.keep')");
-	check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
-		      "'cluster' 'role.cluster.keep2')");
-	check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
-		      "'cluster' 'role.cluster.lose')");
-	check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
-		      "'cluster' 'role.cluster.marc')");
-	check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
-		      "'cluster' 'role.cluster.marco')");
-	check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
-		      "'cluster' 'role.cluster.wibble')");
+	check_build_order(results, "('drop.role.cluster.keep' "
+		      "'role.cluster.keep')");
+	check_build_order(results, "('drop.role.cluster.keep2' "
+		      "'role.cluster.keep2')");
+	check_build_order(results, "('drop.role.cluster.lose' "
+		      "'role.cluster.lose')");
+	check_build_order(results, "('drop.role.cluster.marc' "
+		      "'role.cluster.marc')");
+	check_build_order(results, "('drop.role.cluster.marco' "
+		      "'role.cluster.marco')");
+	check_build_order(results, "('drop.role.cluster.wibble' "
+		      "'role.cluster.wibble')");
 	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
 		      "'role.cluster.lose' "
 		      "'grant.cluster.lose.keep:keep')");
@@ -503,18 +501,17 @@ START_TEST(check_cyclic_gensort2)
 	check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
-		      "'role.cluster.keep2' "
 		      "'tablespace.cluster.tbs2' "
 	              "'grant.cluster.tbs2.create:keep2:regress')");
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'drop and build.viewbase.skittest.public.v1')",
+			     "'rebuild.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'drop and build.viewbase.skittest.public.v2')",
+			     "'rebuild.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop and build.viewbase.skittest.public.v1')",
+			     "'rebuild.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'drop and build.viewbase.skittest.public.v2')",
+			     "'rebuild.viewbase.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
@@ -523,15 +520,15 @@ START_TEST(check_cyclic_gensort2)
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('drop and build.viewbase.skittest.public.v1' "
+			     "('rebuild.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v1')",
-			     "('drop and build.viewbase.skittest.public.v2' "
+			     "('rebuild.viewbase.skittest.public.v2' "
 			      "'view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('drop and build.viewbase.skittest.public.v1' "
+			     "('rebuild.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v2')",
-			     "('drop and build.viewbase.skittest.public.v2' "
+			     "('rebuild.viewbase.skittest.public.v2' "
 			     "'view.skittest.public.v1')",
 			      NULL);
 
@@ -833,7 +830,7 @@ START_TEST(depset_rebuild)
 }
 END_TEST
 
-START_TEST(regress)
+START_TEST(fallback)
 {
     Document *doc = NULL;
     Vector *results = NULL;
@@ -848,14 +845,14 @@ START_TEST(regress)
 	//showMalloc(531);
 	//showFree(724);
 
-	doc = getDoc("regress.xml");
+	doc = getDoc("tmp2.xml");
 	simple_sort = symbolNew("simple-sort");    
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
+	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
 	results = gensort(doc);
-	//printSexp(stderr, "RESULTS: ", (Object *) results);
+	printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
 	objectFree((Object *) results, TRUE);
@@ -878,6 +875,7 @@ START_TEST(regress)
 }
 END_TEST
 
+
 Suite *
 tsort_suite(void)
 {
@@ -898,7 +896,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, depset);
     ADD_TEST(tc_core, depset2);
     ADD_TEST(tc_core, depset_rebuild);
-    ADD_TEST(tc_core, regress);
+    ADD_TEST(tc_core, fallback);
 				
     suite_add_tcase(s, tc_core);
 

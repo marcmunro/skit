@@ -6,7 +6,7 @@
   <!-- This template handles copy-only mode.  This is used when we
        discover that a document may not have its deps removed -->
   <xsl:template match="*" mode="copy">
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates mode="copy"/>
     </xsl:copy>
@@ -18,7 +18,7 @@
 	<xsl:apply-templates select="." mode="copy"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:copy select=".">
+	<xsl:copy>
 	  <xsl:copy-of select="@*"/>
 	  <xsl:apply-templates/>
 	</xsl:copy>
@@ -47,6 +47,9 @@
     </xsl:for-each>	
   </xsl:template>
     
+  <!-- Lose the duplicate database definition within dbincluster -->
+  <xsl:template match="dbobject[@type='dbincluster']/database"/>
+
   <!-- Ignore column dbobjects as the column info appears at both the
        table and column levels. -->
   <xsl:template match="dbobject/column">
@@ -57,7 +60,7 @@
     
   <!-- Main template for database objects -->
   <xsl:template match="*">
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>

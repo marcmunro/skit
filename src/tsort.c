@@ -446,7 +446,6 @@ gensort(Document *doc)
 	nodes = nodesFromDoc(doc);
 	prepareDagForBuild(&nodes);
 	results = simple_tsort(nodes);
-	//dbgSexp(results);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

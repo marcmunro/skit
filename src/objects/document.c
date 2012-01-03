@@ -896,8 +896,11 @@ docHasDeps(Document *doc)
 	node = getNextNode(node);
     }
 
-    if (node) {
-	return streq(node->name, "dbobject");
+    if (node && streq(node->name, "params")) {
+	node = getNextNode(node);
+    }
+    if (node && streq(node->name, "dbobject")) {
+	return TRUE;
     }
     return FALSE;
 }

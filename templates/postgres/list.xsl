@@ -8,7 +8,7 @@
   <xsl:variable name="is_diff" select="boolean(/*/dbobject/@diff)"/>
 
   <xsl:template match="/*">
-    <xsl:copy select=".">
+    <xsl:copy>
       <!-- Eliminate retain_deps if provided (list *must* remove deps) -->
       <xsl:for-each select="@*">
 	<xsl:if test="name(.) != 'retain_deps'">
@@ -30,6 +30,8 @@
 		      (skit:eval('grants') != 't')"/>
       <xsl:when test="(self::*[@type='context']) and 
                       (skit:eval('contexts') != 't')"/>
+      <xsl:when test="(self::*[@type='fallback']) and 
+                      (skit:eval('fallbacks') != 't')"/>
       <xsl:otherwise>
 	<xsl:call-template name="printObject">
 	  <xsl:with-param name="depth" select="$depth"/>
@@ -40,7 +42,7 @@
 
   <xsl:template name="printObject">
     <xsl:param name="depth"/>
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <print>
 	<xsl:attribute name="text">

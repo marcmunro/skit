@@ -13,14 +13,16 @@
     <option name='sources' type='integer' value='1'/>
     <option name='g*rants' type='flag'/>
     <option name='con*texts' type='flag'/>
+    <option name='f*allbacks' type='flag'/>
     <option name='a*ll' type='flag'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
   </skit:options>
 
-  <!-- If all is specified, we set both grants and contexts -->
+  <!-- If all is specified, we set grants, contexts and fallbacks -->
   <skit:exec expr="(setq contexts (or contexts all))"/>
   <skit:exec expr="(setq grants (or grants all))"/>
+  <skit:exec expr="(setq fallbacks (or fallbacks all))"/>
   <!-- <skit:exec expr="(debug 'CONTEXTS' contexts)"/>
        <skit:exec expr="(debug 'GRANTS' grants)"/>
        <skit:exec expr="(debug 'ALL' all)"/> -->

@@ -1031,8 +1031,8 @@ addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
 
     BEGIN {
 	navigation = navigationToNode(cur, target);
-	for (i = 0; i < navigation->elems; i++) {
-	    nnode = (DagNode *) navigation->contents->vector[i];
+	EACH(navigation, i) {
+	    nnode = (DagNode *) ELEM(navigation, i);
 	    curnode = copyObjectNode(nnode->dbobject);
 	    addAction(curnode, actionName(nnode));
 	    xmlAddChild(parent_node, curnode);
@@ -1053,8 +1053,8 @@ treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
     xmlNode *curnode;
     int i;
 
-    for (i = 0; i < sorted_nodes->elems; i++) {
-	dnode = (DagNode *) sorted_nodes->contents->vector[i];
+    EACH(sorted_nodes, i) {
+	dnode = (DagNode *) ELEM(sorted_nodes, i);
 	if (dnode->build_type != EXISTS_NODE) {
 	    /* Ignore EXISTS_NODES for the purpose of adding navigation
 	     * nodes.  There is no point in navigating to these nodes as
@@ -2238,8 +2238,25 @@ addParamsNode(Document *doc, Object *params)
     node = nodeNew(param_node);
     hashEach((Hash *) params, addParamAttribute, (Object *) node);
     objectFree((Object *) node, FALSE);
-
-    return;
 }
 
+
+void
+rmParamsNode(Document *doc)
+{
+    xmlNode *root = xmlDocGetRootElement(doc->doc);
+    xmlNode *param_node;
+
+    if (!root) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("Unable to retrieve document root"));
+    }
+
+    if (param_node = root->children) {
+	if (streq(nodeName(param_node), "params")) {
+	    xmlUnlinkNode(param_node);
+	    xmlFreeNode(param_node);
+	}
+    }
+}
 

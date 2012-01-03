@@ -962,7 +962,7 @@ getRedirectionAction(DagNode *node, DagNode *dep)
 	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DROP_NODE */
 	{REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED,
 	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DIFF_NODE */
-	{REDIRECT_ERROR, REDIRECT_ERROR,
+	{REDIRECT_RETAIN, REDIRECT_RETAIN,
 	 REDIRECT_DROP, REDIRECT_DROP}                    /* EXISTS_NODE */
     };
 
@@ -970,12 +970,6 @@ getRedirectionAction(DagNode *node, DagNode *dep)
 	   "Unexpected node type (%d)\n", node->type);
     assert(dep->type == OBJ_DAGNODE, 
 	   "Unexpected dep type (%d)\n", dep->type);
-    if (dep->build_type > EXISTS_NODE) {
-	dbgSexp(node);
-	dbgSexp(node->dependencies);
-	dbgSexp(node->dependents);
-	dbgSexp(dep);
-    }
     assert(node->build_type <= EXISTS_NODE,
 	   "Unexpected build_type (%d) in node\n", node->build_type);
     assert(dep->build_type <= EXISTS_NODE,
@@ -991,6 +985,7 @@ getRedirectionAction(DagNode *node, DagNode *dep)
 	     * performed before the  normal operations in both cases.
 	     */
 	    return REDIRECT_CHECK_CYCLE;
+	    
 	}
 	if (node->fallback_build_type != UNSPECIFIED_NODE) {
 	    /* This is a fallback node.  We don't invert the
@@ -1159,6 +1154,8 @@ redirectDependencies(Vector *nodes)
 		    RAISE(NOT_IMPLEMENTED_ERROR, errstr);
 		    
 		default:
+		    dbgSexp(node);
+		    dbgSexp(depnode);
 		    RAISE(NOT_IMPLEMENTED_ERROR, 
 			  newstr("Nothing defined for redirect action "
 				 "type %d", action));
@@ -1188,6 +1185,7 @@ promoteFallback(Vector *nodes, DagNode *instigator, DagNodeBuildType build_type)
     instigator->build_type = BUILD_NODE;
     closer = dagnodeNew(instigator->dbobject, DROP_NODE);
     closer->fallback_build_type = build_type;
+    closer->parent = instigator->parent;
     vectorPush(nodes, (Object*) closer);
     instigator->duplicate_node = closer;
 

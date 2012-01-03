@@ -10,7 +10,8 @@
   <xsl:template name="SchemaGrant">
     <xsl:param name="owner" select="@owner"/>
     <!-- Dependency on schema usage grant to owner, public or self -->
-    <dependency-set>
+    <dependency-set 
+	fallback="{concat('fallback.grant.', $owner, '.superuser')}">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       ancestor::schema/@name, '.create:public')}"/>
@@ -34,7 +35,8 @@
     <xsl:param name="table" select="@table"/>
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
-    <dependency-set>
+    <dependency-set
+	fallback="{concat('fallback.grant.', $owner, '.superuser')}">>
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       $schema, '.', $table, '.', $priv, ':public')}"/>
