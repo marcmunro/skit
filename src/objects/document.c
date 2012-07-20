@@ -120,6 +120,7 @@ new_file_context()
     fc->readlines = 0;
     fc->URI = NULL;
     fc->skipping = TRUE;
+    return fc;
 }
 
 static int
@@ -376,10 +377,10 @@ getAttribute(xmlTextReaderPtr reader,
 static void
 process_option_node(Document *doc)
 {
-    String *name = NULL;
-    String *dflt = NULL;
-    String *value = NULL;
-    String *type = NULL;
+    String *volatile name = NULL;
+    String *volatile dflt = NULL;
+    String *volatile value = NULL;
+    String *volatile type = NULL;
     String *required = NULL;
     Object *validated_value = NULL;
 
@@ -445,8 +446,8 @@ process_option_node(Document *doc)
 static void
 process_alias_node(Document *doc)
 {
-    String *name = getAttribute(doc->reader, "for");
-    String *alias = getAttribute(doc->reader, "value");
+    String *volatile name = getAttribute(doc->reader, "for");
+    String *volatile alias = getAttribute(doc->reader, "value");
     BEGIN {
 	if (name) {
 	    if (alias) {
@@ -484,7 +485,7 @@ errorContext(Document *doc)
 static void
 process_possible_option(Document *doc)
 {
-    xmlChar *name;
+    xmlChar *volatile name;
 
     BEGIN {
 	if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
@@ -518,7 +519,7 @@ process_possible_option(Document *doc)
 Document *
 docFromFile(String *path)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     int ret;
     enum state_t {EXPECTING_OPTIONS, PROCESSING_OPTIONS, DONE} state;
     boolean reading_options = FALSE;
@@ -930,10 +931,10 @@ getClusterNode(Document *doc)
 void
 readDocDbver(Document *doc)
 {
-    Node *node = getClusterNode(doc);
-    String *version_str = NULL;
+    Node *volatile node = getClusterNode(doc);
+    String *volatile version_str = NULL;
+    Object *volatile obj = NULL;
     char *sexp = NULL;
-    Object *obj = NULL;
 
     BEGIN {
 	if (node) {
@@ -993,11 +994,11 @@ Object *
 xpathEach(Document *doc, String *xpath,
 	  TraverserFn *traverser, Object *param)
 {
-    xmlXPathContextPtr context = NULL;
-    xmlXPathObjectPtr xpath_obj = NULL; 
+    volatile xmlXPathContextPtr context = NULL;
+    volatile xmlXPathObjectPtr xpath_obj = NULL; 
+    volatile *tmp_str = NULL;
     xmlNodeSetPtr nodelist;
     Node node = {OBJ_XMLNODE, NULL};
-    char *tmp_str = NULL;
     int nodecount;
     int i;
 
@@ -1127,7 +1128,8 @@ templateFilePath(String *filename, String *path, String *default_filename)
 static Document *
 readTemplateDoc(String *filename, String *path, String *default_filename)
 {
-    String *filepath = templateFilePath(filename, path, default_filename);
+    String *volatile filepath = templateFilePath(filename, path, 
+						 default_filename);
     Document *doc;
     BEGIN {
 	doc = simpleDocFromFile(filepath);

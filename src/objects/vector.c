@@ -249,7 +249,8 @@ vectorRemove(Vector *vec, int index)
     result = vec->contents->vector[index];
     vec->elems--;
     while (index < vec->elems) {
-	vec->contents->vector[index] = vec->contents->vector[++index];
+	vec->contents->vector[index] = vec->contents->vector[index + 1];
+	index++;
     }
     
     return result;

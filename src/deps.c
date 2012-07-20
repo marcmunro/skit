@@ -704,9 +704,7 @@ identifyDeps(Vector *nodes, Hash *byfqn)
 {
     DagNode *node;
     int i;
-    Hash *bypqn = NULL;
-
-    bypqn = hashByPqn(nodes);
+    Hash *volatile bypqn = hashByPqn(nodes);
 
     BEGIN {
 	EACH(nodes, i) {
@@ -730,8 +728,9 @@ identifyDeps(Vector *nodes, Hash *byfqn)
 Vector *
 nodesFromDoc(Document *doc)
 {
-    Vector *nodes = vectorNew(1000);
-    Hash *byfqn = NULL;
+    Vector *volatile nodes = vectorNew(1000);
+    Hash *volatile byfqn = NULL;
+
     BEGIN {
 	(void) xmlTraverse(doc->doc->children, &addNodeToVector, 
 			   (Object *) nodes);
@@ -1314,8 +1313,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results);
 static void
 tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 {
-    Vector *deps;
-    int i;
+    Vector *volatile deps;
+    volatile int i;
     char *errmsg;
     char *tmp;
     DagNode *depnode;
@@ -1455,8 +1454,9 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 Vector *
 resolving_tsort(Vector *nodes)
 {
-    Vector *results = vectorNew(nodes->elems + 10); /* Allow a little
-						       extra for expansion */
+    Vector *volatile results = vectorNew(nodes->elems + 10); /* Allow a little
+								extra for
+								expansion */
     DagNode *node;
     int i;
     BEGIN {

@@ -242,8 +242,8 @@ fnSplit(Object *obj)
 static Object *
 fnInt4Promote(Object *obj)
 {
+    String *volatile str;
     Cons *cons = (Cons *) obj;
-    String *str;
 
     raiseIfNotList("try-to-int", obj);
     raiseIfMoreArgs("try-to-int", cons->cdr);
@@ -394,7 +394,8 @@ fnDebug(Object *obj)
     Cons *cons = (Cons *) obj;
     String *label;
     char *sexp;
-    Object *result;
+    Object *volatile result;
+
     raiseIfNotList("debug", obj);
     label = (String *) cons->car;
     raiseIfNotString("debug", label);
@@ -417,11 +418,12 @@ fnDebug(Object *obj)
 static Object *
 fnSelect(Object *obj)
 {
+    Object *volatile old;
     Cons *cons = (Cons *) obj;
     Object *container;
     Object *actual;
-    Object *old;
     Object *key;
+
     evalCar(cons);
     container = (Object *) objRefNew(cons->car);
     while (cons = (Cons *) cons->cdr) {
@@ -442,9 +444,7 @@ fnSelect(Object *obj)
 	}
 	EXCEPTION(ex);
 	FINALLY {
-	    if (old) {
-		objectFree(old, TRUE);
-	    }
+	    objectFree(old, TRUE);
 	}
 	END;
     }
@@ -585,10 +585,10 @@ fnOr(Object *obj)
 static Object *
 fnConcat(Object *obj)
 {
+    String *volatile result = stringNew("");
     Cons *cons = (Cons *) obj;
     Object *item;
     String *itemstr;
-    String *result = stringNew("");
 
     BEGIN {
 	raiseIfNotList("concat", obj);
@@ -620,9 +620,9 @@ fnConcat(Object *obj)
 static Object *
 fnCons(Object *obj)
 {
+    Object *volatile car = NULL;
+    Object *volatile cdr = NULL;
     Cons *cons = (Cons *) obj;
-    Object *car = NULL;
-    Object *cdr = NULL;
     Cons *result;
     BEGIN {
 	raiseIfNotList("cons", obj);
@@ -674,9 +674,9 @@ fnCdr(Object *obj)
 static Object *
 fnPlus(Object *obj)
 {
+    Int4 *volatile result = int4New(0);
     Cons *cons = (Cons *) obj;
     Object *item;
-    Int4 *result = int4New(0);
 
     BEGIN {
 	raiseIfNotList("+", obj);
@@ -706,9 +706,9 @@ fnPlus(Object *obj)
 static Object *
 fnMinus(Object *obj)
 {
+    Int4 *volatile result = int4New(0);
     Cons *cons = (Cons *) obj;
     Object *item;
-    Int4 *result = int4New(0);
     boolean first = TRUE;
 
     BEGIN {
@@ -741,10 +741,10 @@ fnMinus(Object *obj)
 static Object *
 fnHashAdd(Object *obj)
 {
+    Object *volatile key = NULL;
+    Object *volatile value = NULL;
     Cons *cons = (Cons *) obj;
     Hash *hash;
-    Object *key = NULL;
-    Object *value = NULL;
     Object *ref;
     Object *old;
 

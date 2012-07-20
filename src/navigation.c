@@ -288,7 +288,7 @@ Vector *
 navigationToNode(DagNode *start, DagNode *target)
 {
     Cons *context_nav;
-    Vector *results;
+    Vector *volatile results;
     Vector *context_arrivals = NULL;
     Object *elem;
     DagNode *current = NULL;

@@ -307,11 +307,12 @@ nextParam(Object **params)
 char *
 applyOneParam(char *qrystr, char *pattern, Object *param)
 {
-    String *source = NULL;
+    String *volatile source = NULL;
+    String *volatile replacement = NULL;
+    Regexp *volatile match = NULL;
     String *result = NULL;
-    String *replacement = NULL;
-    Regexp *match = NULL;
     char *raw_result;
+
     if (param->type == OBJ_STRING) {
 	replacement = (String *) objectCopy(param);
     }

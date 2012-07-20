@@ -626,8 +626,8 @@ objectSexp(Object *obj)
 Cons *
 consDup(Cons *cons)
 {
-    Object *carcopy = NULL;
-    Object *cdrcopy = NULL;
+    Object *volatile carcopy = NULL;
+    Object *volatile cdrcopy = NULL;
     Cons *result;
 
     assert(cons && (cons->type == OBJ_CONS), "consDup arg is not a cons cell");
@@ -735,9 +735,10 @@ objectEval(Object *obj)
 Object *
 evalSexp(char *str)
 {
-    Object *obj;
+    Object *volatile obj;
     Object *result = NULL;
     TokenStr token_str = {str, '\0', NULL};
+
     if (obj = objectRead(&token_str)) {
 	BEGIN {
 	    result = objectEval(obj);
@@ -818,7 +819,7 @@ isCollection(Object *object)
 Object *
 objectFromStr(char *instr)
 {
-    char *str = newstr("%s", instr);
+    char *volatile str = newstr("%s", instr);
     Object *obj;
     TokenStr token_str = {str, '\0', NULL};
 

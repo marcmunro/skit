@@ -1,7 +1,7 @@
 # ----------
 # GNUmakefile
 #
-#      Copyright (c) 2009 Marc Munro
+#      Copyright (c) 2009 - 2012 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3

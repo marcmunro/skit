@@ -114,8 +114,8 @@ check_build_order_or(Vector *results, ...)
 
 START_TEST(check_gensort)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -342,8 +342,8 @@ END_TEST
 
 START_TEST(check_cyclic_gensort)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -449,8 +449,8 @@ END_TEST
 /* As check_cyclic_gensort but using smart sort */
 START_TEST(check_cyclic_gensort2)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -554,8 +554,8 @@ END_TEST
 
 START_TEST(check_cyclic_exception)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -567,12 +567,13 @@ START_TEST(check_cyclic_exception)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	//showMalloc(1104);
+	showMalloc(432);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource3.xml");
+	dbgSexp(doc);
 	results = gensort(doc);
 
 	objectFree((Object *) results, TRUE);
@@ -581,6 +582,7 @@ START_TEST(check_cyclic_exception)
     }
     EXCEPTION(ex);
     WHEN(TSORT_CYCLIC_DEPENDENCY) {
+	dbgSexp(doc);
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
     }
@@ -602,8 +604,8 @@ END_TEST
 
 START_TEST(diff)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -646,8 +648,8 @@ END_TEST
 
 START_TEST(diff2)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -689,8 +691,8 @@ END_TEST
 
 START_TEST(depset)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -737,8 +739,8 @@ END_TEST
 
 START_TEST(depset2)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -784,8 +786,8 @@ END_TEST
 
 START_TEST(depset_rebuild)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;
@@ -832,8 +834,8 @@ END_TEST
 
 START_TEST(fallback)
 {
-    Document *doc = NULL;
-    Vector *results = NULL;
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
     int result;

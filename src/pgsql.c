@@ -110,10 +110,11 @@ pgsqlConnect(Object *sqlfuncs)
      * The first connection we create will be made global.
      */
 
-	Connection *connection = (Connection *) symbolGetValue("dbconnection");
+	Connection *volatile connection = 
+		(Connection *) symbolGetValue("dbconnection");
+	String *volatile connect;
 	boolean make_global;
 	boolean new_connection;
-	String *connect;
 	String *host;
     String *port;
     String *dbname;

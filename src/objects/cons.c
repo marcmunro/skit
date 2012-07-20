@@ -93,23 +93,23 @@ consPop(Cons **head)
 Cons *
 consRead(Object *closer, TokenStr *sexp)
 {
-    Cons *cons;
+    Cons *volatile cons;
     Object *obj;
     Object *cdr;
     obj = objectRead(sexp);
     if (obj) {
 	if (obj->type >= OBJ_NOTOBJECT) {
-	    // ObjectRead has returned us a control object: ie one that
-	    // provides syntax.
+	    /* ObjectRead has returned us a control object: ie one that
+	     * provides syntax. */
 	    if (obj->type == OBJ_DOT) {
-		// Instead of reading the rest of a list, we are reading
-		// an alist entry.  Return the control object back to
-		// the caller, where it will deal with it.
+		/* Instead of reading the rest of a list, we are reading
+		 * an alist entry.  Return the control object back to
+		 * the caller, where it will deal with it. */
 		return (Cons *) obj;
 	    }
 	    if (obj == closer) {
-		// We have just read the token that closes this list.
-		// Return an empty list (NULL) to the caller.
+		/* We have just read the token that closes this list.
+		 * Return an empty list (NULL) to the caller. */
 		return NULL;
 	    }
 	    RAISE(LIST_ERROR, newstr("Invalid closing token at end of list"));
@@ -121,11 +121,11 @@ consRead(Object *closer, TokenStr *sexp)
 	cdr = (Object *) consRead(closer, sexp);
 	if (cdr &&(cdr->type == OBJ_DOT)) {
 	    char *tok;
-	    // We are reading alist syntax.  The cdr of this cons cell will
-	    // not be another cons but a directly referenced  object.
+	    /* We are reading alist syntax.  The cdr of this cons cell will
+	     * not be another cons but a directly referenced  object. */
 	    cdr = objectRead(sexp);
-	    // And now we should have a closing paren token.  Ensure that we
-	    // have. 
+	    /* And now we should have a closing paren token.  Ensure that we
+	     * have.  */
 	    tok = sexpTok(sexp);
 	    if (!streq(tok, ")")) {
 		objectFree((Object *) cdr, TRUE);

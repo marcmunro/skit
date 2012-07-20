@@ -159,10 +159,10 @@ END_TEST
 /* Test basic dependencies, using dependency sets, with xnodes in place, */
 START_TEST(depset_deps1)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
-    Hash *nodes_by_fqn;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn;
     char *xnode_name;
 
     BEGIN {
@@ -225,11 +225,11 @@ END_TEST
  * processing xnodes. */ 
 START_TEST(depset_dag1_build)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -241,7 +241,7 @@ START_TEST(depset_dag1_build)
 	doc = getDoc("test/data/gensource_depset.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -279,11 +279,11 @@ END_TEST
  * processing xnodes. */ 
 START_TEST(depset_dag1_drop)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -295,7 +295,7 @@ START_TEST(depset_dag1_drop)
 	doc = getDoc("test/data/gensource_depset.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -334,11 +334,11 @@ END_TEST
 /* Test dependency handling for rebuilds. */ 
 START_TEST(depset_dag2_rebuild)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -350,7 +350,7 @@ START_TEST(depset_dag2_rebuild)
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 
@@ -395,11 +395,11 @@ END_TEST
 /* Test dependency handling for rebuilds, with a default action of drop. */ 
 START_TEST(depset_dag2_rebuild2)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -410,7 +410,7 @@ START_TEST(depset_dag2_rebuild2)
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -458,11 +458,11 @@ END_TEST
 
 START_TEST(cyclic_build)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -473,7 +473,7 @@ START_TEST(cyclic_build)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	/* The following assumes that v1 will be the node that gets a
@@ -526,11 +526,11 @@ END_TEST
 
 START_TEST(cyclic_drop)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -541,7 +541,7 @@ START_TEST(cyclic_drop)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -588,11 +588,11 @@ END_TEST
 
 START_TEST(cyclic_both)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -604,7 +604,7 @@ START_TEST(cyclic_both)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 	
@@ -673,11 +673,11 @@ END_TEST
 
 START_TEST(fallback)
 {
-    Document *doc = NULL;
+    Document *volatile doc = NULL;
     boolean failed = FALSE;
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *nodes_by_fqn;
+    Hash *volatile nodes_by_fqn;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -689,7 +689,7 @@ START_TEST(fallback)
 	//doc = getDoc("tmp.xml");
 	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	showVectorDeps(nodes);

@@ -176,8 +176,8 @@ docForNode(xmlNode *node) {
 static xmlNode *
 stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
+    String *volatile result_attr = nodeAttribute(template_node, "result");
     xmlNode *node = NULL;
-    String *result_attr = nodeAttribute(template_node, "result");
     Object *result_reqd;
     Document *doc = NULL;
 
@@ -224,7 +224,7 @@ ignoreFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static boolean
 hasExprAttribute(xmlNode *node, Object **p_result, char *attribute_name)
 {
-    String *expr;
+    String *volatile expr;
     Object *value = NULL;
     if (expr = nodeAttribute(node, attribute_name)) {
 	BEGIN {
@@ -279,7 +279,7 @@ getExpr(xmlNode *node)
 static String *
 fieldValueForTemplate(xmlNode *template_node)
 {
-    String *field = NULL;
+    String *volatile field = NULL;
     Object *value = NULL;
     Object *actual;
     String *strvalue = NULL;
@@ -345,8 +345,8 @@ fieldValueForTemplate(xmlNode *template_node)
 static xmlNode *
 attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *name = nodeAttribute(template_node, "name");
-    String *str = NULL;
+    String *volatile name = nodeAttribute(template_node, "name");
+    String *volatile str = NULL;
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR,
@@ -433,8 +433,8 @@ appendToMapVar(Object *obj)
 static xmlNode *
 execResult(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
+    String *volatile expr = nodeAttribute(template_node, "expr");
     Object *obj;
-    String *expr = nodeAttribute(template_node, "expr");
     if (!expr) {
 	RAISE(XML_PROCESSING_ERROR, 
 	      newstr("expr must be specified for skit:result"));
@@ -455,19 +455,19 @@ static xmlNode *
 iterate(Object *collection, String *filter,
 	xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    Object *tuple;
+    Object *volatile tuple;
+    Object *volatile placeholder = NULL;
+    String *volatile varname = nodeAttribute(template_node, "var");
+    String *volatile key = nodeAttribute(template_node, "key");
+    String *volatile idxname = nodeAttribute(template_node, "index");
+    String *volatile mapname = nodeAttribute(template_node, "map_to");
+    Symbol *volatile varsym = NULL;
+    Symbol *volatile idxsym = NULL;
+    Int4 *volatile idx = NULL;
     xmlNode *first_child = NULL;
     xmlNode *child;
     Object *result;
-    Object *placeholder = NULL;
     boolean do_it = TRUE;
-    String *varname = nodeAttribute(template_node, "var");
-    String *key = nodeAttribute(template_node, "key");
-    String *idxname = nodeAttribute(template_node, "index");
-    String *mapname = nodeAttribute(template_node, "map_to");
-    Symbol *varsym = NULL;
-    Symbol *idxsym = NULL;
-    Int4 *idx = NULL;
 
     if (mapname) {
 	newMapSymbol(mapname);
@@ -488,7 +488,8 @@ iterate(Object *collection, String *filter,
     }
 
     BEGIN {
-	while (tuple = objNext(collection, &placeholder), placeholder) {
+	while (tuple = objNext(collection, (Object **) &placeholder), 
+	       placeholder) {
 	    if (varsym) {
 		varsym->svalue = tuple;
 	    }
@@ -558,17 +559,18 @@ iterate(Object *collection, String *filter,
 static xmlNode *
 execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *filename = nodeAttribute(template_node, "file");
-    String *varname = nodeAttribute(template_node, "to");
-    String *hashkey = nodeAttribute(template_node, "hash");
-    String *filetext = NULL;
-    Cursor *cursor = NULL;
-    String *sqltext = NULL;
+    String *volatile filename = nodeAttribute(template_node, "file");
+    String *volatile varname = nodeAttribute(template_node, "to");
+    String *volatile hashkey = nodeAttribute(template_node, "hash");
+    String *volatile filetext = NULL;
+    Cursor *volatile cursor = NULL;
+    String *volatile sqltext = NULL;
+    Object *volatile params = NULL;
     Connection *conn;
     Tuple *tuple;
     xmlNode *child = NULL;
     Symbol *sym;
-    Object *params = NULL;
+
     BEGIN {
 	if (!filename) {
 	    RAISE(XML_PROCESSING_ERROR, 
@@ -624,9 +626,9 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *fromname = nodeAttribute(template_node, "from");
+    String *volatile fromname = nodeAttribute(template_node, "from");
+    String *volatile filter = nodeAttribute(template_node, "filter");
     String *expr;
-    String *filter = nodeAttribute(template_node, "filter");
     Object *collection;
     xmlNode *child = NULL;
     boolean doit = TRUE;
@@ -676,7 +678,7 @@ execKids(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *expr = nodeAttribute(template_node, "test");
+    String *volatile expr = nodeAttribute(template_node, "test");
     Object *expr_result;
     xmlNode *result = NULL;
     BEGIN {
@@ -781,9 +783,9 @@ execDeclareFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 static void
 getParam(xmlNode *template_node, xmlNode *cur_node)
 {
-    String *name = nodeAttribute(cur_node, "name");
-    String *dflt = NULL;
-    String *expr = NULL;
+    String *volatile name = nodeAttribute(cur_node, "name");
+    String *volatile dflt = NULL;
+    String *volatile expr = NULL;
     Object *value = NULL;
     Symbol *sym;
 
@@ -888,10 +890,11 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *stylesheet_name = nodeAttribute(template_node, "stylesheet");
-    String *input = nodeAttribute(template_node, "input");
-    Document *stylesheet = NULL;
-    Document *source_doc = NULL;
+    String *volatile stylesheet_name = 
+	nodeAttribute(template_node, "stylesheet");
+    String *volatile input = nodeAttribute(template_node, "input");
+    Document *volatile stylesheet = NULL;
+    Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
     xmlNode *scratch;
     xmlNode *result;
@@ -1024,7 +1027,7 @@ addAction(xmlNode *node, char *action)
 void
 addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
 {
-    Vector *navigation = NULL;
+    Vector *volatile navigation = NULL;
     DagNode *nnode;
     xmlNode *curnode;
     int i;
@@ -1072,11 +1075,11 @@ treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
 static xmlNode *
 execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *input = nodeAttribute(template_node, "input");
-    Document *source_doc = NULL;
+    String *volatile input = nodeAttribute(template_node, "input");
+    Document *volatile source_doc = NULL;
+    Vector *volatile sorted = NULL;
     Document *result_doc = NULL;
     Hash *dagnodes = NULL;
-    Vector *sorted = NULL;
     xmlNode *root;
     xmlDocPtr xmldoc;
 
@@ -1399,8 +1402,13 @@ writeScatterFile(String *path, String *name, xmlNode *node,
 {
     String *pathroot = (String *) symbolGetValue("path");
     char *dirpath = newstr("%s/%s", pathroot->value, path->value);
-    String *fullpath = stringNewByRef(newstr("%s/%s", dirpath, name->value));
-    Document *prev_doc = NULL;
+    String *volatile fullpath = 
+	stringNewByRef(newstr("%s/%s", dirpath, name->value));
+    Document *volatile prev_doc = NULL;
+    Document *volatile new_doc = NULL;
+    String *volatile header = NULL;
+    String *volatile footer = NULL;
+    char *volatile result_text = NULL;
     xmlNode *scatter_root;
     xmlNode *scatter_start;
     xmlNode *prev_root;
@@ -1408,14 +1416,10 @@ writeScatterFile(String *path, String *name, xmlNode *node,
     xmlNode *textnode;
     DiffType diff;
     xmlNode *new_root; 
-    Document *new_doc = NULL;
     xmlNode *header_node = NULL;
     xmlNode *footer_node = NULL;
-    String *header = NULL;
-    String *footer = NULL;
     FILE *scatterfile;
     xmlNode *result = NULL;
-    char *result_text = NULL;
     char *result_prefix = NULL;
     Object *verbose = symbolGetValue("verbose");
     Object *checkonly = symbolGetValue("checkonly");
@@ -1504,8 +1508,8 @@ writeScatterFile(String *path, String *name, xmlNode *node,
 static xmlNode *
 scatterFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *path = nodeAttribute(template_node, "path");
-    String *name;
+    String *volatile path = nodeAttribute(template_node, "path");
+    String *volatile name;
     Document *template = NULL;
     xmlNode *result = NULL;
 
@@ -1576,17 +1580,17 @@ processGatherNodes(xmlNode *node, char *filename);
 static void
 gatherDirIntoNode(xmlNode *node, char *dirname)
 {
-    char *globpath = newstr("%s/*.xml", dirname);
-    glob_t globbuf;
-    String *path;
-    Document *gatherdoc;
+    char *volatile globpath = newstr("%s/*.xml", dirname);
+    volatile glob_t globbuf;
+    String *volatile path;
+    Document *volatile gatherdoc;
     xmlNode *root;
     xmlNode *source;
     xmlNode *copy;
     int i;
 
     BEGIN {
-	glob(globpath, 0, NULL, &globbuf);
+	glob(globpath, 0, NULL, (glob_t *) &globbuf);
 
 	if (globbuf.gl_pathc) {
 	    /* Some .xml files have been found.  Load each one in turn. */
@@ -1620,7 +1624,7 @@ gatherDirIntoNode(xmlNode *node, char *dirname)
 	     * directories.  Do another glob without the .xml extension */
 	    i = strlen(globpath);
 	    globpath[i - 4] = '\0';
-	    glob(globpath, 0, NULL, &globbuf);
+	    glob(globpath, 0, NULL, (glob_t *) &globbuf);
 	    for (i = 0; i < globbuf.gl_pathc; i++) {
 		gatherDirIntoNode(node, globbuf.gl_pathv[i]);
 	    }
@@ -1629,7 +1633,7 @@ gatherDirIntoNode(xmlNode *node, char *dirname)
     EXCEPTION(ex);
     FINALLY {
 	skfree(globpath);
-	globfree(&globbuf);
+	globfree((glob_t *) &globbuf);
     }
     END;
 }
@@ -1637,7 +1641,7 @@ gatherDirIntoNode(xmlNode *node, char *dirname)
 static void
 gatherDocsIntoNode(xmlNode *node, char *filename)
 {
-    char *dirname = newstr("%s", filename);
+    char *volatile dirname = newstr("%s", filename);
     int len = strlen(dirname);
 
     if ((len > 4) && streq(dirname+len-4, ".xml")) {
@@ -1795,8 +1799,8 @@ gatherFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *diffrules = nodeAttribute(template_node, "rules");
-    String *swap = nodeAttribute(template_node, "swap");
+    String *volatile diffrules = nodeAttribute(template_node, "rules");
+    String *volatile swap = nodeAttribute(template_node, "swap");
     Object *do_swap = evalSexp(swap->value);
     xmlNode *result;
 
@@ -1817,8 +1821,8 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *input = nodeAttribute(template_node, "input");
-    Document *source_doc = NULL;
+    String *volatile input = nodeAttribute(template_node, "input");
+    Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
     xmlNode *result;
     xmlNode *root_node;
@@ -1889,10 +1893,11 @@ initSkitProcessors()
 static xmlNode *
 exec(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    String *stylesheet_name = nodeAttribute(template_node, "stylesheet");
-    String *input = nodeAttribute(template_node, "input");
-    Document *stylesheet = NULL;
-    Document *source_doc = NULL;
+    String *volatile stylesheet_name = 
+	nodeAttribute(template_node, "stylesheet");
+    String *volatile input = nodeAttribute(template_node, "input");
+    Document *volatile stylesheet = NULL;
+    Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
     xmlNode *result;
     xmlNode *root_node;
@@ -1966,7 +1971,7 @@ execXmlNodeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    xmlNode *this = NULL;
+    xmlNode *volatile this = NULL;
     xmlNode *kids = NULL;
     xmlNs *ns;
     // TODO: Assert that this is a node!
@@ -2091,11 +2096,11 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 processRemaining(xmlNode *remaining, xmlNode *parent_node, int depth)
 {
-    xmlNode *prev_node = NULL;
-    xmlNode *cur_node;
-    xmlNode *next_node;
-    xmlNode *child;
-    boolean failed_once = FALSE;
+    xmlNode *volatile prev_node = NULL;
+    xmlNode *volatile cur_node;
+    xmlNode *volatile next_node;
+    xmlNode *volatile child;
+    volatile boolean failed_once = FALSE;
 
     if (cur_node = remaining) {
 	do {

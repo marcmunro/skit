@@ -152,7 +152,7 @@ static Vector *
 getBuildCandidates(Hash *allnodes)
 {
     int elems = hashElems(allnodes);
-    Vector *results = vectorNew(elems);
+    Vector *volatile results = vectorNew(elems);
     BEGIN {
 	hashEach(allnodes, &addCandidateToBuild, (Object *) results);
     }
@@ -320,7 +320,7 @@ smart_tsort(Hash *allnodes)
 {
     DagNode *root = initDagNodeTree(allnodes);
     DagNode *next;
-    Vector *results;
+    Vector *volatile results;
 
     hashEach(allnodes, &addDependents, (Object *) allnodes);
     results = vectorNew(hashElems(allnodes));
@@ -415,7 +415,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 Vector *
 simple_tsort(Vector *nodes)
 {
-    Vector *results = vectorNew(nodes->elems + 10); // Allow for expansion
+    Vector *volatile results = 
+	vectorNew(nodes->elems + 10); // Allow for expansion
     DagNode *node;
     int i;
     BEGIN {
@@ -439,12 +440,13 @@ simple_tsort(Vector *nodes)
 Vector *
 gensort(Document *doc)
 {
-    Symbol *simple_sort = symbolGet("simple-sort");
-    Vector *nodes = NULL;
+    Vector *volatile nodes = NULL;
     Vector *results = NULL;
+    Symbol *simple_sort = symbolGet("simple-sort");
+
     BEGIN {
 	nodes = nodesFromDoc(doc);
-	prepareDagForBuild(&nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	results = simple_tsort(nodes);
     }
     EXCEPTION(ex);

@@ -153,12 +153,12 @@
  * WHEN clause is encountered in the block, to handle the exception it
  * will be re-raised on exit from the block (at the END token).
  */
-#define EXCEPTION(x)					\
-	    exception_avoided_jgjlksljksch = TRUE;      \
-    	}						\
-	else {						\
-	    Exception *x = exceptionCurHandler();       \
-	    x->signal = exception_signal_jgjlksljksch; {
+#define EXCEPTION(x)						\
+        exception_avoided_jgjlksljksch = TRUE;			\
+    }								\
+    else {							\
+        volatile Exception *x = exceptionCurHandler();		\
+        x->signal = exception_signal_jgjlksljksch; {
 
 /* Catch a specific numbered exception.  This block may re-raise the
  * exception using RAISE() with no arguments, may raise a different
@@ -166,13 +166,13 @@
  * exception is considered to have been successfully handled.
  */
 #define WHEN(x) }					\
-            if (exceptionCurHandler()->signal == x) {	\
-	        exceptionCurHandler()->caught = TRUE;
+        if (exceptionCurHandler()->signal == x) {	\
+	    exceptionCurHandler()->caught = TRUE;
 
 /* Catch any exception not already caught by another handler. */
 #define WHEN_OTHERS }					\
-            if (!(exceptionCurHandler()->caught)) {	\
-	        exceptionCurHandler()->caught = TRUE;
+        if (!(exceptionCurHandler()->caught)) {		\
+	    exceptionCurHandler()->caught = TRUE;
 
 /* FINALLY performs code that must be performed before exitting the 
  * exception block, regardless of whether it has handled an exception or

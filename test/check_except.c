@@ -109,7 +109,7 @@ catcher(
 
 
 int 
-catcher2(int i)
+catcher2(volatile int i)
 {
     int zero = 0;
     BEGIN {

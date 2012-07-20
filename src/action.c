@@ -149,7 +149,7 @@ freeStdTemplates()
 void
 loadInFile(String *filename)
 {
-    Document *doc = docFromFile(filename);
+    Document *volatile doc = docFromFile(filename);
     if (!doc) {
 	RAISE(PARAMETER_ERROR, 
 	      newstr("Failed to load xml document %s", filename->value));
@@ -319,13 +319,13 @@ checkRequired(Hash *params, Cons *optionlist)
 static Hash *
 getOptionlistArgs(Cons *optionlist)
 {
-    String *arg = NULL;
+    String *volatile arg = NULL;
+    Object *volatile value = NULL;
+    Hash *volatile params = hashNew(TRUE);
     boolean is_option;
-    Object *value = NULL;
     Object *old;
     int expected_sources = getIntOption(optionlist, &sources_str, &value_str);
     int expected_args = 0;
-    Hash *params = hashNew(TRUE);
     String *fullname;
     
     BEGIN {
@@ -334,11 +334,11 @@ getOptionlistArgs(Cons *optionlist)
 		expected_args = 1;
 	    }
 	}
-	while (nextArg(&arg, &is_option)) {
+	while (nextArg((String **) &arg, &is_option)) {
 	    if (is_option) {
-		// If this is an option, check its validity and deal with
-		// it.  If it is not valid, assume that it is not intended
-		// for this action and replace it into the arglist
+		/* If this is an option, check its validity and deal with
+		 * it.  If it is not valid, assume that it is not intended
+		 * for this action and replace it into the arglist */
 		
 		if (value = getOptionValue(optionlist, arg)) {
 		    fullname = optionlistGetOptionName(optionlist, arg);
@@ -360,7 +360,7 @@ getOptionlistArgs(Cons *optionlist)
 			expected_args--;
 			old = hashAdd(params, (Object *) stringNew("arg"), 
 				      (Object *) arg);
-			objectFree(old, TRUE); // maybe raise an error?
+			objectFree(old, TRUE); // TODO: maybe raise an error?
 		    }
 		    else {
 			RAISE(PARAMETER_ERROR, 
@@ -393,12 +393,12 @@ getOptionlistArgs(Cons *optionlist)
 static Object *
 doParseTemplate(String *filename)
 {
-    String *path;
+    String *volatile path;
+    Hash *volatile params = NULL;
+    Document *volatile template_doc = NULL;
     char *tmp;
-    Hash *params = NULL;
     Object *obj;
     Object *old;
-    Document *template_doc = NULL;
 
     BEGIN {
 	path = findFile(filename);
@@ -434,7 +434,7 @@ doParseTemplate(String *filename)
 static Object *
 parseTemplate(Object *obj)
 {
-    String *filename;
+    String *volatile filename;
     Object *action_info;
 
     BEGIN {
@@ -455,7 +455,7 @@ static Object *
 execParseTemplate(char *name)
 {
     Object *action_info;
-    String *filename;
+    String *volatile filename;
 
     BEGIN {
 	filename = stringNew(name);
@@ -517,7 +517,7 @@ parsePrint(Object *obj)
 static Object *
 parseList(Object *obj)
 {
-    String *filename = stringNew("list.xml");
+    String *volatile filename = stringNew("list.xml");
     Object *params;
     BEGIN {
 	params = doParseTemplate(filename);
@@ -625,8 +625,8 @@ defineActionParsers()
 Hash *
 parseAction(String *action)
 {
+    String *volatile parser_name;
     Symbol *action_parser;
-    String *parser_name;
     Hash *params;
     char *tmp = NULL;
     Object *old;
@@ -863,8 +863,8 @@ setVarsFromParams(Hash *params)
 void
 executeAction(String *action, Hash *params)
 {
+    String *volatile executor_name;
     Symbol *action_executor;
-    String *executor_name;
     Object *result = NULL;
     char *tmp = NULL;
     boolean global = FALSE;

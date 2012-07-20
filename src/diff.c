@@ -173,12 +173,12 @@ allDbobjects(xmlNode *node, Hash *rules)
 static xmlNode *
 getMatch(xmlNode *node, Cons *alist, Hash *rules)
 {
-    String *type = nodeAttribute(node, "type");
+    String *volatile key = NULL;
+    Node *volatile match = NULL;
+    String *volatile type = nodeAttribute(node, "type");
     Cons *rule = (Cons *) hashGet(rules, (Object *) type);
-    String *key = NULL;
     String *key_attr;
     Hash *candidates;
-    Node *match = NULL;
     xmlNode *result = NULL;
     BEGIN {
 	if (rule) {
@@ -190,9 +190,10 @@ getMatch(xmlNode *node, Cons *alist, Hash *rules)
 	    key = nodeAttribute(node, "fqn");	    
 	}
 
-	candidates = (Hash *) alistGet(alist, (Object *) type);
-	if (match = (Node *) hashDel(candidates, (Object *) key)) {
-	    result = match->node;
+	if (candidates = (Hash *) alistGet(alist, (Object *) type)) {
+	    if (match = (Node *) hashDel(candidates, (Object *) key)) {
+		result = match->node;
+	    }
 	}
     }
     EXCEPTION(ex);
@@ -283,8 +284,8 @@ makeOldDep(char *type, String *qn)
 static xmlNode *
 getOldDeps(xmlNode *node1, xmlNode *node2)
 {
-    Hash *fqns = hashNew(TRUE);
-    Hash *pqns = hashNew(TRUE);
+    Hash *volatile fqns = hashNew(TRUE);
+    Hash *volatile pqns = hashNew(TRUE);
     String *qn = NULL;
     xmlNode *result = NULL;
     xmlNode *prev;
@@ -364,14 +365,14 @@ skipToContents(xmlNode *node)
 static xmlNode *
 check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 {
-    xmlNode *diff = NULL;
-    String *attr_name = nodeAttribute(rule, "name");
-    String *attr1 = nodeAttribute(content1, attr_name->value);
-    String *attr2 = nodeAttribute(content2, attr_name->value);
-    String *old = NULL;
-    String *new = NULL;
+    String *volatile attr_name = nodeAttribute(rule, "name");
+    String *volatile attr1 = nodeAttribute(content1, attr_name->value);
+    String *volatile attr2 = nodeAttribute(content2, attr_name->value);
+    String *volatile old = NULL;
+    String *volatile new = NULL;
+    String *volatile fail = NULL;
     xmlChar *status = NULL;
-    String *fail = NULL;
+    xmlNode *diff = NULL;
     
     if (attr1) {
 	if (attr2) {
@@ -575,19 +576,19 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 static xmlNode *
 check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 {
+    String *volatile elem_type = nodeAttribute(rule, "type");
+    String *volatile key_type = nodeAttribute(rule, "key");
+    Node *volatile rulenode = nodeNew(rule);
+    Hash *volatile elems2 = hashNew(TRUE);
     xmlNode *diff = NULL;
     xmlNode *prev = NULL;
     xmlNode *kid;
-    String *elem_type = nodeAttribute(rule, "type");
-    String *key_type = nodeAttribute(rule, "key");
     String *key;
     xmlNode *elem1 = content1->children;
     xmlNode *elem2 = content2->children;
     xmlNode *elem_diffs;
-    Hash *elems2 = hashNew(TRUE);
     Node *node;
     Object *obj;
-    Node *rulenode = nodeNew(rule);
     Cons results = {OBJ_CONS, (Object *) rulenode, NULL};
 
     BEGIN {
@@ -755,6 +756,8 @@ copyAndRecurse(xmlNode *node1, xmlNode *node2,
     xmlNode *diffs;
     *has_diffs = FALSE;
 
+    dbgNode(node1);
+    dbgNode(node2);
     if (from2) {
 	copy = xmlCopyNode(from2, 2);
 	from2 = getElement(from2->children);
@@ -809,10 +812,10 @@ dbobjectDiff(xmlNode *node1, xmlNode *node2,
 
     if (node1) {
 	contents1 = skipToContents(node1);
-	//dbgNode(contents1);
+	dbgNode(contents1);
 	if (node2) {
 	    contents2 = skipToContents(node2);
-	    //dbgNode(contents2);
+	    dbgNode(contents2);
 	    if (old_deps = getOldDeps(node1, node2)) {
 		if (!deps) {
 		    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
@@ -966,8 +969,8 @@ processDiffs(
     boolean *diffs,
     boolean is_gone)
 {
+    Cons *volatile node1objects = NULL;
     xmlNode *dbobj2 = getElement(node2);
-    Cons *node1objects = NULL;
     xmlNode *match;
     xmlNode *prev;
     xmlNode *next = NULL;
@@ -1021,16 +1024,16 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
 xmlNode *
 doDiff(String *diffrules, boolean swap)
 {
-    Document *doc1 = NULL;
-    Document *doc2 = NULL;
+    Document *volatile doc1 = NULL;
+    Document *volatile doc2 = NULL;
+    Hash *volatile rules = NULL;
     xmlNode *result = NULL;
-    Hash *rules = NULL;
     BEGIN {
 	if (swap) {
-	    readDocs(&doc1, &doc2);
+	    readDocs((Document **) &doc1, (Document **) &doc2);
 	}
 	else {
-	    readDocs(&doc2, &doc1);
+	    readDocs((Document **) &doc2, (Document **) &doc1);
 	}
 	rules = loadDiffRules(diffrules);
 	result = processDiffRoot(xmlDocGetRootElement(doc1->doc), 

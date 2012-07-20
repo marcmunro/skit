@@ -23,7 +23,7 @@
 Document *
 getDoc(char *name)
 {
-    String *docname = stringNew(name);
+    String *volatile docname = stringNew(name);
     Document *doc;
     BEGIN {
 	doc = findDoc(docname);
