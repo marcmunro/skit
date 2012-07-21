@@ -32,19 +32,16 @@
 
   <!-- The dbincluster object (responsible for actual database creation) -->
   <xsl:template match="database">
-    <xsl:param name="parent_core" select="'cluster'"/>
-    <xsl:variable name="fqn" select="concat('dbincluster.', 
-				     $parent_core, '.', @name)"/>
+    <xsl:variable name="fqn" select="concat('dbincluster.cluster.', 
+				     @name)"/>
     <dbobject type="dbincluster" name="{@name}" 
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}">
       <dependencies>
 	<xsl:if test="@tablespace">
-	  <dependency fqn="{concat('tablespace.', $parent_core, 
-			   '.', @tablespace)}"/>
+	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
 	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.', $parent_core, 
-			   '.', @owner)}"/>
+	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
       </dependencies>
       <xsl:copy>

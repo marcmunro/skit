@@ -567,7 +567,7 @@ START_TEST(check_cyclic_exception)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	showMalloc(432);
+	//showMalloc(432);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
@@ -582,7 +582,6 @@ START_TEST(check_cyclic_exception)
     }
     EXCEPTION(ex);
     WHEN(TSORT_CYCLIC_DEPENDENCY) {
-	dbgSexp(doc);
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
     }

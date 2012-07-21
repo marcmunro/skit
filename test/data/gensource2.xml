@@ -201,10 +201,6 @@
       </dbobject>
     </cluster>
   </dbobject>
-  <dbobject type="dbincluster" name="skittest" qname="skittest" fqn="dbincluster.NOT SUPPLIED.skittest">
-    <dependencies/>
-    <database name="skittest"/>
-  </dbobject>
   <dbobject type="database" visit="true" name="skittest" qname="skittest" fqn="database.cluster.skittest">
     <dependencies>
       <dependency fqn="dbincluster.cluster.skittest"/>
