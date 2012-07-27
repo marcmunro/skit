@@ -133,6 +133,8 @@ xnodeName(char *basename, Vector *nodes)
 }
 
 
+/* Trivially check the inBuildTypeBitSet function.
+ */
 START_TEST(build_type_bitsets)
 {
     BuildTypeBitSet btbs = BUILD_NODE_BIT + DIFF_NODE_BIT;
@@ -692,7 +694,7 @@ START_TEST(fallback)
 	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
-	showVectorDeps(nodes);
+	//showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);

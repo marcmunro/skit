@@ -573,7 +573,7 @@ START_TEST(check_cyclic_exception)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource3.xml");
-	dbgSexp(doc);
+	//dbgSexp(doc);
 	results = gensort(doc);
 
 	objectFree((Object *) results, TRUE);
@@ -846,14 +846,14 @@ START_TEST(fallback)
 	//showMalloc(531);
 	//showFree(724);
 
-	doc = getDoc("tmp2.xml");
+	doc = getDoc("test/data/fallback.xml");
 	simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
 	results = gensort(doc);
-	printSexp(stderr, "RESULTS: ", (Object *) results);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
 	objectFree((Object *) results, TRUE);

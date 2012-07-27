@@ -86,6 +86,7 @@ typedef enum {
     OBJ_CURSOR,
     OBJ_TUPLE,
     OBJ_DAGNODE,
+    OBJ_CONDDEP,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
     OBJ_DOT,       		/* This is not a real-object */
@@ -269,6 +270,15 @@ typedef struct DagNode {
     struct DagNode  *parent;    // Reference only
 } DagNode;
 
+
+/* Used to describe a conditional dependency.  Unconditional
+ * dependencies are recorded simply as DagNode references.
+ */
+typedef struct CondDep {
+    ObjType          type;
+    String          *condition;
+    DagNode         *dependency;    // Reference only
+} CondDep;
 
 /* Used to conveniently pass around multiple nodes as parameters to
  * hashEach.  This type is only ever allocated statically. */

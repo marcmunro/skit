@@ -193,7 +193,6 @@ regression_test1()
     diffextract scratch/regressdb_dump1a.xml scratch/regressdb_dump1b.xml
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
-    echo ==== FINISHED BUILD SCRIPT regressdb_build1.sql ==== 
     echo Regression test 1 complete 1>&2
 }
 
@@ -204,7 +203,6 @@ regression_test2()
     rm -rf scratch/dbdump/*
     build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test2a.dmp ...
-
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/dbdump
     
@@ -213,6 +211,8 @@ regression_test2()
 	     --ignore-contexts
     genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql \
 	     --ignore-contexts
+    #echo "PREMATURE EXIT - Fix regress_run.sh" 1>&2
+    #exit 2
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......

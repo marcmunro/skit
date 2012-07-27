@@ -750,87 +750,6 @@ resetdirect(fileinfo_t *fileinfo)
 }
 
 
-START_TEST(extract)
-{
-    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=pgtest", 
-    //char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
-		    "--connect", 
-		    "dbname = 'skittest' port = '54329'",
-                    "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(4635);
-
-    BEGIN {
-	fi = redirect("/dev/null");
-	process_args2(8, args);
-	resetdirect(fi);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
-START_TEST(print2)
-{
-    char *args[] = {"./skit", "--print", "--full", 
-		    "xx"};
-    //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(306010);
-    //trackMalloc(138807);
-
-    BEGIN {
-	//fi = redirect("/dev/null");
-	process_args2(4, args);
-	//resetdirect(fi);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	//resetdirect(fi);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 START_TEST(gather)
 {
     char *args[] = {"./skit", "--list", 
@@ -873,7 +792,7 @@ END_TEST
 
 START_TEST(scatter)
 {
-    char *args[] = {"./skit", "-t", "scatter.xml", 
+    char *args[] = {"./skit", "-t", "scatter.xml", "-q",
 		    "xx", "--path", "./dbdump", "--checkonly"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -911,13 +830,16 @@ START_TEST(scatter)
 }
 END_TEST
 
-START_TEST(extract2)
+START_TEST(extract)
 {
+    /* Run the database build for a regression test before running this
+     * unit test (you will need to manually modify regress_run.sh to
+     * prematurely exit from the regression test function  before it
+     * runs execdrop, etc. */
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest' port = " PGPORT "host = " PGHOST,
+		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
                     "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
     fileinfo_t *fi;
@@ -935,7 +857,7 @@ START_TEST(extract2)
 	//resetdirect(fi);
 	//process_args2(10, args);
 	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
+	printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
     }
@@ -953,12 +875,13 @@ START_TEST(extract2)
 }
 END_TEST
 
-START_TEST(generate2)
+START_TEST(generate)
 {
+    /* Same preconditions as for extract above. */
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname = 'skittest'",
-                    "--generate", "--build",  "--print", "--full"};
+		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
+                    "--generate", "--drop",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -1101,32 +1024,6 @@ START_TEST(diff)
 }
 END_TEST
 
-START_TEST(generate3)
-{
-    char *args[] = {"./skit", "--generate", "--drop", 
-		    "x", "--print", "--full"};
-    Document *doc;
-    char *bt;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    //showMalloc(171893);
-    //showFree(114923);
-
-    BEGIN {
-	process_args2(4, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 START_TEST(list)
 {
     char *args[] = {"./skit", "--list", 
@@ -1179,44 +1076,6 @@ START_TEST(deps)
 }
 END_TEST
 
-START_TEST(generate)
-{
-    char *args[] = {"./skit", "--extract", "--dbtype=pgtest", 
-		    "--connect", 
-		    "dbname = 'skittest' port = '54329'",
-                    "--generate", "--drop", "--build", "--print", "--full"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(1986);
-
-    BEGIN {
-	fi = redirect("/dev/null");
-	process_args2(8, args);
-	resetdirect(fi);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 Suite *
 params_suite(void)
 {
@@ -1238,27 +1097,46 @@ params_suite(void)
     ADD_TEST(tc_core, no_alias_name);
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
-    ADD_TEST(tc_core, scatter);
-    //ADD_TEST(tc_core, extract);
-    //ADD_TEST(tc_core, generate);
-    //ADD_TEST(tc_core, extract2);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate2); // during development of new db objects
-    ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+
+    // When we start back on diff, these need to be re-instated
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, difflist);
+    //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
-    //ADD_TEST(tc_core, print2);
     //ADD_TEST(tc_core, generate3);
-    ADD_TEST(tc_core, list);
+
+    // Not sure what these are
+    //ADD_TEST(tc_core, list);
     //ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
     //ADD_TEST(tc_core, print);
 				
+    // Populate the regression test database
+    //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
+    //ADD_TEST(tc_core, generate); // during development of new db objects
+
+    // ??
+    //ADD_TEST(tc_core, scatter);
+
     suite_add_tcase(s, tc_core);
 
     return s;
 }
 
 
+#ifdef wibble
+TODO: 
+- Add conditional dependency handling
+
+- Re-implement smart-sort
+
+- Check on disabled unit tests, annd re-enable, comment or eliminate
+
+- Check TODO comments in deps.c
+
+- Get back to diffs implementation
+
+
+#endif

@@ -23,16 +23,16 @@
  * - there may be cyclic dependencies
  *
  * Optional dependencies must be handled first.  We do this by creating
- * a special node (an Xnode) for each dependency-set.  When we traverse
- * such nodes (using resolving_tsort()) only one of the dependencies has
- * to be satisfied.  If a cyclic dependency is found while we are
- * resolving an optional dependency, we will retry the tsort with the
- * next option.  Satisfying optional dependencies after we have
- * duplicated nodes (for drop and build, etc) is very difficult as, the
- * graph when reversed effectively gives us optional dependents rather
- * than optional dependencies and the standard tsort algorithms give us
- * no easy way to resolve such things.  One approach that was considered
- * and tried (and appears to work) is as follows:
+ * a special node (called an Xnode) for each dependency-set.  When we
+ * traverse such nodes (using resolving_tsort()) only one of the
+ * dependencies has to be satisfied.  If a cyclic dependency is found
+ * while we are resolving an optional dependency, we will retry the
+ * tsort with the next option.  Satisfying optional dependencies after
+ * we have duplicated nodes (for drop and build, etc) is very difficult
+ * as, the graph when reversed effectively gives us optional dependents
+ * rather than optional dependencies and the standard tsort algorithms
+ * give us no easy way to resolve such things.  One approach that was
+ * considered and tried (and appears to work) is as follows:
  *
  * Given optional dependencies:
  *   A-->B or C
@@ -46,7 +46,8 @@
  *   XB --> C
  *   XB --> D
  *
- * We then add optional inverted dependencies:
+ * We then add optional inverted dependencies (represented below as
+ * ..>): 
  *    A --> XA
  *   XA --> B
  *   XA --> C
@@ -61,7 +62,7 @@
  * To process this, our rule is that dependencies on Xnodes are
  * traversed first and optional dependencies are tried but may be
  * abandoned if a cyclic dependency is encountered.  It is not obvious
- * that this is a guranteed complete solution (in fact I suspect it is
+ * that this is a guranteed complete solution (in fact, I suspect it is
  * not) but it is the best I came up with.  
  * 
  * In light of this complexity, I chose to deal with dependency inversion
@@ -118,7 +119,7 @@
  * Node duplication, allowing for both build and drop actions within the
  * same DAG is performed by duplicateRebuildNodes().  This is then
  * followed by redirectDependencies() which inverts the initially
- * provided dependencies so that thwy reflect the actions being
+ * provided dependencies so that they reflect the actions being
  * performed at each node.
  */
 
@@ -129,7 +130,7 @@
  *    objects in their own right so that we can depend on them.
  * 2) Need the ability to have a fall-back position for depsets when
  *    no dep is found.  Using the fallback would result in something
- *    like switching the owner into superuser mode (grant superusr to
+ *    like switching the owner into superuser mode (grant superuser to
  *    owner, then do operation, then revoke).
  * 3) For inverted deps we need to be able to determine whether any of
  *    the inverted deps were satisfied and, if not, use the fall-back
