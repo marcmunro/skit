@@ -54,6 +54,9 @@ autom4te.cache/
 # The contents of the regress/scratch subdirectory
 /regress/scratch/
 
+# The contents of the regress/tmp subdirectory
+/regress/tmp/
+
 # Suppression files
 valgrind/*suppressions
 
