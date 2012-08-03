@@ -376,8 +376,51 @@ cons2Vector(Cons *cons)
     return vector;
 }
 
+BuildTypeBitSet 
+conditionForDep(xmlNode *node)
+{
+    String *condition_str = nodeAttribute(node, "condition");
+    String separators = {OBJ_STRING, " ()"};
+    Cons *contents;
+    Cons *elem;
+    char *head;
+    BuildTypeBitSet bitset = 0;
+    boolean inverted = FALSE;
+
+    if (condition_str) {
+	stringLowerOld(condition_str);
+	elem = contents = stringSplit(condition_str, &separators);
+	dbgSexp(contents);
+	while (elem) {
+	    head = ((String *) elem->car)->value;
+	    if (streq(head, "build")) {
+		bitset |= BUILD_NODE_BIT;
+	    }
+	    else if (streq(head, "drop")) {
+		bitset |= DROP_NODE_BIT;
+	    }
+	    else if (streq(head, "not")) {
+		inverted = TRUE;
+	    }
+	    else {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("no conditional dep handling for token %s", head));
+	    }
+	    elem = (Cons *) elem->cdr;
+	}
+
+	objectFree((Object *) condition_str, TRUE);
+	objectFree((Object *) contents, TRUE);
+    }
+    return inverted? (ALL_BUILDTYPE_BITS - bitset): bitset;
+}
+
 static Vector *
-explicitDepsForNode(xmlNode *node, Hash *nodes_by_fqn, Hash *nodes_by_pqn)
+explicitDepsForNode(
+    xmlNode *node, 
+    Hash *nodes_by_fqn, 
+    Hash *nodes_by_pqn,
+    BuildTypeBitSet parent_condition)
 {
     Vector *vector = NULL;
     Vector *next;
@@ -385,6 +428,11 @@ explicitDepsForNode(xmlNode *node, Hash *nodes_by_fqn, Hash *nodes_by_pqn)
     xmlNode *dep_node;
     String *fqn;
     String *pqn;
+    BuildTypeBitSet condition = conditionForDep(node);
+
+    if (!condition) {
+	condition = parent_condition;
+    }
 
     if (isDependencySet(node)) {
 	for (dep_node = node->children;
@@ -392,7 +440,7 @@ explicitDepsForNode(xmlNode *node, Hash *nodes_by_fqn, Hash *nodes_by_pqn)
 	     dep_node = dep_node->next) 
 	{
 	    if (next = explicitDepsForNode(dep_node, nodes_by_fqn, 
-					    nodes_by_pqn)) {
+					   nodes_by_pqn, condition)) {
 		if (vector) {
 		    vectorAppend(vector, next);
 		    objectFree((Object *) next, FALSE);
@@ -444,7 +492,7 @@ addExplicitDepsForNode(
 
     assert(node, "addExplicitDepsForNode: no node provided");
     if (node->xnode_for) {
-	/* Deps have already been added */
+	/* This is an xnode, so deps have already been added */
 	return;
     }
     assert(node->dbobject, "addExplicitDepsForNode: node has no dbobject");
@@ -476,21 +524,19 @@ addExplicitDepsForNode(
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
 		  newstr("new deps handling not implemented"));
 	}
-	deps = explicitDepsForNode(dep_node, nodes_by_fqn, nodes_by_pqn);
+	deps = explicitDepsForNode(dep_node, nodes_by_fqn, 
+				   nodes_by_pqn, 0);
 
 	this = node;  /* this is the node to which we will add deps */
 
 	if (fallback_node || (deps && (deps->elems > 1))) {
 	    /* Create an xnode. */
 	    this = xnodeNew(node);
+	    this->fallback = fallback_node;
 	    xnode_key = stringNew(this->fqn->value);
 	    hashAdd(nodes_by_fqn, (Object *) xnode_key, (Object *) this);
 	    vectorPush(nodes, (Object *) this);
 	    addDep(node, this);
-	    
-	    if (fallback_node) {
-		this->fallback = fallback_node;
-	    }
 	}	
 	else {
 	    if (!deps) {

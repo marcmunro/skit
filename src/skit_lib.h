@@ -237,6 +237,7 @@ typedef enum {
 #define ARRIVE_NODE_BIT 32
 #define DEPART_NODE_BIT 64
 #define BUILD_AND_DROP_NODE_BIT 128
+#define ALL_BUILDTYPE_BITS 255
 
 typedef int BuildTypeBitSet;
 #define inBuildTypeBitSet(btbs, bt)		\
@@ -276,9 +277,10 @@ typedef struct DagNode {
  */
 typedef struct CondDep {
     ObjType          type;
-    String          *condition;
+    BuildTypeBitSet  condition;
     DagNode         *dependency;    // Reference only
 } CondDep;
+
 
 /* Used to conveniently pass around multiple nodes as parameters to
  * hashEach.  This type is only ever allocated statically. */
@@ -379,6 +381,9 @@ extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern DagNode *xnodeNew(DagNode *source);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
+extern CondDep *condDepNew(DagNode *dep, BuildTypeBitSet condition);
+extern void condDepFree(CondDep *cd);
+
 
 // vector.c
 extern Vector *vectorNew(int elems);

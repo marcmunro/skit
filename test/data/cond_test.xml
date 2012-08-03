@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" dbtype="postgres" dbname="regressdb" time="20120727130734">
+  <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.12" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
+    <tablespace name="pg_default" owner="marc" location="">
+    </tablespace>
+    <role name="bark" login="y" password="md56919480e8e8d34883f6681bfbf2d40ee" max_connections="-1">
+      <config type="client_min_messages" value="error"/>
+      <comment>'woof'</comment>
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+      <privilege priv="createrole"/>
+      <privilege priv="createdb"/>
+    </role>
+    <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1">
+  </role>
+    <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1">
+      <grant priv="keep" from="lose" to="keep2" with_admin="yes"/>
+    </role>
+    <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
+      <grant priv="keep" from="keep" to="lose" with_admin="yes"/>
+    </role>
+    <role name="marc" login="y" max_connections="-1">
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+      <privilege priv="createrole"/>
+      <privilege priv="createdb"/>
+    </role>
+    <role name="marco" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" max_connections="-1">
+  </role>
+    <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+      <config type="client_min_messages" value="warning"/>
+      <privilege priv="superuser"/>
+    </role>
+    <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1">
+      <grant priv="keep" from="keep" to="wibble" with_admin="yes"/>
+      <grant priv="keep2" from="keep2" to="wibble" with_admin="no"/>
+    </role>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="-1">
+      <comment>'old comment'</comment>
+      <grant from="regress" to="public" with_grant="no" priv="temporary"/>
+      <grant from="regress" to="public" with_grant="no" priv="connect"/>
+      <grant from="regress" to="regress" with_grant="no" priv="create"/>
+      <grant from="regress" to="regress" with_grant="no" priv="temporary"/>
+      <grant from="regress" to="regress" with_grant="no" priv="connect"/>
+      <schema name="public" owner="regress" privs="{regress=UC/regress,=UC/regress}">
+        <comment>'old public schema'</comment>
+        <grant from="regress" to="regress" with_grant="no" priv="usage"/>
+        <grant from="regress" to="regress" with_grant="no" priv="create"/>
+        <grant from="regress" to="public" with_grant="no" priv="usage"/>
+        <grant from="regress" to="public" with_grant="no" priv="create"/>
+        <table name="additional" schema="public" owner="bark" tablespace="pg_default" privs="{bark=arwdDxt/bark,keep2=r*/bark}">
+          <column colnum="1" name="str1" type="text" type_schema="pg_catalog" nullable="no" storage_policy="e" is_local="t">
+            <comment>'str1 column'</comment>
+          </column>
+          <column colnum="2" name="str2" type="varchar" type_schema="pg_catalog" size="40" nullable="yes" storage_policy="m" is_local="t">
+            <comment>'str2 column'</comment>
+          </column>
+        </table>
+        <table name="thing" schema="public" owner="wibble" tablespace="pg_default">
+          <column colnum="1" name="keycol" type="int4" type_schema="pg_catalog" nullable="no" is_local="t" stats_target="1000"/>
+          <comment>'thing table'</comment>
+          <constraint type="primary key" name="thing__pk" schema="public" deferred="f" deferrable="f" source="PRIMARY KEY (keycol)" owner="wibble" access_method="btree">
+            <column name="keycol"/>
+            <comment>'This is the pk for thing'</comment>
+          </constraint>
+        </table>
+        <table name="thing_1" schema="public" owner="bark" tablespace="pg_default">
+          <comment>'thing1'</comment>
+        </table>
+        <table name="thing_2" schema="public" owner="bark" tablespace="pg_default">
+          <inherits name="thing" schema="public" inherit_order="1"/>
+          <column colnum="1" name="keycol" type="int4" type_schema="pg_catalog" nullable="no" is_local="f"/>
+          <column colnum="2" name="extra" type="bool" type_schema="pg_catalog" nullable="yes" is_local="t" default="'true'"/>
+        </table>
+        <table name="thing_3" schema="public" owner="bark" tablespace="pg_default">
+        </table>
+      </schema>
+    </database>
+  </cluster>
+</dump>

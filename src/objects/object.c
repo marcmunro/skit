@@ -46,6 +46,7 @@ objTypeName(Object *obj)
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
+    case OBJ_CONDDEP: return "OBJ_CONDDEP";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -487,6 +488,23 @@ dagnodeFree(DagNode *node)
     skfree(node);
 }
 
+CondDep *
+condDepNew(DagNode *dep,
+	   BuildTypeBitSet condition)
+{
+    CondDep *new = skalloc(sizeof(CondDep));
+    new->type = OBJ_CONDDEP;
+    new->condition = condition;
+    new->dependency = dep;
+    return new;
+}
+
+void
+condDepFree(CondDep *cd)
+{
+    skfree(cd);
+}
+
 /* Free a dynamically allocated object. */
 void
 objectFree(Object *obj, boolean free_contents)
@@ -527,6 +545,8 @@ objectFree(Object *obj, boolean free_contents)
 	    cursorFree((Cursor *) obj); break;
 	case OBJ_DAGNODE:
 	    dagnodeFree((DagNode *) obj); break;
+	case OBJ_CONDDEP:
+	    condDepFree((CondDep *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -558,6 +578,38 @@ nameForBuildType(DagNodeBuildType build_type)
     return "UNKNOWNBUILDTYPE";
 }
 
+char *
+buildBitsStr(BuildTypeBitSet bitset)
+{
+    char *result = skalloc(10);
+    result[0] = '\0';
+    if (inBuildTypeBitSet(bitset, BUILD_NODE)) {
+	strcat(result, "B");
+    }
+    if (inBuildTypeBitSet(bitset, DROP_NODE)) {
+	strcat(result, "D");
+    }
+    if (inBuildTypeBitSet(bitset, DIFF_NODE)) {
+	strcat(result, "F");
+    }
+    if (inBuildTypeBitSet(bitset, EXISTS_NODE)) {
+	strcat(result, "E");
+    }
+    if (inBuildTypeBitSet(bitset, REBUILD_NODE)) {
+	strcat(result, "R");
+    }
+    if (inBuildTypeBitSet(bitset, ARRIVE_NODE)) {
+	strcat(result, "A");
+    }
+    if (inBuildTypeBitSet(bitset, DEPART_NODE)) {
+	strcat(result, "L");
+    }
+    if (inBuildTypeBitSet(bitset, BUILD_AND_DROP_NODE)) {
+	strcat(result, "2");
+    }
+    return result;
+}
+
 
 /* Return dynamically-created string representation of object. 
  * The full argument allows more information to be returned about the
@@ -569,6 +621,7 @@ objectSexp(Object *obj)
     String *tmps;
     char *tmp;
     char *tmp2;
+    char *tmp3;
     if (!obj) {
 	return newstr("nil");
     }
@@ -606,6 +659,13 @@ objectSexp(Object *obj)
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
 		      nameForBuildType(((DagNode *) obj)->build_type), 
 		      ((DagNode *) obj)->fqn->value); 
+    case OBJ_CONDDEP:
+	tmp = buildBitsStr(((CondDep *) obj)->condition);
+	tmp2 = nameForBuildType(((CondDep *) obj)->dependency->build_type);
+	tmp3 = newstr("<%s ?%s?(%s) %s>", objTypeName(obj), tmp, tmp2,
+		      ((CondDep *) obj)->dependency->fqn->value);
+	skfree(tmp);
+	return tmp3;
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
     case OBJ_TUPLE:
@@ -892,6 +952,7 @@ checkObj(Object *obj, void *chunk)
 	case OBJ_CONNECTION: 
 	case OBJ_CURSOR: 
 	case OBJ_TUPLE: 
+	case OBJ_CONDDEP: 
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
 	      newstr("checkObj: no check yet for objects of type %s",
 		     objTypeName(obj)));
