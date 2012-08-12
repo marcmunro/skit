@@ -86,7 +86,7 @@ typedef enum {
     OBJ_CURSOR,
     OBJ_TUPLE,
     OBJ_DAGNODE,
-    OBJ_CONDDEP,
+    OBJ_DEPENDENCY,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
     OBJ_DOT,       		/* This is not a real-object */
@@ -232,12 +232,7 @@ typedef enum {
 #define BUILD_NODE_BIT 1
 #define DROP_NODE_BIT 2
 #define DIFF_NODE_BIT 4
-#define EXISTS_NODE_BIT 8
-#define DROP_AND_BUILD_NODE_BIT 16
-#define ARRIVE_NODE_BIT 32
-#define DEPART_NODE_BIT 64
-#define BUILD_AND_DROP_NODE_BIT 128
-#define ALL_BUILDTYPE_BITS 255
+#define ALL_BUILDTYPE_BITS 7
 
 typedef int BuildTypeBitSet;
 #define inBuildTypeBitSet(btbs, bt)		\
@@ -272,14 +267,13 @@ typedef struct DagNode {
 } DagNode;
 
 
-/* Used to describe a conditional dependency.  Unconditional
- * dependencies are recorded simply as DagNode references.
+/* Used to describe a dependency
  */
-typedef struct CondDep {
+typedef struct Dependency {
     ObjType          type;
     BuildTypeBitSet  condition;
     DagNode         *dependency;    // Reference only
-} CondDep;
+} Dependency;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to
@@ -381,8 +375,8 @@ extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern DagNode *xnodeNew(DagNode *source);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
-extern CondDep *condDepNew(DagNode *dep, BuildTypeBitSet condition);
-extern void condDepFree(CondDep *cd);
+extern Dependency *dependencyNew(DagNode *dep, BuildTypeBitSet condition);
+extern void dependencyFree(Dependency *dep);
 
 
 // vector.c
@@ -400,7 +394,7 @@ extern Object *vectorGet(Vector *vec, Object *key);
 extern Object *vectorRemove(Vector *vec, int index);
 extern Object *vectorDel(Vector *vec, Object *obj);
 extern void vectorSort(Vector *vec, ComparatorFn *fn);
-extern boolean vectorSeach(Vector *vec, Object *obj, int *p_index);
+extern boolean vectorSearch(Vector *vec, Object *obj, int *p_index);
 extern Object *setPush(Vector *vector, Object *obj);
 extern boolean checkVector(Vector *vec, void *chunk);
 #define setPop vectorPop
@@ -641,9 +635,6 @@ extern void pgsqlFreeMem();
 extern void showDeps(DagNode *node);
 extern void showHashDeps(Hash *nodes);
 extern void showVectorDeps(Vector *nodes);
-
-extern void addDependent(DagNode *node, DagNode *dep);
-extern void addDep(DagNode *node, DagNode *dep);
 
 extern Vector *nodesFromDoc(Document *doc);
 extern Hash *hashByFqn(Vector *vector);

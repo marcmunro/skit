@@ -14,14 +14,13 @@
 
 PACKAGE_NAME=		@PACKAGE_NAME@
 VERSION=		@PACKAGE_VERSION@
-DEBUG=                  @DEBUG@
 
 #build tools
 CC=			gcc
 
 #build tool flags
 
-ifeq "$(DEBUG)" "yes"
+ifdef DEBUG
 # Debug settings for flags
 CFLAGS=			-ggdb3 -O0
 LDFLAGS=		-ggdb3 -O0

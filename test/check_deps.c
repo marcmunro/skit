@@ -35,11 +35,20 @@ static boolean
 hasDependency(DagNode *node, DagNode *dep)
 {
     Vector *vector = node->dependencies;
+    Object *depobj;
     int i;
     if (vector) {
 	for (i = 0; i < vector->elems; i++) {
-	    if (dep == (DagNode *) vector->contents->vector[i]) {
-		return TRUE;
+	    depobj = vector->contents->vector[i];
+	    if (depobj->type == OBJ_DAGNODE) {
+		if (dep == (DagNode *) depobj) {
+		    return TRUE;
+		}
+	    }
+	    else if (depobj->type == OBJ_DEPENDENCY) {
+		if (dep == ((Dependency *) depobj)->dependency) {
+		    return TRUE;
+		}
 	    }
 	}
     }
@@ -151,10 +160,6 @@ START_TEST(build_type_bitsets)
     if (!inBuildTypeBitSet(btbs, DIFF_NODE)) {
 	fail("Failed to find DIFF_NODE in bitset");
     }
-    btbs += DEPART_NODE_BIT;
-    if (!inBuildTypeBitSet(btbs, DEPART_NODE)) {
-	fail("Failed to find DEPART_NODE in bitset");
-    }
 }
 END_TEST
 
@@ -164,7 +169,7 @@ START_TEST(depset_deps1)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
     char *xnode_name;
 
     BEGIN {
@@ -231,7 +236,7 @@ START_TEST(depset_dag1_build)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -285,7 +290,7 @@ START_TEST(depset_dag1_drop)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -340,7 +345,7 @@ START_TEST(depset_dag2_rebuild)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -377,7 +382,7 @@ START_TEST(depset_dag2_rebuild)
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	dbgSexp(nodes);
+	fprintf(stderr, "WHATWHATWHATWHATWHAT?\n");
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -401,7 +406,7 @@ START_TEST(depset_dag2_rebuild2)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -464,7 +469,7 @@ START_TEST(cyclic_build)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -532,7 +537,7 @@ START_TEST(cyclic_drop)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -559,10 +564,10 @@ START_TEST(cyclic_drop)
 		    "drop.viewbase.skittest.public.v1", 
 		    "view.skittest.public.v2", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "drop.viewbase.skittest.public.v1", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
 		    "drop.viewbase.skittest.public.v1", 
-		    "view.skittest.public.v3", NULL);
+		    "view.skittest.public.v1", NULL);
+	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "drop.viewbase.skittest.public.v1", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -594,7 +599,7 @@ START_TEST(cyclic_both)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -614,7 +619,6 @@ START_TEST(cyclic_both)
 	 * cycle breaker.  This does not have to be the case, and 
 	 * other sets of options should be allowed and checked for by
 	 * these tests.  TODO: Add those extra tests */
-
 	requireDeps(nodes_by_fqn, "rebuild.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
 		    "grant.skittest.public.usage:public:regress", 
@@ -643,11 +647,11 @@ START_TEST(cyclic_both)
 		    "drop.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v2", NULL);
 	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2", 
+		    "drop.view.skittest.public.v1", 
 		    "drop.viewbase.skittest.public.v1", NULL);
 
 	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1", 
-		    "drop.viewbase.skittest.public.v1", 
-		    "drop.view.skittest.public.v3", NULL);
+		    "drop.viewbase.skittest.public.v1", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -679,7 +683,7 @@ START_TEST(fallback)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     char *xnode_name;
-    Hash *volatile nodes_by_fqn;
+    Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -738,14 +742,64 @@ START_TEST(fallback)
 END_TEST
 
 
+
+/* Conditional dependencies tests. */
+START_TEST(cond)
+{
+    Document *doc;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //showFree(4247);
+    //showMalloc(1390);
+
+    eval("(setq build t)");
+    eval("(setq drop t)");
+    BEGIN {
+	doc = getDoc("test/data/cond_test_with_deps.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild((Vector **) &nodes);
+	nodes_by_fqn = hashByFqn(nodes);
+	//showVectorDeps(nodes);
+
+	requireDep(nodes_by_fqn, "table.regressdb.public.thing", 
+		   "grant.regressdb.public.create:public:regress");
+	requireNoDep(nodes_by_fqn, "table.regressdb.public.thing", 
+		     "grant.regressdb.public.usage:public:regress");
+
+	requireDep(nodes_by_fqn, 
+		   "drop.grant.regressdb.public.usage:public:regress",
+		   "drop.table.regressdb.public.thing");
+	requireNoDep(nodes_by_fqn, "drop.table.regressdb.public.thing", 
+		     "grant.regressdb.public.create:public:regress");
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
 Suite *
 deps_suite(void)
 {
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
-    ADD_TEST(tc_core, build_type_bitsets);
-    ADD_TEST(tc_core, depset_deps1);
+    //ADD_TEST(tc_core, build_type_bitsets);
+    //ADD_TEST(tc_core, depset_deps1);
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag2_rebuild);
@@ -753,7 +807,9 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
-    ADD_TEST(tc_core, fallback);
+    ADD_TEST(tc_core, cond);
+
+
     //ADD_TEST(tc_core, fallback_drop);
     //ADD_TEST(tc_core, fallback_rebuild);
 				
@@ -763,3 +819,21 @@ deps_suite(void)
 }
 
 
+#ifdef wibble
+TODO: 
+
+- Check TODO comments in deps.c
+
+- Check untested code in deps.c
+
+- Check UH OH! assertions in deps.c
+
+- Check on disabled unit tests, annd re-enable, comment or eliminate
+
+- Get back to diffs implementation
+
+- Re-implement smart-sort
+
+
+
+#endif

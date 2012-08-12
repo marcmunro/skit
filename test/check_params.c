@@ -1076,32 +1076,6 @@ START_TEST(deps)
 }
 END_TEST
 
-START_TEST(cond)
-{
-    char *args[] = {"./skit", "--generate", "--drop",
-		    "test/data/cond_test.xml"};
-    Document *doc;
-    char *bt;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    //showFree(4247);
-    //showMalloc(1909);
-
-    BEGIN {
-	process_args2(4, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 Suite *
 params_suite(void)
 {
@@ -1137,7 +1111,6 @@ params_suite(void)
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
-    ADD_TEST(tc_core, cond);
     //ADD_TEST(tc_core, print);
 				
     // Populate the regression test database
@@ -1153,25 +1126,3 @@ params_suite(void)
 }
 
 
-#ifdef wibble
-TODO: 
-- Add conditional dependency handling
-  + Add a simple test case (like in the regression tests)
-  + Implement enough that the simple test case and regression tests pass
-    This will not need us to implment conditional dep handling, just the
-    handling of CondDep objects.
-  - Add a full test case that proves the conditional dependency is not
-    being used
-  - implement to pass the test
-
-- Check on disabled unit tests, annd re-enable, comment or eliminate
-
-- Check TODO comments in deps.c
-
-- Get back to diffs implementation
-
-- Re-implement smart-sort
-
-
-
-#endif

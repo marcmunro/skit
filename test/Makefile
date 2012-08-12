@@ -34,7 +34,7 @@ SUPPRESSION_FILES = $(wildcard valgrind/*_suppressions)
 MEMCHECK_SUPPRESSIONS = $(SUPPRESSION_FILES:%=--suppressions=%)
 
 VALGRIND_BASIC_OPTIONS = --tool=memcheck $(MEMCHECK_OPTIONS) \
-			 --num-callers=12 --track-origins=yes
+			 --num-callers=20 --track-origins=yes -v
 GEN_SUPPRESSIONS = $(VALGRIND_BASIC_OPTIONS) --gen-suppressions=all
 VALGRIND_OPTIONS = $(VALGRIND_BASIC_OPTIONS) $(MEMCHECK_SUPPRESSIONS)
 

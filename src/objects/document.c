@@ -27,6 +27,7 @@ nodestr(xmlNode *node)
     char *result;
     xmlAttrPtr attr;
     xmlChar *str;
+    xmlChar *prop;
 
     if (node) {
 	switch (node->type) {
@@ -35,8 +36,9 @@ nodestr(xmlNode *node)
 	    end += strlen(end);
 	    for(attr = node->properties; NULL != attr; attr = attr->next) {
 		str = (xmlChar *) attr->name;
-		sprintf(end, " %s=\"%s\"", (char *) str,
-			(char *) xmlGetProp(node, str));
+		prop = xmlGetProp(node, str);
+		sprintf(end, " %s=\"%s\"", (char *) str, (char *) prop);
+		xmlFree(prop);
 		end += strlen(end);
 	    }
 	    sprintf(end, ">");

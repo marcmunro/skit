@@ -190,6 +190,7 @@ checkDependent(DagNode *node, DagNode *dep)
     DagNode *this;
     if (node->dependents) {
 	EACH(node->dependents, i) {
+THIS IS WRONG!
 	    this = (DagNode *) ELEM(node->dependents, i);
 	    if (this == dep) {
 		return;
@@ -209,6 +210,7 @@ checkDependency(DagNode *node, DagNode *dep)
     DagNode *this;
     if (node->dependencies) {
 	EACH(node->dependencies, i) {
+THIS IS WRONG!
 	    this = (DagNode *) ELEM(node->dependencies, i);
 	    if (this == dep) {
 		return;
@@ -228,12 +230,14 @@ checkDeps(DagNode *node)
     if (node) {
 	if (node->dependencies) {
 	    EACH(node->dependencies, i) {
+THIS IS WRONG!
 		dep = (DagNode *) ELEM(node->dependencies, i);
 		checkDependent(dep, node);
 	    }
 	}
 	if (node->dependents) {
 	    EACH(node->dependents, i) {
+THIS IS WRONG!
 		dep = (DagNode *) ELEM(node->dependents, i);
 		checkDependency(dep, node);
 	    }
@@ -247,6 +251,7 @@ checkVectorDeps(Vector *nodes)
     int i;
     DagNode *node;
     EACH(nodes, i) {
+THIS IS WRONG!
 	node = (DagNode *) ELEM(nodes, i);
 	checkDeps(node);
     }
@@ -288,43 +293,103 @@ findAncestor(xmlNode *start, char *name)
 #define makeVector(x) (x) ? (x): (x = vectorNew(10))
 
 static void
-addDependency(DagNode *node, DagNode *dep)
+addDependency(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
 {
     Vector *node_deps = makeVector(node->dependencies);
-    setPush(node_deps, (Object *) dep);
+    Dependency *cond_dep;
+    if (dep->type != OBJ_DAGNODE) {
+	cond_dep = NULL;
+    }
+    assert((dep->type == OBJ_DAGNODE), "DEP IS NOT A DAGNODE!");
+    cond_dep = dependencyNew(dep, condition);
+    if (!setPush(node_deps, (Object *) cond_dep)) {
+	objectFree((Object *) cond_dep, FALSE);
+    }
 }
 
-void
-addDependent(DagNode *node, DagNode *dep)
+static void
+addConditionalDependency(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
+{
+    boolean do_it = TRUE;
+    if (condition) {
+	switch (node->build_type) {
+	case BUILD_NODE:
+	    do_it = condition & BUILD_NODE_BIT; break;
+	case DROP_NODE:
+	    do_it = condition & DROP_NODE_BIT; break;
+	case DIFF_NODE:
+	    do_it = condition & DIFF_NODE_BIT; break;
+	}
+    }
+    if (do_it) {
+	addDependency(node, dep, condition);
+    }
+}
+
+static void
+addDependent(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
 {
     Vector *node_deps = makeVector(node->dependents);
-    setPush(node_deps, (Object *) dep);
+    Dependency *cond_dep;
+    assert((dep->type == OBJ_DAGNODE), "DEP IS NOT A DAGNODE!");
+    cond_dep = dependencyNew(dep, condition);
+    if (!setPush(node_deps, (Object *) cond_dep)) {
+	objectFree((Object *) cond_dep, FALSE);
+    }
 }
 
 void
-addDep(DagNode *node, DagNode *dep)
+addDep(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
 {
-    addDependency(node, dep);
-    addDependent(dep, node);
+    assert((dep->type == OBJ_DAGNODE), "DEP IS NOT A DAGNODE!");
+    assert((node->type == OBJ_DAGNODE), "NODE IS NOT A DAGNODE!");
+    addDependency(node, dep, condition);
+    addDependent(dep, node, condition);
+}
+
+static void
+rmFromDepVector(Vector *vec, DagNode *node)
+{
+    int i;
+    Dependency *dep;
+    EACH(vec, i) {
+	dep = (Dependency *) ELEM(vec, i);
+	if (dep->dependency == node) {
+	    vectorRemove(vec, i);
+	    objectFree((Object *) dep, FALSE);
+	}
+    }
 }
 
 static void
 rmDep(DagNode *node, DagNode *dep)
 {
     if (dep->dependents) {
-	setDel(dep->dependents, (Object *) node);
+	rmFromDepVector(dep->dependents, node);
     }
     if (node->dependencies) {
-	setDel(node->dependencies, (Object *) dep);
+	rmFromDepVector(node->dependencies, dep);
     }
 }
 
+/* This takes a vector of DagNodes or references to DagNodes. */
 static void
 addDepsVector(DagNode *node, Vector *deps)
 {
     int i;
+    Object *obj;
+    Dependency *dep;
+
     EACH(deps, i) {
-	addDep(node, (DagNode *) dereference(ELEM(deps, i)));
+	obj = dereference(ELEM(deps, i));
+	if (obj->type == OBJ_DAGNODE) {
+	    addDep(node, (DagNode *) obj, 0);
+	}
+	else {
+	    dep = (Dependency *) obj;
+	    addDep(node, dep->dependency, dep->condition);
+	    objectFree((Object *) dep, FALSE);
+	}
     }
 }
 
@@ -390,7 +455,6 @@ conditionForDep(xmlNode *node)
     if (condition_str) {
 	stringLowerOld(condition_str);
 	elem = contents = stringSplit(condition_str, &separators);
-	dbgSexp(contents);
 	while (elem) {
 	    head = ((String *) elem->car)->value;
 	    if (streq(head, "build")) {
@@ -411,8 +475,9 @@ conditionForDep(xmlNode *node)
 
 	objectFree((Object *) condition_str, TRUE);
 	objectFree((Object *) contents, TRUE);
+	return inverted? (ALL_BUILDTYPE_BITS - bitset): bitset;
     }
-    return inverted? (ALL_BUILDTYPE_BITS - bitset): bitset;
+    return 0;
 }
 
 static Vector *
@@ -423,18 +488,17 @@ explicitDepsForNode(
     BuildTypeBitSet parent_condition)
 {
     Vector *vector = NULL;
+    int i;
     Vector *next;
     Object *elem;
+    Object *tmp;
     xmlNode *dep_node;
     String *fqn;
     String *pqn;
-    BuildTypeBitSet condition = conditionForDep(node);
-
-    if (!condition) {
-	condition = parent_condition;
-    }
+    BuildTypeBitSet condition;
 
     if (isDependencySet(node)) {
+	condition = conditionForDep(node);
 	for (dep_node = node->children;
 	     dep_node = nextDependency(dep_node);
 	     dep_node = dep_node->next) 
@@ -452,10 +516,15 @@ explicitDepsForNode(
 	}
     }
     else {
+	condition = parent_condition;
 	dep_node = node;
 	if (fqn = nodeAttribute(dep_node, "fqn")) {
 	    if (elem = hashGet(nodes_by_fqn, (Object *) fqn)) {
 		vector = vectorNew(10);
+		if (condition) {
+		    elem = (Object *) dependencyNew((DagNode *) elem, 
+						    condition);
+		}
 		vectorPush(vector, elem);
 	    }
 	    objectFree((Object *) fqn, TRUE);
@@ -463,11 +532,18 @@ explicitDepsForNode(
 	else if (pqn = nodeAttribute(dep_node, "pqn")) {
 	    if (elem = hashGet(nodes_by_pqn, (Object *) pqn)) {
 		vector = cons2Vector((Cons *) elem);
+		if (condition) {
+		    EACH(vector, i) {
+			elem = dereference(ELEM(vector, i));
+			elem = (Object *) dependencyNew((DagNode *) elem, 
+							condition);
+			ELEM(vector, i) = elem;
+		    }
+		}
 	    }
 	    objectFree((Object *) pqn, TRUE);
 	}
     }
-
     return vector;
 }
 
@@ -536,7 +612,7 @@ addExplicitDepsForNode(
 	    xnode_key = stringNew(this->fqn->value);
 	    hashAdd(nodes_by_fqn, (Object *) xnode_key, (Object *) this);
 	    vectorPush(nodes, (Object *) this);
-	    addDep(node, this);
+	    addDep(node, this, 0);
 	}	
 	else {
 	    if (!deps) {
@@ -683,6 +759,7 @@ hashByFqn(Vector *vector)
 
     EACH(vector, i) {
 	node = (DagNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	key = stringDup(node->fqn);
 
 	if (old = hashAdd(hash, (Object *) key, (Object *) node)) {
@@ -706,6 +783,7 @@ hashByPqn(Vector *vector)
 
     EACH(vector, i) {
 	node = (DagNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	pqn = xmlGetProp(node->dbobject, "pqn");
 	if (pqn) {
 	    key = stringNew(pqn);
@@ -717,6 +795,7 @@ hashByPqn(Vector *vector)
 		entry = consNew(new, NULL);
 		hashAdd(hash, (Object *) key, (Object *) entry);
 	    }
+	    xmlFree(pqn);
 	}
     }
     return hash;
@@ -732,6 +811,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	assert(node->dbobject, "identifyParents: no dbobject node");
 	parent = findAncestor(node->dbobject, "dbobject");
 	parent_fqn  = nodeAttribute(parent, "fqn");
@@ -756,12 +836,14 @@ identifyDeps(Vector *nodes, Hash *byfqn)
     BEGIN {
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	    if (node->parent) {
-		addDep(node, node->parent);
+		addDep(node, node->parent, 0);
 	    }
 	}
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	    addExplicitDepsForNode(node, nodes, byfqn, bypqn);
 	}
     }
@@ -802,29 +884,30 @@ static void
 replaceXnodeRefs(DagNode *xnode)
 {
     DagNode *node = xnode->xnode_for;
-    DagNode *dependency;
+    Dependency *dependency;
     DagNode *dep;
     int i;
 
     if (!xnode->dependencies) {
-	dbgSexp(xnode);
 	RAISE(TSORT_ERROR, 
 	      newstr("No realised dependency for Xnode %s", xnode->fqn->value));
     }
-    dependency = (DagNode *) CURDEP(xnode);    
+    dependency = (Dependency *) CURDEP(xnode);    
 
     /* Remove all references to our xnode */
     EACH(xnode->dependents, i) {
-	dep = (DagNode *) ELEM(xnode->dependents, i);
-	setDel(dep->dependencies, (Object *) xnode);
+	dependency = (Dependency *) ELEM(xnode->dependents, i);
+	dep = dependency->dependency;
+	rmFromDepVector(dep->dependencies, xnode);
     }
     EACH(xnode->dependencies, i) {
-	dep = (DagNode *) ELEM(xnode->dependencies, i);
-	setDel(dep->dependents, (Object *) xnode);
+	dependency = (Dependency *) ELEM(xnode->dependencies, i);
+	dep = dependency->dependency;
+	rmFromDepVector(dep->dependents, xnode);
     }
 
     /* Add a full dependency to node for the xnode's actual dependency. */
-    addDep(node, dependency);
+    addDep(node, dependency->dependency, dependency->condition);
 }
 
 /* Remove xnodes from the sorted nodes vector, and bring the realised
@@ -837,8 +920,14 @@ eliminateXnodes(Vector *nodes)
     int read_idx, write_idx;
     for (read_idx = write_idx = 0; read_idx < nodes->elems; read_idx++) {
 	node = (DagNode *) ELEM(nodes, read_idx);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	if (node->xnode_for) {
 	    replaceXnodeRefs(node);
+	    // TODO: Make this freeing work better
+	    objectFree((Object *) node->dependencies, TRUE);
+	    objectFree((Object *) node->dependents, TRUE);
+	    node->dependencies = NULL;
+	    node->dependents = NULL;
 	    objectFree((Object *) node, TRUE);
 	    ELEM(nodes, read_idx) = NULL;
 	}
@@ -859,10 +948,12 @@ findRebuildNodesInVector(
     Vector *foundlist)
 {
     int i;
+    Dependency *dep;
     DagNode *node;
     if (vector) {
 	EACH(vector, i) {
-	    node = (DagNode *) ELEM(vector, i);
+	    dep = (Dependency *)ELEM(vector, i);
+	    node = dep->dependency;
 	    if (node->status == RESOLVED) {
 		if (inBuildTypeBitSet(looking_for, node->build_type)) {
 		    recordRebuildNode(node, foundlist);
@@ -877,8 +968,7 @@ recordRebuildNode(DagNode *node, Vector *nodelist)
 {
     node->status = UNVISITED;
     vectorPush(nodelist, (Object *) node);
-    findRebuildNodesInVector(node->dependents, BUILD_NODE_BIT + 
-				  DIFF_NODE_BIT + EXISTS_NODE_BIT,
+    findRebuildNodesInVector(node->dependents, BUILD_NODE_BIT + DIFF_NODE_BIT,
 				  nodelist);
     findRebuildNodesInVector(node->dependencies, DROP_NODE_BIT,
 				  nodelist);
@@ -907,6 +997,7 @@ identifyRebuildNodes(Vector *nodes)
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
+	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	if (node->status == RESOLVED) {
 	    if (node->build_type == REBUILD_NODE) {
 		checkRebuildParent(node);
@@ -930,7 +1021,8 @@ static void
 duplicateDeps(DagNode *primary, DagNode *dup)
 {
     Vector *deps;
-    DagNode *dep;
+    Dependency *dep;
+    DagNode *depnode;
     boolean doing_dependencies = FALSE;
     int i;
     while (TRUE) {
@@ -938,15 +1030,16 @@ duplicateDeps(DagNode *primary, DagNode *dup)
 
 	if (deps) {
 	    EACH(deps, i) {
-		dep = (DagNode *) ELEM(deps, i);
-		if (dep->duplicate_node) {
-		    dep = dep->duplicate_node;
+		dep = (Dependency *) ELEM(deps, i);
+		depnode = dep->dependency;
+		if (depnode->duplicate_node) {
+		    depnode = depnode->duplicate_node;
 		}
 		if (doing_dependencies) {
-		    addDep(dup, dep);
+		    addDep(dup, depnode, dep->condition);
 		}
 		else {
-		    addDep(dep, dup);
+		    addDep(depnode, dup, dep->condition);
 		}
 	    }
 	}
@@ -971,6 +1064,7 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 
     EACH(rebuild_nodes, i) {
 	primary = (DagNode *) ELEM(rebuild_nodes, i);
+	assert(primary->type == OBJ_DAGNODE, "UH OH!");
 	dup = dagnodeNew(primary->dbobject, DROP_NODE);
 	primary->build_type = BUILD_NODE;
 	primary->duplicate_node = dup;
@@ -978,11 +1072,15 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
     }
     EACH(rebuild_nodes, i) {
 	primary = (DagNode *) ELEM(rebuild_nodes, i);
+	assert(primary->type == OBJ_DAGNODE, "UH OH!");
 	dup = primary->duplicate_node;
 	duplicateDeps(primary, dup);
-	addDep(primary, dup);
+        addDep(primary, dup, 0);
 	if (primary->breaker_for) {
 	    dup->breaker_for = primary->breaker_for->duplicate_node;
+	    /* Duplicate thd dbobject so that it can be safely freed in
+	     * dgnodeFree() */
+	    dup->dbobject = xmlCopyNode(primary->dbobject, 1);
 	}
     }
     return;
@@ -1049,8 +1147,10 @@ isCycleNode(DagNode *this, DagNode *breaker)
     int i;
     EACH(breaker->dependents, i) {
 	if (this == (DagNode *) ELEM(breaker->dependents, i)) {
+	assert(this->type == OBJ_DAGNODE, "UH OH!");
 	    return TRUE;
 	}
+	assert(this->type == OBJ_DAGNODE, "UH OH!");
     }
     return FALSE;
 }
@@ -1059,9 +1159,9 @@ static void
 eliminateDependency(DagNode *node, int i, DagNode *breaker)
 {
     DagNode *dep = (DagNode *) ELEM(node->original_dependencies, i);
-    
+
     assert(dep->type == OBJ_DAGNODE,
-	   "Need to be able to handle REFERENCES");
+	   "Need to be able to handle DEPENDENCY OBJECTS");
     /* Remove from original_dependendencies first.  Since we are
      * iterating over that vector in a caller, we will simply replace
      * the entry with one on breaker, which should be safe. */
@@ -1085,6 +1185,7 @@ findCycleEnd(DagNode *start, DagNode *breaker)
 	continuing = FALSE;
 	EACH(this->original_dependencies, i) {
 	    next = (DagNode *) ELEM(this->original_dependencies, i);
+	    assert(next->type == OBJ_DAGNODE, "NEED TO HANDLE DEP TYPES");
 	    if (isCycleNode(next, breaker)) {
 		this = next;
 		continuing = TRUE;
@@ -1099,12 +1200,14 @@ static void
 maybeInvertCycle(DagNode *node, DagNode *breaker)
 {
     int i;
+    Dependency *dep;
     DagNode *this;
     Vector *deps;
 
     if (node == breaker->breaker_for) {
 	EACH(node->original_dependencies, i) {
-	    this = (DagNode *) ELEM(node->original_dependencies, i);
+	    dep = (Dependency *) ELEM(node->original_dependencies, i);
+	    this = dep->dependency;
 	    if (isCycleNode(this, breaker)) {
 		/* First, eliminate the dependency on our cycle_node.  */
 		eliminateDependency(node, i, breaker);
@@ -1114,7 +1217,7 @@ maybeInvertCycle(DagNode *node, DagNode *breaker)
 		this = findCycleEnd(this, breaker);
 		
 		/* Note that this dependency has to be inverted.  */
-		setPush(node->dependencies, (Object *) this);
+		addConditionalDependency(node, this, 0);
 	    }
 	}
     }
@@ -1147,6 +1250,7 @@ static void
 redirectDependencies(Vector *nodes)
 {
     DagNode *node;
+    Dependency *dep;
     DagNode *depnode;
     Vector *deps;
     Object *ref;
@@ -1168,13 +1272,15 @@ redirectDependencies(Vector *nodes)
 	
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
+    	assert(node->type == OBJ_DAGNODE, "UH OH!");
 	if (deps = node->original_dependencies) {
 	    EACH(deps, j) {
-		depnode = (DagNode *) ELEM(deps, j);
+		dep = (Dependency *) ELEM(deps, j);
+		depnode = dep->dependency;
 		action = getRedirectionAction(node, depnode);
 		switch (action) {
 		case REDIRECT_INVERT:
-		    setPush(depnode->dependencies, (Object *) node);
+		    addConditionalDependency(depnode, node, dep->condition);
 		    break;
 		case REDIRECT_CHECK_CYCLE:
 		    /* If node is part of a cycle for which we have a
@@ -1186,7 +1292,7 @@ redirectDependencies(Vector *nodes)
 		    maybeInvertCycle(node, depnode);
 		    /* Deliberate flow-thru to the next case. */
 		case REDIRECT_RETAIN:
-		    setPush(node->dependencies, (Object *) depnode);
+		    addConditionalDependency(node, depnode, dep->condition);
 		    /* Deliberate flow-thru to the next case. */
 		case REDIRECT_DROP:
 		    break;
@@ -1213,8 +1319,8 @@ redirectDependencies(Vector *nodes)
      * useful. */
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	objectFree((Object *) node->dependents, FALSE);
-	objectFree((Object *) node->original_dependencies, FALSE);
+	objectFree((Object *) node->dependents, TRUE);
+	objectFree((Object *) node->original_dependencies, TRUE);
 	node->original_dependencies = NULL;
 	node->dependents = NULL;
     }
@@ -1224,7 +1330,8 @@ static void
 promoteFallback(Vector *nodes, DagNode *instigator, DagNodeBuildType build_type)
 {
     int i;
-    DagNode *dep;
+    Dependency *dep;
+    DagNode *depnode;
     DagNode *closer;
 
     instigator->fallback_build_type = build_type;
@@ -1236,8 +1343,9 @@ promoteFallback(Vector *nodes, DagNode *instigator, DagNodeBuildType build_type)
     instigator->duplicate_node = closer;
 
     EACH(instigator->dependencies, i) {
-	dep = (DagNode *) ELEM(instigator->dependencies, i);
-	addDep(closer, dep);
+	dep = (Dependency *) ELEM(instigator->dependencies, i);
+	depnode = dep->dependency;
+	addDep(closer, depnode, 0);
     }
 }
 
@@ -1273,13 +1381,13 @@ activateFallback(Vector *nodes, DagNode *xnode)
     DagNode *instigator = getFallbackInstigator(nodes, xnode);
     DagNode *closer = instigator->duplicate_node;
 
-    addDep(xnode, instigator);
+    addDep(xnode, instigator, 0);
     /* Since xnode can only be given one dependency, we place the closer
      * dependency on the node for which this is an xnode.   Note that
      * the normal inversion which would be performed on this
      * dependency will not happen as fallback nodes are handled
      * specially.  */
-    addDep(closer, xnode->xnode_for);
+    addDep(closer, xnode->xnode_for, 0);
 }
 
 
@@ -1292,7 +1400,7 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
     char *new_fqn = newstr("%s%s", breaker_type->value, fqn_suffix);
     xmlNode *breaker_dbobject = xmlCopyNode(dbobject, 1);
     DagNode *breaker;
-    DagNode *dep;
+    Dependency *dep;
     int i;
     xmlSetProp(breaker_dbobject, "type", breaker_type->value);
     xmlUnsetProp(breaker_dbobject, "cycle_breaker");
@@ -1307,8 +1415,8 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
     /* Copy dependencies of from_node to breaker.  We will eliminate
      * unwanted ones later. */
     EACH (from_node->dependencies, i) {
-	dep = (DagNode *) ELEM(from_node->dependencies, i);
-	addDep(breaker, dep);
+	dep = (Dependency *) ELEM(from_node->dependencies, i);
+	addDep(breaker, dep->dependency, dep->condition);
     }
     return breaker;
 }
@@ -1332,26 +1440,30 @@ static void
 processBreaker(DagNode *node, DagNode *breaker)
 {
     DagNode *node_in_cycle;
+    Dependency *dep;
     DagNode *breaker_for;
 
     /* Remove the cycle node in breaker that we copied from the
      * original node (breaker_for). */
-    breaker_for = (DagNode *) CURDEP(node);
-    node_in_cycle = (DagNode *) CURDEP(breaker_for);
+    dep = (Dependency *) CURDEP(node);
+    breaker_for = dep->dependency;
+    dep = (Dependency *) CURDEP(breaker_for);
+    node_in_cycle = dep->dependency;
     rmDep(breaker, node_in_cycle);
 
     /* Add deps to the breaker from each node in the cycle. */
     node_in_cycle = breaker_for;
     while (node_in_cycle != node) {
-	addDep(node_in_cycle, breaker);
+	addDep(node_in_cycle, breaker, 0);
 
-	node_in_cycle = (DagNode *) CURDEP(node_in_cycle);
+	dep = (Dependency *) CURDEP(node_in_cycle);
+	node_in_cycle = dep->dependency;
     }
 
     /* Replace existing dependency on cycle_node from node, with a
      * dependency on breaker. */
     rmDep(node, breaker_for);
-    addDep(node, breaker);
+    addDep(node, breaker, 0);
 }
 
 static void
@@ -1364,6 +1476,7 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
     volatile int i;
     char *errmsg;
     char *tmp;
+    Dependency *dep;
     DagNode *depnode;
     Object *reference;
     DagNode *cycle_node;
@@ -1373,7 +1486,8 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 	EACH(deps, i) {
 	    node->dep_idx = i;
 	    errmsg = NULL;
-	    depnode = (DagNode *) ELEM(deps, i);
+	    dep = (Dependency *) ELEM(deps, i);
+	    depnode = dep->dependency;
 	    BEGIN {
 		tsort_node(nodes, depnode, results);
 	    }
@@ -1467,7 +1581,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 {
     switch (node->status) {
     case VISITING:
-	RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("%s", node->fqn->value), node);
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
     case UNVISITED: 
 	BEGIN {
 	    node->status = VISITING;
@@ -1540,6 +1655,8 @@ resolving_tsort(Vector *nodes)
 void
 prepareDagForBuild(Vector **p_nodes)
 {
+    int i;
+    DagNode *node;
     Vector *sorted = resolving_tsort(*p_nodes);
     Vector *rebuild_nodes = NULL;
     objectFree((Object *) *p_nodes, FALSE);
@@ -1557,6 +1674,7 @@ prepareDagForBuild(Vector **p_nodes)
     duplicateRebuildNodes(sorted, rebuild_nodes);
     //fprintf(stderr, "\n\n4\n\n");
     //showVectorDeps(sorted);
+
     objectFree((Object *) rebuild_nodes, FALSE);
     redirectDependencies(sorted);
     //fprintf(stderr, "\n\n5\n\n");

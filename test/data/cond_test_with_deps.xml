@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20120727130734">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+    <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.12" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
+      <dbobject type="tablespace" name="pg_default" qname="pg_default" fqn="tablespace.cluster.pg_default">
+        <dependencies>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <tablespace name="pg_default" owner="marc" location=""/>
+      </dbobject>
+      <dbobject type="role" name="marc" qname="marc" fqn="role.cluster.marc">
+        <role name="marc" login="y" max_connections="-1">
+          <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser"/>
+          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit"/>
+          <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole"/>
+          <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb"/>
+          <privilege priv="superuser"/>
+          <privilege priv="inherit"/>
+          <privilege priv="createrole"/>
+          <privilege priv="createdb"/>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="regress" qname="regress" fqn="role.cluster.regress">
+        <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+          <config type="client_min_messages" value="warning"/>
+          <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.regress.superuser"/>
+          <privilege priv="superuser"/>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="wibble" qname="wibble" fqn="role.cluster.wibble">
+        <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1"/>
+      </dbobject>
+      <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.cluster.regressdb">
+        <dependencies>
+          <dependency fqn="tablespace.cluster.pg_default"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="-1">
+          <comment>'old comment'</comment>
+        </database>
+      </dbobject>
+    </cluster>
+  </dbobject>
+  <dbobject type="database" visit="true" name="regressdb" qname="regressdb" fqn="database.cluster.regressdb">
+    <dependencies>
+      <dependency fqn="dbincluster.cluster.regressdb"/>
+    </dependencies>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="-1">
+      <comment>'old comment'</comment>
+      <dbobject type="grant" parent="database.regressdb" name="temporary:public" pqn="grant.regressdb.temporary:public" fqn="grant.regressdb.temporary:public:regress" owner="regress" subtype="database" on="regressdb">
+        <context name="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <grant from="regress" to="public" with_grant="no" priv="temporary"/>
+      </dbobject>
+      <dbobject type="grant" parent="database.regressdb" name="connect:public" pqn="grant.regressdb.connect:public" fqn="grant.regressdb.connect:public:regress" owner="regress" subtype="database" on="regressdb">
+        <context name="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <grant from="regress" to="public" with_grant="no" priv="connect"/>
+      </dbobject>
+      <dbobject type="grant" parent="database.regressdb" name="create:regress" pqn="grant.regressdb.create:regress" fqn="grant.regressdb.create:regress:regress" owner="regress" subtype="database" on="regressdb">
+        <context name="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <grant from="regress" to="regress" with_grant="no" priv="create"/>
+      </dbobject>
+      <dbobject type="grant" parent="database.regressdb" name="temporary:regress" pqn="grant.regressdb.temporary:regress" fqn="grant.regressdb.temporary:regress:regress" owner="regress" subtype="database" on="regressdb">
+        <context name="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <grant from="regress" to="regress" with_grant="no" priv="temporary"/>
+      </dbobject>
+      <dbobject type="grant" parent="database.regressdb" name="connect:regress" pqn="grant.regressdb.connect:regress" fqn="grant.regressdb.connect:regress:regress" owner="regress" subtype="database" on="regressdb">
+        <context name="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <grant from="regress" to="regress" with_grant="no" priv="connect"/>
+      </dbobject>
+      <dbobject type="schema" name="public" qname="public" fqn="schema.regressdb.public">
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <schema name="public" owner="regress" privs="{regress=UC/regress,=UC/regress}">
+          <comment>'old public schema'</comment>
+          <dbobject type="grant" parent="schema.regressdb.public" name="usage:regress" pqn="grant.regressdb.public.usage:regress" fqn="grant.regressdb.public.usage:regress:regress" owner="regress" subtype="schema" on="public">
+            <context name="owner" value="regress" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
+            <grant from="regress" to="regress" with_grant="no" priv="usage"/>
+          </dbobject>
+          <dbobject type="grant" parent="schema.regressdb.public" name="create:regress" pqn="grant.regressdb.public.create:regress" fqn="grant.regressdb.public.create:regress:regress" owner="regress" subtype="schema" on="public">
+            <context name="owner" value="regress" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
+            <grant from="regress" to="regress" with_grant="no" priv="create"/>
+          </dbobject>
+          <dbobject type="grant" parent="schema.regressdb.public" name="usage:public" pqn="grant.regressdb.public.usage:public" fqn="grant.regressdb.public.usage:public:regress" owner="regress" subtype="schema" on="public">
+            <context name="owner" value="regress" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
+            <grant from="regress" to="public" with_grant="no" priv="usage"/>
+          </dbobject>
+          <dbobject type="grant" parent="schema.regressdb.public" name="create:public" pqn="grant.regressdb.public.create:public" fqn="grant.regressdb.public.create:public:regress" owner="regress" subtype="schema" on="public">
+            <context name="owner" value="regress" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
+            <grant from="regress" to="public" with_grant="no" priv="create"/>
+          </dbobject>
+          <dbobject type="table" fqn="table.regressdb.public.thing" name="thing" qname="public.thing">
+            <context name="owner" value="wibble" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.cluster.wibble"/>
+              <dependency fqn="tablespace.cluster.pg_default"/>
+              <dependency-set fallback="fallback.grant.wibble.superuser" condition="build">
+                <dependency pqn="grant.regressdb.public.create:public"/>
+                <dependency pqn="grant.regressdb.public.create:marc"/>
+                <dependency pqn="grant.regressdb.public.create:wibble"/>
+                <dependency fqn="privilege.cluster.wibble.superuser"/>
+              </dependency-set>
+              <dependency-set fallback="fallback.grant.wibble.superuser" condition="not build">
+                <dependency pqn="grant.regressdb.public.usage:public"/>
+                <dependency pqn="grant.regressdb.public.usage:marc"/>
+                <dependency pqn="grant.regressdb.public.usage:wibble"/>
+                <dependency fqn="privilege.cluster.wibble.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <table name="thing" schema="public" owner="wibble" tablespace="pg_default">
+              <comment>'thing table'</comment>
+            </table>
+          </dbobject>
+        </schema>
+      </dbobject>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.marc.superuser"/>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.regress.superuser"/>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.wibble.superuser"/>
+    </database>
+  </dbobject>
+</dump>

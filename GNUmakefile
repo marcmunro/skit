@@ -28,6 +28,8 @@ DEFAULT: help
 
 DB_CONNECT = $(DB_PORT) $(DB_HOST) $(DB_CLUSTER) $(DB_VERSION) $(DB_USER)
 
+DEBUG = 1
+
 include $(top_builddir)/Makefile.global
 SUBDIRS = src test dbscript regress doc
 include $(SUBDIRS:%=%/Makefile)

@@ -47,11 +47,11 @@ $(HTMLINDEX): $(DOC_SOURCES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ $(XHTML) $<
 
 man:	
-	@echo Make the man pages (TODO)
+	@echo "Make the man pages (TODO)"
 
 # Remove the shared library and all generated/intermediate files
 doc_clean: 
-	@echo Cleaning doc (TODO)
+	@echo "Cleaning doc (TODO)"
 
 # Describe what this makefile can build
 doc_help: 

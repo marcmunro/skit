@@ -46,7 +46,7 @@ objTypeName(Object *obj)
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
-    case OBJ_CONDDEP: return "OBJ_CONDDEP";
+    case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
     return "UNKNOWN_OBJECT_TYPE";
 }
@@ -481,28 +481,33 @@ xnodeNew(DagNode *source)
 void
 dagnodeFree(DagNode *node)
 {
+    if (node->breaker_for) {
+	/* This is a breaker node, so the xmlnode is not from a
+	 * document, but rather has been created on the fly. */
+	xmlFreeNode(node->dbobject);
+    }
     objectFree((Object *) node->fqn, TRUE);
-    objectFree((Object *) node->dependencies, FALSE);
-    objectFree((Object *) node->original_dependencies, FALSE);
-    objectFree((Object *) node->dependents, FALSE);
+    objectFree((Object *) node->dependencies, TRUE);
+    objectFree((Object *) node->original_dependencies, TRUE);
+    objectFree((Object *) node->dependents, TRUE);
     skfree(node);
 }
 
-CondDep *
-condDepNew(DagNode *dep,
+Dependency *
+dependencyNew(DagNode *dep,
 	   BuildTypeBitSet condition)
 {
-    CondDep *new = skalloc(sizeof(CondDep));
-    new->type = OBJ_CONDDEP;
+    Dependency *new = skalloc(sizeof(Dependency));
+    new->type = OBJ_DEPENDENCY;
     new->condition = condition;
     new->dependency = dep;
     return new;
 }
 
 void
-condDepFree(CondDep *cd)
+dependencyFree(Dependency *dep)
 {
-    skfree(cd);
+    skfree(dep);
 }
 
 /* Free a dynamically allocated object. */
@@ -545,8 +550,8 @@ objectFree(Object *obj, boolean free_contents)
 	    cursorFree((Cursor *) obj); break;
 	case OBJ_DAGNODE:
 	    dagnodeFree((DagNode *) obj); break;
-	case OBJ_CONDDEP:
-	    condDepFree((CondDep *) obj); break;
+	case OBJ_DEPENDENCY: 
+	    dependencyFree((Dependency *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -581,31 +586,16 @@ nameForBuildType(DagNodeBuildType build_type)
 char *
 buildBitsStr(BuildTypeBitSet bitset)
 {
-    char *result = skalloc(10);
+    char *result = skalloc(4);
     result[0] = '\0';
-    if (inBuildTypeBitSet(bitset, BUILD_NODE)) {
+    if (inBuildTypeBitSet(bitset, BUILD_NODE_BIT)) {
 	strcat(result, "B");
     }
-    if (inBuildTypeBitSet(bitset, DROP_NODE)) {
+    if (inBuildTypeBitSet(bitset, DROP_NODE_BIT)) {
 	strcat(result, "D");
     }
-    if (inBuildTypeBitSet(bitset, DIFF_NODE)) {
+    if (inBuildTypeBitSet(bitset, DIFF_NODE_BIT)) {
 	strcat(result, "F");
-    }
-    if (inBuildTypeBitSet(bitset, EXISTS_NODE)) {
-	strcat(result, "E");
-    }
-    if (inBuildTypeBitSet(bitset, REBUILD_NODE)) {
-	strcat(result, "R");
-    }
-    if (inBuildTypeBitSet(bitset, ARRIVE_NODE)) {
-	strcat(result, "A");
-    }
-    if (inBuildTypeBitSet(bitset, DEPART_NODE)) {
-	strcat(result, "L");
-    }
-    if (inBuildTypeBitSet(bitset, BUILD_AND_DROP_NODE)) {
-	strcat(result, "2");
     }
     return result;
 }
@@ -622,6 +612,7 @@ objectSexp(Object *obj)
     char *tmp;
     char *tmp2;
     char *tmp3;
+
     if (!obj) {
 	return newstr("nil");
     }
@@ -659,11 +650,11 @@ objectSexp(Object *obj)
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
 		      nameForBuildType(((DagNode *) obj)->build_type), 
 		      ((DagNode *) obj)->fqn->value); 
-    case OBJ_CONDDEP:
-	tmp = buildBitsStr(((CondDep *) obj)->condition);
-	tmp2 = nameForBuildType(((CondDep *) obj)->dependency->build_type);
-	tmp3 = newstr("<%s ?%s?(%s) %s>", objTypeName(obj), tmp, tmp2,
-		      ((CondDep *) obj)->dependency->fqn->value);
+    case OBJ_DEPENDENCY:
+	tmp = buildBitsStr(((Dependency *) obj)->condition);
+	tmp2 = nameForBuildType(((Dependency *) obj)->dependency->build_type);
+	tmp3 = newstr("<%s {%s}(%s) %s>", objTypeName(obj), tmp, tmp2,
+		      ((Dependency *) obj)->dependency->fqn->value);
 	skfree(tmp);
 	return tmp3;
     case OBJ_CURSOR:
@@ -952,7 +943,7 @@ checkObj(Object *obj, void *chunk)
 	case OBJ_CONNECTION: 
 	case OBJ_CURSOR: 
 	case OBJ_TUPLE: 
-	case OBJ_CONDDEP: 
+	case OBJ_DEPENDENCY:
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
 	      newstr("checkObj: no check yet for objects of type %s",
 		     objTypeName(obj)));

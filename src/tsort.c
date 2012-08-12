@@ -364,11 +364,13 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 {
     Vector *deps;
     int i;
+    Dependency *dep;
     DagNode *depnode;
 
     if (deps = node->dependencies) {
 	for (i = 0; i < deps->elems; i++) {
-	    depnode = (DagNode *) deps->contents->vector[i];
+	    dep = (Dependency *) deps->contents->vector[i];
+	    depnode = dep->dependency;
 	    tsort_node(nodes, depnode, results);
 	}
     }

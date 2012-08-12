@@ -175,7 +175,7 @@ usage()
 {
     fprintf(stderr, "Usage: skit_test -r\n"
 	    "       skit_test [-n] [test_suite_name [test_name]]\n"
-	    "       skit_test -c\n"
+	    "       skit_test -s\n"
 	    " -n is nofork for debugging\n"
 	    " -s is for generating suppressions\n"
 	    " -r is reporting only for showing available tests\n");
@@ -245,6 +245,11 @@ main(int argc, char *argv[])
     sr = srunner_create(base_suite());
     global_sr = sr;
     if (nofork) {
+	if (streq(test_name, "")) {
+	    fprintf(stderr, "ERROR: Can only use -n with single tests\n");
+	    usage();
+	    return EXIT_FAILURE;
+	}
 	fprintf(stderr, "NOT FORKING!!!!\n");
 	srunner_set_fork_status(sr, CK_NOFORK);
     }
