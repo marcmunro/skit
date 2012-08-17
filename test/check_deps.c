@@ -798,8 +798,8 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
-    //ADD_TEST(tc_core, build_type_bitsets);
-    //ADD_TEST(tc_core, depset_deps1);
+    ADD_TEST(tc_core, build_type_bitsets);
+    ADD_TEST(tc_core, depset_deps1);
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag2_rebuild);
@@ -809,9 +809,7 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_both);
     ADD_TEST(tc_core, cond);
 
-
-    //ADD_TEST(tc_core, fallback_drop);
-    //ADD_TEST(tc_core, fallback_rebuild);
+    ADD_TEST(tc_core, fallback);
 				
     suite_add_tcase(s, tc_core);
 
@@ -821,14 +819,6 @@ deps_suite(void)
 
 #ifdef wibble
 TODO: 
-
-- Check TODO comments in deps.c
-
-- Check untested code in deps.c
-
-- Check UH OH! assertions in deps.c
-
-- Check on disabled unit tests, annd re-enable, comment or eliminate
 
 - Get back to diffs implementation
 

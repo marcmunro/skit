@@ -34,8 +34,8 @@ static int oldstderr;
 static pid_t outpid = 0;
 static pid_t errpid = 0;
 
-// Use fd4 to provide an output stream for catcher to write the captured
-// output
+/* Use fd4 to provide an output stream for catcher to write the captured
+ * output */
 FILE *
 returnStream()
 {
@@ -46,8 +46,8 @@ returnStream()
     return fp;
 }
 
-// Use fd4 to provide an input stream for parent to read data from the kids
-//
+/* Use fd4 to provide an input stream for parent to read data from the kids
+ */
 FILE *
 resultsStream()
 {
@@ -58,13 +58,15 @@ resultsStream()
     return fp;
 }
 
-// Run by the children to figure out whether to print the output they capture.
+/* Run by the children to figure out whether to print the output they capture.
+ */
 static boolean
 chkPrint()
 {
     char *line = malloc(20);
 
-    fgets(line, 20, stdin);  // Read first line to figure out whether to print
+    fgets(line, 20, stdin);  /* Read first line to figure out whether to
+			      * print */
 
     if (streq(line, "NOPRINT\n")) {
 	free(line);
@@ -78,7 +80,8 @@ chkPrint()
     return TRUE;
 }
 
-// malloc and realloc a dynamic buffer as required.
+/* malloc and realloc a dynamic buffer as required.
+ */
 static void
 resizeBuf(char **p_buf, int *len)
 {
@@ -92,8 +95,8 @@ resizeBuf(char **p_buf, int *len)
     }
 }
 
-// Read into a dynamically sized buffer from the given FILE source,
-// printing to print it output is required
+/* Read into a dynamically sized buffer from the given FILE source,
+ * printing to print it output is required */
 static void
 readToBuffer(char **p_buffer, FILE *instream, FILE *printstream)
 {
@@ -175,11 +178,11 @@ readStdout()
     close(stdoutpipe[1]);  // Close un-needed pipes
     close(retoutpipe[0]);
 
-    // Redirect stdoutpipe[0] to stdin
+    /* Redirect stdoutpipe[0] to stdin */
     dup2(stdoutpipe[0], 0);
     close(stdoutpipe[0]);
 
-    // Redirect return pipe to fd4
+    /* Redirect return pipe to fd4 */
     dup2(retoutpipe[1], 4);
 
     catcher(stdout, FALSE);
@@ -188,23 +191,23 @@ readStdout()
 static void
 readStderr()
 {
-    close(stdoutpipe[1]);  // Close un-needed pipes
+    close(stdoutpipe[1]);  /* Close un-needed pipes */
     close(retoutpipe[0]);
     close(stderrpipe[1]);
     close(reterrpipe[0]);
 
-    // Redirect stdoutpipe[0] to stdin
+    /* Redirect stdoutpipe[0] to stdin */
     dup2(stderrpipe[0], 0);
     close(stderrpipe[0]);
 
-    // Redirect return pipe to fd4
+    /* Redirect return pipe to fd4 */
     dup2(reterrpipe[1], 4);
 
     catcher(stderr, FALSE);
 }
 
-// Open pipes for communication with child process, and create those
-// children to capture stdout and stderr.
+/* Open pipes for communication with child process, and create those
+ * children to capture stdout and stderr. */
 static void
 openPipes()
 {
@@ -212,20 +215,21 @@ openPipes()
     int ret;
 
     if (! done) {
-	openPipe(stdoutpipe);  	// Open pipes for capture of stdout streams
+	openPipe(stdoutpipe);  	/* Open pipes for capture of stdout
+				   streams */
 	openPipe(retoutpipe);	
 
 	if ((outpid = fork()) == 0) {
-	    // Child process
+	    /* Child process */
 	    readStdout();
 	    exit(0);
 	}
 
-	// Parent process
-	close(stdoutpipe[0]);  	// Close un-needed pipes
+	/* Parent process */
+	close(stdoutpipe[0]);  	/* Close un-needed pipes */
 	close(retoutpipe[1]);
 
-	openPipe(stderrpipe);	// Open pipes for stderr capture
+	openPipe(stderrpipe);	/* Open pipes for stderr capture */
 	openPipe(reterrpipe);
 
 	if ((errpid = fork()) == 0) {
@@ -236,7 +240,7 @@ openPipes()
 	//fprintf(stderr, "stdout reader is %d\n", outpid);
 	//fprintf(stderr, "stderr reader is %d\n", errpid);
 	//fprintf(stderr, "I am %d\n", getpid());
-	close(stderrpipe[0]);  // Close un-needed pipes
+	close(stderrpipe[0]);  /* Close un-needed pipes */
 	close(reterrpipe[1]);
     }
     done = TRUE;
@@ -247,13 +251,13 @@ beginCapture(int print)
 {
     openPipes();
 
-    oldstdout = dup(1);		// Redirect stdout
+    oldstdout = dup(1);		/* Redirect stdout */
     dup2(stdoutpipe[1], 1);
-    oldstderr = dup(2);		// Redirect stderr
+    oldstderr = dup(2);		/* Redirect stderr */
     dup2(stderrpipe[1], 2);
 
-    if (print) {		// Signal the kids to display or not the 
-	printf("PRINT\n");	// captured output.
+    if (print) {		/* Signal the kids to display or not the */
+	printf("PRINT\n");	/* captured output. */
 	fprintf(stderr, "PRINT\n");
     }
     else {
@@ -262,7 +266,8 @@ beginCapture(int print)
     }
 }
 
-// Describe the termination status of a kid.
+/* Describe the termination status of a kid.
+ */
 static void
 showStatus(char *name, int status)
 {
@@ -284,16 +289,16 @@ endCqpture(char **p_stdout, char **p_stderr)
     int status1;
     int status2;
 
-    close(stdoutpipe[1]);	// Close stdout to kid
-    dup2(oldstdout, 1);  	// Restore previous stdout
-    dup2(retoutpipe[0], 4);     // Redirect fd4 for stdout from kid
+    close(stdoutpipe[1]);	/* Close stdout to kid */
+    dup2(oldstdout, 1);  	/* Restore previous stdout */
+    dup2(retoutpipe[0], 4);     /* Redirect fd4 for stdout from kid */
 
     readToBuffer(p_stdout, resultsStream(), NULL);
     close(retoutpipe[0]);
 
     close(stderrpipe[1]);
     dup2(oldstderr, 2);
-    dup2(reterrpipe[0], 4);     // Redirect fd4 for stderr from kid
+    dup2(reterrpipe[0], 4);     /* Redirect fd4 for stderr from kid */
     readToBuffer(p_stderr, resultsStream(), NULL);
 
     if (waitpid(outpid, &status1, 0) != outpid) {
@@ -330,7 +335,7 @@ restore_handler()
     }
 }
 
-// Run test_fn with stdout and stderr captured.
+/* Run test_fn with stdout and stderr captured. */
 int 
 captureOutput(TestRunner *test_fn,
 	      void *param,
@@ -356,5 +361,4 @@ captureOutput(TestRunner *test_fn,
     restore_handler();
     return result;
 }
-
 

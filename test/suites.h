@@ -21,6 +21,9 @@
 extern SRunner *global_sr;
 
 
+// The TestRunner function type
+typedef int (TestRunner)(void *);
+
 // Suite definition functions
 extern Suite *utils_suite(void);
 extern Suite *exceptions_suite(void);
@@ -45,7 +48,9 @@ extern Document *getDoc(char *name);
 
 
 // capture.c
-extern void catchAndRelease();
+extern int captureOutput(TestRunner *test_fn, void *param, int print,
+			 char **p_stdout,  char **p_stderr,
+			 int *p_signal);
 
 // redirect.c
 extern void redirect_stdout(char *filename);
@@ -58,14 +63,7 @@ extern void end_redirects();
 void registerTestSQL();
 
 
-// The TestRunner function type
-typedef int (TestRunner)(void *);
 
-
-// 
-extern int captureOutput(TestRunner *test_fn, void *param, int print,
-			 char **p_stdout,  char **p_stderr,
-			 int *p_signal);
 
 #define TEST_TIMEOUT 180
 
@@ -87,21 +85,8 @@ extern int captureOutput(TestRunner *test_fn, void *param, int print,
 	tcase_add_test(p1, p2);			\
     }
 
-#define ADD_TEST_NOREPORT(p1,p2)		\
-    if (check_test(#p2, FALSE)) {		\
-        tcase_set_timeout (p1, TEST_TIMEOUT);	\
-	tcase_add_test(p1, p2);			\
-    }
-
 #define ADD_TEST_RAISE_SIGNAL(p1,p2,p3)			\
     if (check_test(#p2, TRUE)) {			\
         tcase_set_timeout (p1, TEST_TIMEOUT);	\
 	tcase_add_test_raise_signal(p1, p2, p3);	\
     }
-
-#define ADD_TEST_NOREPORT_RAISE_SIGNAL(p1,p2,p3)	\
-    if (check_test(#p2, FALSE)) {			\
-        tcase_set_timeout (p1, TEST_TIMEOUT);	\
-	tcase_add_test_raise_signal(p1, p2, p3);	\
-    }
-

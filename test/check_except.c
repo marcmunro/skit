@@ -346,30 +346,80 @@ START_TEST(exceptions_new11)
 }
 END_TEST
 
-// Check that RAISE() fails properly when no exception handler is defined
-START_TEST(exceptions_new12)
+static int
+do_exceptions_new12(void *ignore)
 {
     RAISE();
     FREEMEMWITHCHECK;
 }
+
+
+// Check that RAISE() fails properly when no exception handler is defined
+START_TEST(exceptions_new12)
+{
+    char *stderr = malloc(2000);
+    char *stdout = malloc(2000);
+    int   signal;
+    captureOutput(do_exceptions_new12, NULL, FALSE, &stdout, &stderr, &signal);
+
+    if (signal != SIGTERM) {
+	fail("Expected SIGTERM, got %d\n", signal);
+    }
+    fail_unless(contains(stderr, "Stupid attempt to re-raise"));
+    free(stdout);
+    free(stderr);
+}
 END_TEST
 
-// Check that RAISE(x) fails properly when no exception handler is defined
-START_TEST(exceptions_new13)
+static int
+do_exceptions_new13(void *ignore)
 {
     RAISE(71, newstr("LOOKY HERE"));
     FREEMEMWITHCHECK;
 }
+
+// Check that RAISE(x) fails properly when no exception handler is defined
+START_TEST(exceptions_new13)
+{
+    char *stderr = malloc(2000);
+    char *stdout = malloc(2000);
+    int   signal;
+    captureOutput(do_exceptions_new13, NULL, FALSE, &stdout, &stderr, &signal);
+
+    if (signal != SIGTERM) {
+	fail("Expected SIGTERM, got %d\n", signal);
+    }
+    fail_unless(contains(stderr, "LOOKY HERE"));
+    free(stdout);
+    free(stderr);
+}
 END_TEST
 
-// Check that RAISE fails properly from an exception block
-// when no exception handler is defined
-START_TEST(exceptions_new14)
+static int
+do_exceptions_new14(void *ignore)
 {
     int a;
     a = catcher2(14);
     fail_unless(a == 22, "Function result 22 expected, got %d\n", a);
     FREEMEMWITHCHECK;
+}
+
+// Check that RAISE fails properly from an exception block
+// when no exception handler is defined
+START_TEST(exceptions_new14)
+{
+    char *stderr = malloc(2000);
+    char *stdout = malloc(2000);
+    int   signal;
+    captureOutput(do_exceptions_new14, NULL, FALSE, &stdout, &stderr, &signal);
+
+    if (signal != SIGTERM) {
+	fail("Expected SIGTERM, got %d\n", signal);
+    }
+    fail_unless(contains(stderr, "TEST CASE 14", 
+			 "exceptions_new14"));
+    free(stdout);
+    free(stderr);
 }
 END_TEST
 
@@ -551,6 +601,7 @@ START_TEST(exceptions_when_finally)
     }
     END;
 
+    objectFree((Object *) str, TRUE);
     fail_unless(a == 98, "Function result 98 expected, got %d\n", a);
     FREEMEMWITHCHECK;
 }
@@ -599,7 +650,7 @@ exceptions_suite(void)
     TCase *tc_core = tcase_create("ECore");
     ADD_TEST(tc_core, exceptions_1);
     ADD_TEST(tc_core, exceptions_2);
-    ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_3, SIGTERM);
+    ADD_TEST_RAISE_SIGNAL(tc_core, exceptions_3, SIGTERM);
     ADD_TEST(tc_core, exceptions_4);
     ADD_TEST(tc_core, exceptions_5);
     ADD_TEST(tc_core, exceptions_6);
@@ -615,12 +666,11 @@ exceptions_suite(void)
     ADD_TEST(tc_core, exceptions_new9);
     ADD_TEST(tc_core, exceptions_new10);
     ADD_TEST(tc_core, exceptions_new11);
-    //ADD_TEST(tc_core, exceptions_when_finally);
+    ADD_TEST(tc_core, exceptions_when_finally);
     ADD_TEST(tc_core, exceptions_when_finally2);
-    // TODO: The following two tests require stderr to be captured.  
-    //ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_new12, SIGTERM);
-    //ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_new13, SIGTERM);
-    //ADD_TEST_NOREPORT_RAISE_SIGNAL(tc_core, exceptions_new14, SIGTERM);
+    ADD_TEST(tc_core, exceptions_new12);
+    ADD_TEST(tc_core, exceptions_new13);
+    ADD_TEST(tc_core, exceptions_new14);
     ADD_TEST(tc_core, exceptions_new15);
     suite_add_tcase(s, tc_core);
 

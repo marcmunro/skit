@@ -181,83 +181,6 @@ showVectorDeps(Vector *nodes)
     }
 }
 
-#ifdef wibble
-/* Ensure that node has dep as a dependent */
-static void 
-checkDependent(DagNode *node, DagNode *dep)
-{
-    int i;
-    DagNode *this;
-    if (node->dependents) {
-	EACH(node->dependents, i) {
-THIS IS WRONG!
-	    this = (DagNode *) ELEM(node->dependents, i);
-	    if (this == dep) {
-		return;
-	    }
-	}
-    }
-    RAISE(TSORT_ERROR, 
-	  newstr("Node %s is missing %s as a dependent.\n",
-		 node->fqn->value, dep->fqn->value));
-}
-
-/* Ensure that node has dep as a dependency */
-static void 
-checkDependency(DagNode *node, DagNode *dep)
-{
-    int i;
-    DagNode *this;
-    if (node->dependencies) {
-	EACH(node->dependencies, i) {
-THIS IS WRONG!
-	    this = (DagNode *) ELEM(node->dependencies, i);
-	    if (this == dep) {
-		return;
-	    }
-	}
-    }
-    RAISE(TSORT_ERROR, 
-	  newstr("Node %s is missing %s as a dependency.\n",
-		 node->fqn->value, dep->fqn->value));
-}
-
-static void
-checkDeps(DagNode *node)
-{
-    int i;
-    DagNode *dep;
-    if (node) {
-	if (node->dependencies) {
-	    EACH(node->dependencies, i) {
-THIS IS WRONG!
-		dep = (DagNode *) ELEM(node->dependencies, i);
-		checkDependent(dep, node);
-	    }
-	}
-	if (node->dependents) {
-	    EACH(node->dependents, i) {
-THIS IS WRONG!
-		dep = (DagNode *) ELEM(node->dependents, i);
-		checkDependency(dep, node);
-	    }
-	}
-    }
-}
-
-void
-checkVectorDeps(Vector *nodes)
-{
-    int i;
-    DagNode *node;
-    EACH(nodes, i) {
-THIS IS WRONG!
-	node = (DagNode *) ELEM(nodes, i);
-	checkDeps(node);
-    }
-}
-#endif
-
 
 #define DEPENDENCIES_STR "dependencies"
 #define DEPENDENCY_STR "dependency"
@@ -759,7 +682,7 @@ hashByFqn(Vector *vector)
 
     EACH(vector, i) {
 	node = (DagNode *) ELEM(vector, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	assert(node->type == OBJ_DAGNODE, "Incorrect node type");
 	key = stringDup(node->fqn);
 
 	if (old = hashAdd(hash, (Object *) key, (Object *) node)) {
@@ -783,7 +706,7 @@ hashByPqn(Vector *vector)
 
     EACH(vector, i) {
 	node = (DagNode *) ELEM(vector, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	assert(node->type == OBJ_DAGNODE, "Incorrect node type");
 	pqn = xmlGetProp(node->dbobject, "pqn");
 	if (pqn) {
 	    key = stringNew(pqn);
@@ -811,7 +734,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	assert(node->dbobject, "identifyParents: no dbobject node");
 	parent = findAncestor(node->dbobject, "dbobject");
 	parent_fqn  = nodeAttribute(parent, "fqn");
@@ -836,14 +759,14 @@ identifyDeps(Vector *nodes, Hash *byfqn)
     BEGIN {
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	    if (node->parent) {
 		addDep(node, node->parent, 0);
 	    }
 	}
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	    addExplicitDepsForNode(node, nodes, byfqn, bypqn);
 	}
     }
@@ -920,14 +843,9 @@ eliminateXnodes(Vector *nodes)
     int read_idx, write_idx;
     for (read_idx = write_idx = 0; read_idx < nodes->elems; read_idx++) {
 	node = (DagNode *) ELEM(nodes, read_idx);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	if (node->xnode_for) {
 	    replaceXnodeRefs(node);
-	    // TODO: Make this freeing work better
-	    objectFree((Object *) node->dependencies, TRUE);
-	    objectFree((Object *) node->dependents, TRUE);
-	    node->dependencies = NULL;
-	    node->dependents = NULL;
 	    objectFree((Object *) node, TRUE);
 	    ELEM(nodes, read_idx) = NULL;
 	}
@@ -997,7 +915,7 @@ identifyRebuildNodes(Vector *nodes)
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	assert(node->type == OBJ_DAGNODE, "UH OH!");
+	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	if (node->status == RESOLVED) {
 	    if (node->build_type == REBUILD_NODE) {
 		checkRebuildParent(node);
@@ -1064,7 +982,7 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 
     EACH(rebuild_nodes, i) {
 	primary = (DagNode *) ELEM(rebuild_nodes, i);
-	assert(primary->type == OBJ_DAGNODE, "UH OH!");
+	assert(primary->type == OBJ_DAGNODE, "incorrect node type!");
 	dup = dagnodeNew(primary->dbobject, DROP_NODE);
 	primary->build_type = BUILD_NODE;
 	primary->duplicate_node = dup;
@@ -1072,7 +990,7 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
     }
     EACH(rebuild_nodes, i) {
 	primary = (DagNode *) ELEM(rebuild_nodes, i);
-	assert(primary->type == OBJ_DAGNODE, "UH OH!");
+	assert(primary->type == OBJ_DAGNODE, "incorrect node type!");
 	dup = primary->duplicate_node;
 	duplicateDeps(primary, dup);
         addDep(primary, dup, 0);
@@ -1147,10 +1065,10 @@ isCycleNode(DagNode *this, DagNode *breaker)
     int i;
     EACH(breaker->dependents, i) {
 	if (this == (DagNode *) ELEM(breaker->dependents, i)) {
-	assert(this->type == OBJ_DAGNODE, "UH OH!");
+	    assert(this->type == OBJ_DAGNODE, "incorrect node type");
 	    return TRUE;
 	}
-	assert(this->type == OBJ_DAGNODE, "UH OH!");
+	assert(this->type == OBJ_DAGNODE, "incorrect node type");
     }
     return FALSE;
 }
@@ -1272,7 +1190,7 @@ redirectDependencies(Vector *nodes)
 	
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-    	assert(node->type == OBJ_DAGNODE, "UH OH!");
+    	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	if (deps = node->original_dependencies) {
 	    EACH(deps, j) {
 		dep = (Dependency *) ELEM(deps, j);
@@ -1364,7 +1282,8 @@ getFallbackInstigator(Vector *nodes, DagNode *xnode)
 	    return fallback;
 	}
 	else {
-	    RAISE(NOT_IMPLEMENTED_ERROR, newstr("ARG"));
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("NOT SURE WHAT IS GOING ON HERE"));
 	}
     }
 }

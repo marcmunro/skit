@@ -596,29 +596,6 @@ evalStr(char *str)
     skfree(tmp);
 }
 
-START_TEST(print)
-{
-    char *args[] = {"./skit", "--print", "test.xml"};
-    Document *doc;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-
-    BEGIN {
-	process_args2(3, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 START_TEST(dbtype)
 {
     char *args[] = {"./skit", "--dbtype", "postgres"};
@@ -793,8 +770,8 @@ END_TEST
 START_TEST(scatter)
 {
     char *args[] = {"./skit", "-t", "scatter.xml", "-q",
-		    "xx", "--path", "./dbdump", "--checkonly"};
-    //"--list", "-g", "--print", "--full"};
+		    "test/data/cond_test.xml", "--path", 
+		    "./dbdump", "--checkonly"};
     Document *doc;
     char *bt;
     fileinfo_t *fi;
@@ -1024,10 +1001,11 @@ START_TEST(diff)
 }
 END_TEST
 
-START_TEST(list)
+static int
+do_list(void *ignore)
 {
     char *args[] = {"./skit", "--list", 
-		    "diff.out", "--print", "--full"};
+		    "test/data/cond_test.xml", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1048,22 +1026,40 @@ START_TEST(list)
 
     FREEMEMWITHCHECK;
 }
+
+
+START_TEST(list)
+{
+    char *stderr = malloc(50000);
+    char *stdout = malloc(50000);
+    int   signal;
+    captureOutput(do_list, NULL, FALSE, &stdout, &stderr, &signal);
+
+    if (signal != 0) {
+	fail("Unexpected signal: %d\n", signal);
+    }
+    /* Ensure dboject for cluster has been created */
+    fail_unless(contains(stdout, "fqn=\"cluster\""));
+    free(stdout);
+    free(stderr);
+}
 END_TEST
 
-START_TEST(deps)
+static int
+do_deps(void *ignore)
 {
     char *args[] = {"./skit", "--adddeps",
-		    "zz3", "--print", "--full"};
+		    "test/data/cond_test.xml", "--print", "--full"};
     Document *doc;
     char *bt;
 
     initBuiltInSymbols();
     initTemplatePath(".");
-    showFree(4247);
+    //showFree(4247);
     //showMalloc(1909);
 
     BEGIN {
-	process_args2(3, args);
+	process_args2(5, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1073,6 +1069,22 @@ START_TEST(deps)
     END;
 
     FREEMEMWITHCHECK;
+}
+
+START_TEST(deps)
+{
+    char *stderr = malloc(50000);
+    char *stdout = malloc(50000);
+    int   signal;
+    captureOutput(do_deps, NULL, FALSE, &stdout, &stderr, &signal);
+
+    if (signal != 0) {
+	fail("Unexpected signal: %d\n", signal);
+    }
+    /* Ensure dboject for cluster has been created */
+    fail_unless(contains(stdout, "fqn=\"cluster\""));
+    free(stdout);
+    free(stderr);
 }
 END_TEST
 
@@ -1105,20 +1117,19 @@ params_suite(void)
     //ADD_TEST(tc_core, gather);
     //ADD_TEST(tc_core, generate3);
 
-    // Not sure what these are
-    //ADD_TEST(tc_core, list);
-    //ADD_TEST(tc_core, deps);
+    // Various parameters that must work
+    ADD_TEST(tc_core, list);
+    ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
-    //ADD_TEST(tc_core, print);
 				
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects
 
     // ??
-    //ADD_TEST(tc_core, scatter);
+    ADD_TEST(tc_core, scatter);
 
     suite_add_tcase(s, tc_core);
 
