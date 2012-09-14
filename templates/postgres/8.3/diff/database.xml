@@ -13,7 +13,7 @@
       <text/>
     </element>
 
-    <xi:include href="skitfile:diff/schema.xml"/>
+    <xi:include href="skitfile:diff/schemata.xml"/>
   </dbobject>
 
   <!-- Nothing to do for dbincluster, except tell diff that it exists -->

@@ -77,7 +77,7 @@
  * At the same time as handling optional dependencies, we also try to
  * deal with cyclic dependencies.  In some cases cyclic dependencies are
  * allowable, if the objects are built in stages.  Eg if A depends on B
- * and B depends on A, we can build a minimal A, then build Bm and then
+ * and B depends on A, we can build a minimal A, then build B and then
  * build the full A.  For this to work, nodes have to be defined with
  * specific cycle-breaking mechanisms as part of their dbobject
  * definitions.  This is handled by the adddeps.xsl transform.
@@ -91,7 +91,7 @@
  *   B --> C
  *   C --> A
  *
- * We would pick one of the nodes in the cycle (A) and add a cycle
+ * We would pick one of the nodes in the cycle (say, A) and add a cycle
  * breaker (Ab) as follows:
  *
  *  A --> Ab
@@ -123,22 +123,6 @@
  * performed at each node.
  */
 
-
-/* Problems/issues to fix:
- * 1) Need to be able to add optional deps on owner being a superuser.
- *    This means that privs assigned to roles must be considered to be
- *    objects in their own right so that we can depend on them.
- * 2) Need the ability to have a fall-back position for depsets when
- *    no dep is found.  Using the fallback would result in something
- *    like switching the owner into superuser mode (grant superuser to
- *    owner, then do operation, then revoke).
- * 3) For inverted deps we need to be able to determine whether any of
- *    the inverted deps were satisfied and, if not, use the fall-back
- *    option. 
- * Test cases:
- * 1)  create objects owned by X as a superuser with no other rights.
- * 2 and 3) As above, then remove all rights from X.
- */
 
 #include <string.h>
 #include "skit_lib.h"
@@ -652,8 +636,7 @@ buildTypeForNode(Node *node)
 
 
 
-/* A TraverserFn to identify dbobject nodes, adding them to our vector
- * our vector.
+/* A TraverserFn to identify dbobject nodes, adding them to our vector.
  */
 static Object *
 addNodeToVector(Object *this, Object *vector)
@@ -777,6 +760,10 @@ identifyDeps(Vector *nodes, Hash *byfqn)
     END;
 }
 
+/* Create an initial DAG from the nodes within doc.  This DAG does not
+ * take into account any redirection of dependencies that must be done
+ * for (for example) drop operations.
+ */
 Vector *
 nodesFromDoc(Document *doc)
 {
@@ -786,6 +773,7 @@ nodesFromDoc(Document *doc)
     BEGIN {
 	(void) xmlTraverse(doc->doc->children, &addNodeToVector, 
 			   (Object *) nodes);
+	//dbgSexp(nodes);
 	byfqn = hashByFqn(nodes);
 	identifyParents(nodes, byfqn);
 	identifyDeps(nodes, byfqn);
@@ -1013,15 +1001,20 @@ typedef enum {
     REDIRECT_UNIMPLEMENTED
 } RedirectAction;
 
+/* Return the type of redirect action needed to satisfy dependencies
+ * from node to dep.  Eg from a build node to a buld node, the
+ * dependency is kept as is (REDRIRECT_RETAIN), and from a drop node to
+ * a drop node, the dependency must be inverted (REDIRECT_INVERT).
+ */
 static RedirectAction 
 getRedirectionAction(DagNode *node, DagNode *dep)
 {
     RedirectAction result;
     static RedirectAction redirect_action[4][4] = {
 	{REDIRECT_RETAIN, REDIRECT_RETAIN,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* BUILD_NODE */
+	 REDIRECT_RETAIN, REDIRECT_DROP},          /* BUILD_NODE */
 	{REDIRECT_INVERT, REDIRECT_INVERT,
-	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DROP_NODE */
+	 REDIRECT_RETAIN, REDIRECT_DROP},          /* DROP_NODE */
 	{REDIRECT_UNIMPLEMENTED, REDIRECT_UNIMPLEMENTED,
 	 REDIRECT_UNIMPLEMENTED, REDIRECT_DROP},          /* DIFF_NODE */
 	{REDIRECT_RETAIN, REDIRECT_RETAIN,

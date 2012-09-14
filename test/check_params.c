@@ -858,7 +858,7 @@ START_TEST(generate)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
-                    "--generate", "--drop",  "--print", "--full"};
+                    "--generate", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -890,24 +890,28 @@ START_TEST(generate)
 }
 END_TEST
 
-START_TEST(difflist)
+START_TEST(generate2)
 {
-    char *args[] = {"./skit", "-t", "diff.xml", 
-		    "regress/scratch/regressdb_dump3a.xml", 
-		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--list", "-g"};
+    /* Same preconditions as for extract above. */
+    char *args[] = {"./skit",
+		    "--dbtype=postgres", "--connect", 
+		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
+                    "--generate", "--build",   
+		    "regress/scratch/regressdb_dump1a.xml", 
+		    "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
 
     initBuiltInSymbols();
     initTemplatePath(".");
-    //registerTestSQL();
+    registerTestSQL();
     //showFree(1205);
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(8, args);
+	//process_args2(10, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -929,7 +933,8 @@ END_TEST
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "sz", "sz3",
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--generate"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -961,16 +966,13 @@ START_TEST(diffgen)
 }
 END_TEST
 
-START_TEST(diff)
+START_TEST(difflist)
 {
-    // Full size diff with the following params.
-    //char *args[] = {"./skit", "-t", "diff.xml", "zz", 
-    //		    "zz3"};
-    // Smaller diff with these params.
-    char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml", 
-		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--print", "--full"};
+    char *args[] = {"./skit", "-t", "diff.xml", 
+		    "test/data/diffs_1_a.xml", 
+		    "test/data/diffs_1_b.xml", 
+		    "--list", "-g"};
+    //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -982,7 +984,6 @@ START_TEST(diff)
 
     BEGIN {
 	process_args2(7, args);
-	//process_args2(10, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1000,6 +1001,80 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
+
+START_TEST(diff)
+{
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
+		    "--print", "--full", "--xxxx"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //showFree(3563);
+    //showMalloc(5865);
+    //trackMalloc(4097);
+
+    BEGIN {
+	process_args2(7, args);
+	//process_args2(10, args);
+	doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(diff2)
+{
+    char *args[] = {"./skit", "--diff", 
+		    "test/data/diffs_1_a.xml", 
+		    "test/data/diffs_1_b.xml", 
+		    "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //showFree(3563);
+    //showMalloc(5865);
+    //trackMalloc(4097);
+
+    BEGIN {
+	process_args2(6, args);
+	//process_args2(10, args);
+	doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 
 static int
 do_list(void *ignore)
@@ -1088,6 +1163,10 @@ START_TEST(deps)
 }
 END_TEST
 
+
+
+
+
 Suite *
 params_suite(void)
 {
@@ -1111,11 +1190,11 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
 
     // When we start back on diff, these need to be re-instated
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diff2);
+    ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
-    //ADD_TEST(tc_core, generate3);
 
     // Various parameters that must work
     ADD_TEST(tc_core, list);

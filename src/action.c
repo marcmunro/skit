@@ -65,6 +65,15 @@ docStackPop()
     return (Document *) result;
 }
 
+void
+docStackFree()
+{
+    Object *obj;
+    while (obj = (Object *) docStackPop()) {
+	objectFree(obj, TRUE);
+    }
+}
+
 Object *
 docStackHead()
 {
@@ -888,7 +897,7 @@ executeAction(String *action, Hash *params)
 	//checkSymbols();
     }
     EXCEPTION(ex) {
-	objectFree((Object *) docStackPop(), TRUE);
+	docStackFree();
     }
     FINALLY {
 	finishWithConnection();
@@ -909,6 +918,7 @@ finalAction()
 	(void) executePrint(NULL);
     }
     if (docstack) {
+	docStackFree();
 	RAISE(PARAMETER_ERROR, 
 	      newstr("Unprocessed documents still exist on the stack"));
     }

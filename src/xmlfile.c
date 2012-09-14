@@ -1806,6 +1806,7 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 
     BEGIN {
 	result = doDiff(diffrules, do_swap != NULL);
+	//dNode(result);
     }
     EXCEPTION(ex);
     FINALLY {

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="schema" key="name">
+    <attribute name="owner"/>
+    <!-- TODO: Deal with privs - this file is only partially implemented
+         (for testing rebuild mechanism in diffs) -->
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

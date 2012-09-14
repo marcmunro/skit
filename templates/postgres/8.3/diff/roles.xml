@@ -20,6 +20,15 @@
     <element type="comment">
       <text/>
     </element>
-
   </dbobject>
+
+  <dbobject type="privilege" key="fqn">
+    <!-- Privileges have been made into dbobjects so that they can be
+         properly tracked as dependencies.  Note that the privilige
+         dbobject really means the grant of a privilege.  The diffs for
+         privileges are dealt with as elements of roles (above).  This
+         dbobject definition is necessary only to allow diffs to be
+         properly recorded (as "None") for the privilege dbobjects -->
+  </dbobject>
+
 </skit:inclusion>  

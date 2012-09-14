@@ -335,7 +335,7 @@ nextWord(FILE *file)
 	c = fgetc(file);
     }
     buffer[i++] = '\0';
-    buffer = realloc(buffer, i);
+    buffer = skrealloc(buffer, i);
     return stringNewByRef(buffer);
 }
 

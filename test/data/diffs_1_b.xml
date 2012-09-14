@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<dump dbtype="postgres" dbname="x" time="20120914154222">
+  <cluster type="postgres" port="5433 host=/var/run/postgresql" version="8.4.12" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
+    <role name="marc" login="y" max_connections="-1">
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+    </role>
+    <role name="postgres" login="y" max_connections="-1">
+      <privilege priv="superuser"/>
+      <privilege priv="inherit"/>
+      <privilege priv="createrole"/>
+      <privilege priv="createdb"/>
+    </role>
+    <tablespace name="pg_default" owner="postgres" location=""/>
+    <database name="x" owner="marc" encoding="UTF8" tablespace="pg_default" connections="-1">
+      <grant with_grant="no" priv="temporary" to="public" from="marc"/>
+      <grant with_grant="no" priv="connect" to="public" from="marc"/>
+      <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
+        <comment>'standard public schema'</comment>
+        <grant from="postgres" to="postgres" with_grant="no" priv="usage"/>
+        <grant from="postgres" to="postgres" with_grant="no" priv="create"/>
+        <grant from="postgres" to="public" with_grant="no" priv="usage"/>
+        <grant from="postgres" to="public" with_grant="no" priv="create"/>
+        <type name="t" schema="public" owner="marc" subtype="comptype" is_defined="t">
+          <column id="1" name="x" type="text" type_schema="pg_catalog"/>
+        </type>
+        <table name="x" schema="public" owner="marc" tablespace="pg_default">
+          <column colnum="1" name="y" type="t" type_schema="public" nullable="no" is_local="t"/>
+          <grant with_grant="yes" priv="trigger" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="references" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="rule" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="select" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="insert" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="update" default="yes" from="marc" to="marc"/>
+          <grant with_grant="yes" priv="delete" default="yes" from="marc" to="marc"/>
+        </table>
+      </schema>
+    </database>
+  </cluster>
+</dump>

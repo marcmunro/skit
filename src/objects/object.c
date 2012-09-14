@@ -815,6 +815,11 @@ printSexp(void *stream, char *prefix, Object *obj)
     skfree(tmp);
 }
 
+void pSexp(Object *obj)
+{
+    printSexp(stderr, "", obj);
+}
+
 Object *
 objSelect(Object *collection, Object *key)
 {

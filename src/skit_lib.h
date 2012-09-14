@@ -358,6 +358,7 @@ extern int objectCmp(Object *obj1, Object *obj2);
 extern void objectFree(Object *obj, boolean free_contents);
 extern char *objectSexp(Object *obj);
 extern void printSexp(void *stream, char *prefix, Object *obj);
+extern void pSexp(Object *obj);
 extern boolean isObject(Object *obj);
 extern Object *objectCopy(Object *obj);
 extern Object *objectEval(Object *obj);
@@ -599,6 +600,9 @@ extern void readDocDbver(Document *doc);
 extern xmlNode *getElement(xmlNode *node);
 extern xmlNode *getText(xmlNode *node);
 extern void printNode(FILE *output, char *label, xmlNode *node);
+extern void pNode(xmlNode *node);
+extern void dumpNode(FILE *output, xmlNode *node);
+extern void dNode(xmlNode *node);
 
 // exceptions.c functions are defined in exceptions.h
 

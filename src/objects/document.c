@@ -61,12 +61,42 @@ nodestr(xmlNode *node)
 }
 
 extern void
+dumpNode(FILE *output, xmlNode *node)
+{
+    xmlDoc *doc = xmlNewDoc((const xmlChar *) "1.0");
+    xmlNode *root = xmlNewNode(NULL, BAD_CAST "root");
+    xmlNode *copy = xmlCopyNode(node, 1);
+    xmlDocSetRootElement(doc, root);
+    xmlAddChildList(root, copy);
+
+    xmlChar *xmlbuf;
+    int buffersize;
+
+    xmlDocDumpFormatMemory(doc, &xmlbuf, &buffersize, 1);
+    fprintf(output, "%s", (char *) xmlbuf);
+    xmlFree(xmlbuf);
+    xmlFreeDoc(doc);
+}
+
+void
+dNode(xmlNode *node)
+{
+    dumpNode(stderr, node);
+}
+
+extern void
 printNode(FILE *output, char *label, xmlNode *node)
 {
     char *str = nodestr(node);
 
     fprintf(output, "%s %s\n", label, str);
     skfree(str);
+}
+
+void
+pNode(xmlNode *node)
+{
+    printNode(stderr, "", node);
 }
 
 Node *

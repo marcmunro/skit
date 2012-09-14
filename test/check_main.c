@@ -19,6 +19,7 @@
 #include <check.h>
 #include <string.h>
 #include "../src/skit_lib.h"
+#include "../src/exceptions.h"
 #include "suites.h"
 
 
@@ -127,6 +128,26 @@ START_TEST(sql_suppressions)
 }
 END_TEST
 
+START_TEST(xml_suppressions)
+{
+    char *args[] = {"./skit", "-t", "diff.xml"};
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    BEGIN {
+	process_args2(3, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 static boolean reporting_only = FALSE;
 static boolean nofork = FALSE;
 static boolean suppressions = FALSE;
@@ -135,7 +156,7 @@ static char suite_name[100];
 static char test_name[100];
 
 /* The suppressions suite is used to automagically generate suppresions
- * files for valgrind.  See valgrind/make_supression and test/Makefile
+ * files for valgrind.  See valgrind/make_suppression and test/Makefile
  * for more info.
  * To run the suppressions suite as a normal unit test use -s
  * eg: make unit TESTS="-s"
@@ -150,6 +171,7 @@ suppressions_suite(void)
     ADD_TEST(tc_s, hash_suppressions);
     ADD_TEST(tc_s, xmlreader_suppressions);
     ADD_TEST(tc_s, relaxng_suppressions);
+    ADD_TEST(tc_s, xml_suppressions);
     if (suppress_sql) {
 	ADD_TEST(tc_s, sql_suppressions);
     }
@@ -245,7 +267,7 @@ main(int argc, char *argv[])
     sr = srunner_create(base_suite());
     global_sr = sr;
     if (nofork) {
-	if (streq(test_name, "")) {
+	if ((!suppressions) && (streq(test_name, ""))) {
 	    fprintf(stderr, "ERROR: Can only use -n with single tests\n");
 	    usage();
 	    return EXIT_FAILURE;
