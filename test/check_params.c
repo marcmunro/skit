@@ -930,6 +930,44 @@ START_TEST(generate2)
 }
 END_TEST
 
+START_TEST(deps2)
+{
+    /* Same preconditions as for extract above. */
+    char *args[] = {"./skit",
+		    "--adddeps",
+		    "regress/scratch/regressdb_dump1a.xml", 
+		    "--print", "--full"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(299978);
+
+    BEGIN {
+	process_args2(5, args);
+	//process_args2(10, args);
+	//doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -1206,6 +1244,8 @@ params_suite(void)
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects
+    //ADD_TEST(tc_core, generate2); // Testing deps for columns
+    //ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??
     ADD_TEST(tc_core, scatter);
@@ -1216,3 +1256,25 @@ params_suite(void)
 }
 
 
+/*
+PLAN: add columns as dbobjects in their own right.
+      Have diffs processed as pairs of objects; either:
+      1) drop and build if a diff requires recreation (as for types, for
+      example) 
+      2) diffprep and diffcomplete, otherwise
+
+      The drop or diffprep nodes will use "old" dependencies (check the
+      restrict attribute of the dependencies element).  The build or
+      diffcomplete nodes will use the new dependencies.
+
+      This requires changing the dep handling to be able to deal with
+      these new diff node types.
+
+      Once this is done, we can start testing the rebuild mechanism.
+      Diff test files have been prepared in ../test/data/diffs_1_a.xml
+      and ../test/data/diffs_1_b.xml
+
+      See check_params diff2 and difflist for initial test teplates
+*/
+      
+   

@@ -143,7 +143,7 @@ START_TEST(adddeps)
 
     loadInFile(filename);
     doc = docStackPop();
-    //printSexp(stderr, "DOC: ", doc);
+    //dbgSexp(doc);
     
     objectFree((Object *) doc, TRUE);
     objectFree((Object *) filename, TRUE);
