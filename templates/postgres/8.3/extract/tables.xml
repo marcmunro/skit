@@ -100,6 +100,13 @@
 	      </column>	
 	    </skit:foreach>
 
+	    <skit:foreach from="colnums" var="colnum">
+	      <depends>
+		<skit:attr name="column" 
+			   expr="(select columns (try-to-int colnum) 'name')"/>
+	      </depends>	
+	    </skit:foreach>
+
 	    <!-- Identify functions/casts on which we depend -->
 	    <skit:runsql var="dependency" file="sql/getdeps.sql"
 		         params='(list (select tuple "oid") 
@@ -107,10 +114,10 @@
 					 "(&apos;pg_proc&apos;)")'>
 	      <depends>
 		<skit:attr name="cast" 
-			   expr="(select cast_sigs (select tuple 'objoid'))"/> 
+			   expr="(select cast_sigs (select tuple 'objoid'))"/>	
 		<skit:attr name="function"
 			   expr="(select function_sigs 
-				         (select tuple 'objoid'))"/>
+				 (select tuple 'objoid'))"/>
 	      </depends>
 	    </skit:runsql>
 
@@ -141,6 +148,7 @@
 	    <skit:attr name="indexprs"/>
 	    <skit:attr name="indpred"/>
 
+	    <!-- Provide column definitions -->
 	    <skit:foreach from="colnums" var="colnum" index="idx"
 			  filter="(not (string= colnum '0'))">
 	      <column>
@@ -150,12 +158,27 @@
 	      </column>	
 	    </skit:foreach>
 
+	    <!-- All column dependencies -->
+	    <skit:runsql var="coldep" file="sql/coldeps.sql"
+			 params='(list (select indices "oid"))'>
+	      <depends>	
+		<skit:attr name="column"
+			   expr="(select columns 
+				 (try-to-int (select tuple 'colnum')) 
+				 'name')"/>
+	      </depends>	
+	    </skit:runsql>
+
+	    <!-- Operator class dependencies per column?
+	         TODO: Find a test case for this or remove it. -->
+<!--
 	    <skit:foreach from="colnums" var="colnum" index="idx">
 	      <skit:let>
 		<skit:var name="opclass" 
 			  expr="(select operator_classes 
 				(select opclasses (- idx 1)))"/>
 		<skit:if test="opclass">
+		<skit:exec expr="(debug 'OPCLASS DEP' opclass)"/>
 		  <depends>
 		    <skit:attr name="type" expr="'operator class'"/>
 		    <skit:attr name="name"
@@ -167,15 +190,16 @@
 		</skit:if>
 	      </skit:let>	
 	    </skit:foreach>
+-->
+	    <!-- Function dependencies -->
 
 	    <skit:runsql var="dependency" file="sql/getdeps.sql"
 		         params='(list (select tuple "oid") 
 				         "pg_class" 
 					 "(&apos;pg_proc&apos;)")'>
-	      <skit:exec expr="(debug 'DEP' dependency)"/>
+	      <!-- <skit:exec expr="(debug 'DEP' dependency)"/> -->
 	      <depends>
-		<skit:attr name="type" expr="'function'"/>
-		<skit:attr name="name"
+		<skit:attr name="function"
 			   expr="(select function_sigs 
 				         (select dependency 'objoid'))"/>
 	      </depends>

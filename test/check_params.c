@@ -890,6 +890,34 @@ START_TEST(generate)
 }
 END_TEST
 
+
+START_TEST(dep2)
+{
+    char *args[] = {"./skit", "-t", "add_deps.xml",
+		    "regress/scratch/regressdb_dump1a.xml", 
+		    "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    registerTestSQL();
+    //showFree(1205);
+    //showMalloc(299978);
+
+    BEGIN {
+	process_args2(5, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+}
+END_TEST
+
+
 START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
@@ -911,18 +939,11 @@ START_TEST(generate2)
 
     BEGIN {
 	process_args2(8, args);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
@@ -1228,10 +1249,10 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
 
     // When we start back on diff, these need to be re-instated
-    ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, diff2);
-    ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, diff2);
+    //ADD_TEST(tc_core, difflist);
+    //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
 
     // Various parameters that must work
@@ -1244,8 +1265,8 @@ params_suite(void)
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects
-    //ADD_TEST(tc_core, generate2); // Testing deps for columns
-    //ADD_TEST(tc_core, deps2); // Testing deps for columns
+    ADD_TEST(tc_core, generate2); // Testing deps for columns
+    ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??
     ADD_TEST(tc_core, scatter);

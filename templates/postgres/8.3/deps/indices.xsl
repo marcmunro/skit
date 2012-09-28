@@ -6,26 +6,40 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Indices -->
   <xsl:template name="depends">
+    <!-- Add explicitly identified dependencies -->
     <xsl:for-each select="depends">
       <xsl:choose>
-	<xsl:when test="@type='operator class'">
+	<xsl:when test="@operator_class">
 	  <dependency fqn="{concat('operator_class.', 
 			           ancestor::database/@name,
-			           '.', @name)}"/>
+			           '.', @operator_class)}"/>
 	</xsl:when>
-	<xsl:when test="@type='function'">
+	<xsl:when test="@function">
 	  <dependency fqn="{concat('function.', ancestor::database/@name,
-			        '.', @name)}"/>
+			        '.', @function)}"/>
 	</xsl:when>
+	<xsl:when test="@cast">
+	  <dependency fqn="{concat('cast.', 
+			   ancestor::database/@name, 
+			   '.', @cast)}"/>
+	</xsl:when>	
+	<xsl:when test="@column">
+	  <dependency fqn="{concat('column.', 
+			   ancestor::database/@name, '.', 
+			   ancestor::schema/@name, '.',
+			   ancestor::table/@name, '.', @column)}"/>
+	</xsl:when>	
 	<xsl:otherwise>
-	  <UNHANDLED_DEPENDS_NODE type="{@type}" name="{@name}"/>
+	  <UNHANDLED_DEPENDS_NODE>
+	    <xsl:copy-of select="@*"/>
+	  </UNHANDLED_DEPENDS_NODE>
 	</xsl:otherwise>
       </xsl:choose>
     </xsl:for-each>
   </xsl:template>
 
+  <!-- Indices -->
   <xsl:template match="index">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="index_fqn" 

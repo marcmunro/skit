@@ -27,21 +27,7 @@
 				   reftable/@reftable, '.',
 				   reftable/@refconstraintname)}"/>
 	</xsl:if>
-	<!-- Add explicitly identified dependencies -->
-	<xsl:for-each select="depends">
-	  <xsl:choose>
-	    <xsl:when test="@cast">
-	      <dependency fqn="{concat('cast.', 
-			               ancestor::database/@name, 
-				       '.', @cast)}"/>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <dependency fqn="{concat('function.', 
-			                ancestor::database/@name, 
-					'.', @function)}"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	</xsl:for-each>
+	<xsl:call-template name="depends"/>
 	<xsl:call-template name="SchemaGrant">
 	  <xsl:with-param name="owner" select="../@owner"/>
 	</xsl:call-template>
