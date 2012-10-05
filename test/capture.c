@@ -64,6 +64,7 @@ static boolean
 chkPrint()
 {
     char *line = malloc(20);
+    line[0] = '\0';
 
     fgets(line, 20, stdin);  /* Read first line to figure out whether to
 			      * print */
@@ -74,6 +75,7 @@ chkPrint()
     }
     else if (!streq(line, "PRINT\n")) {
 	printf("INVALID FIRST LINE \"%s\"\n", line);
+	free(line);
 	exit(2);
     }
     free(line);
@@ -96,24 +98,26 @@ resizeBuf(char **p_buf, int *len)
 }
 
 /* Read into a dynamically sized buffer from the given FILE source,
- * printing to print it output is required */
-static void
-readToBuffer(char **p_buffer, FILE *instream, FILE *printstream)
+ * printing to printstream if output is required */
+static char *
+readToBuffer(FILE *instream, FILE *printstream)
 {
     int len = 0;
     char c;
     char *buf;
     char *end;
     char *next;
+    char *buffer;
 
-    resizeBuf(p_buffer, &len);
-    next = buf = *p_buffer;
+    resizeBuf(&buffer, &len);
+    next = buf = buffer;
     while (TRUE) {
 	end = buf + len;
 	if (printstream) {
 	    while (next < end) {
 		if ((c = getc(instream)) == EOF) {
-		    return;
+		    *next = '\0';
+		    return buffer;
 		}
 		*next++ = c;
 		putc(c, printstream);
@@ -123,12 +127,12 @@ readToBuffer(char **p_buffer, FILE *instream, FILE *printstream)
 	    while (next < end) {
 		if ((c = getc(instream)) == EOF) {
 		    *next = '\0';
-		    return;
+		    return buffer;
 		}
 		*next++ = c;
 	    }
 	}
-	resizeBuf(p_buffer, &len);
+	resizeBuf(&buffer, &len);
     }
 }
 
@@ -145,10 +149,11 @@ writeFromBuffer(char *buf, FILE *outstream)
 static void
 catcher(FILE *out, boolean debug)
 {
-    char *buffer;
+    char *buffer = NULL;
     boolean printing = chkPrint();
+    FILE *stream;
 
-    readToBuffer(&buffer, stdin, printing? out: NULL);
+    buffer = readToBuffer(stdin, printing? out: NULL);
     // We get here either because readToBuffer has finished or we have
     // been interupted.
     if (debug)
@@ -157,9 +162,9 @@ catcher(FILE *out, boolean debug)
 	fprintf(stderr, "[[[<<<%s>>>]]]\n", buffer);
 	sleep(1);
     }
-    writeFromBuffer(buffer, returnStream());
+    writeFromBuffer(buffer, stream = returnStream());
     free(buffer);
-    close(4);
+    fclose(stream);
 }
 
 static void
@@ -288,18 +293,19 @@ endCqpture(char **p_stdout, char **p_stderr)
 {
     int status1;
     int status2;
+    FILE *stream;
 
     close(stdoutpipe[1]);	/* Close stdout to kid */
     dup2(oldstdout, 1);  	/* Restore previous stdout */
     dup2(retoutpipe[0], 4);     /* Redirect fd4 for stdout from kid */
 
-    readToBuffer(p_stdout, resultsStream(), NULL);
+    *p_stdout = readToBuffer(stream = resultsStream(), NULL);
     close(retoutpipe[0]);
-
     close(stderrpipe[1]);
+
     dup2(oldstderr, 2);
     dup2(reterrpipe[0], 4);     /* Redirect fd4 for stderr from kid */
-    readToBuffer(p_stderr, resultsStream(), NULL);
+    *p_stderr = readToBuffer(resultsStream(), NULL);
 
     if (waitpid(outpid, &status1, 0) != outpid) {
 	showStatus("stdout", status1);

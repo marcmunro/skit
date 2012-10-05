@@ -117,8 +117,11 @@ static DagNode *
 departNode(DagNode *current)
 {
     DagNode *navigation = NULL;
+    xmlNode *newnode;
+
     if (requiresNavigation(current->dbobject)) {
-	navigation = dagnodeNew(current->dbobject, DEPART_NODE);
+	newnode = copyObjectNode(current->dbobject);
+	navigation = dagnodeNew(newnode, DEPART_NODE);
     }
     return navigation;
 }
@@ -130,8 +133,11 @@ static DagNode *
 arriveNode(DagNode *target)
 {
     DagNode *navigation = NULL;
+    xmlNode *newnode;
+
     if (requiresNavigation(target->dbobject)) {
-	navigation = dagnodeNew(target->dbobject, ARRIVE_NODE);
+	newnode = copyObjectNode(target->dbobject);
+	navigation = dagnodeNew(newnode, ARRIVE_NODE);
     }
     return navigation;
 }
@@ -210,12 +216,11 @@ addArriveContext(Vector *vec, Cons *context)
     String *name = (String *) context->car;
     Cons *cell2 = (Cons *) context->cdr;
     DagNode *context_node;
+
     /* Do not close the context, if it is the default. */
     if (objectCmp(cell2->car, cell2->cdr) != 0) {
 	context_node = arriveContextNode(name, (String *) cell2->car);
 	vectorPush(vec, (Object *) context_node);
-	//fprintf(stderr, "SET CONTEXT %s(%s)\n", name->value,
-	//	((String *) cell2->car)->value);
     }
 }
 
@@ -225,12 +230,11 @@ addDepartContext(Vector *vec, Cons *context)
     String *name = (String *) context->car;
     Cons *cell2 = (Cons *) context->cdr;
     DagNode *context_node;
+
     /* Do not close the context, if it is the default. */
     if (objectCmp(cell2->car, cell2->cdr) != 0) {
 	context_node = departContextNode(name, (String *) cell2->car);
 	vectorPush(vec, (Object *) context_node);
-	//fprintf(stderr, "RESET CONTEXT %s(%s)\n", name->value,
-	//	((String *) cell2->car)->value);
     }
 }
 
@@ -251,6 +255,7 @@ getContextNavigation(DagNode *from, DagNode *target)
     /* Contexts are lists of the form: (name value default) */
     from_contexts = getContexts(from);
     target_contexts = getContexts(target);
+
     while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
 	name = (String *) this->car;
 	if (from_contexts &&
@@ -283,7 +288,9 @@ getContextNavigation(DagNode *from, DagNode *target)
 
 
 /* Return a vector of DagNodes containing the navigation to get from
- * start to target */
+ * start to target.  All of the dbojects returned in the DagNode
+ * Vectors, must be orphans so that they can be safely added to the
+ * appropriate parent node. */
 Vector *
 navigationToNode(DagNode *start, DagNode *target)
 {
@@ -297,10 +304,11 @@ navigationToNode(DagNode *start, DagNode *target)
     DagNode *navigation = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     boolean handling_context = (ignore_contexts == NULL);
-
+    int i;
     BEGIN {
 	if (handling_context) {
 	    context_nav = getContextNavigation(start, target);
+
 	    /* Context departures must happen before any other
 	     * departures and arrivals after */
 	    results = (Vector *) context_nav->car;
@@ -357,7 +365,6 @@ navigationToNode(DagNode *start, DagNode *target)
 	objectFree((Object *) results, TRUE);
     }
     END;
-    //dbgSexp(results);
     return results;
 }
 

@@ -327,8 +327,8 @@ alistExtract(Cons **p_alist, Object *key)
 	entry = (Cons *) this->car;
 	if (objectCmp(entry->car, key) == 0) {
 	    /* This entry matches key. */
-	    objectFree((Object *) this, FALSE);
 	    *p_this = (Cons *) this->cdr;
+	    objectFree((Object *) this, FALSE);
 	    return entry;
 	}
 	p_this = (Cons **) &(this->cdr);

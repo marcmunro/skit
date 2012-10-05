@@ -1164,8 +1164,8 @@ do_list(void *ignore)
 
 START_TEST(list)
 {
-    char *stderr = malloc(50000);
-    char *stdout = malloc(50000);
+    char *stderr;
+    char *stdout;
     int   signal;
     captureOutput(do_list, NULL, FALSE, &stdout, &stderr, &signal);
 
@@ -1207,8 +1207,8 @@ do_deps(void *ignore)
 
 START_TEST(deps)
 {
-    char *stderr = malloc(50000);
-    char *stdout = malloc(50000);
+    char *stderr;
+    char *stdout;
     int   signal;
     captureOutput(do_deps, NULL, FALSE, &stdout, &stderr, &signal);
 

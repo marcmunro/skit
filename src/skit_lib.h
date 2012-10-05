@@ -575,6 +575,7 @@ extern void rmParamsNode(Document *doc);
 extern void treeFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
 extern xmlNode *firstElement(xmlNode *start);
+extern xmlNode *copyObjectNode(xmlNode *source);
 
 // document.c
 extern char *nodestr(xmlNode *node);

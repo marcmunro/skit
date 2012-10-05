@@ -1002,7 +1002,7 @@ copyNodeContents(xmlNode *source)
 }
 
 /* Copy the contents of the dbobject node */
-static xmlNode *
+xmlNode *
 copyObjectNode(xmlNode *source)
 {
     xmlNode *new = xmlCopyNode(source, 2);
@@ -1036,9 +1036,9 @@ addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
 	navigation = navigationToNode(cur, target);
 	EACH(navigation, i) {
 	    nnode = (DagNode *) ELEM(navigation, i);
-	    curnode = copyObjectNode(nnode->dbobject);
-	    addAction(curnode, actionName(nnode));
+	    curnode = nnode->dbobject;
 	    xmlAddChild(parent_node, curnode);
+	    addAction(curnode, actionName(nnode));
 	}
     }
     EXCEPTION(ex);

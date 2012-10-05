@@ -156,7 +156,8 @@ unhandled_exception(char *msg, int signal, char *file, int line, char *txt)
     char *unhandled;
     unhandled = newstr(msg, signal, exceptionName(signal), file, line, txt);
     skfree(txt);
-    fprintf(stderr, "%s\n", unhandled);
+    fprintf(stderr, "skit: unhandled exception %s\n", unhandled);
+    skfree(unhandled);
     raise(SIGTERM);
 }
 
@@ -175,7 +176,7 @@ doRaise(char *file, int line, int signal, char *txt, Object *param)
 	exhandler->backtrace = backtraceStr(exhandler, NULL);
 	longjmp(exhandler->handler, signal);
     }
-    unhandled_exception("UNHANDLED EXCEPTION %d(%s) in %s at line %d\n%s\n",
+    unhandled_exception("%d(%s) in %s at line %d\n%s\n",
 			signal, file, line, txt);
 }
 
@@ -214,7 +215,7 @@ doReRaise(char *file, int line)
 	txt = newstr("NO EXCEPTION TEXT");
     }
     exceptionPop();
-    unhandled_exception("Unhandled Exception %d(%s): raised at %s:%d\n%s", 
+    unhandled_exception("%d(%s): raised at %s:%d\n%s", 
 			signal, file, line, txt);
 
 }
@@ -262,7 +263,7 @@ exceptionRaise(char *file, int line, ...)
 	    txt = newstr("Stupid attempt to re-raise an exception outside "
 			 "of an exception block.");
 	}
-	unhandled_exception("Unhandled Exception %d(%s): raised at %s:%d\n%s", 
+	unhandled_exception("%d(%s): raised at %s:%d\n%s", 
 			    signal, file, line, txt);
     }
 }

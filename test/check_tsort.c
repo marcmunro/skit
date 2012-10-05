@@ -268,6 +268,8 @@ START_TEST(navigation)
     xmlNode *root;
     xmlDocPtr xmldoc;
     Symbol *simple_sort;
+    //showMalloc(7040);
+    //trackMalloc(7040);
 
     initBuiltInSymbols();
     initTemplatePath(".");

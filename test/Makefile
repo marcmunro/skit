@@ -27,7 +27,8 @@ TEST_DEPS = $(TEST_SOURCES:.c=.d)
 TEST_GARBAGE = $(garbage:%=$(TEST_DIR)/%)
 
 #LIBCHECK = /usr/lib/libcheck.a
-#LIBCHECK = /home/marc/dpkg/check-0.9.5/src/.libs/libcheck.a
+LIBCHECK = /home/marc/dpkg/check-0.9.8/src/.libs/libcheck.a
+
 
 MEMCHECK_OPTIONS = --leak-check=full --show-reachable=yes --trace-children=yes 
 SUPPRESSION_FILES = $(wildcard valgrind/*_suppressions)
@@ -76,7 +77,8 @@ SUPP_FLAG = -$(shell if test -d testdb; then echo S; else echo s; fi)
 
 # Build a single suppression file.  This is called recursively from the
 # suppressions target.  As suppression files rarely require updating, this
-# is considered safe enough.  
+# is considered safe enough.  The variable THIS_TEST must be supplied to
+# this target to define what it will actually create
 suppress_one:
 	@echo Creating valgrind/$(THIS_TEST)...
 	suppression_files=`$(EXISTING_SUPPRESSIONS)` ; \

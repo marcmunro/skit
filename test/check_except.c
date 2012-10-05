@@ -1,5 +1,5 @@
 /**
- * @file   check_utils.c
+ * @file   check_except.c
  * \code
  *     Author:       Marc Munro
  *     Fileset:	skit - a database schema management toolset
@@ -350,15 +350,14 @@ static int
 do_exceptions_new12(void *ignore)
 {
     RAISE();
-    FREEMEMWITHCHECK;
 }
 
 
 // Check that RAISE() fails properly when no exception handler is defined
 START_TEST(exceptions_new12)
 {
-    char *stderr = malloc(2000);
-    char *stdout = malloc(2000);
+    char *stderr;
+    char *stdout;
     int   signal;
     captureOutput(do_exceptions_new12, NULL, FALSE, &stdout, &stderr, &signal);
 
@@ -368,6 +367,7 @@ START_TEST(exceptions_new12)
     fail_unless(contains(stderr, "Stupid attempt to re-raise"));
     free(stdout);
     free(stderr);
+    FREEMEMWITHCHECK;
 }
 END_TEST
 
@@ -375,14 +375,13 @@ static int
 do_exceptions_new13(void *ignore)
 {
     RAISE(71, newstr("LOOKY HERE"));
-    FREEMEMWITHCHECK;
 }
 
 // Check that RAISE(x) fails properly when no exception handler is defined
 START_TEST(exceptions_new13)
 {
-    char *stderr = malloc(2000);
-    char *stdout = malloc(2000);
+    char *stderr;
+    char *stdout;
     int   signal;
     captureOutput(do_exceptions_new13, NULL, FALSE, &stdout, &stderr, &signal);
 
@@ -392,6 +391,7 @@ START_TEST(exceptions_new13)
     fail_unless(contains(stderr, "LOOKY HERE"));
     free(stdout);
     free(stderr);
+    FREEMEMWITHCHECK;
 }
 END_TEST
 
@@ -401,25 +401,25 @@ do_exceptions_new14(void *ignore)
     int a;
     a = catcher2(14);
     fail_unless(a == 22, "Function result 22 expected, got %d\n", a);
-    FREEMEMWITHCHECK;
 }
 
 // Check that RAISE fails properly from an exception block
 // when no exception handler is defined
 START_TEST(exceptions_new14)
 {
-    char *stderr = malloc(2000);
-    char *stdout = malloc(2000);
+    char *stderr;
+    char *stdout;
     int   signal;
     captureOutput(do_exceptions_new14, NULL, FALSE, &stdout, &stderr, &signal);
 
+    free(stdout);
+    free(stderr);
+    FREEMEMWITHCHECK;
     if (signal != SIGTERM) {
 	fail("Expected SIGTERM, got %d\n", signal);
     }
     fail_unless(contains(stderr, "TEST CASE 14", 
 			 "exceptions_new14"));
-    free(stdout);
-    free(stderr);
 }
 END_TEST
 
@@ -496,24 +496,34 @@ START_TEST(exceptions_2)
 END_TEST
 
 // Test for unhandled exceptions
+static int
+do_exceptions_3(void *ignore)
+{
+    int signal;
+    signal = catcher(99, raiser1);
+}
+
 START_TEST(exceptions_3)
 {
-    char *out;
-    char *err;
-    int  signal;
+    char *my_stderr = NULL;
+    char *my_stdout = NULL;
+    int   signal;
+    boolean contains_unhandled;
 
-    redirect_stderr("exceptions_3");
-    signal = catcher(99, raiser1);
+    captureOutput(do_exceptions_3, NULL, TRUE, &my_stdout, &my_stderr, &signal);
+    printf("PID is %d\n", (int) getpid());
+    contains_unhandled = contains(my_stderr, "unhandled exception 99");
 
-    // We would like to test stderr for the following text but
-    // as the exception is unhandled, we cannot.  Also the 
-    // memory freeing, and shutdown of shared memory, etc
-    // cannot be done.
-    //fail_unless_contains("stderr", err, "Unhandled Exception 99", NULL);
-    //fail_unless_contains("stderr", err, "--> Exception 99", NULL);
-    //fail_unless_contains("stderr", err, "Raised at", NULL);
-    //freeUnhandledException();
-    //FREEMEMWITHCHECK;
+    free(my_stdout);
+    free(my_stderr);
+    FREEMEMWITHCHECK;
+    printf("DONE FREE\n");
+
+    if (signal != SIGTERM) {
+	fail("Expected SIGTERM, got %d\n", signal);
+    }
+    
+    fail_unless(contains_unhandled);
 }
 END_TEST
 
@@ -650,7 +660,7 @@ exceptions_suite(void)
     TCase *tc_core = tcase_create("ECore");
     ADD_TEST(tc_core, exceptions_1);
     ADD_TEST(tc_core, exceptions_2);
-    ADD_TEST_RAISE_SIGNAL(tc_core, exceptions_3, SIGTERM);
+    ADD_TEST(tc_core, exceptions_3);
     ADD_TEST(tc_core, exceptions_4);
     ADD_TEST(tc_core, exceptions_5);
     ADD_TEST(tc_core, exceptions_6);
