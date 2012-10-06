@@ -1167,15 +1167,20 @@ START_TEST(list)
     char *stderr;
     char *stdout;
     int   signal;
+    boolean contains_expected;
+
     captureOutput(do_list, NULL, FALSE, &stdout, &stderr, &signal);
 
     if (signal != 0) {
 	fail("Unexpected signal: %d\n", signal);
     }
     /* Ensure dboject for cluster has been created */
-    fail_unless(contains(stdout, "fqn=\"cluster\""));
+
+    contains_expected = contains(stdout, "fqn=\"cluster\"");
     free(stdout);
     free(stderr);
+    fail_unless(contains_expected);
+    FREEMEMWITHCHECK;
 }
 END_TEST
 

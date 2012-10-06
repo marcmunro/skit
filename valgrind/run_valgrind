@@ -26,6 +26,7 @@ check_output()
 do_test()
 {
     echo ======== testing $1 $2 ============ >>valgrind.log
+
     valgrind ${flags} ${cmd} ${cmd_flags} $1 $2 2>&1 | \
 	tee -a valgrind/valgrind.log | check_output >/dev/null
     this=$?

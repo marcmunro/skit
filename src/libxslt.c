@@ -31,6 +31,13 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
     String *str1;
     String *str2 = NULL;
 
+    if ((nargs < 1) || (nargs > 2)) {
+	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
+		"dbquote() : expects one or two  arguments\n");
+	ctxt->error = XPATH_INVALID_ARITY;
+	return;
+    }
+
     if (nargs == 2) {
 	xmlXPathStringFunction(ctxt, 1);
 
@@ -43,13 +50,7 @@ xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
 	instr2 = valuePop(ctxt);
 
 	str2 = stringNewByRef(newstr("%s", instr2->stringval));
-    }
-
-    if ((nargs < 1) || (nargs > 2)) {
-	xsltTransformError(xsltXPathGetTransformContext(ctxt), NULL, NULL,
-		"dbquote() : expects one or two  arguments\n");
-	ctxt->error = XPATH_INVALID_ARITY;
-	return;
+	xmlXPathFreeObject(instr2);
     }
 
     xmlXPathStringFunction(ctxt, 1);
