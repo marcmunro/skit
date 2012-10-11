@@ -48,7 +48,7 @@ extern Document *getDoc(char *name);
 
 
 // capture.c
-extern int captureOutput(TestRunner *test_fn, void *param, int print,
+extern int captureOutput(TestRunner *test_fn, void *param,
 			 char **p_stdout,  char **p_stderr,
 			 int *p_signal);
 

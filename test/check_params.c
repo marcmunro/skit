@@ -1157,8 +1157,6 @@ do_list(void *ignore)
 	fprintf(stderr, "%s\n", ex->backtrace);
     }
     END;
-
-    FREEMEMWITHCHECK;
 }
 
 
@@ -1169,7 +1167,7 @@ START_TEST(list)
     int   signal;
     boolean contains_expected;
 
-    captureOutput(do_list, NULL, FALSE, &stdout, &stderr, &signal);
+    captureOutput(do_list, NULL, &stdout, &stderr, &signal);
 
     if (signal != 0) {
 	fail("Unexpected signal: %d\n", signal);
@@ -1214,8 +1212,8 @@ START_TEST(deps)
 {
     char *stderr;
     char *stdout;
-    int   signal;
-    captureOutput(do_deps, NULL, FALSE, &stdout, &stderr, &signal);
+    int   signal = 0;
+    captureOutput(do_deps, NULL, &stdout, &stderr, &signal);
 
     if (signal != 0) {
 	fail("Unexpected signal: %d\n", signal);

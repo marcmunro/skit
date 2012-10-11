@@ -359,7 +359,7 @@ START_TEST(exceptions_new12)
     char *stderr;
     char *stdout;
     int   signal;
-    captureOutput(do_exceptions_new12, NULL, FALSE, &stdout, &stderr, &signal);
+    captureOutput(do_exceptions_new12, NULL, &stdout, &stderr, &signal);
 
     if (signal != SIGTERM) {
 	fail("Expected SIGTERM, got %d\n", signal);
@@ -383,7 +383,7 @@ START_TEST(exceptions_new13)
     char *stderr;
     char *stdout;
     int   signal;
-    captureOutput(do_exceptions_new13, NULL, FALSE, &stdout, &stderr, &signal);
+    captureOutput(do_exceptions_new13, NULL, &stdout, &stderr, &signal);
 
     if (signal != SIGTERM) {
 	fail("Expected SIGTERM, got %d\n", signal);
@@ -410,16 +410,16 @@ START_TEST(exceptions_new14)
     char *stderr;
     char *stdout;
     int   signal;
-    captureOutput(do_exceptions_new14, NULL, FALSE, &stdout, &stderr, &signal);
+    captureOutput(do_exceptions_new14, NULL, &stdout, &stderr, &signal);
 
+    fail_unless(contains(stderr, "TEST CASE 14", 
+			 "exceptions_new14"));
     free(stdout);
     free(stderr);
     FREEMEMWITHCHECK;
     if (signal != SIGTERM) {
 	fail("Expected SIGTERM, got %d\n", signal);
     }
-    fail_unless(contains(stderr, "TEST CASE 14", 
-			 "exceptions_new14"));
 }
 END_TEST
 
@@ -510,14 +510,12 @@ START_TEST(exceptions_3)
     int   signal;
     boolean contains_unhandled;
 
-    captureOutput(do_exceptions_3, NULL, TRUE, &my_stdout, &my_stderr, &signal);
-    printf("PID is %d\n", (int) getpid());
+    captureOutput(do_exceptions_3, NULL, &my_stdout, &my_stderr, &signal);
     contains_unhandled = contains(my_stderr, "unhandled exception 99");
 
     free(my_stdout);
     free(my_stderr);
     FREEMEMWITHCHECK;
-    printf("DONE FREE\n");
 
     if (signal != SIGTERM) {
 	fail("Expected SIGTERM, got %d\n", signal);
@@ -647,8 +645,6 @@ START_TEST(exceptions_when_finally2)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
-
 
 
 Suite *

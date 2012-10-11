@@ -150,39 +150,6 @@ START_TEST(xml_suppressions)
 END_TEST
 */
 
-static int
-do_exceptions_suppressions(void *ignore)
-{
-    fprintf(stdout, "STDOUT:\n");
-    fprintf(stderr, "STDERR:\n");
-    raise(SIGTERM);
-    return SIGTERM;
-}
-
-START_TEST(exceptions_suppressions)
-{
-    char *my_stderr = NULL;
-    char *my_stdout = NULL;
-    int   signal;
-    boolean contains_unhandled;
-
-    printf("SUPPRESSION: exceptions_suppressions check_list_create\n");
-    printf("SUPPRESSION: exceptions_suppressions tcase_create\n");
-    printf("SUPPRESSION: exceptions_suppressions suite_create\n");
-    printf("SUPPRESSION: exceptions_suppressions srunner_create\n");
-    printf("SUPPRESSION: exceptions_suppressions srunner_run_init\n");
-    printf("SUPPRESSION: exceptions_suppressions tcase_add_test\n");
-    printf("SUPPRESSION: exceptions_suppressions list_add_end\n");
-    printf("SUPPRESSION: exceptions_suppressions captureOutput\n");
-    fflush(stdout);
-    captureOutput(do_exceptions_suppressions, NULL, FALSE, 
-		  &my_stdout, &my_stderr, &signal);
-    free(my_stdout);
-    free(my_stderr);
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 
 static boolean reporting_only = FALSE;
 static boolean nofork = FALSE;
@@ -208,7 +175,6 @@ suppressions_suite(void)
     ADD_TEST(tc_s, xmlreader_suppressions);
     ADD_TEST(tc_s, relaxng_suppressions);
     //ADD_TEST(tc_s, xml_suppressions);
-    ADD_TEST(tc_s, exceptions_suppressions);
     if (suppress_sql) {
 	ADD_TEST(tc_s, sql_suppressions);
     }
@@ -285,21 +251,28 @@ check_test(char *testname, boolean report_this)
 	strcpy(suite_name, #name);			\
     }							\
     if (string_matches(#name, suite_name)) {		\
-	srunner_add_suite(sr, name##_suite());		\
+	srunner_add_suite(global_sr, name##_suite());		\
     }
+
+
+SRunner *global_sr = NULL;
 
 int
 main(int argc, char *argv[])
 {
     int number_failed;
-    SRunner *sr;
+    pid_t catcher1;
+    pid_t catcher2;
+    char *stdout_buf;
+
     suite_name[0] = '\0';
     test_name[0] = '\0';
     handle_args(argc, argv);
     memShutdown();
 
     skit_register_signal_handler();
-    sr = srunner_create(base_suite());
+    global_sr = srunner_create(base_suite());
+
     if (nofork) {
 	if ((!suppressions) && (streq(test_name, ""))) {
 	    fprintf(stderr, "ERROR: Can only use -n with single tests\n");
@@ -307,7 +280,7 @@ main(int argc, char *argv[])
 	    return EXIT_FAILURE;
 	}
 	fprintf(stderr, "NOT FORKING!!!!\n");
-	srunner_set_fork_status(sr, CK_NOFORK);
+	srunner_set_fork_status(global_sr, CK_NOFORK);
     }
 
     if (reporting_only || suppressions) {
@@ -329,14 +302,15 @@ main(int argc, char *argv[])
     }
 
     if (!reporting_only) {
-	srunner_set_log (sr, "test.log");
+	srunner_set_log (global_sr, "test.log");
 
-	srunner_run_all(sr, CK_NORMAL);
-	number_failed = srunner_ntests_failed(sr);
-	srunner_free(sr);
+	srunner_run_all(global_sr, CK_NORMAL);
+	number_failed = srunner_ntests_failed(global_sr);
+	srunner_free(global_sr);
 
 	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
+
     return 0;
 }
 
