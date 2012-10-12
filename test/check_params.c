@@ -918,39 +918,6 @@ START_TEST(dep2)
 END_TEST
 
 
-START_TEST(generate2)
-{
-    /* Same preconditions as for extract above. */
-    char *args[] = {"./skit",
-		    "--dbtype=postgres", "--connect", 
-		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
-                    "--generate", "--build",   
-		    "regress/scratch/regressdb_dump1a.xml", 
-		    "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(299978);
-
-    BEGIN {
-	process_args2(8, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 START_TEST(deps2)
 {
     /* Same preconditions as for extract above. */
@@ -989,11 +956,50 @@ START_TEST(deps2)
 }
 END_TEST
 
-START_TEST(diffgen)
+START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
 		    "regress/scratch/regressdb_dump3a.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
+		    "--print", "--full", "--xxxx"};
+    Document *doc;
+    char *bt;
+
+    initBuiltInSymbols();
+    initTemplatePath(".");
+    //showFree(3563);
+    //showMalloc(5865);
+    //trackMalloc(4097);
+
+    BEGIN {
+	process_args2(7, args);
+	//process_args2(10, args);
+	doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(diffgen)
+{
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    "test/data/diffs_1_a.xml", 
+		    "test/data/diffs_1_b.xml", 
+		    //"regress/scratch/regressdb_dump3a.xml", 
+		    //"regress/scratch/regressdb_dump3b.xml", 
 		    "--generate"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -1061,43 +1067,6 @@ START_TEST(difflist)
 }
 END_TEST
 
-START_TEST(diff)
-{
-    char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml", 
-		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--print", "--full", "--xxxx"};
-    Document *doc;
-    char *bt;
-
-    initBuiltInSymbols();
-    initTemplatePath(".");
-    //showFree(3563);
-    //showMalloc(5865);
-    //trackMalloc(4097);
-
-    BEGIN {
-	process_args2(7, args);
-	//process_args2(10, args);
-	doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
-
 START_TEST(diff2)
 {
     char *args[] = {"./skit", "--diff", 
@@ -1139,7 +1108,8 @@ static int
 do_list(void *ignore)
 {
     char *args[] = {"./skit", "--list", 
-		    "test/data/cond_test.xml", "--print", "--full"};
+		    "test/data/cond_test.xml", 
+		    "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1186,7 +1156,9 @@ static int
 do_deps(void *ignore)
 {
     char *args[] = {"./skit", "--adddeps",
-		    "test/data/cond_test.xml", "--print", "--full"};
+		    "test/data/diffs_1_a.xml", 
+		    //"test/data/cond_test.xml", 
+		    "--print", "--full"};
     Document *doc;
     char *bt;
 
@@ -1219,6 +1191,7 @@ START_TEST(deps)
 	fail("Unexpected signal: %d\n", signal);
     }
     /* Ensure dboject for cluster has been created */
+    //printf(stdout);
     fail_unless(contains(stdout, "fqn=\"cluster\""));
     free(stdout);
     free(stderr);
@@ -1253,9 +1226,9 @@ params_suite(void)
 
     // When we start back on diff, these need to be re-instated
     //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, diff2);
+    ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
 
     // Various parameters that must work
@@ -1268,8 +1241,7 @@ params_suite(void)
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects
-    ADD_TEST(tc_core, generate2); // Testing deps for columns
-    ADD_TEST(tc_core, deps2); // Testing deps for columns
+    //ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??
     ADD_TEST(tc_core, scatter);
@@ -1281,11 +1253,16 @@ params_suite(void)
 
 
 /*
-PLAN: add columns as dbobjects in their own right.
-      Have diffs processed as pairs of objects; either:
-      1) drop and build if a diff requires recreation (as for types, for
+PLAN: 
+
+      1) Ensure rebuild diffs are handled the same as other rebulds
+      This requires element diffs to work so that we can use a "type"
+      difference to create a diff rebuild node.
+
+      2) Have diffs processed as pairs of objects; either:
+      a) drop and build if a diff requires recreation (as for types, for
       example) 
-      2) diffprep and diffcomplete, otherwise
+      b) diffprep and diffcomplete, otherwise
 
       The drop or diffprep nodes will use "old" dependencies (check the
       restrict attribute of the dependencies element).  The build or

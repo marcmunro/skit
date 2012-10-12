@@ -364,6 +364,7 @@ setDiff(xmlNode *node, DiffType difftype)
     case IS_NEW: type = DIFFNEW; break;
     case IS_GONE: type = DIFFGONE; break;
     case IS_DIFF: type = DIFFDIFF; break;
+    case IS_REBUILD: type = ACTIONREBUILD; break;
     case IS_SAME: type = DIFFSAME; break;
     case IS_UNKNOWN: type = DIFFUNKNOWN; break;
     case HAS_DIFFKIDS: type = DIFFKIDS; break;
@@ -609,26 +610,6 @@ handleNewElem(Cons *entry, Object *param)
 }
 
 static xmlNode *
-getLastSibling(xmlNode *node)
-{
-    if (node) {
-	while (node->next) {
-	    node = node->next;
-	}
-    }
-    return node;
-}
-
-static xmlNode *
-getLastKid(xmlNode *node)
-{
-    if (node) {
-	node = getLastSibling(node->children);
-    }
-    return node;
-}
-
-static xmlNode *
 elementDiffs(xmlNode *content1, xmlNode *content2, 
 	     xmlNode *ruleset);
 
@@ -691,24 +672,18 @@ check_element(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 		//dbgNode(elem1);
 		//dbgNode(elem2);
 		objectFree((Object *) node, TRUE);
-		elem_diffs = elementDiffs(elem1, elem2, 
-					  getElement(rule->children));
+		elem_diffs = elementDiffs(elem1, elem2, rule);
 		if (elem_diffs) {
 		    //dbgNode(elem_diffs);
-		    diff = diffElement(elem2, elem_type->value, 
-				       DIFFDIFF, key_type? key_type->value: NULL);
-		    //printList("DIFFDIFF: ", diff);
-		    //dbgNode(diff->children);
-		    RAISE(XML_PROCESSING_ERROR, newstr("WTF???"));
-		    // TODO: Eleminate getLastKid function and refactor
-		    kid = getLastKid(diff);
-		    kid->next = elem_diffs;
+		    diff = diffElement(elem2, elem_type->value, DIFFDIFF, 
+				       key_type? key_type->value: NULL);
+		    xmlAddChild(diff, elem_diffs);
 		}
 		else {
 		    diff = NULL;
 		}
 	    }
-	    else {
+	    else { /* No match for elem1 in content2 */
 		diff = diffElement(elem1, elem_type->value, 
 				   DIFFGONE, key_type? key_type->value: NULL);
 	    }
@@ -873,21 +848,24 @@ dbobjectDiff(xmlNode *dbobject1, xmlNode *dbobject2,
     xmlNode *content;
     xmlNode *volatile result = NULL;
     boolean kids_differ = FALSE;
+    String *volatile rebuild = NULL;
 
     assert((dbobject1 == NULL) || streq("dbobject", (char *) dbobject1->name),
 	   "dbobjectDiff: dbobject1 must be a dbobject");
     assert((dbobject2 == NULL) || streq("dbobject", (char *) dbobject2->name),
 	   "dbobjectDiff: dbobject2 must be a dbobject");
+
     BEGIN {
 	if (dbobject2) {
 	    result = xmlCopyNode(dbobject2, 2);
 	    if (contents1) {
 		if (ruleset = rulesetForNode(dbobject1, rules)) {
+		    rebuild = nodeAttribute(ruleset, "rebuild");
 		    if (difflist = elementDiffs(contents1, contents2, 
 						ruleset)) 
 		    {
 			*diffs = TRUE;
-			difftype = IS_DIFF;
+			difftype = rebuild? IS_REBUILD: IS_DIFF;
 		    }
 		    else {
 			difftype = IS_SAME;
@@ -932,12 +910,14 @@ dbobjectDiff(xmlNode *dbobject1, xmlNode *dbobject2,
 	if (kids_differ) {
 	    *diffs = TRUE;
 	    if (difftype == IS_SAME) {
-		difftype = HAS_DIFFKIDS;
+		difftype = rebuild? IS_REBUILD: HAS_DIFFKIDS;
 	    }
 	}
+	objectFree((Object *) rebuild, TRUE);
     }
     EXCEPTION(ex) {
 	xmlFreeNode(result);
+	objectFree((Object *) rebuild, TRUE);
     }
     END;
     setDiff(result, difftype);

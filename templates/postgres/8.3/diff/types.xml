@@ -4,13 +4,20 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="schema" key="name">
-    <attribute name="owner"/>
-    <!-- TODO: Deal with privs - this file is only partially implemented
-         (for testing rebuild mechanism in diffs) -->
-    <element type="comment">
-      <text/>
+  <dbobject type="type" key="fqn" rebuild="true">
+    <!-- Incomplete -->
+    <element type="column" key="name">
+      <attribute name="id"/>
+      <attribute name="type"/>
+      <attribute name="type_schema"/>
+      <attribute name="nullable"/>
+      <attribute name="storage_policy"/>
     </element>
+  </dbobject>	
+
+  <dbobject type="table" key="fqn">
+    <!-- Incomplete: in place only temporarily for testing newly built functionality -->
+    <dbobject type="column" key="fqn"/>
   </dbobject>	
 
 </skit:inclusion>  

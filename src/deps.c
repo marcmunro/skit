@@ -574,6 +574,9 @@ buildTypeForNode(Node *node)
 	else if (streq(diff->value, DIFFDIFF)) {
 	    build_type = DIFF_NODE;
 	}
+	else if (streq(diff->value, ACTIONREBUILD)) {
+	    build_type = REBUILD_NODE;
+	}
 	else {
 	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
 	    errmsg = newstr("identifyBuildTypes: unexpected diff "

@@ -11,6 +11,8 @@
     <element type="comment">
       <text/>
     </element>
+
+    <xi:include href="skitfile:diff/types.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

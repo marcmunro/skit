@@ -31,14 +31,14 @@
 typedef unsigned char boolean;
 
 typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, 
-	      IS_UNKNOWN, HAS_DIFFKIDS} DiffType;
+	      IS_UNKNOWN, IS_REBUILD, HAS_DIFFKIDS} DiffType;
 
-#define DIFFNEW       "New"
-#define DIFFGONE      "Gone"
-#define DIFFDIFF      "Diff"
-#define DIFFSAME      "None"
+#define DIFFNEW       "new"
+#define DIFFGONE      "gone"
+#define DIFFDIFF      "diff"
+#define DIFFSAME      "none"
 #define DIFFUNKNOWN   "UNKNOWN"
-#define DIFFKIDS      "Diffkids"
+#define DIFFKIDS      "diffkids"
 #define ACTIONBUILD   "build"
 #define ACTIONDROP    "drop"
 #define ACTIONREBUILD "rebuild"

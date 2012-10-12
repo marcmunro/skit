@@ -211,8 +211,6 @@ regression_test2()
 	     --ignore-contexts
     genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql \
 	     --ignore-contexts
-    #echo "PREMATURE EXIT - Fix regress_run.sh" 1>&2
-    #exit 2
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......

@@ -15,15 +15,15 @@
 			           ancestor::database/@name,
 			           '.', @operator_class)}"/>
 	</xsl:when>
-	<xsl:when test="@function">
-	  <dependency fqn="{concat('function.', ancestor::database/@name,
-			        '.', @function)}"/>
-	</xsl:when>
 	<xsl:when test="@cast">
 	  <dependency fqn="{concat('cast.', 
 			   ancestor::database/@name, 
 			   '.', @cast)}"/>
 	</xsl:when>	
+	<xsl:when test="@function">
+	  <dependency fqn="{concat('function.', ancestor::database/@name,
+			        '.', @function)}"/>
+	</xsl:when>
 	<xsl:when test="@column">
 	  <dependency fqn="{concat('column.', 
 			   ancestor::database/@name, '.', 

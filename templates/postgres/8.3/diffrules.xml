@@ -20,9 +20,6 @@
     <xi:include href="skitfile:diff/roles.xml"/>
     <xi:include href="skitfile:diff/tablespaces.xml"/>
     <xi:include href="skitfile:diff/grants.xml"/>
-<!--    <xi:include href="skitfile:diff/schemata.xml"/>  Incomplete -->
-
-
   </dbobject>
 </skit:diffrules>
 
