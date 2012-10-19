@@ -103,14 +103,8 @@
 			           ancestor::database/@name, '.',
 				   @schema, '.', @name)}"/>
 	</xsl:for-each>
-	<!-- Dependencies on types for columns -->
-	<xsl:for-each select="column[@type_schema != 'pg_catalog']">
-	  <dependency fqn="{concat('type.', 
-			    ancestor::database/@name, '.', 
-			    @type_schema, '.', @type)}"/>
-	</xsl:for-each>
 
-	<!-- Dependency on sequences -->
+	<!-- Dependency on sequences Q: should these be col dependencies? -->
 	<xsl:for-each select="depends[@schema]">
 	  <dependency fqn="{concat('sequence.', 
 			    ancestor::database/@name, '.', 

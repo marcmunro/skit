@@ -382,7 +382,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 {
     switch (node->status) {
     case VISITING:
-	RAISE(TSORT_CYCLIC_DEPENDENCY, newstr("%s", node->fqn->value), node);
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("Cyclic dep found in %s", node->fqn->value), node);
     case UNVISITED: 
     case RESOLVED: 
 	BEGIN {

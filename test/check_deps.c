@@ -818,12 +818,13 @@ deps_suite(void)
 
 
 #ifdef wibble
-TODO: 
-
-- Get back to diffs implementation
-
-- Re-implement smart-sort
-
+PLAN:
+1) Revert deps.c to a version that passes unit tests
+2) Add explicit dependencies between parents and children
+3) Remove special case handling of parents throughout deps.c
+4) Invert the dependency direction between tables and columns
+5) Investigate handling of rebuild propagation.  This may necessitate 
+   a full rewrite of deps.c 
 
 
 #endif

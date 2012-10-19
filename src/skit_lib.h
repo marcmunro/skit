@@ -232,7 +232,8 @@ typedef enum {
 #define BUILD_NODE_BIT 1
 #define DROP_NODE_BIT 2
 #define DIFF_NODE_BIT 4
-#define ALL_BUILDTYPE_BITS 7
+#define EXISTS_NODE_BIT 8
+#define ALL_BUILDTYPE_BITS 15
 
 typedef int BuildTypeBitSet;
 #define inBuildTypeBitSet(btbs, bt)		\
