@@ -37,6 +37,7 @@
     <dbobject type="dbincluster" name="{@name}" 
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}">
       <dependencies>
+	<dependency fqn="cluster"/>
 	<xsl:if test="@tablespace">
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>

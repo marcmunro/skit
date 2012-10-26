@@ -12,6 +12,9 @@
     <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('role.', $role_name)}">
+      <dependencies>
+	<dependency fqn="cluster"/>
+      </dependencies>
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
@@ -32,7 +35,7 @@
 
   <xsl:template match="privilege">
     <!-- WHY IS A PRIVILEGE CONSIDERED TO BE A DBOBJECT?  
-         I'm sure I has a good reason but I can't recall it.  If anyone
+         I'm sure there is a good reason but I can't recall it.  If anyone
 	 ever figures it out, please comment the reason here.  MM -->
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>

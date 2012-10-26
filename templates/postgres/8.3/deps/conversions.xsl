@@ -20,6 +20,7 @@
       </xsl:if>
       <dependencies>
 	<!-- Add explicitly identified dependencies -->
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<xsl:for-each select="depends[@function]">
 	  <xsl:choose>
 	    <xsl:when test="@cast">
@@ -39,7 +40,7 @@
 	</xsl:if>
       </dependencies>
 
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

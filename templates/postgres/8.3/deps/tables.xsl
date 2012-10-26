@@ -85,6 +85,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>

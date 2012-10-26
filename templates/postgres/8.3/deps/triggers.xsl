@@ -20,6 +20,7 @@
 	<xsl:variable name="table_owner" 
 		      select="//schema[@name=$schema_name]/table[@name=$table_name]/@owner"/>
 	<dependencies>
+	  <dependency fqn="{concat('table.', $parent_core)}"/>
 	  <dependency fqn="{concat('function.', 
 			            ancestor::database/@name, '.', 
 				    @function)}"/>

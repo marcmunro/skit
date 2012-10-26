@@ -15,6 +15,7 @@
     <dbobject type="tablespace" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{$tbs_fqn}">
       <dependencies>
+	<dependency fqn="cluster"/>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.', $parent_core, '.',
 			   @owner)}"/>

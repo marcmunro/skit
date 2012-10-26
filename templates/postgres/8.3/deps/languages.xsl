@@ -18,6 +18,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('database.cluster.', $parent_core)}"/>
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
@@ -30,7 +31,7 @@
 			   '.',  @validator_signature)}"/>
 	</xsl:if>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core"

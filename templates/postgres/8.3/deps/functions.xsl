@@ -40,7 +40,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
-
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<xsl:if test="(@language != 'c') and (@language != 'internal')
 	  and (@language != 'sql')">
 	  <dependency fqn="{concat('language.', 
@@ -84,7 +84,7 @@
 	</xsl:if>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

@@ -30,6 +30,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<xsl:if test="arg[@position='left']/@schema != 'pg_catalog'">
 	  <dependency fqn="{concat('type.', ancestor::database/@name, '.', 
 			           arg[@position='left']/@schema, '.', 
@@ -85,7 +86,7 @@
 	</xsl:if>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

@@ -19,6 +19,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('table.', $parent_core)}"/>
 	<!-- Dependencies on other constraints -->
 	<xsl:if test="reftable/@refconstraintname">
 	  <dependency fqn="{concat('constraint.', 

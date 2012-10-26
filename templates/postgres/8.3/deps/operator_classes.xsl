@@ -21,6 +21,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<!-- owner -->
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
@@ -58,7 +59,7 @@
 	</xsl:for-each>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

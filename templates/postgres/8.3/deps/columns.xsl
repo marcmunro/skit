@@ -17,6 +17,9 @@
     <dbobject type="column" fqn="{$column_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@name)}">
       <dependencies>
+	<dependency fqn="{concat('schema.', 
+		          ancestor::database/@name, '.', 
+			  ancestor::schema/@name)}"/>
 	<!-- Dependencies on types for columns -->
 	<xsl:if test="@type_schema != 'pg_catalog'">
 	  <dependency fqn="{concat('type.', 

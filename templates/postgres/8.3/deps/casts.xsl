@@ -16,6 +16,7 @@
 			     ' as ', 
 		             skit:dbquote(target/@schema,target/@type), ')')}">
       <dependencies>
+	<dependency fqn="{concat('database.cluster.', $parent_core)}"/>
 	<!-- source type -->
 	<xsl:if test="source[@schema != 'pg_catalog']">
 	  <dependency fqn="{concat('type.', 
@@ -37,7 +38,7 @@
 				    handler-function/@signature)}"/>
 	</xsl:if>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

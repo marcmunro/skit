@@ -20,6 +20,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
 	<!-- Add explicitly identified dependencies -->
 	<xsl:for-each select="depends[@function]">
 	  <xsl:choose>
@@ -47,7 +48,7 @@
 	</xsl:call-template>
       </dependencies>
 
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 

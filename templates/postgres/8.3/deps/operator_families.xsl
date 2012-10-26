@@ -21,6 +21,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<!-- owner -->
 	<xsl:if test="@owner != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
@@ -58,7 +59,7 @@
 
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
-      <xsl:copy select=".">
+      <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 
@@ -80,11 +81,12 @@
 	          name="{@name}" qname="{skit:dbquote(@schema,@name)}"
 		  nolist="true" method="{@method}">
 	  <dependencies>
+	    <dependency fqn="{concat('schema.', $parent_core)}"/>
 	    <dependency fqn="{concat('operator_class.', $parent_core,
 			      '.', @name, '(', @method, ')')}"/>
 	  </dependencies>
 	  <xsl:for-each select="comment">
-	    <xsl:copy select=".">
+	    <xsl:copy>
 	      <xsl:copy-of select="text()"/>
 	    </xsl:copy>
 	  </xsl:for-each>
