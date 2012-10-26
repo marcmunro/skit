@@ -27,6 +27,7 @@
 	       default="{//cluster/@username}"/>	
       <dependencies>
 	<!-- Dependencies on roles from, to and priv -->
+	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
 	<dependency fqn="{concat('role.cluster.', @priv)}"/>
 	<dependency fqn="{concat('role.cluster.', @from)}"/>
 	<dependency fqn="{concat('role.', $parent_core)}"/>
@@ -101,6 +102,7 @@
 		 default="{//cluster/@username}"/>	
       </xsl:if>
       <dependencies>
+	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
 	<!-- Roles -->
 	<xsl:if test="@to != 'public'">
 	  <dependency fqn="{concat('role.cluster.', @to)}"/>

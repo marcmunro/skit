@@ -233,7 +233,11 @@ audit data'</comment>
           <privilege priv="inherit"/>
         </role>
 	<dbobject type="fallback" subtype="grant" fallback="yes" 
-		  fqn="fallback.grant.x.superuser"/>
+		  fqn="fallback.grant.x.superuser">
+	  <dependencies>
+	    <dependency fqn="role.cluster.x"/>
+	  </dependencies>
+	</dbobject>
       </dbobject>
       <dbobject type="tablespace" name="pg_default" qname="pg_default" fqn="tablespace.cluster.pg_default">
         <dependencies>
@@ -295,6 +299,7 @@ audit data'</comment>
             <context name="owner" value="x" default="marc"/>
             <dependencies>
               <dependency fqn="role.cluster.x"/>
+              <dependency fqn="schema.x.public"/>
               <dependency fqn="tablespace.cluster.pg_default"/>
 	      <dependency-set fallback="fallback.grant.x.superuser"> 
                 <dependency pqn="grant.x.public.create:public"/>
@@ -308,6 +313,7 @@ audit data'</comment>
               <dbobject type="grant" parent="table.x.public.x" name="trigger:x" pqn="grant.x.public.x.trigger:x" fqn="grant.x.public.x.trigger:x:x" owner="x" subtype="table" on="public.x">
                 <context name="owner" value="x" default="marc"/>
                 <dependencies>
+                  <dependency fqn="table.x.public.x"/>
                   <dependency fqn="role.cluster.x"/>
                   <dependency fqn="role.cluster.x"/>
                   <dependency-set fallback="fallback.grant.x.superuser">

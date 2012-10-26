@@ -482,6 +482,7 @@ START_TEST(cyclic_build)
 
 	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
+	//showVectorDeps(nodes);
 	
 	/* The following assumes that v1 will be the node that gets a
 	 * cycle breaker.  This does not have to be the case, and 
@@ -489,24 +490,22 @@ START_TEST(cyclic_build)
 	 * these tests.  TODO: Add those extra tests */
 
 	requireDeps(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL);
+		    "schema.skittest.public", "role.cluster.marc", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
 		    "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL);
+		    "privilege.cluster.marc.superuser", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
 		    "view.skittest.public.v3",
 		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL);
+		    "schema.skittest.public", "role.cluster.marc", 
+		    "privilege.cluster.marc.superuser", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
 		    "view.skittest.public.v2",
 		    "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL);
+		    "privilege.cluster.marc.superuser", NULL);
 
-	//showVectorDeps(nodes);
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -621,23 +620,22 @@ START_TEST(cyclic_both)
 	 * these tests.  TODO: Add those extra tests */
 	requireDeps(nodes_by_fqn, "rebuild.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", 
 		    "drop.viewbase.skittest.public.v1", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", 
 		    "rebuild.viewbase.skittest.public.v1", 
+		    "privilege.cluster.marc.superuser",
 		    "drop.view.skittest.public.v3", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
 		    "schema.skittest.public", "view.skittest.public.v3",
 		    "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", 
+		    "privilege.cluster.marc.superuser",
 		    "rebuild.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v2", NULL);
 	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
 		    "schema.skittest.public", "view.skittest.public.v2",
 		    "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", 
+		    "privilege.cluster.marc.superuser",
 		    "rebuild.viewbase.skittest.public.v1", 
 		    "drop.view.skittest.public.v1", NULL);
 
@@ -822,8 +820,9 @@ PLAN:
 1) Revert deps.c to a version that passes unit tests
    done
 2) Add explicit dependencies between parents and children
-   
+   done   
 3) Remove special case handling of parents throughout deps.c
+
 4) Invert the dependency direction between tables and columns
 5) Investigate handling of rebuild propagation.  This may necessitate 
    a full rewrite of deps.c 

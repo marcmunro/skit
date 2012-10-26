@@ -472,6 +472,7 @@ addExplicitDepsForNode(
     DagNode *fallback_node;
     DagNode *this;
     char *errmsg;
+    String *tmp;
 
     assert(node, "addExplicitDepsForNode: no node provided");
     if (node->xnode_for) {
@@ -523,11 +524,18 @@ addExplicitDepsForNode(
 	}	
 	else {
 	    if (!deps) {
-		RAISE(TSORT_ERROR, 
-		      newstr("Unable to find any dependency for dependency "
-			     "set in %s\n(Perhaps a fallback needs to be "
-			     "defined by the skit template developer)", 
-			     node->fqn->value));
+		if (isDependencySet(dep_node)) {
+		    RAISE(TSORT_ERROR, 
+			  newstr("Unable to find any dependency for dependency "
+				 "set in %s\n(Perhaps a fallback needs to be "
+				 "defined by the skit template developer)", 
+				 node->fqn->value));
+		}
+		tmp = nodeAttribute(dep_node, "fqn");
+		errmsg = newstr("Unable to find dependency %s in %s", 
+				tmp->value, node->fqn->value);
+		objectFree((Object *) tmp, TRUE);
+		RAISE(TSORT_ERROR, errmsg);
 	    }
 	}
 
@@ -746,9 +754,10 @@ identifyDeps(Vector *nodes, Hash *byfqn)
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
 	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
-	    if (node->parent) {
-		addDep(node, node->parent, 0);
-	    }
+	    //XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+	    //if (node->parent) {
+	    //addDep(node, node->parent, 0);
+	    //}
 	}
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
@@ -968,7 +977,6 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 {
     DagNode *primary;
     DagNode *dup;
-    DagNode *node_for_breaker;
     int i;
 
     EACH(rebuild_nodes, i) {

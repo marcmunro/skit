@@ -84,11 +84,13 @@
 	</xsl:if>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
+
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @signature)"/>
+			  select="concat(ancestor::database/@name, '.', 
+				         @signature)"/>
 	</xsl:apply-templates>
       </xsl:copy>
     </dbobject>

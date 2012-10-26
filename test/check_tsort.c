@@ -368,10 +368,10 @@ START_TEST(check_cyclic_gensort)
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order(results, "('drop.database.cluster.skittest' "
+	check_build_order(results, "('drop.database.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
-		      "'database.cluster.skittest')");
+		      "'database.skittest')");
 	check_build_order(results, "('drop.role.cluster.keep' "
 			  "'role.cluster.keep')");
 	check_build_order(results, "('drop.role.cluster.keep2' "
@@ -473,10 +473,10 @@ START_TEST(check_cyclic_gensort2)
 	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order(results, "('drop.database.cluster.skittest' "
+	check_build_order(results, "('drop.database.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
-		      "'database.cluster.skittest')");
+		      "'database.skittest')");
 	check_build_order(results, "('drop.role.cluster.keep' "
 		      "'role.cluster.keep')");
 	check_build_order(results, "('drop.role.cluster.keep2' "

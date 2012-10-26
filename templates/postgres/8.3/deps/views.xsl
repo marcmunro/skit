@@ -21,6 +21,7 @@
       </xsl:if>
       <dependencies>
 	<!-- Add explicitly identified dependencies -->
+	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<xsl:for-each select="depends[@function]">
 	  <xsl:choose>
 	    <xsl:when test="@cast">

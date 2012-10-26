@@ -406,8 +406,9 @@ extern boolean checkVector(Vector *vec, void *chunk);
 #define setDel vectorDel
 #define setSearch vectorSearch
 
-#define EACH(vector, idx) 			\
-    for (idx = 0; idx < vector->elems; idx++)
+#define EACH(vector, idx)				\
+    if (vector)						\
+        for (idx = 0; idx < vector->elems; idx++)
 
 #define ELEM(vec, idx)				\
     vec->contents->vector[idx]

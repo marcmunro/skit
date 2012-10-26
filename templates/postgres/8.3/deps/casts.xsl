@@ -16,7 +16,7 @@
 			     ' as ', 
 		             skit:dbquote(target/@schema,target/@type), ')')}">
       <dependencies>
-	<dependency fqn="{concat('database.cluster.', $parent_core)}"/>
+	<dependency fqn="{concat('database.', $parent_core)}"/>
 	<!-- source type -->
 	<xsl:if test="source[@schema != 'pg_catalog']">
 	  <dependency fqn="{concat('type.', 

@@ -5,16 +5,19 @@
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.3.14" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
       <dbobject type="role" name="r1" qname="r1" fqn="role.cluster.r1">
         <dependencies>
+          <dependency fqn="cluster"/>
 	  <dependency fqn="role.cluster.r3"/>
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r2" qname="r2" fqn="role.cluster.r2">
         <dependencies>
+          <dependency fqn="cluster"/>
 	  <dependency fqn="role.cluster.r3"/>
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r3" qname="r3" fqn="role.cluster.r3">
         <dependencies>
+	  <dependency fqn="cluster"/>
 	  <dependency-set>
 	    <dependency fqn="role.cluster.r1"/>
 	    <dependency fqn="role.cluster.r2"/>
@@ -25,7 +28,6 @@
       <dbobject type="role" name="r4" qname="r4" fqn="role.cluster.r4">
         <dependencies>
           <dependency fqn="cluster"/>
-          <dependency fqn="cluster"/>
 	  <dependency-set>
 	    <dependency fqn="role.cluster.r1"/>
 	    <dependency fqn="role.cluster.r2"/>
@@ -34,6 +36,9 @@
         </dependencies>
       </dbobject>
       <dbobject type="role" name="r5" qname="r5" fqn="role.cluster.r5">
+        <dependencies>
+          <dependency fqn="cluster"/>
+        </dependencies>
       </dbobject>
     </cluster>
   </dbobject>

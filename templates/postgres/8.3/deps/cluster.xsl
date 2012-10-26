@@ -59,7 +59,7 @@
   <xsl:template match="database" mode="database">
     <dbobject type="database" visit="true" name="{@name}" 
 	      qname="{skit:dbquote(@name)}" 
-	      fqn="{concat('database.cluster.', @name)}">
+	      fqn="{concat('database.', @name)}">
       <dependencies>
 	<dependency fqn="{concat('dbincluster.cluster.', @name)}"/>
       </dependencies>
@@ -73,7 +73,11 @@
 	     superuser privilege to the role -->
 	<xsl:for-each select="//cluster/role">
 	  <dbobject type="fallback" subtype="grant" fallback="yes" 
-		    fqn="{concat('fallback.grant.', @name, '.superuser')}"/>
+		    fqn="{concat('fallback.grant.', @name, '.superuser')}">
+	    <dependencies>
+	      <dependency fqn="{concat('role.cluster.', @name)}"/>
+	    </dependencies>
+	  </dbobject>
 	</xsl:for-each>
       </database>
     </dbobject>

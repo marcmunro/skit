@@ -15,7 +15,7 @@
 	      fqn="{$tbs_fqn}">
       <xsl:if test="@owner != 'public'">
 	<dependencies>
-	  <dependency fqn="{concat('database.cluster.', $parent_core)}"/>
+	  <dependency fqn="{concat('database.', $parent_core)}"/>
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</dependencies>
       </xsl:if>
