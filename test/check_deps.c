@@ -822,8 +822,9 @@ PLAN:
 2) Add explicit dependencies between parents and children
    done   
 3) Remove special case handling of parents throughout deps.c
-
+   Handling of parents as deps is done.
 4) Invert the dependency direction between tables and columns
+   done
 5) Investigate handling of rebuild propagation.  This may necessitate 
    a full rewrite of deps.c 
 

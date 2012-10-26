@@ -75,9 +75,7 @@
   <xsl:template match="table">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="table_fqn" 
-		  select="concat('table.', 
-			  ancestor::database/@name, '.', 
-			  ancestor::schema/@name, '.', @name)"/>
+		  select="concat('table.', $parent_core, '.', @name)"/>
     <dbobject type="table" fqn="{$table_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@schema,@name)}">
       <xsl:if test="@owner">
@@ -112,6 +110,12 @@
 			    @schema, '.', @sequence)}"/>
 	</xsl:for-each>
 
+	<!-- The table depends on all of its columns -->
+	<xsl:for-each select="column">
+	  <dependency fqn="{concat('column.', $parent_core, '.', ../@name, 
+		            '.', @name)}"/>
+
+	</xsl:for-each>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy>
