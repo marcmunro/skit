@@ -226,6 +226,7 @@ typedef enum {
     ARRIVE_NODE,
     DEPART_NODE,
     BUILD_AND_DROP_NODE,
+    OPTIONAL_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
 
@@ -260,10 +261,12 @@ typedef struct DagNode {
     Vector          *dependencies;   // use objectFree(obj, FALSE);
     Vector          *dependents;     // use objectFree(obj, FALSE);
     Vector          *original_dependencies;
+    struct DagNode  *supernode;
+    struct DagNode  *subnodes;       // Linked list
     struct DagNode  *breaker_for;    // Reference only
-    struct DagNode  *xnode_for; // Reference only
+    struct DagNode  *xnode_for; // Reference only  DEPRECATE
     struct DagNode  *fallback;  // Reference only
-    struct DagNode  *duplicate_node; // Reference only
+    struct DagNode  *duplicate_node; // Reference only IS THIS USED?  DEPRECATE?
     struct DagNode  *parent;    // Reference only
 } DagNode;
 

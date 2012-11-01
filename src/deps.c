@@ -133,9 +133,14 @@
 void
 showDeps(DagNode *node)
 {
+    DagNode *sub = node->subnodes;
     if (node) {
 	printSexp(stderr, "NODE: ", (Object *) node);
 	printSexp(stderr, "-->", (Object *) node->dependencies);
+	while (sub) {
+	    printSexp(stderr, "oooo>", (Object *) sub->dependencies);
+	    sub = sub->subnodes;
+	}
 	printSexp(stderr, "<--", (Object *) node->dependents);
     }
 }
@@ -1590,6 +1595,472 @@ prepareDagForBuild(Vector **p_nodes)
     eliminateXnodes(sorted);
     //fprintf(stderr, "\n\n2\n\n");
     //showVectorDeps(sorted);
+    rebuild_nodes = identifyRebuildNodes(sorted);
+    //fprintf(stderr, "\n\n3\n\n");
+    //dbgSexp(rebuild_nodes);
+    //showVectorDeps(sorted);
+    duplicateRebuildNodes(sorted, rebuild_nodes);
+    //fprintf(stderr, "\n\n4\n\n");
+    //showVectorDeps(sorted);
+
+    objectFree((Object *) rebuild_nodes, FALSE);
+    redirectDependencies(sorted);
+    //fprintf(stderr, "\n\n5\n\n");
+    //showVectorDeps(sorted);
+}
+
+
+/* This is a new implementation of deps handling.  The set of
+ * dependencies defined in the document graph must eventually form a
+ * DAG.  There are two distinct challenges that we face in doing this:
+ * 1) optional dependencies
+ * 2) cyclic dependencies
+ *
+ * Both of these issues are dealt with in the resolving_tsort()
+ * function.  This traverses the graph, eliminating optional
+ * dependencies and placing breaker nodes where needed in order to deal
+ * with cyclic dependencies.  Once this function is complete, the
+ * resulting dependency graph is a true DAG.
+ *
+ * Optional dependencies are handled as follows.  Consider a dependency
+ * specification that looks something like this:
+ * A -> (B or C)
+ *
+ * Although this can be dealt with by making the tsort code smart enough
+ * to handle optional dependencies, there is no usable way to invert the
+ * resulting graph.  The naive solution:
+ * (B or C) -> A
+ * 
+ * leads to a pair of nodes on the left hand side of the dependency,
+ * which is not something the standard tsort algorithm can be easily
+ * modified to deal with.  Since we need to be able to invert the
+ * dependency graph (in order to handle generation of drop scripts, and
+ * also to manage the drop parts of code generation for diffs), we need
+ * a better solution.  The adopted solution is to make nodes with
+ * optional dependencies contain a subnode for each optional part, and
+ * to make resolving tsort able to deal with subnodes.  Consider the
+ * following graph definition: A -> (B or C) A -> D F -> A
+ *
+ * Using subnodes, this becomes:
+ * A1 -> B
+ * A2 -> C 
+ * A -> D
+ * F -> A
+ * 
+ * This has the advantage of being able to be inverted without multiple
+ * nodes appearing on the left hand side of the dependencies.
+ * 
+ * Cyclic dependencies are handled by adding a cycle breaking node.
+ * Only a limited number of database objects are capable of being dealt
+ * with in this way, so only those dbobjects will specify cycle
+ * breakers.  In postgres, views are able to be defined in terms of each
+ * other.  The following code creates a pair of views that are mutually
+ * dependent (though not very useful):
+ *   create view x as select 1 as a, 2 as b;
+ *   create view y as select * from x;
+ *   create or replace view x as select * from y;
+ *
+ * From the DAG point of view, given the following cyclic dependency
+ * graph:
+ *   A -> B
+ *   B -> A
+ *   B -> C
+ *   A -> D
+ * We resolve the cyclic dependency by adding a cycle breaker for one of
+ * the nodes in the cycle (eg B).  This gives us the following
+ * dependencies:
+ * B -> A
+ * B -> C
+ * A -> B'
+ * A -> D
+ * B'-> C
+ * 
+ */
+
+/* Our cycle breaking strategy:
+ * - if we have a cycle breaker available we use it
+ *   Done in tsort_deps
+ * - if we have a bunch of optional dependencies, none of which are
+ *   satisfied, and we have a fallback available, we use it.
+ *   Done where??????
+ * - if we have a bunch of optional dependents, none of which have been
+ *   satisfied, and we have a fallback available, we use it.
+ *   Done where??????
+ */
+
+static DagNode *
+getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn)
+{
+    String *fallback;
+    DagNode *fallback_node = NULL;
+    char *errmsg;
+    if (isDependencySet(dep_node)) {
+	fallback = nodeAttribute(dep_node, "fallback");
+	if (fallback) {
+	    fallback_node = (DagNode *) hashGet(nodes_by_fqn, 
+						(Object *) fallback);
+	    if (!fallback_node) {
+		errmsg = newstr("Fallback node %s not found", 
+				fallback->value);
+		objectFree((Object *) fallback, TRUE);
+		RAISE(TSORT_ERROR, errmsg);
+	    }
+	    objectFree((Object *) fallback, TRUE);
+	}
+    }
+    return fallback_node;
+}
+
+
+static DagNode *
+addSubNode(DagNode *node)
+{
+    DagNode *this;
+    this = dagnodeNew(node->dbobject, OPTIONAL_NODE);
+    this->subnodes = node->subnodes;
+    this->supernode = node;
+    node->subnodes = this;
+    return this;
+}
+
+/* Record the dependencies for a single node. */
+static void
+addDepsForNode(
+    DagNode *node, 
+    Vector *nodes,
+    Hash *nodes_by_fqn, 
+    Hash *nodes_by_pqn)
+{
+    xmlNode *dep_node;
+    DagNode *fallback_node;
+    Vector *deps;
+    DagNode *this;
+    String *tmp;
+    String *errmsg;
+
+    assert(node, "addExplicitDepsForNode: no node provided");
+    if (node->xnode_for) {
+	/* This is an xnode, so deps have already been added */
+	return;
+    }
+    assert(node->dbobject, "addExplicitDepsForNode: node has no dbobject");
+
+    for (dep_node = node->dbobject->children;
+	 dep_node = nextDependency(dep_node);
+	 dep_node = dep_node->next) 
+    {
+	fallback_node = getFallbackNode(dep_node, nodes_by_fqn);
+	deps = explicitDepsForNode(dep_node, nodes_by_fqn, 
+				   nodes_by_pqn, 0);
+
+	if (fallback_node || (deps && (deps->elems > 1))) {
+	    /* We have a set of optional dependencies.  Create a new subnode
+	     * where they will be recorded. */
+	    this = addSubNode(node);
+	}
+	else {
+	    if (!deps) {
+		if (isDependencySet(dep_node)) {
+		    RAISE(TSORT_ERROR, 
+			  newstr("Unable to find any dependency for dependency "
+				 "set in %s\n(Perhaps a fallback needs to be "
+				 "defined by the skit template developer)", 
+				 node->fqn->value));
+		}
+		tmp = nodeAttribute(dep_node, "fqn");
+		errmsg = newstr("Unable to find dependency %s in %s", 
+				tmp->value, node->fqn->value);
+		objectFree((Object *) tmp, TRUE);
+		RAISE(TSORT_ERROR, errmsg);
+	    }
+
+	    this = node;  /* this is the node to which we will add deps */
+	}
+
+	if (deps) {
+	    addDepsVector(this, deps);
+	    objectFree((Object *) deps, FALSE);
+	}
+    }
+}
+
+
+/* Create an initial dependency graph.
+ */
+Vector *
+nodesFromDoc2(Document *doc)
+{
+    Vector *volatile nodes = vectorNew(1000);
+    Hash *volatile byfqn = NULL;
+    Hash *volatile bypqn = NULL;
+    DagNode *node;
+    int i;
+
+    BEGIN {
+	(void) xmlTraverse(doc->doc->children, &addNodeToVector, 
+			   (Object *) nodes);
+	byfqn = hashByFqn(nodes);
+	bypqn = hashByPqn(nodes);
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
+	    addDepsForNode(node, nodes, byfqn, bypqn);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) nodes, TRUE);
+    }
+    FINALLY {
+	objectFree((Object *) byfqn, FALSE);
+	objectFree((Object *) bypqn, TRUE);
+    }
+    END;
+    return nodes;
+}
+
+
+
+
+
+static void tsort_node2(Vector *nodelist, DagNode *node, Vector *results);
+
+static void
+tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
+{
+    Vector *volatile deps;
+    volatile int i;
+    Dependency *dep;
+    DagNode *depnode;
+    boolean in_cycle;
+    DagNode *cycle_node;
+    DagNode *breaker;
+    char *errmsg;
+    char *tmpmsg;
+
+    if (deps = node->dependencies) {
+	EACH(deps, i) {
+	    node->dep_idx = i;
+	    dep = (Dependency *) ELEM(deps, i);
+	    depnode = dep->dependency;
+	    BEGIN {
+		tsort_node2(nodelist, depnode, results);
+		in_cycle = FALSE;
+	    }
+	    EXCEPTION(ex);
+	    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+		in_cycle = TRUE;
+		cycle_node = (DagNode *) ex->param;
+		errmsg = newstr("%s", ex->text);
+	    }
+	    END;
+
+	    if (in_cycle) {
+		if (breaker = getBreakerFor(depnode)) {
+		    /* We have a breaker for depnode.  Add it to our
+		     * nodes vector. */
+		    vectorPush(nodelist, (Object *) breaker);
+		    processBreaker(node, breaker);
+
+		    skfree(errmsg);
+		    i--;        /* The current depnode will have been
+				 * replaced, so repeat this iteration. 
+				 */
+		    continue;   
+		}
+
+		if (node->supernode) {
+		    /* In a subnode, only a single dependency from the
+		     * vector needs to succeed. */
+
+		    if ((i + 1) < deps->elems) {
+			/* Try the next dep in the list. */
+			skfree(errmsg);
+			continue;
+		    }
+		}
+
+		if (node == cycle_node) {
+		    /* We are at the start of the cyclic dependency.
+		     * Set errmsg to describe this, and reset cycle_node
+		     * for the RAISE below. */ 
+		    tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+				    node->fqn->value, errmsg);
+		    cycle_node = NULL;
+		}
+		else if (cycle_node) {
+		    /* We are somewhere in the cycle of deps.  Add the current
+		     * node to the error message. */ 
+		    tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+		}
+		else {
+		    /* We are outside of the cyclic deps.  Add this node
+		     * to the error message so we can see how we got
+		     * to this point.  */ 
+		    tmpmsg = newstr("%s from %s", errmsg, node->fqn->value);
+		}
+
+		skfree(errmsg);
+		errmsg = tmpmsg;
+		RAISE(TSORT_CYCLIC_DEPENDENCY, errmsg, cycle_node);
+	    }
+
+	    /* We are not in a dependency cycle.  If this is a subnode,
+	     * we have successfully found a suitable dependency and we
+	     * record it.  If not, we process the rest of the
+	     * dependencies. */
+	    if (node->supernode) {
+		return;
+	    }
+	}
+    }
+}
+
+static DagNodeStatus *
+nodeStatusP(DagNode *node)
+{
+    if (node->supernode) {
+	return &(node->supernode->status);
+    }
+    return &(node->status);
+}
+
+static void
+tsort_subnodes(
+    Vector *nodelist,
+    DagNode *node,
+    Vector *results)
+{
+    /* We will have already handled the non-optional dependencies of our
+     * parent node. */
+    while (node) {
+	tsort_deps2(nodelist, node, results);
+	node = node->subnodes;
+    }
+}
+
+static void
+tsort_node2(
+    Vector *nodelist,
+    DagNode *node,
+    Vector *results)
+{
+    DagNodeStatus *p_status = nodeStatusP(node);
+
+    switch (*p_status) {
+    case VISITING:
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
+    case UNVISITED: 
+	BEGIN {
+	    *p_status = VISITING;
+	    tsort_deps2(nodelist, node, results);
+	    if (node->supernode) {
+		/* node is a sub-node.  Now handle the deps for the parent */
+		RAISE(NOT_IMPLEMENTED_ERROR, newstr("TSORT_DEPS2 of supernode"));
+		//tsort_deps2(nodes, node->supernode, results);
+	    }
+	    else if (node->subnodes) {
+		/* node is a parent-node.  Handle optional deps */
+		tsort_subnodes(nodelist, node->subnodes, results);
+	    }
+	}
+	EXCEPTION(ex) {
+	    *p_status = UNVISITED;
+	    RAISE();
+	}
+	END;
+	*p_status = RESOLVED;
+	vectorPush(results, (Object *) node);
+	break;
+    case RESOLVED: 
+	break;
+    default:
+	RAISE(TSORT_ERROR,
+		  newstr("Unexpected status for dagnode %s: %d",
+			 node->fqn->value, node->status));
+    }
+}
+
+/* Convert the dependency graph into a true DAG.  This is a variant on
+ * the standard tsort algorithm, with tweaks to allow optional and
+ * cyclic dependencies.  */
+Vector *
+resolving_tsort2(Vector *nodelist)
+{
+    Vector *volatile results = vectorNew(nodelist->elems + 10);
+    DagNode *node;
+    int i;
+    BEGIN {
+	EACH(nodelist, i) {
+	    node = (DagNode *) ELEM(nodelist, i);
+	    tsort_node2(nodelist, node, results);
+	}
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, FALSE);
+	RAISE();
+    }
+    END;
+
+    return results;
+}
+
+static void
+resolveOneSubNode(DagNode *node, DagNode *sub)
+{
+    Dependency *dep;
+    DagNode *depnode;
+    int i;
+
+    EACH(sub->dependencies, i) {
+	dep = (Dependency *) ELEM(sub->dependencies, i);
+	depnode = dep->dependency;
+	/* Remove the optional dependent. */
+	rmFromDepVector(depnode->dependents, sub);
+
+	if (i == sub->dep_idx) {
+	    /* Add depnode as a non-optional dependency to node. */
+	    addDep(node, depnode, 0);
+	}
+    }
+    objectFree((Object *) sub->dependencies, TRUE);
+    sub->dependencies = NULL;
+}
+
+/* Make the optional deps into actual ones. */
+static void
+resolveSubNodes(Vector *nodes)
+{
+    int i;
+    DagNode *this;
+    DagNode *sub;
+    DagNode *next;
+    Dependency *dep;
+    EACH(nodes, i) {
+	this = (DagNode *) ELEM(nodes, i);
+	sub = this->subnodes;
+	while (sub) {
+	    next = sub->subnodes;
+	    resolveOneSubNode(this, sub);
+	    sub = next;
+	}
+    }
+}
+
+void
+prepareDagForBuild2(Vector **p_nodes)
+{
+    int i;
+    DagNode *node;
+    Vector *sorted = resolving_tsort2(*p_nodes);
+    Vector *rebuild_nodes = NULL;
+    objectFree((Object *) *p_nodes, FALSE);
+    *p_nodes = sorted;
+
+    //fprintf(stderr, "\n\n1\n\n");
+    //showVectorDeps(sorted);
+    resolveSubNodes(sorted);
     rebuild_nodes = identifyRebuildNodes(sorted);
     //fprintf(stderr, "\n\n3\n\n");
     //dbgSexp(rebuild_nodes);

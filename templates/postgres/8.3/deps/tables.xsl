@@ -103,7 +103,7 @@
 				   @schema, '.', @name)}"/>
 	</xsl:for-each>
 
-	<!-- Dependency on sequences Q: should these be col dependencies? -->
+	<!-- Dependency on sequences -->
 	<xsl:for-each select="depends[@schema]">
 	  <dependency fqn="{concat('sequence.', 
 			    ancestor::database/@name, '.', 

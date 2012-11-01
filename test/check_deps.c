@@ -126,6 +126,61 @@ requireDeps(Hash *hash, char *from, ...)
     }
 }
 
+static void
+requireOptionalDeps(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DagNode *fromnode;
+    DagNode *tonode;
+    DagNode *sub;
+    String *key;
+    int dep_elems = 0;
+    Vector *required = vectorNew(10);
+    int i;
+    boolean abandoned = FALSE;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	vectorPush(required, (Object*) stringNew(to));
+	count++;
+    }
+    va_end(params);
+    key = stringNewByRef(from);
+    fromnode = (DagNode *) hashGet(hash, (Object *) key);
+    if (!fromnode) {
+	fail("Cannot find %s ", key->value);
+    }
+
+    objectFree((Object *) key, FALSE);
+    sub = fromnode->subnodes;
+
+    while (sub) {
+	dep_elems = (sub->dependencies)? sub->dependencies->elems: 0;
+	abandoned = FALSE;
+	EACH(required, i) {
+	    key = (String *) ELEM(required, i);
+	    tonode = (DagNode *) hashGet(hash, (Object *) key);
+	    if (!hasDependency(sub, tonode)) {
+		abandoned = TRUE;
+		break;
+	    }
+	}
+	if (!abandoned) {
+	    /* Everything must have matched.  Yippee! */
+	    break;
+	}
+	sub = sub->subnodes;
+    }
+    objectFree((Object *) required, TRUE);
+	
+    if (abandoned) {
+	fail("Not all optional dependencies accounted for in %s "
+	     "(expecting %d)", fromnode->fqn->value, count);
+    }
+}
+
 
 static char *
 xnodeName(char *basename, Vector *nodes)
@@ -170,7 +225,6 @@ START_TEST(depset_deps1)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
-    char *xnode_name;
 
     BEGIN {
 	initBuiltInSymbols();
@@ -180,29 +234,24 @@ START_TEST(depset_deps1)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
+	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
 	requireDeps(nodes_by_fqn, "role.cluster.r1", "cluster", 
 		    "role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", "cluster", 
 		    "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r3", "cluster", NULL);
 
-	xnode_name = xnodeName("role.cluster.r3.", nodes);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", "cluster", 
-		    xnode_name, NULL);
-	requireNoDep(nodes_by_fqn, xnode_name, "cluster"); 
-	requireDeps(nodes_by_fqn, xnode_name, "role.cluster.r1", 
-		    "role.cluster.r2", "role.cluster.r4", NULL);
+	requireOptionalDeps(nodes_by_fqn, "role.cluster.r3", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r4", NULL);
 
+	requireOptionalDeps(nodes_by_fqn, "role.cluster.r4", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r5", NULL);
 
-	xnode_name = xnodeName("role.cluster.r4.", nodes);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", "cluster", 
-		    xnode_name, NULL);
-	requireNoDep(nodes_by_fqn, xnode_name, "cluster"); 
-	requireDeps(nodes_by_fqn, xnode_name, "role.cluster.r1", 
-		    "role.cluster.r2", "role.cluster.r5", NULL);
-	
 	requireDeps(nodes_by_fqn, "role.cluster.r5", "cluster", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -246,9 +295,9 @@ START_TEST(depset_dag1_build)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -789,6 +838,52 @@ START_TEST(cond)
 }
 END_TEST
 
+START_TEST(cyclic_build2)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Vector *results = NULL;
+    char *xnode_name;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(1911);
+	//showFree(572);
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource2.xml");
+	nodes = (Vector *) nodesFromDoc2(doc);
+	//dbgSexp(nodes);
+	//showVectorDeps(nodes);
+
+	results = (Vector *) resolving_tsort2(nodes);
+	//dbgSexp(results);
+
+	objectFree((Object *) results, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//dbgSexp(nodes);
+	objectFree((Object *) results, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
 
 Suite *
 deps_suite(void)
@@ -809,6 +904,7 @@ deps_suite(void)
 
     ADD_TEST(tc_core, fallback);
 				
+    ADD_TEST(tc_core, cyclic_build2);
     suite_add_tcase(s, tc_core);
 
     return s;
@@ -817,16 +913,10 @@ deps_suite(void)
 
 #ifdef wibble
 PLAN:
-1) Revert deps.c to a version that passes unit tests
-   done
-2) Add explicit dependencies between parents and children
-   done   
-3) Remove special case handling of parents throughout deps.c
-   Handling of parents as deps is done.
-4) Invert the dependency direction between tables and columns
-   done
-5) Investigate handling of rebuild propagation.  This may necessitate 
-   a full rewrite of deps.c 
+Rewrite deps.c to use the new ideas for dealing with optional dependencies.
 
+Todo: 
+DEPRECATE ALL XNODE STUFF
+   
 
 #endif

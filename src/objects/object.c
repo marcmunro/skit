@@ -423,6 +423,8 @@ basicDagNode()
     new->fallback = NULL;
     new->duplicate_node = NULL;
     new->parent = NULL;
+    new->supernode = NULL;
+    new->subnodes = NULL;
 
     return new;
 }
@@ -477,9 +479,8 @@ xnodeNew(DagNode *source)
     return new;
 }
 
-
 void
-dagnodeFree(DagNode *node)
+doDagnodeFree(DagNode *node)
 {
     if (node->breaker_for) {
 	/* This is a breaker node, so the xmlnode is not from a
@@ -491,6 +492,27 @@ dagnodeFree(DagNode *node)
     objectFree((Object *) node->original_dependencies, TRUE);
     objectFree((Object *) node->dependents, TRUE);
     skfree(node);
+}
+
+void
+dagnodeFree(DagNode *node)
+{
+    DagNode *sub;
+    DagNode *tmp;
+    if (node->supernode) {
+	/* This is a subnode.  Do not free it, as it will be dealt with
+	 * when the supernode is freed. */
+	return;
+    }
+
+    sub = node->subnodes;
+    doDagnodeFree(node);
+
+    while (sub) {
+	tmp = sub->subnodes;
+	doDagnodeFree(sub);
+	sub = tmp;
+    }
 }
 
 Dependency *
@@ -578,6 +600,7 @@ nameForBuildType(DagNodeBuildType build_type)
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
     case REBUILD_NODE: return "rebuild";
+    case OPTIONAL_NODE: return "optional";
     case BUILD_AND_DROP_NODE: return "build and drop";
     }
     return "UNKNOWNBUILDTYPE";
