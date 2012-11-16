@@ -24,16 +24,24 @@
 #include <unistd.h>
 #include <signal.h>
 
+static char *stdout_file = NULL;
+static char *stderr_file = NULL;
 
 static char *
 flushCaptured(char *name)
 {
-    int len = 5000;
+    int len = 20000;
     char *buffer = malloc(len);
     char c;
     int i = 0;
 	
     FILE *fp = fopen(name, "r");
+    if (!fp) {
+	sprintf(buffer, 
+		"==CAPTUREFAIL==\nUnable to open file %s, errno %d: \"%s\"\n", 
+		name, errno, strerror(errno));
+	return buffer;
+    }
     while ((c = getc(fp)) != EOF) {
 	buffer[i++] = c;
 	if (i >= len) {
@@ -51,7 +59,7 @@ static int
 capture_stdout()
 {
     int old = dup(fileno(stdout));
-    freopen("./test_stdout", "w", stdout);
+    freopen(stdout_file, "w", stdout);
     return old;
 }
 
@@ -62,14 +70,14 @@ flush_stdout(int old)
     dup2(old, fileno(stdout));
     close(old);
 
-    return flushCaptured("./test_stdout");
+    return flushCaptured(stdout_file);
 }
 
 static int
 capture_stderr()
 {
     int old = dup(fileno(stderr));
-    freopen("./test_stderr", "w", stderr);
+    freopen(stderr_file, "w", stderr);
     return old;
 }
 
@@ -80,7 +88,7 @@ flush_stderr(int old)
     dup2(old, fileno(stderr));
     close(old);
 
-    return flushCaptured("./test_stderr");
+    return flushCaptured(stderr_file);
 }
 
 static jmp_buf back_to_capture;
@@ -110,6 +118,14 @@ restore_handler()
 }
 
 
+static char *
+filenameFor(char *name)
+{
+    char *result = malloc(100);
+    sprintf(result, "./test_%s_%p", name, getpid());
+    return result;
+}
+
 /* Run test_fn with stdout and stderr captured. */
 int 
 captureOutput(TestRunner *test_fn,
@@ -118,10 +134,15 @@ captureOutput(TestRunner *test_fn,
 	      char **p_stderr,
 	      int *p_signal)
 {
-    int old_stdout = capture_stdout();
-    int old_stderr = capture_stderr();
+    int old_stdout;
+    int old_stderr;
     int result;
     int sig;
+    
+    stdout_file = filenameFor("stdout");
+    stderr_file = filenameFor("stderr");
+    old_stdout = capture_stdout();
+    old_stderr = capture_stderr();
 
     if ((sig = sigsetjmp(back_to_capture, 1)) == 0) {
 	if (p_signal) {
@@ -132,12 +153,23 @@ captureOutput(TestRunner *test_fn,
 
     *p_stdout = flush_stdout(old_stdout);
     *p_stderr = flush_stderr(old_stderr);
+    if (strncmp(*p_stdout, "==CAPTUREFAIL==", 15) == 0) {
+	fprintf(stderr, "STDOUT CAPTURE FAIL: %s\n", *p_stdout);
+    }
+
+    if (strncmp(*p_stderr, "==CAPTUREFAIL==", 15) == 0) {
+	fprintf(stderr, "STDERR CAPTURE FAIL: %s\n", *p_stderr);
+    }
 
     if (p_signal) {
 	signal(SIGTERM, NULL);
 	*p_signal = sig;
     }
 
+    free(stdout_file);
+    free(stderr_file);
+    stdout_file = NULL;
+    stderr_file = NULL;
     return result;
 }
 

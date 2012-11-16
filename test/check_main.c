@@ -206,6 +206,10 @@ usage()
 	    " -r is reporting only for showing available tests\n");
 }
 
+/** 
+ * Read flags (-r, -n, -s or -S, and set suite_name and test_name if
+ * they were provided as args.
+ */
 void
 handle_args(int argc, char *argv[])
 {
@@ -234,6 +238,11 @@ handle_args(int argc, char *argv[])
     }
 }
 
+/**
+ * Called from ADD_TEST() to conditionally add a test case.  The test
+ * will only be added if the name matches test_name (possibly provided as
+ * an arg to the test run) or if test_name is empty.
+ */
 boolean
 check_test(char *testname, boolean report_this)
 {
@@ -246,6 +255,10 @@ check_test(char *testname, boolean report_this)
     return string_matches(testname, test_name);
 }
 
+/**
+ * Conditionally add the given suite to the test run.  It is added if
+ * the name of the suite matches suite_name, or if suite_name is empty.
+ */
 #define ADD_SUITE(name)					\
     if (suppressions || reporting_only) {		\
 	strcpy(suite_name, #name);			\

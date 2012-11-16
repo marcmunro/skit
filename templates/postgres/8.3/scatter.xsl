@@ -20,7 +20,7 @@
 	   use="concat(operator/@schema, '.', operator/@name)"/>
 
   <xsl:template match="*" mode="fullcopy">
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates mode="fullcopy"/>
     </xsl:copy>

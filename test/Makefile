@@ -26,8 +26,8 @@ TEST_OBJECTS = $(TEST_SOURCES:%.c=%.o)
 TEST_DEPS = $(TEST_SOURCES:.c=.d)
 TEST_GARBAGE = $(garbage:%=$(TEST_DIR)/%)
 
-#LIBCHECK = /usr/lib/libcheck.a
-LIBCHECK = /home/marc/dpkg/check-0.9.8/src/.libs/libcheck.a
+LIBCHECK = /usr/lib/libcheck.a
+#LIBCHECK = /home/marc/dpkg/check-0.9.8/src/.libs/libcheck.a
 
 
 MEMCHECK_OPTIONS = --leak-check=full --show-reachable=yes --trace-children=yes 
@@ -40,7 +40,7 @@ GEN_SUPPRESSIONS = $(VALGRIND_BASIC_OPTIONS) --gen-suppressions=all
 VALGRIND_OPTIONS = $(VALGRIND_BASIC_OPTIONS) $(MEMCHECK_SUPPRESSIONS)
 
 # Include dependency files for each test file
-include $(TEST_DEPS)
+include $(TEST_DEPS) $(TEST_DIR)/alltests.mk
 
 
 # Build skit unit test executable from sources.
@@ -98,11 +98,21 @@ valgrind/suppressions:
 valgrind/alltests: skit_test
 	./skit_test -r $(SUPP_FLAG) >valgrind/alltests
 
-grind: skit_test valgrind/suppressions
-	valgrind $(VALGRIND_OPTIONS) ./skit_test $(TESTS)
+# Convert from a target name to the strings to be used for the test
+# parameters to skit_test.
+TARG_TO_TEST = echo $@ | sed -e 's/\(.*\)__\(.*\)\..*/\1 \2/'
 
-skgrind: skit_test valgrind/alltests valgrind/suppressions
-	valgrind/run_valgrind $(VALGRIND_OPTIONS) ./skit_test $(TESTS)
+# Given a value for the TESTS variable, convert this into the
+# appropriate target name.
+TEST_TO_TARG = echo "$(TESTS)" | (read suite test; \
+		if [ "x$${suite}" = "x" ]; then echo _$@; \
+		elif [ "x$${test}" = "x" ]; then echo $@__$${suite}; \
+		else echo $${suite}__$${test}.$@; fi)
+
+skgrind grind: skit_test valgrind/suppressions
+	@rm valgrind.log
+	@$(MAKE) `$(TEST_TO_TARG)`
+
 
 # Remove the shared library and all generated/intermediate files
 test_clean:
@@ -110,9 +120,36 @@ test_clean:
 	@rm -f $(TEST_OBJECTS) $(TEST_DEPS) \
 	       $(TEST_GARBAGE) skit skit_test \
 	       valgrind/alltests valgrind/valgrind.log \
-	       valgrind/suppressions $(SUPPRESSION_FILES)
+	       valgrind/suppressions $(SUPPRESSION_FILES) \
+		$(TEST_DIR)/alltests.mk
 
 tests_distclean: tests_clean
+
+
+# How to build a .grind target.  These targets are specified in
+# tests/alltests.mk and are automatically generated below
+%.grind:
+	@valgrind $(VALGRIND_OPTIONS) ./skit_test -n `$(TARG_TO_TEST)`
+
+# How to build a .skgrind target.  These targets are specified in
+# tests/alltests.mk and are automatically generated below
+%.skgrind:
+	@valgrind/run_valgrind $(VALGRIND_OPTIONS) \
+		./skit_test -n `$(TARG_TO_TEST)` | grep .
+
+# Create the alltests.mk Makefile.  This identifies all of the components
+# of the grind and skgrind targets, which are used to run individual
+# grind and skgrind tests.
+$(TEST_DIR)/alltests.mk: skit_test
+	@./skit_test -r $(SUPP_FLAG) 2>/dev/null | \
+	    while read suite test; do \
+	        echo grind__$${suite}: $${suite}__$${test}.grind; \
+	        echo _grind: grind__$${suite}; \
+	        echo skgrind__$${suite}: $${suite}__$${test}.skgrind; \
+	        echo _skgrind: skgrind__$${suite}; \
+	    done > $@ 
+	@echo Recreated $@
+
 
 # Describe what this makefile can build
 test_help:
