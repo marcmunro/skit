@@ -40,7 +40,7 @@ GEN_SUPPRESSIONS = $(VALGRIND_BASIC_OPTIONS) --gen-suppressions=all
 VALGRIND_OPTIONS = $(VALGRIND_BASIC_OPTIONS) $(MEMCHECK_SUPPRESSIONS)
 
 # Include dependency files for each test file
-include $(TEST_DEPS) $(TEST_DIR)/alltests.mk
+include $(TEST_DEPS) $(TEST_DIR)/alltests.dep
 
 
 # Build skit unit test executable from sources.
@@ -121,26 +121,26 @@ test_clean:
 	       $(TEST_GARBAGE) skit skit_test \
 	       valgrind/alltests valgrind/valgrind.log \
 	       valgrind/suppressions $(SUPPRESSION_FILES) \
-		$(TEST_DIR)/alltests.mk
+		$(TEST_DIR)/alltests.dep
 
 tests_distclean: tests_clean
 
 
 # How to build a .grind target.  These targets are specified in
-# tests/alltests.mk and are automatically generated below
+# tests/alltests.dep and are automatically generated below
 %.grind:
 	@valgrind $(VALGRIND_OPTIONS) ./skit_test -n `$(TARG_TO_TEST)`
 
 # How to build a .skgrind target.  These targets are specified in
-# tests/alltests.mk and are automatically generated below
+# tests/alltests.dep and are automatically generated below
 %.skgrind:
 	@valgrind/run_valgrind $(VALGRIND_OPTIONS) \
 		./skit_test -n `$(TARG_TO_TEST)` | grep .
 
-# Create the alltests.mk Makefile.  This identifies all of the components
+# Create the alltests.dep Makefile.  This identifies all of the components
 # of the grind and skgrind targets, which are used to run individual
 # grind and skgrind tests.
-$(TEST_DIR)/alltests.mk: skit_test
+$(TEST_DIR)/alltests.dep: skit_test
 	@./skit_test -r $(SUPP_FLAG) 2>/dev/null | \
 	    while read suite test; do \
 	        echo grind__$${suite}: $${suite}__$${test}.grind; \
