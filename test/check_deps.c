@@ -94,6 +94,35 @@ requireNoDep(Hash *hash, char *from, char *to)
     }
 }
 
+static boolean
+hasDeps(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DagNode *fromnode;
+    String *key;
+    int dep_elems;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	requireDep(hash, from, to);
+	count++;
+    }
+    va_end(params);
+    key = stringNewByRef(from);
+    fromnode = (DagNode *) hashGet(hash, (Object *) key);
+
+    if (!fromnode) {
+	fail("Cannot find %s ", key->value);
+    }
+    objectFree((Object *) key, FALSE);
+    
+    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
+
+    return dep_elems == count;
+}
+
 static void
 requireDeps(Hash *hash, char *from, ...)
 {
@@ -349,9 +378,9 @@ START_TEST(depset_dag1_drop)
 
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -404,9 +433,9 @@ START_TEST(depset_dag2_rebuild)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 
@@ -464,9 +493,9 @@ START_TEST(depset_dag2_rebuild2)
 	//showFree(572);
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -527,33 +556,89 @@ START_TEST(cyclic_build)
 	//showFree(572);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
-
-	prepareDagForBuild((Vector **) &nodes);
+	nodes = nodesFromDoc2(doc);
+	prepareDagForBuild2((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 	
 	/* The following assumes that v1 will be the node that gets a
 	 * cycle breaker.  This does not have to be the case, and 
 	 * other sets of options should be allowed and checked for by
-	 * these tests.  TODO: Add those extra tests */
+	 * these tests.  TODO: Add those extra tests, or consider other
+	 * criteria for passing. */
 
 	requireDeps(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
+
+	if (hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
 		    "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "privilege.cluster.marc.superuser", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "privilege.cluster.marc.superuser", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", 
+		    "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    /* All is well is this case */
+	}
+	else {
+	    fail("No complete dependency set found for %s",
+		 "view.skittest.public.v3");
+	}
+
+	if (hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
 		    "view.skittest.public.v3",
 		    "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc", 
-		    "privilege.cluster.marc.superuser", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "privilege.cluster.marc.superuser", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "view.skittest.public.v3",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc", 
+		    "grant.skittest.public.usage:public:regress",
+		    "privilege.cluster.marc.superuser", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
+		    "view.skittest.public.v3",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc", 
+		    "grant.skittest.public.usage:public:regress", NULL))
+	{
+	    /* All is well is this case */
+	}
+	else {
+	    fail("No complete dependency set found for %s",
+		 "view.skittest.public.v2");
+	}
+
+	if (hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
 		    "view.skittest.public.v2",
 		    "build.viewbase.skittest.public.v1", 
 		    "schema.skittest.public", "role.cluster.marc",
-		    "privilege.cluster.marc.superuser", NULL);
+		    "privilege.cluster.marc.superuser", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "view.skittest.public.v2",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress",
+		    "privilege.cluster.marc.superuser", NULL) ||
+	    hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
+		    "view.skittest.public.v2",
+		    "build.viewbase.skittest.public.v1", 
+		    "schema.skittest.public", "role.cluster.marc",
+		    "grant.skittest.public.usage:public:regress", NULL))
+
+	{
+	    /* All is well is this case */
+	}
+	else {
+	    fail("No complete dependency set found for %s",
+		 "view.skittest.public.v1");
+	}
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -594,9 +679,9 @@ START_TEST(cyclic_drop)
 	//showFree(572);
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -657,9 +742,9 @@ START_TEST(cyclic_both)
 	eval("(setq drop t)");
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	prepareDagForBuild2((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 	
@@ -740,12 +825,13 @@ START_TEST(fallback)
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_fallback.xml");
 	//doc = getDoc("tmp.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+
+	prepareDagForBuild2((Vector **) &nodes);
+	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
-	//showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);
@@ -806,11 +892,13 @@ START_TEST(cond)
     eval("(setq drop t)");
     BEGIN {
 	doc = getDoc("test/data/cond_test_with_deps.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = nodesFromDoc2(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
-	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
+	//fprintf(stderr, "-------------------------------------\n");
+	prepareDagForBuild2((Vector **) &nodes);
+	//showVectorDeps(nodes);
+	nodes_by_fqn = hashByFqn(nodes);
 
 	requireDep(nodes_by_fqn, "table.regressdb.public.thing", 
 		   "grant.regressdb.public.create:public:regress");
@@ -914,6 +1002,7 @@ deps_suite(void)
 #ifdef wibble
 PLAN:
 Rewrite deps.c to use the new ideas for dealing with optional dependencies.
+See comments in deps.c for more information.
 
 Todo: 
 DEPRECATE ALL XNODE STUFF

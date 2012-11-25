@@ -276,9 +276,9 @@ START_TEST(navigation)
     ignore = evalSexp(tmp = newstr("(setq build t)"));
     objectFree(ignore, TRUE);
     skfree(tmp);
-    ignore = evalSexp(tmp = newstr("(setq drop t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
+    //ignore = evalSexp(tmp = newstr("(setq drop t)"));
+    //objectFree(ignore, TRUE);
+    //skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
     simple_sort = symbolNew("simple-sort");    
@@ -296,6 +296,7 @@ START_TEST(navigation)
     objectFree((Object *) sorted, TRUE);
     objectFree((Object *) src_doc, TRUE);
     objectFree((Object *) result_doc, TRUE);
+
     FREEMEMWITHCHECK;
 }
 END_TEST

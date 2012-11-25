@@ -138,7 +138,12 @@ showDeps(DagNode *node)
 	printSexp(stderr, "NODE: ", (Object *) node);
 	printSexp(stderr, "-->", (Object *) node->dependencies);
 	while (sub) {
-	    printSexp(stderr, "oooo>", (Object *) sub->dependencies);
+	    if (sub->dependencies || sub->fallback) {
+		printSexp(stderr, "deps->", (Object *) sub->dependencies);
+		if (sub->fallback) {
+		    printSexp(stderr, "flbk->", (Object *) sub->fallback);
+		}
+	    }
 	    sub = sub->subnodes;
 	}
 	printSexp(stderr, "<--", (Object *) node->dependents);
@@ -1189,8 +1194,9 @@ redirectDependencies(Vector *nodes)
     int elems;
 
     EACH(nodes, i) {
-	/* Take a temporary copy of the original  dependencies, and then
-	 * reset dependencies.  We will  re-populate it below. */
+	/* Take a temporary copy of the original dependencies, and then
+	 * recreate the dependencies vector.  We will re-populate it
+ 	 * below. */ 
 	node = (DagNode *) ELEM(nodes, i);
 	elems = node->dependencies? node->dependencies->elems: 1;
 	node->original_dependencies = node->dependencies;
@@ -1712,6 +1718,24 @@ getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn)
 }
 
 
+static void
+dropSubNode(DagNode *node)
+{
+    DagNode *parent = node->supernode;
+    DagNode **nodeptr = &(parent->subnodes);
+
+    while (*nodeptr) {
+	if (*nodeptr == node) {
+	    *nodeptr = node->subnodes;
+	    node->supernode = NULL;  /* Without this the node will not
+				      * be freed */
+	    objectFree((Object *) node, TRUE);
+	    break;
+	}
+	nodeptr = &((*nodeptr)->subnodes);
+    }
+}
+
 static DagNode *
 addSubNode(DagNode *node)
 {
@@ -1738,7 +1762,7 @@ addDepsForNode(
     String *tmp;
     String *errmsg;
 
-    assert(node, "addExplicitDepsForNode: no node provided");
+    assert(node, "addDepsForNode: no node provided");
     if (node->xnode_for) {
 	/* This is an xnode, so deps have already been added */
 	return;
@@ -1757,6 +1781,7 @@ addDepsForNode(
 	    /* We have a set of optional dependencies.  Create a new subnode
 	     * where they will be recorded. */
 	    this = addSubNode(node);
+	    this->fallback = fallback_node;
 	}
 	else {
 	    if (!deps) {
@@ -1801,6 +1826,7 @@ nodesFromDoc2(Document *doc)
 			   (Object *) nodes);
 	byfqn = hashByFqn(nodes);
 	bypqn = hashByPqn(nodes);
+	identifyParents(nodes, byfqn);
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
 	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
@@ -1819,12 +1845,55 @@ nodesFromDoc2(Document *doc)
 }
 
 
+/* Activate a fallback node.  
+ * A fallback node is one that is used when no dependencies in a set can
+ * be satisfied.  Typically this would be for privileges for the owner
+ * of an object, and if no suitable privilege assignment can be found in
+ * the set of dependencies, a superuser privilege would be assigned
+ * temporarily.
+ * Fallback nodes are handled as pairs of nodes, one to activate the
+ * fallback (eg grant the temporary privilege), and one to deactivate
+ * it (eg revoke it).
+ */
+static void
+activateFallback2(Vector *nodelist, DagNode *node)
+{
+    DagNode *fallback = node->fallback;
+    DagNode *closer;
+    Dependency *dep;
+    int i;
 
+    if (fallback->build_type != BUILD_NODE) {
+	/* Promote this node from an exists node into a build node, and
+	 * create the matching drop node for it. */
+	fallback->build_type = BUILD_NODE;
+	closer = dagnodeNew(fallback->dbobject, DROP_NODE);
+	closer->fallback_build_type = DROP_NODE;
+	closer->parent = fallback->parent;
+	fallback->duplicate_node = closer;
+	vectorPush(nodelist, (Object*) closer);
+
+	EACH(fallback->dependencies, i) {
+	    dep = (Dependency *) ELEM(fallback->dependencies, i);
+	    addDep(closer, dep->dependency, 0);
+	}
+    }
+    else {
+	closer = fallback->duplicate_node;
+    }
+    /* Add dependencies to and from the fallback and closer. */
+    //node->fallback_build_type = BUILD_NODE;
+    addDep(node->supernode, fallback, 0);
+    addDep(closer, node->supernode, 0);
+
+    /* Eliminate the optional deps that the fallback is for.  */
+    dropSubNode(node);
+}
 
 
 static void tsort_node2(Vector *nodelist, DagNode *node, Vector *results);
 
-static void
+static boolean
 tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
 {
     Vector *volatile deps;
@@ -1834,6 +1903,7 @@ tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
     boolean in_cycle;
     DagNode *cycle_node;
     DagNode *breaker;
+    DagNode *supernode;
     char *errmsg;
     char *tmpmsg;
 
@@ -1862,10 +1932,9 @@ tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
 		    processBreaker(node, breaker);
 
 		    skfree(errmsg);
-		    i--;        /* The current depnode will have been
-				 * replaced, so repeat this iteration. 
-				 */
-		    continue;   
+
+		    i--;        /* The current depnode will have been  */
+		    continue;   /* replaced, so repeat this iteration. */
 		}
 
 		if (node->supernode) {
@@ -1888,8 +1957,8 @@ tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
 		    cycle_node = NULL;
 		}
 		else if (cycle_node) {
-		    /* We are somewhere in the cycle of deps.  Add the current
-		     * node to the error message. */ 
+		    /* We are somewhere in the cycle of deps.  Add the
+		     * current node to the error message. */ 
 		    tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
 		}
 		else {
@@ -1905,16 +1974,34 @@ tsort_deps2(Vector *nodelist, DagNode *node, Vector *results)
 	    }
 
 	    /* We are not in a dependency cycle.  If this is a subnode,
-	     * we have successfully found a suitable dependency and we
-	     * record it.  If not, we process the rest of the
-	     * dependencies. */
+	     * we have successfully found a suitable dependency, which
+	     * we have recorded in node->dep_idx.  If not, we process
+	     * the rest of the dependencies. */
 	    if (node->supernode) {
-		return;
+		return FALSE;
 	    }
 	}
     }
+    if (node->supernode) {
+	/* We get to this point if we are in a subnode and no dependency
+	 * has been found. */
+	if (node->fallback) {
+	    activateFallback2(nodelist, node);
+	    /* Now we need to try the tsort again from the supernode */
+	    return TRUE;
+	}
+	else {
+	    RAISE(TSORT_ERROR, 
+		  newstr("No dependency found in dependency set for %s", 
+			 node->supernode->fqn->value));
+	}
+    }
+    return FALSE;
 }
 
+/* Return a pointer to the node status.  If this is a subnode, the node
+ * status is given by the supernode.
+ */
 static DagNodeStatus *
 nodeStatusP(DagNode *node)
 {
@@ -1924,18 +2011,25 @@ nodeStatusP(DagNode *node)
     return &(node->status);
 }
 
-static void
+static boolean
 tsort_subnodes(
     Vector *nodelist,
     DagNode *node,
     Vector *results)
 {
-    /* We will have already handled the non-optional dependencies of our
-     * parent node. */
+    /* When we get here, we will have already processed the non-optional
+     * dependencies of our supernode. */
     while (node) {
-	tsort_deps2(nodelist, node, results);
+	if (tsort_deps2(nodelist, node, results)) {
+	    /* tsort_deps has indicated that a retry is required.  This
+	     * will be because we have replaced optional dependencies
+	     * with a fallback.  In such a case we must exit and signal
+	     * the need for a retry to our caller. */
+	    return TRUE;
+	}
 	node = node->subnodes;
     }
+    return FALSE;
 }
 
 static void
@@ -1945,6 +2039,7 @@ tsort_node2(
     Vector *results)
 {
     DagNodeStatus *p_status = nodeStatusP(node);
+    boolean retry;
 
     switch (*p_status) {
     case VISITING:
@@ -1953,16 +2048,20 @@ tsort_node2(
     case UNVISITED: 
 	BEGIN {
 	    *p_status = VISITING;
-	    tsort_deps2(nodelist, node, results);
-	    if (node->supernode) {
-		/* node is a sub-node.  Now handle the deps for the parent */
-		RAISE(NOT_IMPLEMENTED_ERROR, newstr("TSORT_DEPS2 of supernode"));
-		//tsort_deps2(nodes, node->supernode, results);
-	    }
-	    else if (node->subnodes) {
-		/* node is a parent-node.  Handle optional deps */
-		tsort_subnodes(nodelist, node->subnodes, results);
-	    }
+	    do {
+		retry = tsort_deps2(nodelist, node, results);
+		if (node->supernode) {
+		    /* node is a sub-node.  Now handle the deps for the
+		     * parent. */ 
+		    RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("TSORT_DEPS2 of supernode"));
+		    //tsort_deps2(nodes, node->supernode, results);
+		}
+		else if (node->subnodes) {
+		    /* node is a parent-node.  Handle optional deps */
+		    retry = tsort_subnodes(nodelist, node->subnodes, results);
+		}
+	    } while (retry);
 	}
 	EXCEPTION(ex) {
 	    *p_status = UNVISITED;
@@ -1982,8 +2081,8 @@ tsort_node2(
 }
 
 /* Convert the dependency graph into a true DAG.  This is a variant on
- * the standard tsort algorithm, with tweaks to allow optional and
- * cyclic dependencies.  */
+ * the standard tsort algorithm with tweaks to allow optional
+ * dependencies and breakable cyclic dependencies.  */
 Vector *
 resolving_tsort2(Vector *nodelist)
 {
@@ -2021,7 +2120,7 @@ resolveOneSubNode(DagNode *node, DagNode *sub)
 
 	if (i == sub->dep_idx) {
 	    /* Add depnode as a non-optional dependency to node. */
-	    addDep(node, depnode, 0);
+	    addDep(node, depnode, dep->condition);
 	}
     }
     objectFree((Object *) sub->dependencies, TRUE);
@@ -2074,3 +2173,6 @@ prepareDagForBuild2(Vector **p_nodes)
     //fprintf(stderr, "\n\n5\n\n");
     //showVectorDeps(sorted);
 }
+
+// TODO: deprecate dagNode.fallback_build_type field
+//       rename dagNode.duplicate_node to fallback_closer

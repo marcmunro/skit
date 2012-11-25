@@ -289,7 +289,7 @@ getContextNavigation(DagNode *from, DagNode *target)
 
 /* Return a vector of DagNodes containing the navigation to get from
  * start to target.  All of the dbojects returned in the DagNode
- * Vectors, must be orphans so that they can be safely added to the
+ * Vectors must be orphans so that they can be safely added to the
  * appropriate parent node. */
 Vector *
 navigationToNode(DagNode *start, DagNode *target)

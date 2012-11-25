@@ -611,13 +611,13 @@ buildBitsStr(BuildTypeBitSet bitset)
 {
     char *result = skalloc(4);
     result[0] = '\0';
-    if (inBuildTypeBitSet(bitset, BUILD_NODE_BIT)) {
+    if (inBuildTypeBitSet(bitset, BUILD_NODE)) {
 	strcat(result, "B");
     }
-    if (inBuildTypeBitSet(bitset, DROP_NODE_BIT)) {
+    if (inBuildTypeBitSet(bitset, DROP_NODE)) {
 	strcat(result, "D");
     }
-    if (inBuildTypeBitSet(bitset, DIFF_NODE_BIT)) {
+    if (inBuildTypeBitSet(bitset, DIFF_NODE)) {
 	strcat(result, "F");
     }
     return result;

@@ -111,6 +111,7 @@ drop_regress_db:
 	@$(PSQL) -d postgres -f $(REGRESS_DIR)/drop_cluster_objects.sql \
 		>/dev/null 2>&1 || true
 
+# Show the environment used for postgres by the regression tests.
 regression_env: 
 	@echo "export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
@@ -151,8 +152,7 @@ regression_test3: skit drop_regress_db \
 	 $(REGRESS_RUN) 3
 
 
-regress: skit regress_cluster regression_test1 regression_test2 \
-	     regression_test3
+regress: skit regress_cluster regression_test1 regression_test2 
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 
