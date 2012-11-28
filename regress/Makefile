@@ -158,10 +158,9 @@ regress: skit regress_cluster regression_test1 regression_test2
 
 regress_clean: drop_regress_cluster
 	@echo Cleaning regress...
-	@rm -rf $(REGRESS_LOG)/scratch/*
-	@rm -rf $(REGRESS_LOG)/dbdumo/*
-	@rm -rf REGRESSDB $(REGRESS_LOG)/regressdb_*.sql \
-	    $(REGRESS_LOG)/regressdb_*.xml
+	@rm -rf $(REGRESS_DIR)/scratch
+	@rm -f $(REGRESS_DIR)/*.log
+	@rm -f $(REGRESS_DIR)/*~
 
 regress_distclean: regress_clean
 

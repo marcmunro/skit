@@ -1,6 +1,21 @@
 Next tasks:
 
-1) Add node traversal optimisation to gensort
+0) Set up new public git repo
+
+1) Refactoring
+Remove use of xnodes. 
+Remove any redundant fields in DagNodes
+Rename DagNode.duplicate to mirror or inverse or something
+Remove old versions of nodesFromDoc, etc
+Rename nodesFromDoc2, etc to eliminate the 2 suffix
+Remove any code/field redundancy
+
+2) Extension handling
+Add handling for dealing with extensions.  This is a preqrequisite for
+getting skit working with PG 9.1
+
+
+3) Add node traversal optimisation to gensort
 We want tsort output to be better cost-optimised.  When we are visiting
 a particular point in the tree, we should do as much as possible at that
 point before departing to other points in the tree.
@@ -61,30 +76,26 @@ c) test
 d) add costsort
 
 
-
-2) Add diff handling
-This is a biggy.
-
-
-3) get check working using an out of the box version
-
-
 4) get all valgrind tests to pass
 
 
-5) documentation
+5) Add diff handling
+This is a biggy.
 
 
-6) update for the latest versions of postgres
+6) documentation
 
 
-7) initial release
+7) update for the latest versions of postgres
 
 
-8) implement merge
+8) initial release
 
 
-9) implement grep
+9) implement merge
+
+
+10) implement grep
 
 
 

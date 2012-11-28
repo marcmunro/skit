@@ -20,7 +20,7 @@ END {if (errors) {exit(1)}}' IAM="\"${iam}\""
 build_db()
 {
     echo ...creating base objects... 1>&2
-    echo ==== BUILDING DB FROM $1 ====
+    echo ==== BUILDING DB FROM ${REGRESS_DIR}/$1 $2====
     sh ${REGRESS_DIR}/$1 2>&1 | errcheck
     echo ==== FINISHED BUILD FROM $1 ====
 }
