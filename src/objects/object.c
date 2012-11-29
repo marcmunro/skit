@@ -412,16 +412,15 @@ basicDagNode()
     new->fqn = NULL;
     new->dbobject = NULL;
     new->build_type = UNSPECIFIED_NODE;
-    new->fallback_build_type = UNSPECIFIED_NODE;
+    new->is_fallback = FALSE;
     new->status = UNVISITED;
     new->dep_idx = -1;
     new->dependencies = NULL;
     new->original_dependencies = NULL;
     new->dependents = NULL;
     new->breaker_for = NULL;
-    new->xnode_for = NULL;
     new->fallback = NULL;
-    new->duplicate_node = NULL;
+    new->mirror_node = NULL;
     new->parent = NULL;
     new->supernode = NULL;
     new->subnodes = NULL;
@@ -452,30 +451,6 @@ dagnodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->fqn = actual_fqn;
     new->dbobject = node;
     new->build_type = build_type;
-    return new;
-}
-
-DagNode *
-xnodeNew(DagNode *source)
-{
-    DagNode *new = basicDagNode();
-    String *fqn;
-    static Int4 *xnode_seq = NULL;
-
-    assert(source, "xnodeNew: source not provided");
-    assert(source->fqn, "xnodeNew: source has no fqn");
-
-    if (!xnode_seq) {
-	xnode_seq = (Int4 *) symbolGetValue("xnode_seq");
-    }
-
-    fqn = stringNewByRef(newstr("%s.XNODE_%d", source->fqn->value, 
-				(xnode_seq->value)++));
-    new->fqn = fqn;
-    new->build_type = source->build_type;
-    new->dbobject = source->dbobject;
-    new->parent = source->parent;
-    new->xnode_for = source;
     return new;
 }
 

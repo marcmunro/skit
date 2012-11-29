@@ -448,8 +448,8 @@ gensort(Document *doc)
     Symbol *simple_sort = symbolGet("simple-sort");
 
     BEGIN {
-	nodes = nodesFromDoc2(doc);
-	prepareDagForBuild2((Vector **) &nodes);
+	nodes = nodesFromDoc(doc);
+	prepareDagForBuild((Vector **) &nodes);
 	results = simple_tsort(nodes);
     }
     EXCEPTION(ex);

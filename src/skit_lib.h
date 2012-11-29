@@ -255,7 +255,7 @@ typedef struct DagNode {
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
     DagNodeBuildType build_type;
-    DagNodeBuildType fallback_build_type;
+    boolean          is_fallback;
     DagNodeStatus    status;
     int              dep_idx;
     Vector          *dependencies;   // use objectFree(obj, FALSE);
@@ -264,10 +264,9 @@ typedef struct DagNode {
     struct DagNode  *supernode;
     struct DagNode  *subnodes;       // Linked list
     struct DagNode  *breaker_for;    // Reference only
-    struct DagNode  *xnode_for; // Reference only  DEPRECATE
-    struct DagNode  *fallback;  // Reference only
-    struct DagNode  *duplicate_node; // Reference only IS THIS USED?  DEPRECATE?
-    struct DagNode  *parent;    // Reference only
+    struct DagNode  *fallback;  	// Reference only
+    struct DagNode  *mirror_node; 	// Reference only
+    struct DagNode  *parent;   		// Reference only
 } DagNode;
 
 
@@ -328,6 +327,7 @@ extern Cons *consNew(Object *car, Object *cdr);
 extern void consFree(Cons *cons, boolean free_contents);
 extern Object *consPush(Cons **list, Object *obj);
 extern Object *consPop(Cons **list);
+extern Cons *consRead(Object *closer, TokenStr *sexp);
 extern Object *checkedConsRead(Object *closer, TokenStr *sexp);
 extern char *consStr(Cons *cons);
 extern Object *setCar(Cons *cons, Object *obj);
@@ -377,7 +377,6 @@ extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
 extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
-extern DagNode *xnodeNew(DagNode *source);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
 extern Dependency *dependencyNew(DagNode *dep, BuildTypeBitSet condition);
@@ -649,6 +648,7 @@ extern void showVectorDeps(Vector *nodes);
 extern Vector *nodesFromDoc(Document *doc);
 extern Hash *hashByFqn(Vector *vector);
 extern void prepareDagForBuild(Vector **p_nodes);
+extern Vector *resolving_tsort(Vector *nodelist);
 
 
 

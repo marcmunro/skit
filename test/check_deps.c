@@ -263,7 +263,7 @@ START_TEST(depset_deps1)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -324,9 +324,9 @@ START_TEST(depset_dag1_build)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -378,9 +378,9 @@ START_TEST(depset_dag1_drop)
 
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -433,9 +433,9 @@ START_TEST(depset_dag2_rebuild)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 
@@ -493,9 +493,9 @@ START_TEST(depset_dag2_rebuild2)
 	//showFree(572);
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -556,8 +556,8 @@ START_TEST(cyclic_build)
 	//showFree(572);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc2(doc);
-	prepareDagForBuild2((Vector **) &nodes);
+	nodes = nodesFromDoc(doc);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 	
@@ -679,9 +679,9 @@ START_TEST(cyclic_drop)
 	//showFree(572);
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
 	//showVectorDeps(nodes);
@@ -742,9 +742,9 @@ START_TEST(cyclic_both)
 	eval("(setq drop t)");
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	//showVectorDeps(nodes);
 	
@@ -825,10 +825,10 @@ START_TEST(fallback)
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_fallback.xml");
 	//doc = getDoc("tmp.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
 
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 	
@@ -892,11 +892,11 @@ START_TEST(cond)
     eval("(setq drop t)");
     BEGIN {
 	doc = getDoc("test/data/cond_test_with_deps.xml");
-	nodes = nodesFromDoc2(doc);
+	nodes = nodesFromDoc(doc);
 
 	//showVectorDeps(nodes);
 	//fprintf(stderr, "-------------------------------------\n");
-	prepareDagForBuild2((Vector **) &nodes);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -942,11 +942,11 @@ START_TEST(cyclic_build2)
 	//showFree(572);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = (Vector *) nodesFromDoc2(doc);
+	nodes = (Vector *) nodesFromDoc(doc);
 	//dbgSexp(nodes);
 	//showVectorDeps(nodes);
 
-	results = (Vector *) resolving_tsort2(nodes);
+	results = (Vector *) resolving_tsort(nodes);
 	//dbgSexp(results);
 
 	objectFree((Object *) results, FALSE);
@@ -998,7 +998,7 @@ deps_suite(void)
     return s;
 }
 
-
+/*
 #ifdef wibble
 PLAN:
 Rewrite deps.c to use the new ideas for dealing with optional dependencies.
@@ -1009,3 +1009,4 @@ DEPRECATE ALL XNODE STUFF
    
 
 #endif
+*/

@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 
@@ -203,14 +204,14 @@ chunkInfo(void *chunk)
     if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 				     &key, &contents)) {
 	fprintf(stderr, "Chunk %p is malloc'd  as number %d\n", 
-		chunk, (int) contents);
+		chunk, (intptr_t) contents);
     }
     else {
 	hash = freeTable();
 	if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 					 &key, &contents)) {
 	    fprintf(stderr, "Chunk %p was freed as number %d\n", 
-		    chunk, (int) contents);
+		    chunk, (intptr_t) contents);
 	    memdebug("in chunkinfo");
 	}
 	else {
@@ -228,9 +229,9 @@ chunkInfo(void *chunk)
  * heavy lifting for addChunk and delChunk, and can be also used to
  * free hash table entries.
  */
-static int
+static intptr_t
 moveChunk(GHashTable *from_hash, GHashTable *to_hash, 
-	  void *chunk, int chunk_number)
+	  void *chunk, intptr_t chunk_number)
 {
     char *keystr = malloc(20);
     gpointer previous_contents = NULL;
@@ -262,7 +263,7 @@ moveChunk(GHashTable *from_hash, GHashTable *to_hash,
     else {
 	free(keystr);
     }
-    return (int) previous_contents;
+    return (intptr_t) previous_contents;
 }
 
 /* Record the allocation of a chunk of free memory.  The chunk_number is
@@ -330,7 +331,8 @@ showChunk(
      * not doing any real copies.  Remember this when it becomes time to
      * free the strings! */
 
-    fprintf(stderr, "Chunk %d not freed: %s.", (int) contents, (char *) key);
+    fprintf(stderr, "Chunk %d not freed: %s.", 
+	    (intptr_t) contents, (char *) key);
     ptr = toPtr((char *) key);
 
     printObj((Object *) ptr);
