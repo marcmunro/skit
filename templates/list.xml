@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  Argument and action definitions for the list action.  List simply 
+  generates a list of the contents of the input stream.
+  
+  Synopsis (\- represents a single hyphen character)
+    skit \-\-list [OPTIONS]...
 
-  TODO: Complete this comment
+    Options:
+        \-\-g[rants]
+	Show grants in the output list.  Default is not to show grants.
 
+        \-\-con[texts]
+	Show contexts in the output list.  Default is not to show contexts.
+
+        \-\-f[allbacks]
+	Show fallbacks in the output list.  Default is not to show fallbacks.
+
+        \-\-a[ll]
+	SHow grants, contexts and fallbacks in the output list.
 -->
 
 
@@ -10,13 +25,14 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
-    <option name='sources' type='integer' value='1'/>
     <option name='g*rants' type='flag'/>
     <option name='con*texts' type='flag'/>
     <option name='f*allbacks' type='flag'/>
     <option name='a*ll' type='flag'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
+    <!-- "list" processes one source stream -->
+    <option name='sources' type='integer' value='1'/>
   </skit:options>
 
   <!-- If all is specified, we set grants, contexts and fallbacks -->

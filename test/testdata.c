@@ -172,9 +172,6 @@ testConnect(Object *sqlfuncs)
 	record_param(user, "username", make_global);
 	record_param(pass, "password", make_global);
 	
-	/* TODO: Rebuild the connect string based on the other parameter
-	 * values. */
-	
 	record_param(connect, "connect", make_global);
 
 	connection = (Connection *) skalloc(sizeof(Connection));

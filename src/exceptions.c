@@ -9,7 +9,6 @@
  * \endcode
  * @brief  
  * Signal/exception handling functions for skit
- * TODO Some documentation describing how to use this.
  */
 
 #include <stdio.h>

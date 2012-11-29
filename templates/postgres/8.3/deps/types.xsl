@@ -50,15 +50,13 @@
     <xsl:param name="type_name" select="@type"/>
     <xsl:param name="type_schema" select="@schema"/>
     <xsl:if test="$type_schema != 'pg_catalog'"> 
-      <!-- Ignore builtin types TODO: Make the test below use xsl:if -->
-      <xsl:choose>
-	<xsl:when test="($ignore/@schema = $type_schema) and
-	  ($ignore/@name = $type_name)"/>
-	<xsl:otherwise>
+      <!-- Ignore builtin types -->
+      <xsl:if test="not(($ignore/@schema = $type_schema) and
+	  ($ignore/@name = $type_name))">
 	  <dependency fqn="{concat('type.', ancestor::database/@name,
 			   '.', $type_schema, '.', $type_name)}"/>
-	</xsl:otherwise>
-      </xsl:choose>
+
+      </xsl:if>
     </xsl:if>
   </xsl:template>
 

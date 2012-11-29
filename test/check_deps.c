@@ -998,15 +998,3 @@ deps_suite(void)
     return s;
 }
 
-/*
-#ifdef wibble
-PLAN:
-Rewrite deps.c to use the new ideas for dealing with optional dependencies.
-See comments in deps.c for more information.
-
-Todo: 
-DEPRECATE ALL XNODE STUFF
-   
-
-#endif
-*/

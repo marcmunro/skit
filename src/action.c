@@ -27,7 +27,7 @@ static String value_str = {OBJ_STRING, "value"};
 static String type_str = {OBJ_STRING, "type"};
 static String required_str = {OBJ_STRING, "required"};
 static String default_str = {OBJ_STRING, "default"};
-static String add_deps_str= {OBJ_STRING, "add_deps"};  // TODO: deprecate
+static String add_deps_str= {OBJ_STRING, "add_deps"}; 
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
 static String dbtype_str = {OBJ_STRING, "dbtype"};
@@ -205,7 +205,6 @@ getIntOption(Cons *optionlist, String *option_name, String *option_value)
     return ((Int4 *) obj)->value;
 }
 
-// TODO: Maybe capture exceptions for better error message formatting.
 static Object *
 getOptionValue(Cons *optionlist, String *option)
 {
@@ -369,7 +368,7 @@ getOptionlistArgs(Cons *optionlist)
 			expected_args--;
 			old = hashAdd(params, (Object *) stringNew("arg"), 
 				      (Object *) arg);
-			objectFree(old, TRUE); // TODO: maybe raise an error?
+			objectFree(old, TRUE);
 		    }
 		    else {
 			RAISE(PARAMETER_ERROR, 
@@ -701,17 +700,16 @@ executePrint(Object *params)
     boolean print_full;
     boolean print_xml;
     boolean has_deps;
-    String *action_name;
     Document *doc;
     char *docstr;
 
-    // TODO: Ensure sources is retrieved successfully from the hash
+    if (!sources) {
+	RAISE(GENERAL_ERROR, 
+	      newstr("No sources definition found for action \"print\""));
+    }
     if (docstack_entries < sources->value) {
-	action_name = (String *) dereference(symbolGetValue("action"));
-
-	// TODO: Ensure action_name is retrieved successfully from the hash
 	RAISE(PARAMETER_ERROR, 
-	      newstr("Insufficient inputs for %s", action_name->value));
+	      newstr("Insufficient inputs for action \"print\""));
     }
 
     print_full = dereference(symbolGetValue("full")) && TRUE;
@@ -750,20 +748,23 @@ executeTemplate(Object *params)
     Document *template = (Document *) dereference(symbolGetValue("template"));
     Int4 *sources = (Int4 *) dereference(symbolGetValue("sources"));
     int docstack_entries = consLen(docstack);
-    String *action_name;
+    String *action_name = (String *) dereference(symbolGetValue("action"));
     Document *result;
     boolean retain_deps;
     xmlNode *root;
 
     retain_deps = dereference(symbolGetValue("retain_deps")) && TRUE;
 
-    // TODO: Ensure sources is retrieved successfully from the hash
-    if (docstack_entries < sources->value) {
-	action_name = (String *) dereference(symbolGetValue("action"));
+    if (!sources) {
+	RAISE(GENERAL_ERROR, 
+	      newstr("No sources definition found for action \"%s\"",
+		     action_name? action_name->value: "template"));
+    }
 
-	// TODO: Ensure action_name is retrieved successfully from the hash
+    if (docstack_entries < sources->value) {
 	RAISE(PARAMETER_ERROR, 
-	      newstr("Insufficient inputs for %s", action_name->value));
+	      newstr("Insufficient inputs for %s", 
+		     action_name? action_name->value: "template"));
     }
 
     preprocessSourceDocs(sources->value, params);
