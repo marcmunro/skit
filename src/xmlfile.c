@@ -1,7 +1,7 @@
 /**
  * @file   xmlfile.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2009, 2010, 2011, 2012 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -230,12 +230,7 @@ hasExprAttribute(xmlNode *node, Object **p_result, char *attribute_name)
 	BEGIN {
 	    value = evalSexp(expr->value);
 	}
-	EXCEPTION(ex) /* NOTE: Adding the following clause causes memory
-	    errors.  Evidently there is a problem with the exception
-	    handling macros in combination of WHEN clauses and FINALLY
-	    TODO: Investigate this further.
-	    */
-	{
+	EXCEPTION(ex) {
 	    WHEN(LIST_ERROR) {
 		char *newtext = newstr("%s in expr:\n%s", 
 				       ex->text, expr->value);
@@ -380,9 +375,13 @@ textFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    Object *result = getExpr(template_node);
-    objectFree((Object *) result, TRUE);
-    return NULL;
+    Object *result;
+    if (hasExpr(template_node, &result)) {
+	objectFree((Object *) result, TRUE);
+	return NULL;
+    }
+    RAISE(XML_PROCESSING_ERROR,
+	  newstr("No expr provided for skit:exec"));
 }
 
 static Object *debug_obj = NULL;
@@ -521,23 +520,17 @@ iterate(Object *collection, String *filter,
 	    END;
 	    if (!parent_node) {
 		/* No parent implies child is a root node.  There
-		 * may only  be one root, so exit now.  TODO:
-		 * Consider whether to raise an exception if another
-		 * child is found here. */ 
+		 * may only  be one root, so exit now.  */ 
 		break;
 	    }
 	}
     }
     EXCEPTION(ex);
     FINALLY {
-	// TODO: This direct handling of symbol svalues below is dumb.
-	// See if this can be handled better by dropSymbolScope 
 	if (varsym) {
 	    varsym->svalue = NULL;
 	}
-	if (idxsym) {
-	    idxsym->svalue = NULL;
-	}
+
 	if (varname || idxname) {
 	    dropSymbolScope();
 	}
@@ -548,7 +541,6 @@ iterate(Object *collection, String *filter,
 	objectFree((Object *) key, TRUE);
 	objectFree((Object *) idxname, TRUE);
 	objectFree((Object *) varname, TRUE);
-	objectFree((Object *) idx, TRUE);
 	objectFree(placeholder, TRUE);
     }
     END;
@@ -1975,7 +1967,8 @@ processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
     xmlNode *volatile this = NULL;
     xmlNode *kids = NULL;
     xmlNs *ns;
-    // TODO: Assert that this is a node!
+
+    assert(template_node, "template_node is NULL in processNode");
     //fprintf(stderr, "processNode: template=%s, parent=%s\n", 
     //	    nodeName(template_node), nodeName(parent_node));
     if ((ns = template_node->ns) && streq(ns->prefix, "skit")) {

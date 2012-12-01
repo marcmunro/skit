@@ -9,7 +9,7 @@
   <!-- Anything not matched explicitly will match this and be copied 
        This handles dbobject, dependencies, etc -->
   <xsl:template match="*">
-    <xsl:copy select=".">
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:apply-templates/>
     </xsl:copy>

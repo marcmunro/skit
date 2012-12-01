@@ -202,8 +202,8 @@ static void
 sqlResetCursor(Cursor *cursor)
 {
     cursor = (Cursor *) dereference((Object *) cursor);
-    // TODO: Assert that this is a cursor
-
+    assert(cursor && (cursor->type == OBJ_CURSOR), 
+	   "Invalid cursor in sqlResetCursor");
     cursor->tuple.rownum = 0;
 }
 

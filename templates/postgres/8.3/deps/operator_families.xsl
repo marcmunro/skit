@@ -27,36 +27,8 @@
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
 
-	<!-- operators -->
-	<!-- The following is copied from oerator_classes.xsl
-	     TODO: Make this a template call to eliminate redundant code -->
-	<xsl:for-each select="opclass_operator">
-	  <xsl:if test="@schema != 'pg_catalog'">
-	    <dependency fqn="{concat('operator.', 
-			     ancestor::database/@name, '.', 
-			     @schema, '.', @name, '(',
-			     arg[@position='left']/@schema, '.',
-			     arg[@position='left']/@name, ',',
-			     arg[@position='right']/@schema, '.',
-			     arg[@position='right']/@name, ')')}"/>
-	  </xsl:if>
-	</xsl:for-each>
-
-	<!-- functions -->
-	<!-- The following is copied from oerator_classes.xsl
-	     TODO: Make this a template call to eliminate redundant code -->
-	<xsl:for-each select="opclass_function">
-	  <xsl:if test="@schema != 'pg_catalog'">
-	    <dependency fqn="{concat('function.', 
-			     ancestor::database/@name, '.', 
-			     @schema, '.', @name, '(',
-			     params/param[@position='1']/@schema, '.',
-			     params/param[@position='1']/@type, ',',
-			     params/param[@position='2']/@schema, '.',
-			     params/param[@position='2']/@type, ')')}"/>
-	  </xsl:if>
-	</xsl:for-each>
-
+	<xsl:call-template name="operator_deps"/>
+	<xsl:call-template name="operator_function_deps"/>
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy>

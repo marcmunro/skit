@@ -22,21 +22,6 @@
 		          ('T' . 'temporary')
 		      &gt;"/>
 
-      <skit:function name="getdeps">
-	<skit:parameter name="source_catalog"/>
-	<skit:parameter name="oid"/>
-	<skit:runsql var="dependency" file="sql/getdeps.sql"
-		         params="(list oid source_catalog)">
-	  <skit:exec expr="(debug 'DEP' dependency)"/>
-	  <depends>
-	    <skit:attr name="type" expr="'function'"/>
-	    <skit:attr name="name"
-		       expr="(select function_sigs 
-			     (select index_function 'objoid'))"/>
-	  </depends>
-	</skit:runsql>
-      </skit:function>
-
       <skit:function name="grants_from_privs">
 	<skit:parameter name="privileges"/>
 	<skit:if test="privileges">

@@ -658,9 +658,12 @@ findRebuildNodesInVector(
     if (vector) {
 	EACH(vector, i) {
 	    dep = (Dependency *)ELEM(vector, i);
+	    //dbgSexp(dep);
 	    node = dep->dependency;
 	    if (node->status == RESOLVED) {
+		//fprintf(stderr, "Looking for %d in %d\n", node->build_type, looking_for);
 		if (inBuildTypeBitSet(looking_for, node->build_type)) {
+		    //printSexp(stderr, "FOUND: ", node);
 		    recordRebuildNode(node, foundlist);
 		}
 	    }
@@ -673,10 +676,14 @@ recordRebuildNode(DagNode *node, Vector *nodelist)
 {
     node->status = UNVISITED;
     vectorPush(nodelist, (Object *) node);
-    findRebuildNodesInVector(node->dependents, BUILD_NODE_BIT + DIFF_NODE_BIT,
+    //dbgSexp(node);
+    //dbgSexp(node->dependents);
+    //dbgSexp(node->dependencies);
+    findRebuildNodesInVector(node->dependents, EXISTS_NODE_BIT + DIFF_NODE_BIT,
 				  nodelist);
-    findRebuildNodesInVector(node->dependencies, DROP_NODE_BIT,
-				  nodelist);
+    // I THINK THE FOLLOWING IS JUST PLAIN WRONG 20121130
+    //findRebuildNodesInVector(node->dependencies, DROP_NODE_BIT,
+    //				  nodelist);
 }
 
 static void
@@ -772,6 +779,8 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 	dup = dagnodeNew(primary->dbobject, DROP_NODE);
 	primary->build_type = BUILD_NODE;
 	primary->mirror_node = dup;
+	dup->mirror_node = primary;
+	dup->parent = primary->parent;
 	vectorPush(nodes, (Object *) dup);
     }
     EACH(rebuild_nodes, i) {
@@ -782,7 +791,7 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
         addDep(primary, dup, 0);
 	if (primary->breaker_for) {
 	    dup->breaker_for = primary->breaker_for->mirror_node;
-	    /* Duplicate thd dbobject so that it can be safely freed in
+	    /* Duplicate the dbobject so that it can be safely freed in
 	     * dgnodeFree() */
 	    dup->dbobject = xmlCopyNode(primary->dbobject, 1);
 	}

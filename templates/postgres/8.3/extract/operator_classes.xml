@@ -4,6 +4,65 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
+  <skit:function name="opclass_operators">
+    <skit:foreach var="opclass_oper" from="opclass_opers"
+		  filter="(string= (select opclass_oper 'class_oid')
+			  (select operator_class 'oid'))">
+      <opclass_operator>	
+	<skit:attr name="name"/>
+	<skit:attr name="schema"/>
+	<skit:attr name="strategy"/>
+	<skit:attr name="recheck"/>
+	<skit:if test="(select opclass_oper 'leftarg_type')">
+	  <arg position="left">
+	    <skit:attr name="name"
+		       expr="(select opclass_oper 'leftarg_type')"/>
+	    <skit:attr name="schema"
+		       expr="(select opclass_oper 'leftarg_schema')"/>
+	  </arg>	
+	</skit:if>
+	<skit:if test="(select opclass_oper 'rightarg_type')">
+	  <arg position="right">
+	    <skit:attr name="name"
+		       expr="(select opclass_oper 'rightarg_type')"/>
+	    <skit:attr name="schema"
+		       expr="(select opclass_oper 'rightarg_schema')"/>
+	  </arg>	
+	</skit:if>
+      </opclass_operator>
+    </skit:foreach>
+  </skit:function>
+
+  <skit:function name="opclass_functions">
+    <skit:foreach var="opclass_func" from="opclass_funcs"
+		  filter="(string= (select opclass_func 'class_oid')
+			  (select operator_class 'oid'))">
+      <opclass_function>
+	<skit:attr name="name"/>
+	<skit:attr name="schema"/>
+	<skit:attr name="proc_num"/>
+	<skit:var name="argtypes" 
+		  expr="(split (select tuple 'argtype_oids') ',')"/>
+	<skit:attr name="function"
+		   expr="(select function_sigs (select tuple 'proc_oid'))"/>
+	<params>
+	  <skit:foreach from="argtypes" var="arg" index="idx">
+	    <param>
+	      <skit:let>
+		<skit:var name="argtuple" expr="(select alltypes arg)"/>
+		<skit:attr name="type" expr="(select argtuple 'name')"/>
+		<skit:attr name="schema" expr="(select argtuple 'schema')"/>
+		<skit:attr name="name" expr="(select argnames (- idx 1))"/>
+		<skit:attr name="mode" expr="(select argmodes (- idx 1))"/>
+		<skit:attr name="position" expr="idx"/>
+	      </skit:let>
+	    </param>
+	  </skit:foreach>
+      	  </params>/
+      </opclass_function>
+    </skit:foreach>
+  </skit:function>
+
   <skit:foreach var="operator_class" from="operator_classes" 
 		filter="(string= (select operator_class 'schema')
 			         (select schema 'name'))">
@@ -24,59 +83,8 @@
 	</comment>
       </skit:if>
 
-      <skit:foreach var="opclass_oper" from="opclass_opers"
-		    filter="(string= (select opclass_oper 'class_oid')
-			             (select operator_class 'oid'))">
-	<opclass_operator>
-	  <skit:attr name="name"/>
-	  <skit:attr name="schema"/>
-	  <skit:attr name="strategy"/>
-	  <skit:attr name="recheck"/>
-	  <skit:if test="(select opclass_oper 'leftarg_type')">
-	    <arg position="left">
-	      <skit:attr name="name"
-      			 expr="(select opclass_oper 'leftarg_type')"/>
-	      <skit:attr name="schema"
-      			 expr="(select opclass_oper 'leftarg_schema')"/>
-	    </arg>	
-	  </skit:if>
-	  <skit:if test="(select opclass_oper 'rightarg_type')">
-	    <arg position="right">
-	      <skit:attr name="name"
-      			 expr="(select opclass_oper 'rightarg_type')"/>
-	      <skit:attr name="schema"
-      			 expr="(select opclass_oper 'rightarg_schema')"/>
-	    </arg>	
-	  </skit:if>
-	</opclass_operator>
-      </skit:foreach>
-      <skit:foreach var="opclass_func" from="opclass_funcs"
-		    filter="(string= (select opclass_func 'class_oid')
-			             (select operator_class 'oid'))">
-	<opclass_function>
-	  <skit:attr name="name"/>
-	  <skit:attr name="schema"/>
-	  <skit:attr name="proc_num"/>
-	  <skit:var name="argtypes" 
-		    expr="(split (select tuple 'argtype_oids') ',')"/>
-	  <skit:attr name="function"
-		     expr="(select function_sigs (select tuple 'proc_oid'))"/>
-      	  <params>
-      	    <skit:foreach from="argtypes" var="arg" index="idx">
-      	      <param>
-		<skit:let>
-      		  <skit:var name="argtuple" expr="(select alltypes arg)"/>
-      		  <skit:attr name="type" expr="(select argtuple 'name')"/>
-      		  <skit:attr name="schema" expr="(select argtuple 'schema')"/>
-      		  <skit:attr name="name" expr="(select argnames (- idx 1))"/>
-      		  <skit:attr name="mode" expr="(select argmodes (- idx 1))"/>
-      		  <skit:attr name="position" expr="idx"/>
-	        </skit:let>
-      	      </param>
-      	    </skit:foreach>
-      	  </params>/
-	</opclass_function>
-      </skit:foreach>
+      <skit:exec_function name="opclass_operators"/>
+      <skit:exec_function name="opclass_functions"/>
     </operator_class>
   </skit:foreach>
 </skit:inclusion>  

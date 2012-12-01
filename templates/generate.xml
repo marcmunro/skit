@@ -1,8 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-  TODO: Complete this comment
+  Argument and action definitions for the generate action.  Generate
+  creates an executable text output stream of ddl and dml commands from
+  an xml input stream.
+  
+  Synopsis (\- represents a single hyphen character)
+    skit \-\-list [OPTIONS]...
 
+    Options:
+        \-\-d[rop]
+	Create a drop script if the input stream is not a diff stream.
+
+        \-\-b[uild]
+	Create a build script if the input stream is not a diff stream.
+	This is the default but is disabled if drop is provided.  If you
+	want both drop and build, you must explicitly provide both.
+
+        \-\-ec[hoes]
+	Add echo statements to the drop and build scripts that show
+	progress when run through sql TODO: check this works
+
+        \-\-i[gnore-contexts]
+	TODO: check this works, and create the comment if it makes sense
+
+        \-\-s[simple-sort]
+	Use a basic tsort rather than skit's more sophisticated sort for
+	identifying the order of statements issued.
 -->
 
 
@@ -11,24 +35,29 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
-    <option name='sources' type='integer' value='1'/>
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
     <option name='ec*hoes' type='flag' default='true'/>
-    <option name='i*gnore-contexts' type='flag'>
-      This causes the context handling code that optimises context
-      switches, to be diabled.  The only context that we have right now
-      is for ownership, and the context arrival and departure code
-      causes "set authorization" and "reset authorization" statements to
-      be issued.
-    </option>
-    <option name='s*imple-sort' type='flag'>
-      This causes the simple, rather than smart, version of tsort to be
-      used.  It is is possible that the smart tsort may be buggy or
-      inefficient which is why this option exists.
-    </option>
+
+    <!-- This causes the context handling code that optimises context
+         switches, to be disabled.  The only context that we have right
+         now is for ownership, and the context arrival and departure
+         code causes "set authorization" and "reset authorization"
+         statements to be issued.  TODO: Figure out if ignore-contexts
+	 makes sense as a parameter (I think it is too hard to
+	 understand) -->
+    <option name='i*gnore-contexts' type='flag'/>
+
+    <!-- This causes the simple, rather than smart, version of tsort to
+         be used.  It is is possible that the smart tsort may be buggy
+         or inefficient which is why this option exists. -->
+    <option name='s*imple-sort' type='flag'/>
+
     <!-- Ensure add_deps.xsl is run before anything else is done -->
     <option name='add_deps' type='boolean' value='true'/>
+
+    <!-- "generate" processes one source stream -->
+    <option name='sources' type='integer' value='1'/>
   </skit:options>
 
   <!-- If neither build or drop are specified, then we do a build -->

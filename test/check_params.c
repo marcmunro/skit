@@ -1225,10 +1225,10 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
 
     // When we start back on diff, these need to be re-instated
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, diff2);
-    //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diff2);
+    ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, gather);
 
     // Various parameters that must work

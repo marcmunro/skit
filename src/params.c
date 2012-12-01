@@ -125,14 +125,14 @@ usage_msg()
 	"\n";
 }
 
-// Display usage message to dest
+/* Display usage message to dest */
 void
 show_usage(FILE *dest)
 {
     fprintf(dest, usage_msg());
 }
 
-// Display error and usage message to stderr and then abort
+/* Display error and usage message to stderr and then abort */
 static void
 usage_abort(char *errmsg)
 {
@@ -165,7 +165,8 @@ nextArg(String **p_arg, boolean *p_option)
 		    param = stringNew(equals + 1); 
 		    unread_arg(param, FALSE);
 		}
-		result = stringNew(arg + 2);  // skip over leading hyphens
+		result = stringNew(arg + 2);  /* skip over leading
+						 hyphens */
 		objectFree((Object *) argstr, TRUE);
 	    }
 	    else {
@@ -195,10 +196,7 @@ nextAction()
     Hash *option_hash = coreOptionHash();
 
     (void) nextArg(&arg, &is_option);
-    // TODO: We should be checking for the validity of the option as
-    // well as the fact that it is an option.
     if (arg) {
-	//fprintf(stderr, "ARG \"%s\", is_option %d\n", arg->value, is_option);
 	if (is_option) {
 	    if (action = (String *) hashGet(option_hash, (Object *) arg)) {
 		objectFree((Object *) arg, TRUE);
@@ -211,8 +209,8 @@ nextAction()
     return NULL;
 }
 
-// This probably needs to be modified based on reading a config file or
-// something
+/* This probably needs to be modified based on reading a config file or
+ * something */
 void
 initTemplatePath(char *arg)
 {
@@ -294,23 +292,3 @@ validateParamValue(String *type, String *value)
     /* Should not reach this point */
     RAISE(OUT_OF_BOUNDS, newstr("validateParamValue: coding error"));
 }
-
-/*
-TODO: Figure out what data is required by *all* actions and define
-suitable data types to contain that data.  Define protoypes for the
-parser and executor functions.  Provide a structure that maps from an
-enum into the parser and executors.  Provide a mapping for command-line
-arguments to the enums.  Provide dynamic hash tables for fast lookups -
-these will be useful elsewhere.  Maybe provide a nice read syntax for
-defining those hashes.  
-
-Data required by executors:
-  stylesheet name/path/file handle
-  stylesheet parameters
-  other options
-  default database connection (if defined)
-  action-specific database connection (if defined)
-  They also require access to the actionstack
-
-*/
-  

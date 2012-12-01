@@ -43,6 +43,5 @@
       <xi:include href="skitfile:extract/conversions.xml"/>
     </schema>
   </skit:runsql>
-  <!-- <skit:exec expr="(debug 'TODO: triggers rules views free-text stuff)"/> -->
 </skit:inclusion>
 

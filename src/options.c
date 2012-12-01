@@ -20,10 +20,10 @@
 static Hash *core_options = NULL;
 static Cons *print_options = NULL;
 
-// This provides the list of core options for the skit command-line
-// interface.  It also shows what an option key list should look like.
-// The * in  the strings represents the shortest allowable abbreviation
-// of the option. 
+/* This provides the list of core options for the skit command-line
+ * interface.  It also shows what an option key list should look like.
+ * The * in  the strings represents the shortest allowable abbreviation
+ * of the option. */
 static Cons *
 coreOptions()
 {
@@ -89,8 +89,8 @@ freeOptions()
     print_options = NULL;
 }
 
-// Return a list of option names consisting of each legitimate
-// abbreviation, and starting with the full name.
+/* Return a list of option names consisting of each legitimate
+ * abbreviation, and starting with the full name. */
 Cons *
 optionKeyList(String *instr) 
 {
@@ -101,7 +101,7 @@ optionKeyList(String *instr)
     char nextch;
     String *name;
     char *strtok_tmp;
-    char *str_for_tok;  // Take a copy of the source string for safety
+    char *str_for_tok;  /* Take a copy of the source string for safety */
     assert(instr->type == OBJ_STRING,
 	   "optionKeyList: Expected string");
 
@@ -129,8 +129,8 @@ optionKeyList(String *instr)
     return cons;
 }
 
-// What we want for an options object is a hash, keyed by each possible
-// option string and abbreviation, of primary option names.
+/* What we want for an options object is a hash, keyed by each possible
+ * option string and abbreviation, of primary option names. */
 Hash *
 hashFromOptions(Cons *options)
 {
@@ -160,8 +160,8 @@ hashFromOptions(Cons *options)
 		option_name = (String *) option_keys->car;  
 		assert(option_name->type == OBJ_STRING,
 		       "hashFromOptions: Expected option_name to be String");
-		// Note that this is a reference, so we must make a copy
-		// before doing anything with it.
+		/* Note that this is a reference, so we must make a copy
+		 * before doing anything with it. */
 	    }
 	    while (option_keys) {
 		assert(option_keys->type == OBJ_CONS,
@@ -170,9 +170,8 @@ hashFromOptions(Cons *options)
 		assert(this_option->type == OBJ_STRING,
 		       "hashFromOptions: Expected this_option to be String(2)");
 		
-		// TODO: HANDLE RESULT FROM hashAdd
-		hashAdd(hash, (Object *) this_option, 
-			(Object *) stringDup(option_name));
+		(void) hashAdd(hash, (Object *) this_option, 
+			       (Object *) stringDup(option_name));
 	    }
 	}
     }

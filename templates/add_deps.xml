@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-  TODO: Complete this comment
+  Argument and action definitions for the adddeps action.  This simply
+  causes dependencies to be added to the input stream, generating a
+  result stream.  Note that in order to see the dependencies you will
+  need to specify \-\-\full to the \-\-print action.
+  
+  Synopsis (\- represents a single hyphen character)
+    skit \-\-add_deps
 
 -->
 
@@ -9,13 +15,13 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
-    <option name='sources' type='integer' value='1'/>
     <option name='add_deps' type='boolean' value='true'/>
+    <!-- "add_deps" processes one source stream -->
+    <option name='sources' type='integer' value='1'/>
   </skit:options>
 
   <!-- Take the raw xml and add dependencies.  This allows filtering
        and dependency-based ordering to be performed -->
-
   <skit:xslproc stylesheet="add_deps.xsl" input="pop"/>
 
 </skit:stylesheet>

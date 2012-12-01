@@ -417,6 +417,9 @@ END_TEST
 
 
 /* Test dependency handling for rebuilds. */ 
+/* MM - This is all wrong.  There is no reason for builds to propagate
+ * to rebiulds, which is what the tests below seem to be trying to
+ * accomplish. */
 START_TEST(depset_dag2_rebuild)
 {
     Document *volatile doc = NULL;
@@ -437,7 +440,7 @@ START_TEST(depset_dag2_rebuild)
 
 	prepareDagForBuild((Vector **) &nodes);
 	nodes_by_fqn = hashByFqn(nodes);
-	//showVectorDeps(nodes);
+	showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "cluster", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
@@ -478,6 +481,7 @@ START_TEST(depset_dag2_rebuild)
 END_TEST
 
 /* Test dependency handling for rebuilds, with a default action of drop. */ 
+/* As above, I think is completely wrong. */
 START_TEST(depset_dag2_rebuild2)
 {
     Document *volatile doc = NULL;
@@ -983,8 +987,8 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_deps1);
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
-    ADD_TEST(tc_core, depset_dag2_rebuild);
-    ADD_TEST(tc_core, depset_dag2_rebuild2);
+    //ADD_TEST(tc_core, depset_dag2_rebuild);  Deprecated (dumb and broken)
+    //ADD_TEST(tc_core, depset_dag2_rebuild2); Deprecated (dumb and broken)
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);

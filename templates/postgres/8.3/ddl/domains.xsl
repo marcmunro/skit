@@ -6,7 +6,6 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- TODO: comments on domains! -->
   <xsl:template match="dbobject/domain">
     <xsl:if test="../@action='build'">
       <print>
