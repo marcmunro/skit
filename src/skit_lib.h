@@ -225,6 +225,8 @@ typedef enum {
     REBUILD_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
+    DIFFPREP_NODE,
+    DIFFCOMPLETE_NODE,
     BUILD_AND_DROP_NODE,
     OPTIONAL_NODE,
     UNSPECIFIED_NODE
@@ -382,6 +384,7 @@ extern boolean checkObj(Object *obj, void *chunk);
 extern Dependency *dependencyNew(DagNode *dep, BuildTypeBitSet condition);
 extern void dependencyFree(Dependency *dep);
 
+#define isSubnode(node)       (node && node->supernode)
 
 // vector.c
 extern Vector *vectorNew(int elems);
@@ -410,12 +413,14 @@ extern boolean checkVector(Vector *vec, void *chunk);
 
 #define EACH(vector, idx)				\
     if (vector)						\
-        for (idx = 0; idx < vector->elems; idx++)
+        for ((idx) = 0; (idx) < vector->elems; (idx)++)
 
 #define ELEM(vec, idx)				\
     vec->contents->vector[idx]
 
+#define isVector(obj)       (obj && (obj->type == OBJ_VECTOR))
 
+#define isLastElem(vector, idx) (idx == vector->elems)
 
 
 // hash.c

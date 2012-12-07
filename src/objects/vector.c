@@ -189,9 +189,9 @@ vectorCopy(Vector *vector)
     int i;
     if (vector) {
 	result = vectorNew(vector->elems);
-	for (i = 0; i < vector->elems; i++) {
-	    elem = vector->contents->vector[i];
-	    result->contents->vector[i] = elem;
+	EACH(vector, i) {
+	    elem = ELEM(vector, i);
+	    vectorPush(result, elem);
 	}
     }
     return result;

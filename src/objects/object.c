@@ -575,6 +575,8 @@ nameForBuildType(DagNodeBuildType build_type)
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
     case REBUILD_NODE: return "rebuild";
+    case DIFFPREP_NODE: return "diffprep";
+    case DIFFCOMPLETE_NODE: return "diffcomplete";
     case OPTIONAL_NODE: return "optional";
     case BUILD_AND_DROP_NODE: return "build and drop";
     }

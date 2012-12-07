@@ -1235,7 +1235,8 @@ addDepsForNode(
 }
 
 
-/* Create an initial dependency graph.
+/* Create an initial dependency graph from a source xml document.
+ * Return the graph as a Vector of DagNodes.
  */
 Vector *
 nodesFromDoc(Document *doc)
@@ -1252,6 +1253,7 @@ nodesFromDoc(Document *doc)
 	byfqn = hashByFqn(nodes);
 	bypqn = hashByPqn(nodes);
 	identifyParents(nodes, byfqn);
+
 	EACH(nodes, i) {
 	    node = (DagNode *) ELEM(nodes, i);
 	    assert(node->type == OBJ_DAGNODE, "incorrect node type");
@@ -1597,4 +1599,674 @@ prepareDagForBuild(Vector **p_nodes)
     redirectDependencies(sorted);
     //fprintf(stderr, "\n\n5\n\n");
     //showVectorDeps(sorted);
+}
+
+
+/* 
+ * Dependency handling in skit has 2 features that prevent the standard
+ * topological sort from being directly used:
+ * 1) We allow optional dependencies
+ * 2) Cyclic dependencies can happen
+ *
+ * This means that the dependency graph as derived directly from the
+ * input stream does not form a Directed Acyclic Graph (DAG) which is
+ * required by the standard tsort algorithms.  Skit deals with this by
+ * using a resolving process to convert the dependency graph into a true
+ * DAG.  The dependency resolver is based upon the standard tsort
+ * algorithm.
+ *
+ * The basic unit of the dependency graph is th DagNode.  Each dbobject
+ * in the source document is initially converted into 1 or 2 DagNodes,
+ * one for each action.  If a generate run consists of both build and
+ * drop, one DagNode will be created for each of Build and Drop.  In the
+ * case of diffs, a diff is converted into 2 DagNodes: DiffPrep and
+ * DiffComplete.  For dbobjects that are left unchanges in a diff
+ * stream, a single Exists node is created.
+ *
+ * Each set of optional dependencies is handled by creating a subnode of
+ * a DagNode.  Only one dependency (or dependent) of a subnode needs to
+ * be satisfied.  If no dependencies are satisfied, a fallback node may
+ * be provided.  Typically a fallback node is used when granting
+ * privileges on objects.  The dependency-set (set of optional
+ * dependencies) in such a case might be on the grantor having been
+ * assigned the privilege, or public having been assigned the privilege,
+ * or the grantor having been assigned superuser privilege.  If none of
+ * these are satisifed the fallback would be to use a superuser to
+ * assign the privilege.
+ *
+ * Cyclic dependencies are handled by allowing cycle-breaker nodes to be
+ * added to the graph, these resolve the cyclic dependency by creating
+ * an intermediate version of an object that is not dependent on other
+ * objects in the cycle.
+ *
+ * The algorithm for the resolver is as follows:
+ * TODO: Rewrite this based upon a successful implementation
+ * 
+ * fn visit_node(node, from, list)
+ *   node->status := VISITING;
+ *   for dep = each dependency(node)
+ *     begin
+ *       resolve_node(dep, dep, list)
+ *     exception when cyclic_exception
+ *       if is_sub_node(node) then
+ *         if dep is last dep of node then
+ * 	  if has_fallback then
+ * 	    deploy fallback to supernode
+ * 	  else
+ * 	    raise
+ * 	  end if
+ * 	end if;
+ *       else
+ *         if has_breaker(node) then
+ * 	  deploy_breaker
+ * 	else
+ * 	  raise
+ * 	end if
+ *       end if
+ *     end
+ *   end loop
+ *   node->status := VISITED
+ *   if is_sub_node(node) then
+ *     record the dep from which we were traversed to
+ *   else
+ *     append node to list
+ *   end if
+ * end fn
+ * 
+ * fn resolve_node(node, from list)
+ *   case node->status
+ *   VISITED: break
+ *   VISITING: 
+ *     if is_sub_node(node) then
+ *       if there are unvisited dependents then
+ *         -- We can continue in the hope that one of the others will apply
+ * 	return
+ *       else
+ *         if there is a fallback then
+ * 	  deploy fallback
+ * 	else
+ * 	  raise cyclic_exception
+ * 	end if
+ *       end if
+ *     else
+ *       raise cyclic_exception
+ *     end if
+ *   UNVISITED: visit_node(node, from, list)
+ *   end case
+ * end fn
+ * 
+ * fn resolver(vector)
+ *   for node = each node in vector loop
+ *     resolve_node(node, null, vector)
+ *   end loop
+ * 
+ *   for node = each node in vector loop
+ *     if the node is not VISITED then
+ *       raise an exception
+ *     end if
+ *     if the node is a subnode then
+ *       move the selected dependency (or dependent) to the supernode
+ *       remove the subnode and associated dependencies and dependents
+ *     end if
+ *   end loop
+ * end fn
+ * 
+ * 
+ */
+
+/* Read the source document, creating a single Dagnode for each
+ * dbobject.
+ */
+static Vector *
+dagNodesFromDoc(Document *doc)
+{
+    Vector *volatile nodes = vectorNew(1000);
+
+    BEGIN {
+	(void) xmlTraverse(doc->doc->children, &addNodeToVector, 
+			   (Object *) nodes);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) nodes, TRUE);
+    }
+    END;
+    return nodes;
+
+}
+
+static DagNode *
+makeMirror(DagNode *node, DagNodeBuildType type)
+{
+    DagNode *mirror = dagnodeNew(node->dbobject, type);
+    node->mirror_node = mirror;
+    mirror->mirror_node = node;
+    mirror->parent = node->parent;
+    return mirror;
+}
+ 
+static Vector *
+expandDagNodes(Vector *nodes)
+{
+    Vector *result = vectorNew(nodes->elems * 2);
+    DagNode *this;
+    DagNode *mirror;
+    int i;
+
+    EACH(nodes, i) {
+	this = (DagNode *) ELEM(nodes, i);
+	switch (this->build_type) {
+	case BUILD_NODE:
+	case DROP_NODE:
+	case EXISTS_NODE:
+	    /* Nothing to do - all is well */
+	    mirror = NULL;
+	    break;
+	case DIFF_NODE:
+	    this->build_type = DIFFCOMPLETE_NODE;
+	    mirror = makeMirror(this, DIFFPREP_NODE);
+	    break;
+	case REBUILD_NODE:
+	    this->build_type = BUILD_NODE;
+	    mirror = makeMirror(this, DROP_NODE);
+	    break;
+	default:
+	    objectFree((Object *) result, FALSE);
+	    RAISE(TSORT_ERROR, 
+		  newstr("Unexpected build_type: %d", this->build_type));
+	}
+	vectorPush(result, (Object *) this); 
+	if (mirror) {
+	    vectorPush(result, (Object *) mirror); 
+	}
+    }
+
+    objectFree((Object *) nodes, FALSE);
+    return result;
+}
+
+static Object *
+getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
+{
+    xmlNode *depnode;
+    Object *depsobj = NULL;
+    Object *elem;
+    Vector *depsvec = NULL;
+    String *restrict = nodeAttribute(node, "restrict");
+    String *qn;
+    boolean dep_applies;
+
+    if (restrict) {
+	dep_applies = (streq(restrict->value, "old") && inverted) ||
+	    (streq(restrict->value, "new") && !inverted);
+	objectFree((Object *) restrict, TRUE);
+    }
+    else {
+	dep_applies = TRUE;
+    }
+    
+    if (dep_applies) {
+	if (isDependencySet(node)) {
+	    for (depnode = node->children;
+		 depnode = nextDependency(depnode);
+		 depnode = depnode->next) 
+	    {
+		if (depsobj = getDepSet(depnode, inverted, byfqn, bypqn)) {
+		    if (depsvec) {
+			if (isVector(depsobj)) {
+			    vectorAppend(depsvec, (Vector *) depsobj);
+			}
+			else {
+			    vectorPush(depsvec, depsobj);
+			}
+		    }
+		    else {
+			if (isVector(depsobj)) {
+			    depsvec = (Vector *) depsobj;
+			}
+			else {
+			    depsvec = vectorNew(10);
+			    vectorPush(depsvec, depsobj);
+			}
+		    }
+		}
+	    }
+	    depsobj = (Object *) depsvec;
+	}
+	else {
+	    if (qn = nodeAttribute(node, "fqn")) {
+		if (elem = hashGet(byfqn, (Object *) qn)) {
+		    depsobj = (Object *) elem;
+		}
+	    }
+	    else if (qn = nodeAttribute(node, "pqn")) {
+		if (elem = hashGet(bypqn, (Object *) qn)) {
+		    RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("pqn matches"));
+		}
+	    }
+	    objectFree((Object *) qn, TRUE);
+	}
+    }
+
+    return depsobj;
+}
+
+
+static DagNode *
+addSubNode2(DagNode *node, boolean invert)
+{
+    DagNode *subnode;
+    subnode= dagnodeNew(node->dbobject, OPTIONAL_NODE);
+    subnode->subnodes = node->subnodes;
+    subnode->supernode = node;
+    node->subnodes = subnode;
+    if (invert) {
+	addDep(subnode, node, 0);
+    }
+    else {
+	addDep(node, subnode, 0);
+    }
+    return subnode;
+}
+
+
+static void
+addDepsetToNode(
+    DagNode *node, 
+    Object *depset, 
+    boolean invert, 
+    boolean is_conditional)
+{
+    DagNode *subnode;
+    Object *dep;
+    int i;
+    boolean dep_is_ignorable;
+    if (isVector(depset)) {
+	subnode = addSubNode2(node, invert);
+	EACH(((Vector *) depset), i) {
+	    dep = ELEM(((Vector *) depset), i);
+	    addDepsetToNode(subnode, dep, invert, TRUE);
+	}
+	objectFree(depset, FALSE);
+    }
+    else {
+	dep_is_ignorable = (node->build_type == EXISTS_NODE) ||
+	    (((DagNode *) depset)->build_type == EXISTS_NODE);
+
+	if (is_conditional || !dep_is_ignorable) {
+	    /* Unconditional dependencies involving an EXISTS_NODE need
+	     * not be recorded. */
+	    if (invert) {
+		addDep((DagNode *) depset, node, 0);
+	    }
+	    else {
+		addDep(node, (DagNode *) depset, 0);
+	    }
+	}
+    }
+}
+
+static void
+addDepsForNode2(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
+{
+    xmlNode *depnode;
+    boolean invert_deps;
+    Object *deps;
+    
+    assert(node, "addDepsForNode: no node provided");
+    assert(node->dbobject, "addDepsForNode: node has no dbobject");
+
+    invert_deps = (node->build_type == DROP_NODE) ||
+	(node->build_type == DIFFPREP_NODE);
+
+    for (depnode = node->dbobject->children;
+	 depnode = nextDependency(depnode);
+	 depnode = depnode->next) 
+    {
+	if (deps = getDepSet(depnode, invert_deps, byfqn, bypqn)) {
+	    addDepsetToNode(node, deps, invert_deps, FALSE);
+	}
+    }
+}
+
+static boolean
+hasUnvisitedDependents(DagNode *node)
+{
+    DagNode *dep;
+    int i;
+    if (node->dependents) {
+	EACH(node->dependents, i) {
+	    dep = (DagNode *) ELEM(node->dependents, i);
+	    if (dep->status == UNVISITED) {
+		return TRUE;
+	    }
+	}
+    }
+    return FALSE;
+}
+
+/* Deresolve any elements that were resolved as part of a cyclic
+ * dependency loop.  We will re-resolve them later if we can.
+ */
+static void
+resetResolvedList(Vector *resolved, int reset_to)
+{
+    DagNode *node;
+    int i;
+    for (i = reset_to; i < resolved->elems; i++) {
+	RAISE(NOT_IMPLEMENTED_ERROR, newstr("De-resolver for cycle"));
+	node = (DagNode *) ELEM(resolved, i);
+	node->status = UNVISITED;
+    }
+    resolved->elems = reset_to;
+}
+
+static boolean
+subnodeHasDependencies(DagNode *node)
+{
+    Dependency *dep;
+    if (node->dependencies->elems > 1) {
+	return TRUE;
+    }
+
+    /* One dependency.  If it is our parent then this node has no real
+     * dependencies and so must represent a set of dependents rather
+     * than a set of dependencies (eg this might be on the drop side of
+     * the dependency graph).
+     */
+    dep = (Dependency *) ELEM(node->dependencies, 0);
+    return dep->dependency != node->supernode;
+}
+
+static boolean
+isDependencySubnode(DagNode *node)
+{
+    return isSubnode(node) && subnodeHasDependencies(node);
+}
+
+static boolean
+isDependentSubnode(DagNode *node)
+{
+    return isSubnode(node) && !subnodeHasDependencies(node);
+}
+
+
+
+static void resolveNode(DagNode *node, DagNode *from, Vector *resolved);
+
+static void 
+resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
+{
+    Dependency *dep;
+    DagNode *volatile depnode;
+    DagNode *volatile subnode;
+    int volatile resolved_elems;
+    Vector *volatile rescopy = resolved;
+    int volatile i;
+    boolean volatile in_cycle;
+    DagNode *cycle_node;
+    char *errmsg ;
+    char *tmpmsg;
+
+    assert(isVector(resolved), "resolveDeps: resolved is not a vector");
+
+    if (node->dependencies) {
+	EACH(node->dependencies, i) {
+	    node->dep_idx = i;
+	    dep = (Dependency *) ELEM(node->dependencies, i);
+	    depnode = dep->dependency;
+	    BEGIN {
+		in_cycle = FALSE;
+		resolved_elems = resolved->elems;
+		resolveNode(depnode, node, resolved);
+	    }
+	    EXCEPTION(ex);
+	    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+		in_cycle = TRUE;
+		cycle_node = (DagNode *) ex->param;
+		errmsg = newstr("%s", ex->text);
+	    }
+	    END;
+
+	    if (in_cycle) {
+		/* We do this processing outside of the exception
+		 * handler as I don't have confidence that the exception
+		 * handler can deal properly with exceptions raised 
+		 * inside. */
+		resetResolvedList(rescopy, resolved_elems);
+
+		if (isDependentSubnode(depnode)) {
+		    /* We were traversing to an optional Dependent.
+		     * Nothing to do here except ignore it and proceed.
+		     * We will be ensuring that at least one dependent
+		     * was satisfied later */
+		    skfree(errmsg);
+		    continue;
+		}
+
+		if (isDependencySubnode(node)) {
+		    skfree(errmsg);
+		    if (isLastElem(node->dependencies, i)) {
+			RAISE(NOT_IMPLEMENTED_ERROR, 
+			      newstr("handle fallback"));
+		    }
+		    else {
+			/* We only have to successfully traverse one
+			 * dependency, so try the next one. */
+			continue;
+		    }
+		}
+
+		if (getBreakerFor(node)) {
+		    skfree(errmsg);
+		    RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("cycle breaker"));
+		    
+		}
+
+		/* We were unable to resolve the cyclic dependency.
+ 		 * Update the errmsg and re-raise it - maybe one of our
+ 		 * callers will be able to resolve it.
+		 */
+		if (node == cycle_node) {
+		    /* We are at the start of the cyclic dependency.
+		     * Set errmsg to describe this, and reset cycle_node
+		     * for the RAISE below. */ 
+		    tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+				    node->fqn->value, errmsg);
+		    cycle_node = NULL;
+		}
+		else if (cycle_node) {
+		    /* We are somewhere in the cycle of deps.  Add the
+		     * current node to the error message. */ 
+		    tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+		}
+		else {
+		    /* We are outside of the cyclic deps.  Add this node
+		     * to the error message so we can see how we got
+		     * to this point.  */ 
+		    tmpmsg = newstr("%s from %s", errmsg, node->fqn->value);
+		}
+
+		skfree(errmsg);
+		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
+	    }
+
+	    if (isSubnode(node)) {
+		/* We only have to process one of our dependencies.
+		 * The one we have matched is recorded in node->dep_idx */
+		break;
+	    }
+	}
+    }    
+}
+
+static boolean
+findNodeinDepVector(Vector *deps, DagNode *node, int *idx)
+{
+    Dependency *dep;
+    EACH(deps, *idx) {
+	dep = (Dependency *) ELEM(deps, *idx);
+	if (dep->dependency == node) {
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+static void 
+resolveNode(
+    DagNode *volatile node, 
+    DagNode *volatile from, 
+    Vector *volatile resolved)
+{
+    assert(node && node->type == OBJ_DAGNODE, 
+	   "resolveNode: node is not a DagNode");
+
+    switch (node->status) {
+    case VISITING:
+	if (isSubnode(node)) {
+	    if (hasUnvisitedDependents(node)) {
+		/* We continue in the hope that one of the others
+		 * will apply.  If not, we will be back and this
+		 * condition will no longer be true. */
+		break;
+	    }
+	    else {
+		if (node->fallback) {
+		    RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("Fallback in resolver"));
+		}
+	    }
+	}
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
+    case UNVISITED: 
+	node->status = VISITING;
+	BEGIN {
+	    if (isDependentSubnode(node)) {
+		/* We are in a subnode which does not have dependencies.
+		 * That means we have a set of optional dependents.  We
+		 * need to record which of the dependents we traversed
+		 * to this node from so that it can (later) become the
+		 * resolved dependent for the supernode.  */
+
+		if (!findNodeinDepVector(node->dependents, from, 
+					 &node->dep_idx)) {
+		    RAISE(TSORT_ERROR, 
+			  newstr("Could not find %s in dependents of %s", 
+				 from->fqn->value, node->fqn->value));
+		}
+	    }
+	    resolveDeps(node, from, resolved);
+	}
+	EXCEPTION(ex) {
+	    node->status = UNVISITED;
+	    RAISE();
+	}
+	END;
+	node->status = VISITED;
+	if (!node->supernode) {
+	    /* Do not record subnodes in the final list. */
+	    vectorPush(resolved, (Object *) node);
+	}
+    case VISITED:
+	break;
+    default: 
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected build_type: %d", node->build_type));
+    }
+}
+
+static Vector *
+resolveGraph(Vector *nodes)
+{
+    Vector *volatile resolved = vectorNew(nodes->elems + 10);
+    Vector *vtmp;
+    DagNode *node;
+    DagNode *subnode;
+    Dependency *dep;
+    int i, j;
+
+    BEGIN {
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    resolveNode(node, NULL, resolved);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) resolved, FALSE);
+    }
+    END;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	if (node->status != VISITED) {
+	    RAISE(TSORT_ERROR, 
+		  newstr("Node %s not processed by resolver", 
+			 node->fqn->value));
+	}
+	subnode = node->subnodes; 
+	while (subnode) {
+	    /* Check each subnode, identifying the selected dependency
+	     * for it, and transferring that dependency to the
+	     * supernode. */
+
+	    if (subnodeHasDependencies(subnode)) {
+		dep = (Dependency *) ELEM(subnode->dependencies, 
+					  subnode->dep_idx);
+		rmDep(node, subnode);
+		rmDep(subnode, dep->dependency);
+		addDependency(node, dep->dependency, 0);
+	    }
+	    else {
+		/* We need to remove all of the dependencies to this
+		 * optional node, and replace with the resolved single
+		 * dependency to the supernode. */
+		vtmp = vectorCopy(subnode->dependents);
+		EACH(vtmp, j) {
+		    dep = (Dependency *) ELEM(vtmp, j);
+		    if (j == subnode->dep_idx) {
+			addDependency(dep->dependency, node, 0);
+		    }
+		    rmDep(dep->dependency, subnode);
+		}
+		rmDep(subnode, node);
+		objectFree((Object *) vtmp, FALSE);
+	    }
+	    subnode = subnode->subnodes;
+	}
+    }
+
+    return resolved;
+}
+
+Vector *
+dagFromDoc(Document *doc)
+{
+    Vector *volatile nodes = dagNodesFromDoc(doc);
+    Vector *volatile resolved_nodes = NULL;
+    Hash *volatile byfqn = hashByFqn(nodes);
+    Hash *volatile bypqn = NULL;
+    DagNode *volatile this = NULL;
+    int volatile i;
+    BEGIN {
+	identifyParents(nodes, byfqn);
+	nodes = expandDagNodes(nodes);
+	bypqn = hashByPqn(nodes);
+	EACH(nodes, i) {
+	    this = (DagNode *) ELEM(nodes, i);
+	    assert(this->type == OBJ_DAGNODE, "incorrect node type");
+	    addDepsForNode2(this, nodes, byfqn, bypqn);
+	}
+	resolved_nodes = resolveGraph(nodes);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) nodes, FALSE);
+	objectFree((Object *) byfqn, FALSE);
+	objectFree((Object *) bypqn, FALSE);
+    }
+    END;
+    return resolved_nodes;
 }

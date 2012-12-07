@@ -145,13 +145,15 @@ requireDeps(Hash *hash, char *from, ...)
     if (!fromnode) {
 	fail("Cannot find %s ", key->value);
     }
-    objectFree((Object *) key, FALSE);
-    
-    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
+    else {
+	objectFree((Object *) key, FALSE);
 	
-    if (dep_elems != count) {
-	fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
-	     fromnode->fqn->value, count, fromnode->dependencies->elems);
+	dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
+	
+	if (dep_elems != count) {
+	    fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
+		 fromnode->fqn->value, count, fromnode->dependencies->elems);
+	}
     }
 }
 
@@ -211,6 +213,92 @@ requireOptionalDeps(Hash *hash, char *from, ...)
 }
 
 
+static void
+requireOptionalDependencies(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DagNode *fromnode;
+    DagNode *tonode;
+    String *key;
+    int dep_elems = 0;
+    Vector *deplist = vectorNew(10);
+    int i;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	vectorPush(deplist, (Object*) stringNew(to));
+	count++;
+    }
+    va_end(params);
+    key = stringNewByRef(from);
+    fromnode = (DagNode *) hashGet(hash, (Object *) key);
+    if (!fromnode) {
+	fail("Cannot find %s ", key->value);
+    }
+
+    objectFree((Object *) key, FALSE);
+
+    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
+    EACH(deplist, i) {
+	key = (String *) ELEM(deplist, i);
+	tonode = (DagNode *) hashGet(hash, (Object *) key);
+	if (hasDependency(fromnode, tonode)) {
+	    objectFree((Object *) deplist, TRUE);
+	    return;
+	}
+    }
+
+    objectFree((Object *) deplist, TRUE);
+	
+    fail("No optional dependencies found in %s", fromnode->fqn->value);
+}
+
+
+static void
+requireOptionalDependents(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DagNode *tonode;
+    DagNode *fromnode;
+    String *key;
+    int dep_elems = 0;
+    Vector *deplist = vectorNew(10);
+    int i;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	vectorPush(deplist, (Object*) stringNew(to));
+	count++;
+    }
+    va_end(params);
+    key = stringNewByRef(from);
+    tonode = (DagNode *) hashGet(hash, (Object *) key);
+    if (!tonode) {
+	fail("Cannot find %s ", key->value);
+    }
+
+    objectFree((Object *) key, FALSE);
+    dep_elems = (tonode->dependencies)? tonode->dependencies->elems: 0;
+    EACH(deplist, i) {
+	key = (String *) ELEM(deplist, i);
+	fromnode = (DagNode *) hashGet(hash, (Object *) key);
+	if (hasDependency(fromnode, tonode)) {
+	    objectFree((Object *) deplist, TRUE);
+	    return;
+	}
+    }
+    objectFree((Object *) deplist, TRUE);
+	
+    fail("No optional dependents found in %s", tonode->fqn->value);
+}
+
+
+
+
 static char *
 xnodeName(char *basename, Vector *nodes)
 {
@@ -247,67 +335,8 @@ START_TEST(build_type_bitsets)
 }
 END_TEST
 
-/* Test basic dependencies, using dependency sets, with xnodes in place, */
-START_TEST(depset_deps1)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
 
-    BEGIN {
-	initBuiltInSymbols();
-	initTemplatePath(".");
-	//showMalloc(23);
-	//showFree(724);
-
-	eval("(setq build t)");
-	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
-	//showVectorDeps(nodes);
-	nodes_by_fqn = hashByFqn(nodes);
-
-	requireDeps(nodes_by_fqn, "role.cluster.r1", "cluster", 
-		    "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", "cluster", 
-		    "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", "cluster", NULL);
-
-	requireOptionalDeps(nodes_by_fqn, "role.cluster.r3", 
-			    "role.cluster.r1", "role.cluster.r2", 
-			    "role.cluster.r4", NULL);
-
-	requireOptionalDeps(nodes_by_fqn, "role.cluster.r4", 
-			    "role.cluster.r1", "role.cluster.r2", 
-			    "role.cluster.r5", NULL);
-
-	requireDeps(nodes_by_fqn, "role.cluster.r5", "cluster", NULL);
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("gensort fails with exception");
-    }
-}
-END_TEST
-
-
-/* Test basic build dependencies, using dependency sets, after
- * processing xnodes. */ 
+/* Test basic build dependencies, using dependency sets */ 
 START_TEST(depset_dag1_build)
 {
     Document *volatile doc = NULL;
@@ -319,23 +348,32 @@ START_TEST(depset_dag1_build)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(23);
+	//showMalloc(654);
 	//showFree(724);
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r1", "role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", "role.cluster.r4", NULL);
+
+	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r3", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r4", NULL);
+
+	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r4", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r5", NULL);
+
 	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r5", NULL);
+
+
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -360,8 +398,7 @@ START_TEST(depset_dag1_build)
 }
 END_TEST
 
-/* Test basic (inverted) drop dependencies, using dependency sets, after
- * processing xnodes. */ 
+/* Test basic (inverted) drop dependencies, using dependency sets. */ 
 START_TEST(depset_dag1_drop)
 {
     Document *volatile doc = NULL;
@@ -378,19 +415,19 @@ START_TEST(depset_dag1_drop)
 
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = nodesFromDoc(doc);
-
-	prepareDagForBuild((Vector **) &nodes);
+	nodes = dagFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", "role.cluster.r4", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "role.cluster.r2", "role.cluster.r1", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
+	requireOptionalDependents(nodes_by_fqn, "role.cluster.r3", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r4", NULL);
+
+	requireOptionalDependents(nodes_by_fqn, "role.cluster.r4", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r5", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -416,11 +453,7 @@ START_TEST(depset_dag1_drop)
 END_TEST
 
 
-/* Test dependency handling for rebuilds. */ 
-/* MM - This is all wrong.  There is no reason for builds to propagate
- * to rebiulds, which is what the tests below seem to be trying to
- * accomplish. */
-START_TEST(depset_dag2_rebuild)
+START_TEST(depset_dag1_both)
 {
     Document *volatile doc = NULL;
     boolean failed = FALSE;
@@ -432,97 +465,27 @@ START_TEST(depset_dag2_rebuild)
 	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(23);
-	//showFree(572);
+	showFree(415);
 
-	eval("(setq build t)");
-	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc(doc);
-
-	prepareDagForBuild((Vector **) &nodes);
-	nodes_by_fqn = hashByFqn(nodes);
-	showVectorDeps(nodes);
-
-	requireDeps(nodes_by_fqn, "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r5", 
-		    "drop.role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "role.cluster.r4", "drop.role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", 
-		    "role.cluster.r3", "drop.role.cluster.r1", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", 
-		    "role.cluster.r3", "drop.role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
-		    "drop.role.cluster.r1", "drop.role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r1", NULL);
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r2", NULL);
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "WHATWHATWHATWHATWHAT?\n");
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("gensort fails with exception");
-    }
-}
-END_TEST
-
-/* Test dependency handling for rebuilds, with a default action of drop. */ 
-/* As above, I think is completely wrong. */
-START_TEST(depset_dag2_rebuild2)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    char *xnode_name;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    BEGIN {
-	initBuiltInSymbols();
-	initTemplatePath(".");
-	//showMalloc(813);
-	//showFree(572);
 	eval("(setq drop t)");
-	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	nodes = nodesFromDoc(doc);
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource_depset.xml");
+	nodes = dagFromDoc(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
+	showVectorDeps(nodes);
+/*
 	nodes_by_fqn = hashByFqn(nodes);
-	
-	//showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", 
-		    "drop.role.cluster.r5", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", 
-		    "role.cluster.r5", "drop.role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r5", "role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "role.cluster.r4", "drop.role.cluster.r3",
-		    "role.cluster.r1", "role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
+		    "role.cluster.r2", "role.cluster.r1", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
-
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r3", 
-		    "role.cluster.r1", "role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r4", 
-		    "drop.role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "drop.role.cluster.r5", 
-		    "drop.role.cluster.r4", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
+*/
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
     }
@@ -544,6 +507,46 @@ START_TEST(depset_dag2_rebuild2)
     }
 }
 END_TEST
+
+
+START_TEST(depset_diff)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    char *xnode_name;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initBuiltInSymbols();
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	eval("(setq drop t)");
+	eval("(setq build t)");
+	doc = getDoc("test/data/diffstream1.xml");
+	nodes = nodesFromDoc(doc);
+
+	prepareDagForBuild((Vector **) &nodes);
+	showVectorDeps(nodes);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
 
 START_TEST(cyclic_build)
 {
@@ -984,11 +987,10 @@ deps_suite(void)
     TCase *tc_core = tcase_create("deps");
 
     ADD_TEST(tc_core, build_type_bitsets);
-    ADD_TEST(tc_core, depset_deps1);
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
-    //ADD_TEST(tc_core, depset_dag2_rebuild);  Deprecated (dumb and broken)
-    //ADD_TEST(tc_core, depset_dag2_rebuild2); Deprecated (dumb and broken)
+    ADD_TEST(tc_core, depset_dag1_both);
+    ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
