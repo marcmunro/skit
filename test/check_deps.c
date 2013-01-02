@@ -353,10 +353,10 @@ START_TEST(depset_dag1_build)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = dagFromDoc(doc);
+	//nodes = dagFromDoc(doc);
 
-	//nodes = nodesFromDoc(doc);
-	//prepareDagForBuild((Vector **) &nodes);
+	nodes = nodesFromDoc(doc);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -415,9 +415,9 @@ START_TEST(depset_dag1_drop)
 
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = dagFromDoc(doc);
-	//nodes = nodesFromDoc(doc);
-	//prepareDagForBuild((Vector **) &nodes);
+	//nodes = dagFromDoc(doc);
+	nodes = nodesFromDoc(doc);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -471,9 +471,9 @@ START_TEST(depset_dag1_both)
 	eval("(setq build t)");
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	nodes = dagFromDoc(doc);
-	//nodes = nodesFromDoc(doc);
-	//prepareDagForBuild((Vector **) &nodes);
+	//nodes = dagFromDoc(doc);
+	nodes = nodesFromDoc(doc);
+	prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
@@ -1031,4 +1031,3 @@ deps_suite(void)
 
     return s;
 }
-

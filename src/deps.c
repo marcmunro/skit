@@ -2079,8 +2079,8 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 	    node->dep_idx = i;
 	    dep = (Dependency *) ELEM(node->dependencies, i);
 	    depnode = dep->dependency;
-	    printSexp(stderr, "Checking: ", (Object *) depnode);
-	    printSexp(stderr, "  from: ", (Object *) node);
+	    //printSexp(stderr, "Checking: ", (Object *) depnode);
+	    //printSexp(stderr, "  from: ", (Object *) node);
 	    BEGIN {
 		in_cycle = FALSE;
 		resolved_elems = resolved->elems;
@@ -2095,8 +2095,8 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 	    END;
 
 	    if (in_cycle) {
-	    printSexp(stderr, "Cycling at: ", (Object *) depnode);
-	    printSexp(stderr, "  from: ", (Object *) node);
+		//printSexp(stderr, "Cycling at: ", (Object *) depnode);
+		//printSexp(stderr, "  from: ", (Object *) node);
 		/* We do this processing outside of the exception
 		 * handler as I don't have confidence that the exception
 		 * handler can deal properly with exceptions raised 
@@ -2109,7 +2109,7 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 		     * dependency.  We will be ensuring that at least
 		     * one dependent of the subnode was satisfied later.
 		     */
-		    printSexp(stderr, "ELIMINATING: ", (Object *) depnode);
+		    //printSexp(stderr, "ELIMINATING: ", (Object *) depnode);
 		    rmDep(node, depnode);
 		    skfree(errmsg);
 		    i--;
@@ -2175,8 +2175,8 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
 	    }
 	    else {
-		printSexp(stderr, "Resolved: ", (Object *) depnode);
-		printSexp(stderr, "  from: ", (Object *) node);
+		//printSexp(stderr, "Resolved: ", (Object *) depnode);
+		//printSexp(stderr, "  from: ", (Object *) node);
 	    }
 
 	    if (isSubnode(node)) {
@@ -2336,7 +2336,7 @@ dagFromDoc(Document *doc)
 	//showVectorDeps(nodes);
 	//fprintf(stderr, "==========================\n");
 	resolved_nodes = resolveGraph(nodes);
-	showVectorDeps(resolved_nodes);
+	//showVectorDeps(resolved_nodes);
     }
     EXCEPTION(ex) {
 	objectFree((Object *) nodes, TRUE);

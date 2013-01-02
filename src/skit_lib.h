@@ -86,6 +86,7 @@ typedef enum {
     OBJ_CURSOR,
     OBJ_TUPLE,
     OBJ_DAGNODE,
+    OBJ_DOGNODE,
     OBJ_DEPENDENCY,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
@@ -273,6 +274,19 @@ typedef struct DagNode {
 } DagNode;
 
 
+// TODO: Refactor eliminating current DagNodes and Dependencies and 
+// renaming DogNodes to DagNodes
+typedef struct DogNode {
+    ObjType          type;
+    String          *fqn;
+    xmlNode         *dbobject;    // Reference only - not to be freed from here
+    DagNodeBuildType build_type;
+    int              dep_idx;
+    Vector          *forward_deps;   // use objectFree(obj, FALSE);
+    Vector          *backward_deps;     // use objectFree(obj, FALSE);
+    struct DagNode  *mirror_node; 	// Reference only
+    struct DagNode  *parent;   		// Reference only
+} DogNode;
 /* Used to describe a dependency
  */
 typedef struct Dependency {
