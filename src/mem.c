@@ -300,6 +300,7 @@ delChunk(void *chunk)
 		     chunk, free_number));
     }
     if (previous == -1) {
+	memdebug("CHUNK ALREADY FREED");
 	RAISE(MEMORY_ERROR, 
 	      newstr("delChunk: Chunk %p already freed", chunk));
     }

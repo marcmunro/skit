@@ -462,3 +462,76 @@ gensort(Document *doc)
     return results;
 }
 
+
+static void
+new_tsort_node(DagNode *node, Vector *results)
+{
+    int i;
+    Dependency *dep;
+    switch (node->status) {
+    case SORTED:
+	break;
+    case VISITED:
+	node->status = VISITING;
+	if (node->dependencies) {
+	    EACH(node->dependencies, i) {
+		dep = (Dependency *) ELEM(node->dependencies, i);
+		new_tsort_node(dep->dependency, results);
+	    }
+	}
+	vectorPush(results, (Object *) node);
+	node->status = SORTED;
+	break;
+    case VISITING:
+	RAISE(TSORT_ERROR, 
+	      newstr("Cyclic exception found at %s", node->fqn->value));
+    default:
+	dbgSexp(node);
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected node status: %d", node->status));
+    }
+}
+
+static Vector *
+new_tsort(Vector *nodes)
+{
+    Vector *results = vectorNew(nodes->elems);
+    DagNode *node;
+    int i;
+    BEGIN {
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    new_tsort_node(node, results);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, FALSE);
+    }
+    END;
+    
+    return results;
+}
+
+/* Do the sort. 
+*/
+Vector *
+gensort2(Document *doc)
+{
+    Vector *volatile nodes = NULL;
+    Vector *results = NULL;
+
+    BEGIN {
+	nodes = dagFromDoc(doc);
+	//showVectorDeps(nodes);
+	results = new_tsort(nodes);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes, TRUE);
+	RAISE();
+    }
+    END;
+    objectFree((Object *) nodes, FALSE);
+    return results;
+}
+

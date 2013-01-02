@@ -464,28 +464,56 @@ START_TEST(depset_dag1_both)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(23);
-	showFree(415);
+	//showMalloc(1800);
+	//showFree(415);
 
 	eval("(setq drop t)");
 	eval("(setq build t)");
+
 	doc = getDoc("test/data/gensource_depset.xml");
 	nodes = dagFromDoc(doc);
-
-	showVectorDeps(nodes);
-/*
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
+	//showVectorDeps(nodes);
 	nodes_by_fqn = hashByFqn(nodes);
 
-	requireDeps(nodes_by_fqn, "cluster", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r5", "role.cluster.r4", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r4", "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r3", 
-		    "role.cluster.r2", "role.cluster.r1", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r1", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r1", 
+		    "drop.role.cluster.r1", "role.cluster.r3", NULL);
+	requireDeps(nodes_by_fqn, "role.cluster.r2", 
+		    "drop.role.cluster.r2", "role.cluster.r3", NULL);
+
+	requireDep(nodes_by_fqn, "role.cluster.r3", "drop.role.cluster.r3");
+	requireOptionalDependents(nodes_by_fqn, "role.cluster.r3", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r4", NULL);
+
+	requireDep(nodes_by_fqn, "role.cluster.r4", "drop.role.cluster.r4");
+	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r4", 
+			    "role.cluster.r1", "role.cluster.r2", 
+			    "role.cluster.r5", NULL);
+
+	requireDeps(nodes_by_fqn, "role.cluster.r5", 
+		    "drop.role.cluster.r5", NULL);
+
+	/* No guaranteed deps for drop r1 */
+	/* No guaranteed deps for drop r2 */
+
+	requireDep(nodes_by_fqn, "drop.role.cluster.r3", 
+		   "drop.role.cluster.r1");
+	requireDep(nodes_by_fqn, "drop.role.cluster.r3", 
+		   "drop.role.cluster.r2");
+	requireOptionalDependents(nodes_by_fqn, "drop.role.cluster.r3", 
+			    "drop.role.cluster.r1", "drop.role.cluster.r2", 
+			    "drop.role.cluster.r4", NULL);
+
+	/* No guaranteed deps for drop r4 */
+	requireOptionalDependents(nodes_by_fqn, "drop.role.cluster.r4", 
+			    "drop.role.cluster.r1", "drop.role.cluster.r2", 
+			    "drop.role.cluster.r5", NULL);
+
+	/* No guaranteed deps for drop r5 */
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
-*/
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
     }
@@ -529,7 +557,7 @@ START_TEST(depset_diff)
 	nodes = nodesFromDoc(doc);
 
 	prepareDagForBuild((Vector **) &nodes);
-	showVectorDeps(nodes);
+	//showVectorDeps(nodes);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
     }

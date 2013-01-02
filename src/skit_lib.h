@@ -246,7 +246,8 @@ typedef enum {
     UNVISITED = 27,
     VISITING,
     RESOLVED,           /* Node has been resolved by resolving_tsort */
-    VISITED,            /* Node has been visited by tsort */
+    VISITED,            /* Node has been visited by the graph resolver */
+    SORTED,             /* Node has been sorted by tsort */
     UNBUILDABLE,	// Used in original tsort.c
     BUILDABLE,		// ditto
     SELECTED_FOR_BUILD	// ditto

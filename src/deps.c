@@ -117,7 +117,7 @@ showDeps(DagNode *node)
 	printSexp(stderr, "-->", (Object *) node->dependencies);
 	while (sub) {
 	    if (sub->dependencies || sub->fallback) {
-		printSexp(stderr, "deps->", (Object *) sub->dependencies);
+		printSexp(stderr, "optional->", (Object *) sub->dependencies);
 		if (sub->fallback) {
 		    printSexp(stderr, "flbk->", (Object *) sub->fallback);
 		}
@@ -581,6 +581,7 @@ hashByFqn(Vector *vector)
 		  newstr("hashbyFqn: duplicate node \"%s\"", key->value));
 	}
     }
+    //printSexp(stderr, "FQN HASH: ", (Object *) hash);
     return hash;
 }
 
@@ -612,10 +613,15 @@ hashByPqn(Vector *vector)
 	    xmlFree(pqn);
 	}
     }
+    //printSexp(stderr, "PQN HASH: ", (Object *) hash);
     return hash;
 }
 
 
+/*
+ * For each DagNode in the nodes Vector, identify the parent node and
+ * record it in the child node's parent field.
+ */
 static void
 identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 {
@@ -1120,8 +1126,22 @@ processBreaker(DagNode *node, DagNode *breaker)
     addDep(node, breaker, 0);
 }
 
+/* Replace the current dependency on depnode with one instead on
+* breaker.  Note that breaker has been created with the same
+* dependencies as depnode, so we must remove from it the dependency that
+* causes the cycle.  Then we replace the current dependency on depnode
+* with one instead on breaker.
+*/
+static void 
+processBreaker2(DagNode *curnode, DagNode *depnode, DagNode *breaker)
+{
+    Dependency *dep = (Dependency *) CURDEP(depnode);
+    DagNode *to_eliminate = dep->dependency;
 
-
+    rmDep(breaker, to_eliminate);
+    dep = (Dependency *) CURDEP(curnode);
+    dep->dependency = breaker;
+}
 
 static DagNode *
 getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn)
@@ -1217,7 +1237,11 @@ addDepsForNode(
 				 "defined by the skit template developer)", 
 				 node->fqn->value));
 		}
-		tmp = nodeAttribute(dep_node, "fqn");
+		if (!(tmp = nodeAttribute(dep_node, "fqn"))) {
+		    if (!(tmp = nodeAttribute(dep_node, "pqn"))) {
+			tmp = stringNew("unknown");
+		    }
+		}
 		errmsg = newstr("Unable to find dependency %s in %s", 
 				tmp->value, node->fqn->value);
 		objectFree((Object *) tmp, TRUE);
@@ -1734,6 +1758,12 @@ dagNodesFromDoc(Document *doc)
 
 }
 
+/* 
+ * Create a mirror node for node.  A mirror node is one which is
+ * repsonsible for a mirror operation on the node.  In the case of a
+ * rebuild operation, the mirror of a build node is a drop node.  For a
+ * diff, the operations are prepare and complete. 
+ */
 static DagNode *
 makeMirror(DagNode *node, DagNodeBuildType type)
 {
@@ -1741,9 +1771,18 @@ makeMirror(DagNode *node, DagNodeBuildType type)
     node->mirror_node = mirror;
     mirror->mirror_node = node;
     mirror->parent = node->parent;
+    addDep(node, mirror, 0);
     return mirror;
 }
- 
+
+/*
+ * For each DagNode in the nodes Vector, create mirror nodes as needed.
+ * Nodes with build_types of REBUILD_NODE become a pair of DROP_NODE and
+ * BUILD_NODE, and nodes with build_types of DIFF_NODE become a pair of
+ * DIFFCOMPLETE_NODE and DIFFPREP_NODE.
+ * When nodes are converted into pairs, an appropriate dependency is
+ * added between the nodes.
+ */
 static Vector *
 expandDagNodes(Vector *nodes)
 {
@@ -1840,8 +1879,15 @@ getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
 	    }
 	    else if (qn = nodeAttribute(node, "pqn")) {
 		if (elem = hashGet(bypqn, (Object *) qn)) {
-		    RAISE(NOT_IMPLEMENTED_ERROR, 
-			  newstr("pqn matches"));
+		    if (((Cons *) elem)->cdr) {
+			dbgNode(node);
+			dbgSexp(elem);
+			RAISE(NOT_IMPLEMENTED_ERROR, 
+			      newstr("pqn multiple elements unhandled"));
+		    }
+		    else {
+			depsobj = dereference(((Cons *) elem)->car);
+		    }
 		}
 	    }
 	    objectFree((Object *) qn, TRUE);
@@ -1856,7 +1902,18 @@ static DagNode *
 addSubNode2(DagNode *node, boolean invert)
 {
     DagNode *subnode;
-    subnode= dagnodeNew(node->dbobject, OPTIONAL_NODE);
+    char *orig_fqn;
+    int subnode_count = 1;
+    DagNode *this = node;
+    while (this = this->subnodes) {
+	subnode_count++;
+    }
+    subnode= dagnodeNew(node->dbobject, UNSPECIFIED_NODE);
+    orig_fqn = subnode->fqn->value;
+    subnode->fqn->value = newstr("%s.%s.sub%d", 
+				 nameForBuildType(node->build_type), 
+				 orig_fqn, subnode_count);
+    skfree(orig_fqn);
     subnode->subnodes = node->subnodes;
     subnode->supernode = node;
     node->subnodes = subnode;
@@ -1878,6 +1935,7 @@ addDepsetToNode(
     boolean is_conditional)
 {
     DagNode *subnode;
+    DagNode *depnode;
     Object *dep;
     int i;
     boolean dep_is_ignorable;
@@ -1897,7 +1955,11 @@ addDepsetToNode(
 	    /* Unconditional dependencies involving an EXISTS_NODE need
 	     * not be recorded. */
 	    if (invert) {
-		addDep((DagNode *) depset, node, 0);
+		depnode = (DagNode *) depset;
+		if (depnode->mirror_node) {
+		    depnode = depnode->mirror_node;
+		}
+		addDep(depnode, node, 0);
 	    }
 	    else {
 		addDep(node, (DagNode *) depset, 0);
@@ -1954,7 +2016,6 @@ resetResolvedList(Vector *resolved, int reset_to)
     DagNode *node;
     int i;
     for (i = reset_to; i < resolved->elems; i++) {
-	RAISE(NOT_IMPLEMENTED_ERROR, newstr("De-resolver for cycle"));
 	node = (DagNode *) ELEM(resolved, i);
 	node->status = UNVISITED;
     }
@@ -1994,6 +2055,8 @@ isDependentSubnode(DagNode *node)
 
 static void resolveNode(DagNode *node, DagNode *from, Vector *resolved);
 
+// TODO: I think we can remove the resolved Vector.  There is no need to
+// put resolved nodes into a different container as fas as I can see.
 static void 
 resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 {
@@ -2005,16 +2068,19 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
     int volatile i;
     boolean volatile in_cycle;
     DagNode *cycle_node;
+    DagNode *breaker;
     char *errmsg ;
     char *tmpmsg;
 
     assert(isVector(resolved), "resolveDeps: resolved is not a vector");
 
-    if (node->dependencies) {
+     if (node->dependencies) {
 	EACH(node->dependencies, i) {
 	    node->dep_idx = i;
 	    dep = (Dependency *) ELEM(node->dependencies, i);
 	    depnode = dep->dependency;
+	    printSexp(stderr, "Checking: ", (Object *) depnode);
+	    printSexp(stderr, "  from: ", (Object *) node);
 	    BEGIN {
 		in_cycle = FALSE;
 		resolved_elems = resolved->elems;
@@ -2029,6 +2095,8 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 	    END;
 
 	    if (in_cycle) {
+	    printSexp(stderr, "Cycling at: ", (Object *) depnode);
+	    printSexp(stderr, "  from: ", (Object *) node);
 		/* We do this processing outside of the exception
 		 * handler as I don't have confidence that the exception
 		 * handler can deal properly with exceptions raised 
@@ -2037,10 +2105,14 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 
 		if (isDependentSubnode(depnode)) {
 		    /* We were traversing to an optional Dependent.
-		     * Nothing to do here except ignore it and proceed.
-		     * We will be ensuring that at least one dependent
-		     * was satisfied later */
+		     * Since that failed, we will remove this
+		     * dependency.  We will be ensuring that at least
+		     * one dependent of the subnode was satisfied later.
+		     */
+		    printSexp(stderr, "ELIMINATING: ", (Object *) depnode);
+		    rmDep(node, depnode);
 		    skfree(errmsg);
+		    i--;
 		    continue;
 		}
 
@@ -2057,8 +2129,19 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 		    }
 		}
 
-		if (getBreakerFor(node)) {
+		if (breaker = getBreakerFor(depnode)) {
+		    /* Replace the current dependency on depnode with
+		     * one instead on breaker.  Breaker has been created
+		     * with the same dependencies as depnode, so we must
+		     * remove from it the dependency that causes the
+		     * cycle.  Then we replace the current dependency on
+		     * depnode with one instead on breaker and finally
+		     * we retry processing this, modified, dependency. */
+
+		    processBreaker2(node, depnode, breaker);
+		    i--;
 		    skfree(errmsg);
+		    continue;
 		    RAISE(NOT_IMPLEMENTED_ERROR, 
 			  newstr("cycle breaker"));
 		    
@@ -2090,6 +2173,10 @@ resolveDeps(DagNode *node, DagNode *from, Vector *resolved)
 
 		skfree(errmsg);
 		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
+	    }
+	    else {
+		printSexp(stderr, "Resolved: ", (Object *) depnode);
+		printSexp(stderr, "  from: ", (Object *) node);
 	    }
 
 	    if (isSubnode(node)) {
@@ -2144,20 +2231,6 @@ resolveNode(
     case UNVISITED: 
 	node->status = VISITING;
 	BEGIN {
-	    if (isDependentSubnode(node)) {
-		/* We are in a subnode which does not have dependencies.
-		 * That means we have a set of optional dependents.  We
-		 * need to record which of the dependents we traversed
-		 * to this node from so that it can (later) become the
-		 * resolved dependent for the supernode.  */
-
-		if (!findNodeinDepVector(node->dependents, from, 
-					 &node->dep_idx)) {
-		    RAISE(TSORT_ERROR, 
-			  newstr("Could not find %s in dependents of %s", 
-				 from->fqn->value, node->fqn->value));
-		}
-	    }
 	    resolveDeps(node, from, resolved);
 	}
 	EXCEPTION(ex) {
@@ -2193,50 +2266,51 @@ resolveGraph(Vector *nodes)
 	    node = (DagNode *) ELEM(nodes, i);
 	    resolveNode(node, NULL, resolved);
 	}
+
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    if (node->status != VISITED) {
+		RAISE(TSORT_ERROR, 
+		      newstr("Node %s is unresolved in resolveGraph", 
+			     node->fqn->value));
+	    }
+	    subnode = node->subnodes; 
+	    while (subnode) {
+		/* Check each subnode, identifying the selected dependency
+		 * for it, and transferring that dependency to the
+		 * supernode. */
+		
+		if (subnodeHasDependencies(subnode)) {
+		    dep = (Dependency *) ELEM(subnode->dependencies, 
+					      subnode->dep_idx);
+		    rmDep(node, subnode);
+		    rmDep(subnode, dep->dependency);
+		    addDependency(node, dep->dependency, 0);
+		}
+		else {
+		    /* We need to remove all of the dependencies to this
+		     * optional node, and replace with the resolved single
+		     * dependency to the supernode. */
+		    vtmp = vectorCopy(subnode->dependents);
+		    EACH(vtmp, j) {
+			dep = (Dependency *) ELEM(vtmp, j);
+			if (j == subnode->dep_idx) {
+			    addDependency(dep->dependency, node, 0);
+			}
+			rmDep(dep->dependency, subnode);
+		    }
+		    rmDep(subnode, node);
+		    objectFree((Object *) vtmp, FALSE);
+		}
+		subnode = subnode->subnodes;
+	    }
+	}
     }
     EXCEPTION(ex) {
 	objectFree((Object *) resolved, FALSE);
+	RAISE();
     }
     END;
-
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	if (node->status != VISITED) {
-	    RAISE(TSORT_ERROR, 
-		  newstr("Node %s not processed by resolver", 
-			 node->fqn->value));
-	}
-	subnode = node->subnodes; 
-	while (subnode) {
-	    /* Check each subnode, identifying the selected dependency
-	     * for it, and transferring that dependency to the
-	     * supernode. */
-
-	    if (subnodeHasDependencies(subnode)) {
-		dep = (Dependency *) ELEM(subnode->dependencies, 
-					  subnode->dep_idx);
-		rmDep(node, subnode);
-		rmDep(subnode, dep->dependency);
-		addDependency(node, dep->dependency, 0);
-	    }
-	    else {
-		/* We need to remove all of the dependencies to this
-		 * optional node, and replace with the resolved single
-		 * dependency to the supernode. */
-		vtmp = vectorCopy(subnode->dependents);
-		EACH(vtmp, j) {
-		    dep = (Dependency *) ELEM(vtmp, j);
-		    if (j == subnode->dep_idx) {
-			addDependency(dep->dependency, node, 0);
-		    }
-		    rmDep(dep->dependency, subnode);
-		}
-		rmDep(subnode, node);
-		objectFree((Object *) vtmp, FALSE);
-	    }
-	    subnode = subnode->subnodes;
-	}
-    }
 
     return resolved;
 }
@@ -2251,22 +2325,27 @@ dagFromDoc(Document *doc)
     DagNode *volatile this = NULL;
     int volatile i;
     BEGIN {
+	bypqn = hashByPqn(nodes);
 	identifyParents(nodes, byfqn);
 	nodes = expandDagNodes(nodes);
-	bypqn = hashByPqn(nodes);
 	EACH(nodes, i) {
 	    this = (DagNode *) ELEM(nodes, i);
 	    assert(this->type == OBJ_DAGNODE, "incorrect node type");
 	    addDepsForNode2(this, nodes, byfqn, bypqn);
 	}
+	//showVectorDeps(nodes);
+	//fprintf(stderr, "==========================\n");
 	resolved_nodes = resolveGraph(nodes);
+	showVectorDeps(resolved_nodes);
     }
-    EXCEPTION(ex);
+    EXCEPTION(ex) {
+	objectFree((Object *) nodes, TRUE);
+    }
     FINALLY {
-	objectFree((Object *) nodes, FALSE);
 	objectFree((Object *) byfqn, FALSE);
-	objectFree((Object *) bypqn, FALSE);
+	objectFree((Object *) bypqn, TRUE);
     }
     END;
+    objectFree((Object *) nodes, FALSE);
     return resolved_nodes;
 }

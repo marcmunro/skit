@@ -127,7 +127,7 @@ START_TEST(check_gensort)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	//showMalloc(1104);
+	//showMalloc(1522);
 	//showFree(140);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
@@ -135,7 +135,8 @@ START_TEST(check_gensort)
 	
 	doc = getDoc("test/data/gensource1.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	//results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
@@ -213,7 +214,7 @@ START_TEST(check_gensort2)
     skfree(tmp);
 
     doc = getDoc("test/data/gensource1.xml");
-    results = gensort(doc);
+    results = gensort2(doc);
     //printSexp(stderr, "RESULTS: ", (Object *) results);
 
     check_build_order(results, "('drop.database.cluster.skittest' "
@@ -282,7 +283,7 @@ START_TEST(navigation)
 
     src_doc = getDoc("test/data/gensource1.xml");
     simple_sort = symbolNew("simple-sort");    
-    sorted = gensort(src_doc);
+    sorted = gensort2(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -324,7 +325,7 @@ START_TEST(navigation2)
     skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
-    sorted = gensort(src_doc);
+    sorted = gensort2(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -365,7 +366,7 @@ START_TEST(check_cyclic_gensort)
 	
 	doc = getDoc("test/data/gensource2.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	results = gensort2(doc);
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
@@ -402,13 +403,13 @@ START_TEST(check_cyclic_gensort)
 
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'rebuild.viewbase.skittest.public.v1')",
+			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'rebuild.viewbase.skittest.public.v2')",
+			     "'build.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'rebuild.viewbase.skittest.public.v1')",
+			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'rebuild.viewbase.skittest.public.v2')",
+			     "'build.viewbase.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
@@ -417,15 +418,15 @@ START_TEST(check_cyclic_gensort)
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('rebuild.viewbase.skittest.public.v1' "
+			     "('build.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v1')",
-			     "('rebuild.viewbase.skittest.public.v2' "
+			     "('build.viewbase.skittest.public.v2' "
 			      "'view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('rebuild.viewbase.skittest.public.v1' "
+			     "('build.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v2')",
-			     "('rebuild.viewbase.skittest.public.v2' "
+			     "('build.viewbase.skittest.public.v2' "
 			     "'view.skittest.public.v1')",
 			      NULL);
 
@@ -471,7 +472,7 @@ START_TEST(check_cyclic_gensort2)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.skittest' "
@@ -508,13 +509,13 @@ START_TEST(check_cyclic_gensort2)
 	              "'grant.cluster.tbs2.create:keep2:regress')");
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'rebuild.viewbase.skittest.public.v1')",
+			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'rebuild.viewbase.skittest.public.v2')",
+			     "'build.viewbase.skittest.public.v2')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'rebuild.viewbase.skittest.public.v1')",
+			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
-			     "'rebuild.viewbase.skittest.public.v2')",
+			     "'build.viewbase.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
@@ -523,15 +524,15 @@ START_TEST(check_cyclic_gensort2)
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('rebuild.viewbase.skittest.public.v1' "
+			     "('build.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v1')",
-			     "('rebuild.viewbase.skittest.public.v2' "
+			     "('build.viewbase.skittest.public.v2' "
 			      "'view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
-			     "('rebuild.viewbase.skittest.public.v1' "
+			     "('build.viewbase.skittest.public.v1' "
 			     "'view.skittest.public.v2')",
-			     "('rebuild.viewbase.skittest.public.v2' "
+			     "('build.viewbase.skittest.public.v2' "
 			     "'view.skittest.public.v1')",
 			      NULL);
 
@@ -570,14 +571,14 @@ START_TEST(check_cyclic_exception)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	//showMalloc(432);
+	//showMalloc(439);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource3.xml");
 	//dbgSexp(doc);
-	results = gensort(doc);
+	results = gensort2(doc);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -597,10 +598,10 @@ START_TEST(check_cyclic_exception)
     }
     END;
 
-    FREEMEMWITHCHECK;
     if (failed) {
 	fail("check_cyclic_exception: unexpected exception");
     }
+    FREEMEMWITHCHECK;
 }
 END_TEST
 
@@ -619,7 +620,7 @@ START_TEST(diff)
 	//showMalloc(981);
 	doc = getDoc("test/data/gensource_diff.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -662,7 +663,7 @@ START_TEST(diff2)
 	initTemplatePath(".");
 	//showMalloc(1104);
 	doc = getDoc("test/data/gensource_diff.xml");
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -703,7 +704,7 @@ START_TEST(depset)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(531);
+	//showMalloc(1190);
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");
@@ -715,7 +716,7 @@ START_TEST(depset)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -761,7 +762,7 @@ START_TEST(depset2)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -810,7 +811,7 @@ START_TEST(depset_rebuild)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -855,7 +856,7 @@ START_TEST(fallback)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = gensort2(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
