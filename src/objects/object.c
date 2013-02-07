@@ -45,7 +45,6 @@ objTypeName(Object *obj)
     case OBJ_CURSOR: return "OBJ_CURSOR";
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
-    case OBJ_DAGNODE: return "OBJ_DAGNODE";
     case OBJ_DOGNODE: return "OBJ_DOGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
@@ -405,57 +404,6 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
-#ifdef wibble
-static DagNode *
-basicDagNode()
-{
-    DagNode *new = skalloc(sizeof(DagNode));
-    new->type = OBJ_DAGNODE;
-    new->fqn = NULL;
-    new->dbobject = NULL;
-    new->build_type = UNSPECIFIED_NODE;
-    new->is_fallback = FALSE;
-    new->status = UNVISITED;
-    new->dep_idx = -1;
-    new->dependencies = NULL;
-    new->original_dependencies = NULL;
-    new->dependents = NULL;
-    new->breaker_for = NULL;
-    new->fallback = NULL;
-    new->mirror_node = NULL;
-    new->parent = NULL;
-    new->supernode = NULL;
-    new->subnodes = NULL;
-
-    return new;
-}
-
-DagNode *
-dagnodeNew(xmlNode *node, DagNodeBuildType build_type)
-{
-    DagNode *new = basicDagNode();
-    String *source_fqn;
-    String *actual_fqn;
-
-    assert(node, "dagnodeNew: node not provided");
-
-    source_fqn = nodeAttribute(node, "fqn");
-
-    if (build_type == UNSPECIFIED_NODE) {
-	actual_fqn = source_fqn;
-    }
-    else {
-	actual_fqn = stringNewByRef(newstr("%s.%s", 
-					   nameForBuildType(build_type), 
-					   source_fqn->value));
-	objectFree((Object *) source_fqn, TRUE);
-    }
-    new->fqn = actual_fqn;
-    new->dbobject = node;
-    new->build_type = build_type;
-    return new;
-}
-#endif
 
 static DogNode *
 basicDogNode()
@@ -495,44 +443,6 @@ dognodeNew(xmlNode *node, DagNodeBuildType build_type)
     return new;
 }
 
-#ifdef wibble
-void
-doDagnodeFree(DagNode *node)
-{
-    if (node->breaker_for) {
-	/* This is a breaker node, so the xmlnode is not from a
-	 * document, but rather has been created on the fly. */
-	xmlFreeNode(node->dbobject);
-    }
-    objectFree((Object *) node->fqn, TRUE);
-    objectFree((Object *) node->dependencies, TRUE);
-    objectFree((Object *) node->original_dependencies, TRUE);
-    objectFree((Object *) node->dependents, TRUE);
-    skfree(node);
-}
-
-void
-dagnodeFree(DagNode *node)
-{
-    DagNode *sub;
-    DagNode *tmp;
-    if (node->supernode) {
-	/* This is a subnode.  Do not free it, as it will be dealt with
-	 * when the supernode is freed. */
-	return;
-    }
-
-    sub = node->subnodes;
-    doDagnodeFree(node);
-
-    while (sub) {
-	tmp = sub->subnodes;
-	doDagnodeFree(sub);
-	sub = tmp;
-    }
-}
-#endif
-
 void
 doDognodeFree(DogNode *node)
 {
@@ -569,25 +479,6 @@ dognodeFree(DogNode *node)
 
     doDognodeFree(node);
 }
-
-#ifdef wibble
-Dependency *
-dependencyNew(DagNode *dep,
-	   BuildTypeBitSet condition)
-{
-    Dependency *new = skalloc(sizeof(Dependency));
-    new->type = OBJ_DEPENDENCY;
-    new->condition = condition;
-    new->dependency = dep;
-    return new;
-}
-
-void
-dependencyFree(Dependency *dep)
-{
-    skfree(dep);
-}
-#endif
 
 /* Free a dynamically allocated object. */
 void

@@ -85,7 +85,6 @@ typedef enum {
     OBJ_CONNECTION,
     OBJ_CURSOR,
     OBJ_TUPLE,
-    OBJ_DAGNODE,
     OBJ_DOGNODE,
     OBJ_DEPENDENCY,
     OBJ_TRIPLE,
@@ -257,26 +256,8 @@ typedef enum {
     SELECTED_FOR_BUILD	// ditto
 } DagNodeStatus;
 
-typedef struct DagNodeOld {
-    ObjType          type;
-    String          *fqn;
-    xmlNode         *dbobject;    // Reference only - not to be freed from here
-    DagNodeBuildType build_type;
-    boolean          is_fallback;
-    DagNodeStatus    status;
-    int              dep_idx;
-    Vector          *dependencies;   // use objectFree(obj, FALSE);
-    Vector          *dependents;     // use objectFree(obj, FALSE);
-    Vector          *original_dependencies;
-    struct DagNodeOld  *supernode;
-    struct DagNodeOld  *subnodes;       // Linked list
-    struct DagNodeOld  *breaker_for;    // Reference only
-    struct DagNodeOld  *fallback;  	// Reference only
-    struct DagNodeOld  *mirror_node; 	// Reference only
-    struct DagNodeOld  *parent;   		// Reference only
-} DagNodeOld;
-
-
+/* Used to identify to which side of the DAG, a given dependency
+ * applies. */
 typedef enum {
     FORWARDS = 17,
     BACKWARDS,
@@ -303,15 +284,6 @@ typedef struct DogNode {
     struct DogNode  *backward_subnodes;       	// Linked list
     struct DogNode  *fallback_node;  
 } DogNode;
-
-
-/* Used to describe a dependency
- */
-typedef struct DependencyOld {
-    ObjType          type;
-    BuildTypeBitSet  condition;
-    DagNodeOld         *dependency;    // Reference only
-} DependencyOld;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to

@@ -252,7 +252,7 @@ START_TEST(check_gensort)
 	doc = getDoc("test/data/gensource1.xml");
 	simple_sort = symbolNew("simple-sort");    
 	//results = gensort(doc);
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order2(results, "('drop.database.cluster.skittest' "
@@ -330,7 +330,7 @@ START_TEST(check_gensort2)
     skfree(tmp);
 
     doc = getDoc("test/data/gensource1.xml");
-    results = gensort2(doc);
+    results = gensort(doc);
     //printSexp(stderr, "RESULTS: ", (Object *) results);
 
     check_build_order2(results, "('drop.database.cluster.skittest' "
@@ -399,14 +399,14 @@ START_TEST(navigation)
 
     src_doc = getDoc("test/data/gensource1.xml");
     simple_sort = symbolNew("simple-sort");    
-    sorted = gensort2(src_doc);
+    sorted = gensort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
     xmlDocSetRootElement(xmldoc, root);
     result_doc = documentNew(xmldoc, NULL);
 
-    treeFromVector2(root, sorted);
+    treeFromVector(root, sorted);
 
     //dbgSexp(result_doc);
 
@@ -441,14 +441,14 @@ START_TEST(navigation2)
     skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
-    sorted = gensort2(src_doc);
+    sorted = gensort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
     xmlDocSetRootElement(xmldoc, root);
     result_doc = documentNew(xmldoc, NULL);
 
-    treeFromVector2(root, sorted);
+    treeFromVector(root, sorted);
 
     //dbgSexp(result_doc);
 
@@ -482,7 +482,7 @@ START_TEST(check_cyclic_gensort)
 	
 	doc = getDoc("test/data/gensource2.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort2(doc);
+	results = gensort(doc);
 	//showVectorDeps(results);
 	printSexp(stderr, "RESULTS: ", (Object *) results);
 
@@ -698,7 +698,7 @@ START_TEST(check_cyclic_exception)
 	
 	doc = getDoc("test/data/gensource3.xml");
 	//dbgSexp(doc);
-	results = gensort2(doc);
+	results = gensort(doc);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -838,7 +838,7 @@ START_TEST(depset)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -884,7 +884,7 @@ START_TEST(depset2)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -933,7 +933,7 @@ START_TEST(depset_rebuild)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -978,7 +978,7 @@ START_TEST(fallback)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
