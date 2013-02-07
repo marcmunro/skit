@@ -24,14 +24,14 @@ static Hash *
 dagnodeHash(Vector *vector)
 {
     int i;
-    DogNode *node;
+    DagNode *node;
     String *key;
     Object *old;
     Hash *hash = hashNew(TRUE);
 
     EACH(vector, i) {
-	node = (DogNode *) ELEM(vector, i);
-	assert(node->type == OBJ_DOGNODE, "Incorrect node type");
+	node = (DagNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DAGNODE, "Incorrect node type");
 	key = stringDup(node->fqn);
 
 	if (hashGet(hash, (Object *) key)) {
@@ -55,143 +55,9 @@ void eval(char *str)
     skfree(tmp);
 }
 
-/*
-static boolean
-hasDependency(DagNode *node, DagNode *dep)
-{
-    Vector *vector = node->dependencies;
-    Object *depobj;
-    int i;
-    if (vector) {
-	for (i = 0; i < vector->elems; i++) {
-	    depobj = vector->contents->vector[i];
-	    if (depobj->type == OBJ_DAGNODE) {
-		if (dep == (DagNode *) depobj) {
-		    return TRUE;
-		}
-	    }
-	    else if (depobj->type == OBJ_DEPENDENCY) {
-		if (dep == ((Dependency *) depobj)->dependency) {
-		    return TRUE;
-		}
-	    }
-	}
-    }
-    return FALSE;
-}
-*/
-
- /*
-static boolean
-hasDep(Hash *hash, char *from, char *to)
-{
-    String *key = stringNewByRef(newstr(from));
-    DagNode *fnode = (DagNode *) hashGet(hash, (Object *) key);
-    DagNode *tnode;
-    if (!fnode) {
-	fail("Cannot find source node %s ", key->value);
-    }
-
-    objectFree((Object *) key, TRUE);
-
-    key = stringNewByRef(newstr(to));
-    tnode = (DagNode *) hashGet(hash, (Object *) key);
-
-    if (!tnode) {
-	fail("Cannot find dependency %s ", key->value);
-    }
-    
-    objectFree((Object *) key, TRUE);
-    return hasDependency(fnode, tnode);
-}
- */
-
-  /*
-static void
-requireDep(Hash *hash, char *from, char *to)
-{
-    if (!hasDep(hash, from, to)) {
-	fail("No dep exists from %s to %s", from, to);
-    }
-}
-
-static void
-requireNoDep(Hash *hash, char *from, char *to)
-{
-    if (hasDep(hash, from, to)) {
-	fail("Unwanted dep exists from %s to %s", from, to);
-    }
-}
-  */
-#ifdef wibble
-static boolean
-hasDeps(Hash *hash, char *from, ...)
-{
-    va_list params;
-    char *to;
-    int count = 0;
-    DagNode *fromnode;
-    String *key;
-    int dep_elems;
-
-    va_start(params, from);
-    while (to = va_arg(params, char *)) {
-	requireDep(hash, from, to);
-	count++;
-    }
-    va_end(params);
-    key = stringNewByRef(from);
-    fromnode = (DagNode *) hashGet(hash, (Object *) key);
-
-    if (!fromnode) {
-	fail("Cannot find %s ", key->value);
-    }
-    objectFree((Object *) key, FALSE);
-    
-    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
-
-    return dep_elems == count;
-}
-#endif
-
-#ifdef wibble
-static void
-requireDeps(Hash *hash, char *from, ...)
-{
-    va_list params;
-    char *to;
-    int count = 0;
-    DagNode *fromnode;
-    String *key;
-    int dep_elems;
-
-    va_start(params, from);
-    while (to = va_arg(params, char *)) {
-	requireDep(hash, from, to);
-	count++;
-    }
-    va_end(params);
-    key = stringNewByRef(from);
-    fromnode = (DagNode *) hashGet(hash, (Object *) key);
-
-    if (!fromnode) {
-	fail("Cannot find %s ", key->value);
-    }
-    else {
-	objectFree((Object *) key, FALSE);
-	
-	dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
-	
-	if (dep_elems != count) {
-	    fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
-		 fromnode->fqn->value, count, fromnode->dependencies->elems);
-	}
-    }
-}
-#endif
 
 static boolean
-hasDependency2(DogNode *node, DogNode *dep)
+hasDependency2(DagNode *node, DagNode *dep)
 {
     Vector *vector = node->forward_deps;
     Object *depobj;
@@ -199,8 +65,8 @@ hasDependency2(DogNode *node, DogNode *dep)
     if (vector) {
 	for (i = 0; i < vector->elems; i++) {
 	    depobj = vector->contents->vector[i];
-	    if (depobj->type == OBJ_DOGNODE) {
-		if (dep == (DogNode *) depobj) {
+	    if (depobj->type == OBJ_DAGNODE) {
+		if (dep == (DagNode *) depobj) {
 		    return TRUE;
 		}
 	    }
@@ -250,19 +116,19 @@ buildPrefixLen(DagNodeBuildType type)
     }
 }
 
-static DogNode *
+static DagNode *
 findDagNode(Hash *hash, char *name)
 {
     DagNodeBuildType type = buildTypeFromName(name);
     String *fqn = stringNew(name);
-    DogNode *node = (DogNode *) hashGet(hash, (Object *) fqn);
+    DagNode *node = (DagNode *) hashGet(hash, (Object *) fqn);
 
     if (!node) {
 	/* Try removing any build type prefix from the name and see if
 	 * there is a match that way. */
 	objectFree((Object *) fqn, TRUE);
 	fqn = stringNew(name + buildPrefixLen(type));
-	node = (DogNode *) hashGet(hash, (Object *) fqn);
+	node = (DagNode *) hashGet(hash, (Object *) fqn);
     }
 
     if (node) {
@@ -285,8 +151,8 @@ findDagNode(Hash *hash, char *name)
 static boolean
 hasDep2(Hash *hash, char *from, char *to)
 {
-    DogNode *fnode = (DogNode *) findDagNode(hash, from);
-    DogNode *tnode = (DogNode *) findDagNode(hash, to);
+    DagNode *fnode = (DagNode *) findDagNode(hash, from);
+    DagNode *tnode = (DagNode *) findDagNode(hash, to);
 
     if (!fnode) {
 	fail("Cannot find source node %s ", from);
@@ -313,7 +179,7 @@ requireDeps2(Hash *hash, char *from, ...)
     va_list params;
     char *to;
     int count = 0;
-    DogNode *fromnode;
+    DagNode *fromnode;
     int dep_elems;
 
     va_start(params, from);
@@ -322,7 +188,7 @@ requireDeps2(Hash *hash, char *from, ...)
 	count++;
     }
     va_end(params);
-    fromnode = (DogNode *) findDagNode(hash, from);
+    fromnode = (DagNode *) findDagNode(hash, from);
 
     if (!fromnode) {
 	fail("Cannot find %s ", from);
@@ -340,8 +206,8 @@ requireDeps2(Hash *hash, char *from, ...)
 static boolean
 chkDep2(Hash *hash, char *from, char *to)
 {
-    DogNode *fnode = (DogNode *) findDagNode(hash, from);
-    DogNode *tnode = (DogNode *) findDagNode(hash, to);
+    DagNode *fnode = (DagNode *) findDagNode(hash, from);
+    DagNode *tnode = (DagNode *) findDagNode(hash, to);
 
     if (!fnode) {
 	return FALSE;
@@ -360,7 +226,7 @@ hasDeps2(Hash *hash, char *from, ...)
     va_list params;
     char *to;
     int count = 0;
-    DogNode *fromnode;
+    DagNode *fromnode;
     int dep_elems;
 
     va_start(params, from);
@@ -372,7 +238,7 @@ hasDeps2(Hash *hash, char *from, ...)
     }
     va_end(params);
     return TRUE;
-    fromnode = (DogNode *) findDagNode(hash, from);
+    fromnode = (DagNode *) findDagNode(hash, from);
 
     if (!fromnode) {
 	fail("Cannot find %s ", from);
@@ -387,106 +253,6 @@ hasDeps2(Hash *hash, char *from, ...)
     return TRUE;
 }
 
-#ifdef wibble
-static void
-requireOptionalDeps(Hash *hash, char *from, ...)
-{
-    va_list params;
-    char *to;
-    int count = 0;
-    DagNode *fromnode;
-    DagNode *tonode;
-    DagNode *sub;
-    String *key;
-    int dep_elems = 0;
-    Vector *required = vectorNew(10);
-    int i;
-    boolean abandoned = FALSE;
-
-    va_start(params, from);
-    while (to = va_arg(params, char *)) {
-	vectorPush(required, (Object*) stringNew(to));
-	count++;
-    }
-    va_end(params);
-    key = stringNewByRef(from);
-    fromnode = (DagNode *) hashGet(hash, (Object *) key);
-    if (!fromnode) {
-	fail("Cannot find %s ", key->value);
-    }
-
-    objectFree((Object *) key, FALSE);
-    sub = fromnode->subnodes;
-
-    while (sub) {
-	dep_elems = (sub->dependencies)? sub->dependencies->elems: 0;
-	abandoned = FALSE;
-	EACH(required, i) {
-	    key = (String *) ELEM(required, i);
-	    tonode = (DagNode *) hashGet(hash, (Object *) key);
-	    if (!hasDependency(sub, tonode)) {
-		abandoned = TRUE;
-		break;
-	    }
-	}
-	if (!abandoned) {
-	    /* Everything must have matched.  Yippee! */
-	    break;
-	}
-	sub = sub->subnodes;
-    }
-    objectFree((Object *) required, TRUE);
-	
-    if (abandoned) {
-	fail("Not all optional dependencies accounted for in %s "
-	     "(expecting %d)", fromnode->fqn->value, count);
-    }
-}
-#endif
-
-#ifdef wibble
-static void
-requireOptionalDependencies(Hash *hash, char *from, ...)
-{
-    va_list params;
-    char *to;
-    int count = 0;
-    DagNode *fromnode;
-    DagNode *tonode;
-    String *key;
-    int dep_elems = 0;
-    Vector *deplist = vectorNew(10);
-    int i;
-
-    va_start(params, from);
-    while (to = va_arg(params, char *)) {
-	vectorPush(deplist, (Object*) stringNew(to));
-	count++;
-    }
-    va_end(params);
-    key = stringNewByRef(from);
-    fromnode = (DagNode *) hashGet(hash, (Object *) key);
-    if (!fromnode) {
-	fail("Cannot find %s ", key->value);
-    }
-
-    objectFree((Object *) key, FALSE);
-
-    dep_elems = (fromnode->dependencies)? fromnode->dependencies->elems: 0;
-    EACH(deplist, i) {
-	key = (String *) ELEM(deplist, i);
-	tonode = (DagNode *) hashGet(hash, (Object *) key);
-	if (hasDependency(fromnode, tonode)) {
-	    objectFree((Object *) deplist, TRUE);
-	    return;
-	}
-    }
-
-    objectFree((Object *) deplist, TRUE);
-	
-    fail("No optional dependencies found in %s", fromnode->fqn->value);
-}
-#endif
 
 static void
 requireOptionalDependencies2(Hash *hash, char *from, ...)
@@ -494,8 +260,8 @@ requireOptionalDependencies2(Hash *hash, char *from, ...)
     va_list params;
     char *to;
     int count = 0;
-    DogNode *fromnode;
-    DogNode *tonode;
+    DagNode *fromnode;
+    DagNode *tonode;
     String *key;
     int dep_elems = 0;
     Vector *deplist = vectorNew(10);
@@ -507,7 +273,7 @@ requireOptionalDependencies2(Hash *hash, char *from, ...)
 	count++;
     }
     va_end(params);
-    fromnode = (DogNode *) findDagNode(hash, from);
+    fromnode = (DagNode *) findDagNode(hash, from);
     if (!fromnode) {
 	fail("Cannot find %s ", from);
     }
@@ -515,7 +281,7 @@ requireOptionalDependencies2(Hash *hash, char *from, ...)
     dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
     EACH(deplist, i) {
 	key = (String *) ELEM(deplist, i);
-	tonode = (DogNode *) findDagNode(hash, key->value);
+	tonode = (DagNode *) findDagNode(hash, key->value);
 	if (hasDependency2(fromnode, tonode)) {
 	    objectFree((Object *) deplist, TRUE);
 	    return;
@@ -527,9 +293,8 @@ requireOptionalDependencies2(Hash *hash, char *from, ...)
     fail("No optional dependencies found in %s", fromnode->fqn->value);
 }
 
-#ifdef wibble
 static void
-requireOptionalDependents(Hash *hash, char *from, ...)
+requireOptionalDependents2(Hash *hash, char *from, ...)
 {
     va_list params;
     char *to;
@@ -547,48 +312,7 @@ requireOptionalDependents(Hash *hash, char *from, ...)
 	count++;
     }
     va_end(params);
-    key = stringNewByRef(from);
-    tonode = (DagNode *) hashGet(hash, (Object *) key);
-    if (!tonode) {
-	fail("Cannot find %s ", key->value);
-    }
-
-    objectFree((Object *) key, FALSE);
-    dep_elems = (tonode->dependencies)? tonode->dependencies->elems: 0;
-    EACH(deplist, i) {
-	key = (String *) ELEM(deplist, i);
-	fromnode = (DagNode *) hashGet(hash, (Object *) key);
-	if (hasDependency(fromnode, tonode)) {
-	    objectFree((Object *) deplist, TRUE);
-	    return;
-	}
-    }
-    objectFree((Object *) deplist, TRUE);
-	
-    fail("No optional dependents found in %s", tonode->fqn->value);
-}
-#endif
-
-static void
-requireOptionalDependents2(Hash *hash, char *from, ...)
-{
-    va_list params;
-    char *to;
-    int count = 0;
-    DogNode *tonode;
-    DogNode *fromnode;
-    String *key;
-    int dep_elems = 0;
-    Vector *deplist = vectorNew(10);
-    int i;
-
-    va_start(params, from);
-    while (to = va_arg(params, char *)) {
-	vectorPush(deplist, (Object*) stringNew(to));
-	count++;
-    }
-    va_end(params);
-    tonode = (DogNode *) findDagNode(hash, from);
+    tonode = (DagNode *) findDagNode(hash, from);
     if (!tonode) {
 	fail("Cannot find %s ", key->value);
     }
@@ -596,7 +320,7 @@ requireOptionalDependents2(Hash *hash, char *from, ...)
     dep_elems = (tonode->forward_deps)? tonode->forward_deps->elems: 0;
     EACH(deplist, i) {
 	key = (String *) ELEM(deplist, i);
-	fromnode = (DogNode *) findDagNode(hash, key->value);
+	fromnode = (DagNode *) findDagNode(hash, key->value);
 	if (hasDependency2(fromnode, tonode)) {
 	    objectFree((Object *) deplist, TRUE);
 	    return;
@@ -608,22 +332,6 @@ requireOptionalDependents2(Hash *hash, char *from, ...)
 }
 
 
-
-#ifdef wibble
-static char *
-xnodeName(char *basename, Vector *nodes)
-{
-    DagNode *node;
-    int i;
-    for (i = 0; i < nodes->elems; i++) {
-	node = (DagNode *) nodes->contents->vector[i];
-	if (strncmp(basename, node->fqn->value, strlen(basename)) == 0) {
-	    return node->fqn->value;
-	}
-    }
-    return NULL;
-}
-#endif
 
 /* Trivially check the inBuildTypeBitSet function.
  */

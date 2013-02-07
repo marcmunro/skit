@@ -55,7 +55,7 @@ findFirstChild(xmlNode *parent, char *name)
 
 
 static int
-generationCount(DogNode *node)
+generationCount(DagNode *node)
 {
     int count = 0;
     while (node) {
@@ -66,7 +66,7 @@ generationCount(DogNode *node)
 }
 
 static boolean
-nodeEq(DogNode *node1, DogNode *node2)
+nodeEq(DagNode *node1, DagNode *node2)
 {
     if (node1 && node2) {
 	return node1->dbobject == node2->dbobject;
@@ -89,8 +89,8 @@ requiresNavigation(xmlNode *node)
     return FALSE;
 }
 
-static DogNode *
-getCommonRoot(DogNode *current, DogNode *target)
+static DagNode *
+getCommonRoot(DagNode *current, DagNode *target)
 {
     int cur_depth = generationCount(current);
     int target_depth = generationCount(target);
@@ -110,39 +110,39 @@ getCommonRoot(DogNode *current, DogNode *target)
     return current;
 }
 
-static DogNode *
-departNode(DogNode *current)
+static DagNode *
+departNode(DagNode *current)
 {
-    DogNode *navigation = NULL;
+    DagNode *navigation = NULL;
     xmlNode *newnode;
 
     if (requiresNavigation(current->dbobject)) {
 	newnode = copyObjectNode(current->dbobject);
-	navigation = dognodeNew(newnode, DEPART_NODE);
+	navigation = dagNodeNew(newnode, DEPART_NODE);
     }
     return navigation;
 }
 
-static DogNode *
-arriveNode(DogNode *target)
+static DagNode *
+arriveNode(DagNode *target)
 {
-    DogNode *navigation = NULL;
+    DagNode *navigation = NULL;
     xmlNode *newnode;
 
     if (requiresNavigation(target->dbobject)) {
 	newnode = copyObjectNode(target->dbobject);
-	navigation = dognodeNew(newnode, ARRIVE_NODE);
+	navigation = dagNodeNew(newnode, ARRIVE_NODE);
     }
     return navigation;
 }
 
 /* Return the node in to's ancestry that is the direct descendant of
  * from */
-static DogNode *
-nextNodeFrom(DogNode *from, DogNode *to)
+static DagNode *
+nextNodeFrom(DagNode *from, DagNode *to)
 {
-    DogNode *cur = to;
-    DogNode *prev = NULL;
+    DagNode *cur = to;
+    DagNode *prev = NULL;
     while (!nodeEq(from, cur)) {
 	prev = cur;
 	cur = cur->parent;
@@ -151,7 +151,7 @@ nextNodeFrom(DogNode *from, DogNode *to)
 }
 
 static Cons *
-getContexts(DogNode *node)
+getContexts(DagNode *node)
 {
     xmlNode *context_node;
     Cons *cell;
@@ -190,18 +190,18 @@ dbobjectNode(char *type, char *name)
     return xmlnode;
 }
 
-static DogNode *
+static DagNode *
 arriveContextNode(String *name, String *value)
 {
     xmlNode *dbobject = dbobjectNode(name->value, value->value);
-    return dognodeNew(dbobject, ARRIVE_NODE);
+    return dagNodeNew(dbobject, ARRIVE_NODE);
 }
 
-static DogNode *
+static DagNode *
 departContextNode(String *name, String *value)
 {
     xmlNode *dbobject = dbobjectNode(name->value, value->value);
-    return dognodeNew(dbobject, DEPART_NODE);
+    return dagNodeNew(dbobject, DEPART_NODE);
 }
 
 static void
@@ -209,7 +209,7 @@ addArriveContext(Vector *vec, Cons *context)
 {
     String *name = (String *) context->car;
     Cons *cell2 = (Cons *) context->cdr;
-    DogNode *context_node;
+    DagNode *context_node;
 
     /* Do not close the context, if it is the default. */
     if (objectCmp(cell2->car, cell2->cdr) != 0) {
@@ -223,7 +223,7 @@ addDepartContext(Vector *vec, Cons *context)
 {
     String *name = (String *) context->car;
     Cons *cell2 = (Cons *) context->cdr;
-    DogNode *context_node;
+    DagNode *context_node;
 
     /* Do not close the context, if it is the default. */
     if (objectCmp(cell2->car, cell2->cdr) != 0) {
@@ -233,7 +233,7 @@ addDepartContext(Vector *vec, Cons *context)
 }
 
 static Cons *
-getContextNavigation(DogNode *from, DogNode *target)
+getContextNavigation(DagNode *from, DagNode *target)
 {
     Cons *from_contexts;
     Cons *target_contexts;
@@ -255,7 +255,7 @@ getContextNavigation(DogNode *from, DogNode *target)
 	if (from_contexts &&
 	    (match = (Cons *) alistExtract(&from_contexts, 
 					   (Object *) name))) {
-	    /* We have the same context for both dagnodes. */
+	    /* We have the same context for both DagNodes. */
 	    this2 = (Cons *) this->cdr;
 	    match2 = (Cons *) match->cdr;
 	    if (objectCmp(this2->car, match2->car) != 0) {
@@ -290,16 +290,16 @@ getContextNavigation(DogNode *from, DogNode *target)
  * Vectors must be orphans so that they can be safely added to the
  * appropriate parent node. */
 Vector *
-navigationToNode(DogNode *start, DogNode *target)
+navigationToNode(DagNode *start, DagNode *target)
 {
     Cons *context_nav;
     Vector *volatile results;
     Vector *context_arrivals = NULL;
     Object *elem;
-    DogNode *current = NULL;
-    DogNode *next = NULL;
-    DogNode *common_root = NULL;
-    DogNode *navigation = NULL;
+    DagNode *current = NULL;
+    DagNode *next = NULL;
+    DagNode *common_root = NULL;
+    DagNode *navigation = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     boolean handling_context = (ignore_contexts == NULL);
     int i;

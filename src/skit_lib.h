@@ -85,7 +85,7 @@ typedef enum {
     OBJ_CONNECTION,
     OBJ_CURSOR,
     OBJ_TUPLE,
-    OBJ_DOGNODE,
+    OBJ_DAGNODE,
     OBJ_DEPENDENCY,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
@@ -264,9 +264,8 @@ typedef enum {
     BOTH
 } DependencyApplication;
 
-// TODO: Refactor eliminating current DagNodes and Dependencies and 
-// renaming DogNodes to DagNodes
-typedef struct DogNode {
+
+typedef struct DagNode {
     ObjType          type;
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
@@ -275,15 +274,15 @@ typedef struct DogNode {
     int              dep_idx;
     Vector          *forward_deps;   	// use objectFree(obj, FALSE);
     Vector          *backward_deps;  	// use objectFree(obj, FALSE);
-    struct DogNode  *mirror_node;    	// Reference only
-    struct DogNode  *parent;   	     	// Reference only
-    struct DogNode  *breaker;           // The breaker for this node
-    struct DogNode  *breaker_for;       // The node for which this is a breaker
-    struct DogNode  *supernode;
-    struct DogNode  *forward_subnodes;       	// Linked list
-    struct DogNode  *backward_subnodes;       	// Linked list
-    struct DogNode  *fallback_node;  
-} DogNode;
+    struct DagNode  *mirror_node;    	// Reference only
+    struct DagNode  *parent;   	     	// Reference only
+    struct DagNode  *breaker;           // The breaker for this node
+    struct DagNode  *breaker_for;       // The node for which this is a breaker
+    struct DagNode  *supernode;
+    struct DagNode  *forward_subnodes;       	// Linked list
+    struct DagNode  *backward_subnodes;       	// Linked list
+    struct DagNode  *fallback_node;  
+} DagNode;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to
@@ -383,8 +382,7 @@ extern Object *objSelect(Object *collection, Object *key);
 extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
-//extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
-extern DogNode *dognodeNew(xmlNode *node, DagNodeBuildType build_type);
+extern DagNode *dagNodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
 
@@ -650,7 +648,7 @@ extern void registerPGSQL();
 extern void pgsqlFreeMem();
 
 // deps.c
-extern void showDeps(DogNode *node);
+extern void showDeps(DagNode *node);
 extern void showHashDeps(Hash *nodes);
 extern void showVectorDeps(Vector *nodes);
 
@@ -668,7 +666,7 @@ extern Vector *simple_tsort(Vector *nodes);
 extern Vector *gensort(Document *doc);
 
 // navigation.c
-extern Vector *navigationToNode(DogNode *current, DogNode *target);
+extern Vector *navigationToNode(DagNode *current, DagNode *target);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

@@ -1004,7 +1004,7 @@ copyObjectNode(xmlNode *source)
 }
 
 static char *
-actionName(DogNode *node)
+actionName(DagNode *node)
 {
     return nameForBuildType(node->build_type);
 }
@@ -1017,17 +1017,17 @@ addAction(xmlNode *node, char *action)
 }
 
 void
-addNavigationNodes(xmlNode *parent_node, DogNode *cur, DogNode *target)
+addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
 {
     Vector *volatile navigation = NULL;
-    DogNode *nnode;
+    DagNode *nnode;
     xmlNode *curnode;
     int i;
 
     BEGIN {
 	navigation = navigationToNode(cur, target);
 	EACH(navigation, i) {
-	    nnode = (DogNode *) ELEM(navigation, i);
+	    nnode = (DagNode *) ELEM(navigation, i);
 	    curnode = nnode->dbobject;
 	    xmlAddChild(parent_node, curnode);
 	    addAction(curnode, actionName(nnode));
@@ -1043,13 +1043,13 @@ addNavigationNodes(xmlNode *parent_node, DogNode *cur, DogNode *target)
 void
 treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
 {
-    DogNode *prev = NULL;
-    DogNode *dnode;
+    DagNode *prev = NULL;
+    DagNode *dnode;
     xmlNode *curnode;
     int i;
 
     EACH(sorted_nodes, i) {
-	dnode = (DogNode *) ELEM(sorted_nodes, i);
+	dnode = (DagNode *) ELEM(sorted_nodes, i);
 	if (dnode->build_type != EXISTS_NODE) {
 	    /* Ignore EXISTS_NODES for the purpose of adding navigation
 	     * nodes.  There is no point in navigating to these nodes as

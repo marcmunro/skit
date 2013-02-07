@@ -45,7 +45,7 @@ objTypeName(Object *obj)
     case OBJ_CURSOR: return "OBJ_CURSOR";
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
-    case OBJ_DOGNODE: return "OBJ_DOGNODE";
+    case OBJ_DAGNODE: return "OBJ_DOGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
     return "UNKNOWN_OBJECT_TYPE";
@@ -405,11 +405,11 @@ endFree(Object *obj)
 #endif
 
 
-static DogNode *
-basicDogNode()
+static DagNode *
+basicDagNode()
 {
-    DogNode *new = skalloc(sizeof(DogNode));
-    new->type = OBJ_DOGNODE;
+    DagNode *new = skalloc(sizeof(DagNode));
+    new->type = OBJ_DAGNODE;
     new->fqn = NULL;
     new->dbobject = NULL;
     new->build_type = UNSPECIFIED_NODE;
@@ -429,10 +429,10 @@ basicDogNode()
     return new;
 }
 
-DogNode *
-dognodeNew(xmlNode *node, DagNodeBuildType build_type)
+DagNode *
+dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
 {
-    DogNode *new = basicDogNode();
+    DagNode *new = basicDagNode();
     String *fqn;
 
     assert(node, "dognodeNew: node not provided");
@@ -444,7 +444,7 @@ dognodeNew(xmlNode *node, DagNodeBuildType build_type)
 }
 
 void
-doDognodeFree(DogNode *node)
+doDagNodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->forward_deps, FALSE);
@@ -453,10 +453,10 @@ doDognodeFree(DogNode *node)
 }
 
 void
-dognodeFree(DogNode *node)
+dagNodeFree(DagNode *node)
 {
-    DogNode *sub;
-    DogNode *tmp;
+    DagNode *sub;
+    DagNode *tmp;
     if (node->supernode) {
 	/* This is a subnode.  Do not free it, as it will be dealt with
 	 * when the supernode is freed. */
@@ -466,18 +466,18 @@ dognodeFree(DogNode *node)
     sub = node->forward_subnodes;
     while (sub) {
 	tmp = sub->forward_subnodes;
-	doDognodeFree(sub);
+	doDagNodeFree(sub);
 	sub = tmp;
     }
 
     sub = node->backward_subnodes;
     while (sub) {
 	tmp = sub->backward_subnodes;
-	doDognodeFree(sub);
+	doDagNodeFree(sub);
 	sub = tmp;
     }
 
-    doDognodeFree(node);
+    doDagNodeFree(node);
 }
 
 /* Free a dynamically allocated object. */
@@ -518,8 +518,8 @@ objectFree(Object *obj, boolean free_contents)
 	    connectionFree((Connection *) obj); break;
 	case OBJ_CURSOR:
 	    cursorFree((Cursor *) obj); break;
-	case OBJ_DOGNODE:
-	    dognodeFree((DogNode *) obj); break;
+	case OBJ_DAGNODE:
+	    dagNodeFree((DagNode *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -619,10 +619,10 @@ objectSexp(Object *obj)
 	return tmp2;
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
-    case OBJ_DOGNODE:
+    case OBJ_DAGNODE:
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
-		      nameForBuildType(((DogNode *) obj)->build_type), 
-		      ((DogNode *) obj)->fqn->value); 
+		      nameForBuildType(((DagNode *) obj)->build_type), 
+		      ((DagNode *) obj)->fqn->value); 
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
     case OBJ_TUPLE:

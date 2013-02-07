@@ -62,7 +62,7 @@ buildPrefixLen(DagNodeBuildType type)
 }
 
 static boolean
-build_name_eq(DogNode *node, char *looking_for)
+build_name_eq(DagNode *node, char *looking_for)
 {
     DagNodeBuildType type;
     char *substr;
@@ -84,7 +84,7 @@ test_build_order2(Vector *results, char *list_str)
 {
     Object *tmp;
     String *name;
-    DogNode *node;
+    DagNode *node;
     Cons *list = (Cons *) objectFromStr(list_str);
     char *result;
     assert(list,
@@ -101,7 +101,7 @@ test_build_order2(Vector *results, char *list_str)
 	       "check_build_order: list item is not a string");
 
 	while (i < results->elems) {
-	    node = (DogNode *) results->contents->vector[i];
+	    node = (DagNode *) results->contents->vector[i];
 	    if (build_name_eq(node, name->value)) {
 		/* We have a match, go on to the next name */
 		break;

@@ -17,18 +17,18 @@
 
 
 static void
-tsort_node(Vector *nodes, DogNode *node, Vector *results);
+tsort_node(Vector *nodes, DagNode *node, Vector *results);
 
 static void
-tsort_deps(Vector *nodes, DogNode *node, Vector *results)
+tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 {
     Vector *deps;
     int i;
-    DogNode *dep;
+    DagNode *dep;
 
     if (deps = node->forward_deps) {
 	EACH(deps, i) {
-	    dep = (DogNode *) ELEM(deps, i);
+	    dep = (DagNode *) ELEM(deps, i);
 	    tsort_node(nodes, dep, results);
 	}
     }
@@ -36,7 +36,7 @@ tsort_deps(Vector *nodes, DogNode *node, Vector *results)
 
 
 static void
-tsort_node(Vector *nodes, DogNode *node, Vector *results)
+tsort_node(Vector *nodes, DagNode *node, Vector *results)
 {
     switch (node->status) {
     case VISITING:
@@ -70,11 +70,11 @@ simple_tsort(Vector *nodes)
 {
     Vector *volatile results = 
 	vectorNew(nodes->elems + 10); // Allow for expansion
-    DogNode *node;
+    DagNode *node;
     int i;
     BEGIN {
 	EACH(nodes, i) {
-	    node = (DogNode *) ELEM(nodes, i);
+	    node = (DagNode *) ELEM(nodes, i);
 	    tsort_node(nodes, node, results);
 	}
     }
