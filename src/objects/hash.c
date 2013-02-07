@@ -31,7 +31,7 @@
 static gboolean 
 equalKey(gconstpointer obj1, gconstpointer obj2)
 {
-    // All keys are strings.
+    /* All keys are strings. */
     if (obj1 == obj2) {
 	return TRUE;
     }
@@ -125,8 +125,8 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
     if (already_exists) {
 	assert(isCons((Cons *) previous_contents), 
 		      "hashAdd: Previous contents is not cons");
-	// We use hash_table_steal rather than hash_table_remove in
-	// order to retain control over memory management.
+	/* We use hash_table_steal rather than hash_table_remove in
+	 * order to retain control over memory management. */
 	if (!g_hash_table_steal((GHashTable *) hash->hash, 
 				(gconstpointer) previous_key)) {
 	    RAISE(GENERAL_ERROR, 
@@ -173,8 +173,8 @@ toHash(Cons *cons)
     }
     hash = hashNew(TRUE);
     
-    // Now, get each alist entry from the list and add it to the hash, 
-    // destroying the list as we go.
+    /* Now, get each alist entry from the list and add it to the hash, 
+     * destroying the list as we go. */
     while (cons) {
 	assert((cons->type == OBJ_CONS), "toHash: Not a cons cell");
     	entry = (Cons *) consPop(&cons);

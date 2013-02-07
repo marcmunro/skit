@@ -53,7 +53,7 @@ findFirstChild(xmlNode *parent, char *name)
     return NULL;
 }
 
-
+/*
 static int
 generationCount(DagNode *node)
 {
@@ -64,9 +64,32 @@ generationCount(DagNode *node)
     }
     return count;
 }
-
+*/
+static int
+generationCount2(DogNode *node)
+{
+    int count = 0;
+    while (node) {
+	count++;
+	node = node->parent;
+    }
+    return count;
+}
+/*
 static boolean
 nodeEq(DagNode *node1, DagNode *node2)
+{
+    if (node1 && node2) {
+	return node1->dbobject == node2->dbobject;
+    }
+    if (node1 || node2) {
+	return FALSE;
+    }
+    return TRUE;
+}
+*/
+static boolean
+nodeEq2(DogNode *node1, DogNode *node2)
 {
     if (node1 && node2) {
 	return node1->dbobject == node2->dbobject;
@@ -89,6 +112,7 @@ requiresNavigation(xmlNode *node)
     return FALSE;
 }
 
+/*
 static DagNode *
 getCommonRoot(DagNode *current, DagNode *target)
 {
@@ -109,10 +133,32 @@ getCommonRoot(DagNode *current, DagNode *target)
     }
     return current;
 }
+*/
+static DogNode *
+getCommonRoot2(DogNode *current, DogNode *target)
+{
+    int cur_depth = generationCount2(current);
+    int target_depth = generationCount2(target);
+
+    while (cur_depth > target_depth) {
+	current = current->parent;
+	cur_depth = generationCount2(current);
+    }
+    while (target_depth > cur_depth) {
+	target = target->parent;
+	target_depth = generationCount2(target);
+    }
+    while (!nodeEq2(current, target)) {
+	current = current->parent;
+	target = target->parent;
+    }
+    return current;
+}
 
 /* Depart the current node, returning a navigation DagNode if
  * appropriate
  */
+/*
 static DagNode *
 departNode(DagNode *current)
 {
@@ -125,10 +171,24 @@ departNode(DagNode *current)
     }
     return navigation;
 }
+*/
+static DogNode *
+departNode2(DogNode *current)
+{
+    DogNode *navigation = NULL;
+    xmlNode *newnode;
+
+    if (requiresNavigation(current->dbobject)) {
+	newnode = copyObjectNode(current->dbobject);
+	navigation = dognodeNew(newnode, DEPART_NODE);
+    }
+    return navigation;
+}
 
 /* Arrive at the target node, returning a navigation DagNode if
  * appropriate
  */
+/*
 static DagNode *
 arriveNode(DagNode *target)
 {
@@ -141,9 +201,23 @@ arriveNode(DagNode *target)
     }
     return navigation;
 }
+*/
+static DogNode *
+arriveNode2(DogNode *target)
+{
+    DogNode *navigation = NULL;
+    xmlNode *newnode;
+
+    if (requiresNavigation(target->dbobject)) {
+	newnode = copyObjectNode(target->dbobject);
+	navigation = dognodeNew(newnode, ARRIVE_NODE);
+    }
+    return navigation;
+}
 
 /* Return the node in to's ancestry that is the direct descendant of
  * from */
+/*
 static DagNode *
 nextNodeFrom(DagNode *from, DagNode *to)
 {
@@ -155,9 +229,48 @@ nextNodeFrom(DagNode *from, DagNode *to)
     }
     return prev;
 }
+*/
+static DogNode *
+nextNodeFrom2(DogNode *from, DogNode *to)
+{
+    DogNode *cur = to;
+    DogNode *prev = NULL;
+    while (!nodeEq2(from, cur)) {
+	prev = cur;
+	cur = cur->parent;
+    }
+    return prev;
+}
 
+/*
 static Cons *
 getContexts(DagNode *node)
+{
+    xmlNode *context_node;
+    Cons *cell;
+    Cons *contexts = NULL;
+    String *name;
+    String *value;
+    String *dflt;
+
+    if (node) {
+	for (context_node = findFirstChild(node->dbobject, "context");
+	     context_node;
+	     context_node = findNextSibling(context_node, "context")) {
+	    name = nodeAttribute(context_node, "name");
+	    value = nodeAttribute(context_node, "value");
+	    dflt = nodeAttribute(context_node, "default");
+	    cell = consNew((Object *) name, 
+			   (Object *) consNew((Object *) value, 
+					      (Object *) dflt));
+	    contexts = consNew((Object *) cell, (Object *) contexts);
+	}
+    }
+    return contexts;
+}
+*/
+static Cons *
+getContexts2(DogNode *node)
 {
     xmlNode *context_node;
     Cons *cell;
@@ -196,20 +309,39 @@ dbobjectNode(char *type, char *name)
     return xmlnode;
 }
 
+/*
 static DagNode *
 arriveContextNode(String *name, String *value)
 {
     xmlNode *dbobject = dbobjectNode(name->value, value->value);
     return dagnodeNew(dbobject, ARRIVE_NODE);
 }
+*/
 
+static DogNode *
+arriveContextNode2(String *name, String *value)
+{
+    xmlNode *dbobject = dbobjectNode(name->value, value->value);
+    return dognodeNew(dbobject, ARRIVE_NODE);
+}
+
+/*
 static DagNode *
 departContextNode(String *name, String *value)
 {
     xmlNode *dbobject = dbobjectNode(name->value, value->value);
     return dagnodeNew(dbobject, DEPART_NODE);
 }
+*/
 
+static DogNode *
+departContextNode2(String *name, String *value)
+{
+    xmlNode *dbobject = dbobjectNode(name->value, value->value);
+    return dognodeNew(dbobject, DEPART_NODE);
+}
+
+#ifdef wibble
 static void
 addArriveContext(Vector *vec, Cons *context)
 {
@@ -223,7 +355,23 @@ addArriveContext(Vector *vec, Cons *context)
 	vectorPush(vec, (Object *) context_node);
     }
 }
+#endif
 
+static void
+addArriveContext2(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DogNode *context_node;
+
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = arriveContextNode2(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+    }
+}
+
+#ifdef wibble
 static void
 addDepartContext(Vector *vec, Cons *context)
 {
@@ -237,7 +385,23 @@ addDepartContext(Vector *vec, Cons *context)
 	vectorPush(vec, (Object *) context_node);
     }
 }
+#endif
 
+static void
+addDepartContext2(Vector *vec, Cons *context)
+{
+    String *name = (String *) context->car;
+    Cons *cell2 = (Cons *) context->cdr;
+    DogNode *context_node;
+
+    /* Do not close the context, if it is the default. */
+    if (objectCmp(cell2->car, cell2->cdr) != 0) {
+	context_node = departContextNode2(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+    }
+}
+
+#ifdef wibble
 static Cons *
 getContextNavigation(DagNode *from, DagNode *target)
 {
@@ -285,12 +449,62 @@ getContextNavigation(DagNode *from, DagNode *target)
     }
     return result;
 }
+#endif
+
+static Cons *
+getContextNavigation2(DogNode *from, DogNode *target)
+{
+    Cons *from_contexts;
+    Cons *target_contexts;
+    Cons *this;
+    Cons *this2;
+    Cons *match;
+    Cons *match2;
+    String *name;
+    Vector *departures = vectorNew(10);
+    Vector *arrivals = vectorNew(10);
+    Cons *result = consNew((Object *) departures, (Object *) arrivals);
+
+    /* Contexts are lists of the form: (name value default) */
+    from_contexts = getContexts2(from);
+    target_contexts = getContexts2(target);
+
+    while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
+	name = (String *) this->car;
+	if (from_contexts &&
+	    (match = (Cons *) alistExtract(&from_contexts, 
+					   (Object *) name))) {
+	    /* We have the same context for both dagnodes. */
+	    this2 = (Cons *) this->cdr;
+	    match2 = (Cons *) match->cdr;
+	    if (objectCmp(this2->car, match2->car) != 0) {
+		/* Depart the old context, and arrive at the new. */
+		addDepartContext2(departures, match);
+		addArriveContext2(arrivals, this);
+	    }
+	    objectFree((Object *) match, TRUE);
+	}
+	else {
+	    /* This is a new context. */
+	    addArriveContext2(arrivals, this);
+	}
+	objectFree((Object *) this, TRUE);
+    }
+    while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
+	/* Close the final contexts.  Unless we are in a default
+	 * context. */ 
+	addDepartContext2(departures, this);
+	objectFree((Object *) this, TRUE);
+    }
+    return result;
+}
 
 
 /* Return a vector of DagNodes containing the navigation to get from
  * start to target.  All of the dbojects returned in the DagNode
  * Vectors must be orphans so that they can be safely added to the
  * appropriate parent node. */
+#ifdef wibble
 Vector *
 navigationToNode(DagNode *start, DagNode *target)
 {
@@ -347,6 +561,88 @@ navigationToNode(DagNode *start, DagNode *target)
 	    }
 	    else {
 		if (navigation = arriveNode(current)) {
+		    vectorPush(results, (Object *) navigation);
+		}
+	    }
+	}
+	if (context_arrivals) {
+	    /* Although this reverses the order of context departures,
+	     * this should not be an issue as the order of contexts is
+	     * expected to be irrelevant. */
+	    while (elem = vectorPop(context_arrivals)) {
+		vectorPush(results, elem);
+	    }
+	    objectFree((Object *) context_arrivals, FALSE);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, TRUE);
+    }
+    END;
+    return results;
+}
+#endif
+
+/* Return a vector of DagNodes containing the navigation to get from
+ * start to target.  All of the dbojects returned in the DagNode
+ * Vectors must be orphans so that they can be safely added to the
+ * appropriate parent node. */
+Vector *
+navigationToNode2(DogNode *start, DogNode *target)
+{
+    Cons *context_nav;
+    Vector *volatile results;
+    Vector *context_arrivals = NULL;
+    Object *elem;
+    DogNode *current = NULL;
+    DogNode *next = NULL;
+    DogNode *common_root = NULL;
+    DogNode *navigation = NULL;
+    Symbol *ignore_contexts = symbolGet("ignore-contexts");
+    boolean handling_context = (ignore_contexts == NULL);
+    int i;
+    BEGIN {
+	if (handling_context) {
+	    context_nav = getContextNavigation2(start, target);
+
+	    /* Context departures must happen before any other
+	     * departures and arrivals after */
+	    results = (Vector *) context_nav->car;
+	    context_arrivals = (Vector *) context_nav->cdr;
+	    objectFree((Object *) context_nav, FALSE);
+	}
+	else
+	{
+	    results = vectorNew(10);
+	}
+	if (start) {
+	    common_root = getCommonRoot2(start, target);
+	    current = start;
+	    while (!nodeEq2(current, common_root)) {
+		if ((current == start) &&
+		    (current->build_type == DROP_NODE)) {
+		    /* We don't need to depart from a drop node as
+		     * the drop must perform the departure for us. */ 
+		}
+		else {
+		    if (navigation = departNode2(current)) {
+			vectorPush(results, (Object *) navigation);
+		    }
+		}
+		current = current->parent;
+	    }
+	}
+	/* Now navigate from common root towards target */
+	current = common_root;
+	while (!nodeEq2(current, target)) {
+	    current = nextNodeFrom2(current, target);
+	    if ((current == target) &&
+		(current->build_type == BUILD_NODE)) {
+		/* We don't need to arrive at a build node as the build
+		 * must perform the arrival for us. */
+	    }
+	    else {
+		if (navigation = arriveNode2(current)) {
 		    vectorPush(results, (Object *) navigation);
 		}
 	    }

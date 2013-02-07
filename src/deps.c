@@ -107,7 +107,7 @@
 #include "exceptions.h"
 
 
-
+/*
 void
 showDeps(DagNode *node)
 {
@@ -127,7 +127,9 @@ showDeps(DagNode *node)
 	printSexp(stderr, "<--", (Object *) node->dependents);
     }
 }
+*/
 
+ /*
 static Object *
 hashEachShowDeps(Cons *node_entry, Object *dagnodes)
 {
@@ -135,13 +137,16 @@ hashEachShowDeps(Cons *node_entry, Object *dagnodes)
     showDeps(node);
     return (Object *) node;
 }
-
+*/
+  /*
 void
 showHashDeps(Hash *nodes)
 {
     hashEach(nodes, &hashEachShowDeps, (Object *) nodes);
 }
+*/
 
+   /*
 void
 showVectorDeps(Vector *nodes)
 {
@@ -152,7 +157,7 @@ showVectorDeps(Vector *nodes)
 	showDeps(node);
     }
 }
-
+   */
 
 #define DEPENDENCIES_STR "dependencies"
 #define DEPENDENCY_STR "dependency"
@@ -187,6 +192,7 @@ findAncestor(xmlNode *start, char *name)
 
 #define makeVector(x) (x) ? (x): (x = vectorNew(10))
 
+#ifdef wibble
 static void
 addDependency(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
 {
@@ -241,7 +247,9 @@ addDep(DagNode *node, DagNode *dep, BuildTypeBitSet condition)
     addDependency(node, dep, condition);
     addDependent(dep, node, condition);
 }
+#endif
 
+#ifdef wibble
 static void
 rmFromDepVector(Vector *vec, DagNode *node)
 {
@@ -255,7 +263,9 @@ rmFromDepVector(Vector *vec, DagNode *node)
 	}
     }
 }
+#endif
 
+#ifdef wibble
 static void
 rmDep(DagNode *node, DagNode *dep)
 {
@@ -287,6 +297,7 @@ addDepsVector(DagNode *node, Vector *deps)
 	}
     }
 }
+#endif
 
 static boolean
 isDependencySet(xmlNode *node)
@@ -375,6 +386,7 @@ conditionForDep(xmlNode *node)
     return 0;
 }
 
+#ifdef wibble
 static Vector *
 explicitDepsForNode(
     xmlNode *node, 
@@ -441,7 +453,7 @@ explicitDepsForNode(
     }
     return vector;
 }
-
+#endif
 
 
 static DagNodeBuildType
@@ -546,6 +558,7 @@ buildTypeForNode(Node *node)
 
 /* A TraverserFn to identify dbobject nodes, adding them to our vector.
  */
+/*
 static Object *
 addNodeToVector(Object *this, Object *vector)
 {
@@ -561,7 +574,8 @@ addNodeToVector(Object *this, Object *vector)
 
     return NULL;
 }
-
+*/
+ /*
 Hash *
 hashByFqn(Vector *vector)
 {
@@ -584,7 +598,9 @@ hashByFqn(Vector *vector)
     //printSexp(stderr, "FQN HASH: ", (Object *) hash);
     return hash;
 }
+ */
 
+  /*
 static Hash *
 hashByPqn(Vector *vector)
 {
@@ -616,12 +632,13 @@ hashByPqn(Vector *vector)
     //printSexp(stderr, "PQN HASH: ", (Object *) hash);
     return hash;
 }
-
+  */
 
 /*
  * For each DagNode in the nodes Vector, identify the parent node and
  * record it in the child node's parent field.
  */
+#ifdef wibble
 static void
 identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 {
@@ -646,10 +663,10 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 	}
     }
 }
-
+#endif
 #define CURDEP(node) ELEM(node->dependencies, node->dep_idx)
 
-
+#ifdef wibble
 static void recordRebuildNode(DagNode *node, Vector *nodelist);
 
 static void
@@ -701,11 +718,13 @@ checkRebuildParent(DagNode *node)
 		     "for build", node->fqn->value, node->parent->fqn->value));
     }
 }
+#endif
 
 /* Return a vector of nodes that must be dropped and built.  Such nodes
  * will either have been directly designated as such, or will have been
  * promoted due to their dependencies on other such nodes. 
  */
+#ifdef wibble
 static Vector *
 identifyRebuildNodes(Vector *nodes)
 {
@@ -726,7 +745,7 @@ identifyRebuildNodes(Vector *nodes)
     
     return rebuild_nodes;
 }
-
+#endif
 /* We duplicate both the dependencies and dependents of each primary to
  * the dup node.  Although in principle we only need to do one or the
  * other, since addDup creates both dependencies and dependents, it is
@@ -735,6 +754,7 @@ identifyRebuildNodes(Vector *nodes)
  * rebuild_nodes some will have been done in the dependency
  * direction and some in the dependent direction.
  */
+#ifdef wibble
 static void
 duplicateDeps(DagNode *primary, DagNode *dup)
 {
@@ -767,11 +787,12 @@ duplicateDeps(DagNode *primary, DagNode *dup)
 	doing_dependencies = TRUE;
     }
 }
-
+#endif
 /* For each node designated to be dropped and rebuilt, duplicate the
  * node including its dependencies etc, add it to our vector of nodes
  * and set the build_type for each node of the pair.
  */
+#ifdef wibble
 static void
 duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
 {
@@ -804,6 +825,7 @@ duplicateRebuildNodes(Vector *nodes, Vector *rebuild_nodes)
     }
     return;
 }
+#endif
 
 typedef enum {
     REDIRECT_RETAIN,
@@ -819,6 +841,7 @@ typedef enum {
  * dependency is kept as is (REDRIRECT_RETAIN), and from a drop node to
  * a drop node, the dependency must be inverted (REDIRECT_INVERT).
  */
+#ifdef wibble
 static RedirectAction 
 getRedirectionAction(DagNode *node, DagNode *dep)
 {
@@ -946,6 +969,7 @@ maybeInvertCycle(DagNode *node, DagNode *breaker)
 	}
     }
 }
+#endif
 
 /* The dependency graph on entry to this function is solely directed in
  * the direction of our declared and implicit (child->parent)
@@ -970,6 +994,7 @@ maybeInvertCycle(DagNode *node, DagNode *breaker)
  *   v1->v3, v1->v1b, v2->v1b, v3->v2, v3->v1b
  * Note that the dependencies on the breaker node are not inverted.
  */
+#ifdef wibble
 static void
 redirectDependencies(Vector *nodes)
 {
@@ -1257,11 +1282,13 @@ addDepsForNode(
 	}
     }
 }
+#endif
 
 
 /* Create an initial dependency graph from a source xml document.
  * Return the graph as a Vector of DagNodes.
  */
+#ifdef wibble
 Vector *
 nodesFromDoc(Document *doc)
 {
@@ -1624,6 +1651,7 @@ prepareDagForBuild(Vector **p_nodes)
     //fprintf(stderr, "\n\n5\n\n");
     //showVectorDeps(sorted);
 }
+#endif
 
 
 /* 
@@ -1741,6 +1769,7 @@ prepareDagForBuild(Vector **p_nodes)
 /* Read the source document, creating a single Dagnode for each
  * dbobject.
  */
+/*
 static Vector *
 dagNodesFromDoc(Document *doc)
 {
@@ -1757,13 +1786,14 @@ dagNodesFromDoc(Document *doc)
     return nodes;
 
 }
-
+*/
 /* 
  * Create a mirror node for node.  A mirror node is one which is
  * repsonsible for a mirror operation on the node.  In the case of a
  * rebuild operation, the mirror of a build node is a drop node.  For a
  * diff, the operations are prepare and complete. 
  */
+/*
 static DagNode *
 makeMirror(DagNode *node, DagNodeBuildType type)
 {
@@ -1774,7 +1804,7 @@ makeMirror(DagNode *node, DagNodeBuildType type)
     addDep(node, mirror, 0);
     return mirror;
 }
-
+*/
 /*
  * For each DagNode in the nodes Vector, create mirror nodes as needed.
  * Nodes with build_types of REBUILD_NODE become a pair of DROP_NODE and
@@ -1783,8 +1813,9 @@ makeMirror(DagNode *node, DagNodeBuildType type)
  * When nodes are converted into pairs, an appropriate dependency is
  * added between the nodes.
  */
+#ifdef wibble
 static Vector *
-expandDagNodes(Vector *nodes)
+expandDa3gNodes(Vector *nodes)
 {
     Vector *result = vectorNew(nodes->elems * 2);
     DagNode *this;
@@ -1822,6 +1853,7 @@ expandDagNodes(Vector *nodes)
     objectFree((Object *) nodes, FALSE);
     return result;
 }
+#endif
 
 static Object *
 getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
@@ -1897,7 +1929,7 @@ getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
     return depsobj;
 }
 
-
+#ifdef wibble
 static DagNode *
 addSubNode2(DagNode *node, boolean invert)
 {
@@ -1967,7 +1999,9 @@ addDepsetToNode(
 	}
     }
 }
+#endif
 
+/*
 static void
 addDepsForNode2(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 {
@@ -1990,7 +2024,8 @@ addDepsForNode2(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 	}
     }
 }
-
+*/
+ /*
 static boolean
 hasUnvisitedDependents(DagNode *node)
 {
@@ -2006,10 +2041,11 @@ hasUnvisitedDependents(DagNode *node)
     }
     return FALSE;
 }
-
+*/
 /* Deresolve any elements that were resolved as part of a cyclic
  * dependency loop.  We will re-resolve them later if we can.
  */
+#ifdef wibble
 static void
 resetResolvedList(Vector *resolved, int reset_to)
 {
@@ -2052,7 +2088,7 @@ isDependentSubnode(DagNode *node)
 }
 
 
-
+#ifdef wibble
 static void resolveNode(DagNode *node, DagNode *from, Vector *resolved);
 
 // TODO: I think we can remove the resolved Vector.  There is no need to
@@ -2314,6 +2350,7 @@ resolveGraph(Vector *nodes)
 
     return resolved;
 }
+#endif
 
 Vector *
 dagFromDoc(Document *doc)
@@ -2348,4 +2385,1042 @@ dagFromDoc(Document *doc)
     END;
     objectFree((Object *) nodes, FALSE);
     return resolved_nodes;
+}
+#endif
+
+/*
+
+ COMMENT NEEDED HERE DESCRIBING THE LATEST ALGORITHM FOR GENERATING A
+ DAG FROM OUR SOMEWHAT UNSTRUCTURED SET OF DEPENDENCIES
+
+*/
+
+
+
+
+
+
+
+void
+showDeps2(DogNode *node)
+{
+    DogNode *sub;
+    if (node) {
+	printSexp(stderr, "NODE: ", (Object *) node);
+	printSexp(stderr, "-->", (Object *) node->forward_deps);
+	sub = node->forward_subnodes;
+	while (sub) {
+	    if (sub->forward_deps || sub->fallback_node) {
+		printSexp(stderr, "optional->", (Object *) sub->forward_deps);
+		if (sub->fallback_node) {
+		    printSexp(stderr, "flbk->", (Object *) sub->fallback_node);
+		}
+	    }
+	    sub = sub->forward_subnodes;
+	}
+	printSexp(stderr, "<==", (Object *) node->backward_deps);
+	sub = node->backward_subnodes;
+	while (sub) {
+	    if (sub->backward_deps || sub->fallback_node) {
+		printSexp(stderr, "optional<=", (Object *) sub->backward_deps);
+		if (sub->fallback_node) {
+		    printSexp(stderr, "flbk<=", (Object *) sub->fallback_node);
+		}
+	    }
+	    sub = sub->backward_subnodes;
+	}
+    }
+}
+
+/*
+ * Identify the type of build action expected for the supplied dbobject
+ * node.
+ */
+static DagNodeBuildType
+buildTypeForDogNode(Node *node)
+{
+    String *diff;
+    String *action;
+    String *tmp;
+    String *fallback;
+    String *fqn;
+    char *errmsg = NULL;
+    DagNodeBuildType build_type = UNSPECIFIED_NODE;
+
+    if (fallback = nodeAttribute(node->node , "fallback")) {
+	objectFree((Object *) fallback, TRUE);
+	/* By default, we don't want to do anything for a fallback
+ 	 * node.  Marking it as an exists node achieves that.  The
+ 	 * build_type will be modified if anything needs to actually
+ 	 * reference the fallback node.  */
+	build_type = EXISTS_NODE;
+    }
+    else if (diff = nodeAttribute(node->node , "diff")) {
+	if (streq(diff->value, DIFFSAME)) {
+	    build_type = EXISTS_NODE;
+	}
+	else if (streq(diff->value, DIFFKIDS)) {
+	    build_type = EXISTS_NODE;
+	}
+	else if (streq(diff->value, DIFFNEW)) {
+	    build_type = BUILD_NODE;
+	}
+	else if (streq(diff->value, DIFFGONE)) {
+	    build_type = DROP_NODE;
+	}
+	else if (streq(diff->value, DIFFDIFF)) {
+	    build_type = DIFF_NODE;
+	}
+	else if (streq(diff->value, ACTIONREBUILD)) {
+	    build_type = REBUILD_NODE;
+	}
+	else {
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    errmsg = newstr("buildTypeForDogNode: unexpected diff "
+			    "type \"%s\" in %s", diff->value, fqn->value);
+	}
+	objectFree((Object *) diff, TRUE);
+    }
+    else if (action = nodeAttribute(node->node , "action")) { 
+	tmp = action;
+	action = stringLower(action);
+	objectFree((Object *) tmp, TRUE);
+	if (streq(action->value, ACTIONBUILD)) {
+	    build_type = BUILD_NODE;
+	}
+	else if (streq(action->value, ACTIONDROP)) {
+	    build_type = DROP_NODE;
+	}
+	else if (streq(action->value, ACTIONREBUILD)) {
+	    build_type = REBUILD_NODE;
+	}
+	else if (streq(action->value, ACTIONNONE)) {
+	    build_type = EXISTS_NODE;
+	}
+	else {
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    errmsg = newstr("buildTypeForDogNode: unexpected action "
+			    "type \"%s\" in %s", action->value, fqn->value);
+	}
+	objectFree((Object *) action, TRUE);
+    }
+    else {
+	if (dereference(symbolGetValue("build"))) {
+	    if (dereference(symbolGetValue("drop"))) {
+		build_type = REBUILD_NODE;
+	    }
+	    else {
+		build_type = BUILD_NODE;
+	    }
+	}
+	else {
+	    if (dereference(symbolGetValue("drop"))) {
+		build_type = DROP_NODE;
+	    }
+	    else {
+		fqn = nodeAttribute(((Node *) node)->node, "fqn");
+		errmsg = newstr("buildTypeForDogNode: cannot identify "
+				"build type for node %s", 
+				diff->value, fqn->value);
+	    }
+	}
+    }
+    if (errmsg) {
+	objectFree((Object *) fqn, TRUE);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+
+    return build_type;
+}
+
+
+
+
+/* A TraverserFn to identify dbobject nodes, adding them to our vector.
+ */
+static Object *
+addDogNodeToVector(Object *this, Object *vector)
+{
+    Node *node = (Node *) this;
+    DagNodeBuildType build_type;
+    DogNode *dognode;
+
+    if (streq(node->node->name, "dbobject")) {
+	dognode = dognodeNew(node->node, UNSPECIFIED_NODE);
+	dognode->build_type = buildTypeForDogNode(node);
+	vectorPush((Vector *) vector, (Object *) dognode);
+    }
+
+    return NULL;
+}
+
+/* Read the source document, creating a single Dognode for each
+ * dbobject.
+ */
+static Vector *
+dogNodesFromDoc(Document *doc)
+{
+    Vector *volatile nodes = vectorNew(1000);
+
+    BEGIN {
+	(void) xmlTraverse(doc->doc->children, &addDogNodeToVector, 
+			   (Object *) nodes);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) nodes, TRUE);
+    }
+    END;
+    return nodes;
+
+}
+
+/* Return a Hash of DogNodes keyed by fqn.
+ */
+Hash *
+hashByFqn2(Vector *vector)
+{
+    int i;
+    DogNode *node;
+    String *key;
+    Object *old;
+    Hash *hash = hashNew(TRUE);
+
+    EACH(vector, i) {
+	node = (DogNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DOGNODE, "Incorrect node type");
+	key = stringDup(node->fqn);
+
+	if (old = hashAdd(hash, (Object *) key, (Object *) node)) {
+	    RAISE(GENERAL_ERROR, 
+		  newstr("hashbyFqn: duplicate node \"%s\"", key->value));
+	}
+    }
+    //printSexp(stderr, "FQN HASH: ", (Object *) hash);
+    return hash;
+}
+
+/* Return a Hash of lists of DogNodes keyed by pqn.
+ */
+static Hash *
+hashByPqn2(Vector *vector)
+{
+    int i;
+    DogNode *node;
+    String *key;
+    Cons *entry ;
+    Hash *hash = hashNew(TRUE);
+    Object *new;
+    xmlChar *pqn;
+
+    EACH(vector, i) {
+	node = (DogNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DOGNODE, "Incorrect node type");
+	pqn = xmlGetProp(node->dbobject, "pqn");
+	if (pqn) {
+	    key = stringNew(pqn);
+	    xmlFree(pqn);
+	    new = (Object *) objRefNew((Object *) node);
+	    if (entry = (Cons *) hashGet(hash, (Object *) key)) {
+       RAISE(NOT_IMPLEMENTED_ERROR, 
+			  newstr("CRAP"));
+		consAppend(entry, new);
+	    }
+	    else {
+		entry = consNew(new, NULL);
+		hashAdd(hash, (Object *) key, (Object *) entry);
+	    }
+	}
+    }
+    return hash;
+}
+/*
+ * For each DagNode in the nodes Vector, identify the parent node and
+ * record it in the child node's parent field.
+ */
+static void
+identifyParents2(Vector *nodes, Hash *nodes_by_fqn)
+{
+    int i;
+    DogNode *node;
+    xmlNode *parent;
+    String *parent_fqn;
+
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+	assert(node->type == OBJ_DOGNODE, "incorrect node type");
+	assert(node->dbobject, "identifyParents: no dbobject node");
+	parent = findAncestor(node->dbobject, "dbobject");
+	parent_fqn  = nodeAttribute(parent, "fqn");
+	if (parent_fqn) {
+	    node->parent = (DogNode *) hashGet(nodes_by_fqn, 
+					       (Object *) parent_fqn);
+	    assert(node->parent, 
+		   "identifyParents2: parent of %s (%s) not found",
+		   node->fqn->value, parent_fqn->value);
+	    objectFree((Object *) parent_fqn, TRUE);
+	}
+    }
+}
+
+static DogNode *
+getFallbackNode2(xmlNode *dep_node, Hash *nodes_by_fqn)
+{
+    String *fallback;
+    DogNode *fallback_node = NULL;
+    char *errmsg;
+    if (isDependencySet(dep_node)) {
+	fallback = nodeAttribute(dep_node, "fallback");
+	if (fallback) {
+	    fallback_node = (DogNode *) hashGet(nodes_by_fqn, 
+						(Object *) fallback);
+	    if (!fallback_node) {
+		errmsg = newstr("Fallback node %s not found", 
+				fallback->value);
+		objectFree((Object *) fallback, TRUE);
+		RAISE(TSORT_ERROR, errmsg);
+	    }
+	    objectFree((Object *) fallback, TRUE);
+	}
+    }
+    return fallback_node;
+}
+
+/* 
+ * Identify to which sides of the DAG, the current dependency or
+ * dependency-set applies.
+ */
+static DependencyApplication 
+applicationForDep(xmlNode *node)
+{
+    String *condition_str = nodeAttribute(node, "condition");
+    String separators = {OBJ_STRING, " ()"};
+    Cons *contents;
+    Cons *elem;
+    char *head;
+    DependencyApplication result;
+    boolean inverted = FALSE;
+
+    if (condition_str) {
+	stringLowerOld(condition_str);
+	elem = contents = stringSplit(condition_str, &separators);
+	while (elem) {
+	    head = ((String *) elem->car)->value;
+	    if (streq(head, "build")) {
+		result = inverted? BACKWARDS: FORWARDS;
+	    }
+	    else if (streq(head, "drop")) {
+		result = inverted? FORWARDS: BACKWARDS;
+	    }
+	    else if (streq(head, "not")) {
+		inverted = TRUE;
+	    }
+	    else {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("no conditional dep handling for token %s", head));
+	    }
+	    elem = (Cons *) elem->cdr;
+	}
+
+	objectFree((Object *) condition_str, TRUE);
+	objectFree((Object *) contents, TRUE);
+	return result;
+    }
+    return BOTH;
+}
+
+/* 
+ * Append dependencies, returning a vector if there are multiple
+ * dependencies, otherwise returning a single DagNode.
+ */
+static Object *
+appendDep(Object *cur, Object *new)
+{
+    Vector *vec;
+    if (cur) {
+	if (new) {
+	    if (cur->type != OBJ_VECTOR) {
+		vec = vectorNew(10);
+		vectorPush(vec, cur);
+		cur = (Object *) vec;
+	    }
+
+	    if (new->type == OBJ_VECTOR) {
+		vectorAppend((Vector *) cur, (Vector *) new);
+	    }
+	    else {
+		vectorPush((Vector *) cur, new);
+	    }
+	}
+	return cur;
+    }
+    return new;
+}
+    
+/* 
+ *
+ * TODO: rename to getDepSet after refactoring away the old version
+ */
+static Object *
+getDepSets(xmlNode *node, Hash *byfqn, Hash *bypqn)
+{
+    xmlNode *depnode;
+    Object *dep;
+    Cons *cons;
+    Object *result = NULL;
+    String *qn = NULL;
+
+    if (isDependencySet(node)) {
+	for (depnode = node->children;
+	     depnode = nextDependency(depnode);
+	     depnode = depnode->next) 
+	{
+	    dep = getDepSets(depnode, byfqn, bypqn);
+	    if (dep) {
+		if ((dep->type == OBJ_DOGNODE) &&
+		    (((DogNode *) dep)->build_type == EXISTS_NODE)) {
+		    /* This dependency set is automatically satisfied.
+		     * This means we do not need to return a set but
+		     * just this simple dependency.  So we clean up and
+		     * exit.
+		     */
+		    objectFree(result, FALSE);
+		    return dep;
+		}
+		else {
+		    result = appendDep(result, dep);
+		}
+	    }
+	}
+    }
+    else {
+	if (qn = nodeAttribute(node, "fqn")) {
+	    dep = hashGet(byfqn, (Object *) qn);
+	    result = appendDep(result, dep);
+	}
+	else if (qn = nodeAttribute(node, "pqn")) {
+	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
+		assert(cons->type == OBJ_CONS, "DEP BY PQN IS NOT A CONS CELL");
+		if (!cons->cdr) {
+		    /* List has only a single element */
+		    dep = dereference(cons->car);
+		}
+		else {
+		    dep = (Object *) toVector(cons);
+		}
+		result = appendDep(result, dep);
+	    }
+	}
+	objectFree((Object *) qn, TRUE);
+    }
+    return result;
+}
+
+static void
+addDepToVector(Vector **p_vector, DogNode *dep)
+{
+    if (!*p_vector) {
+	*p_vector = vectorNew(10);
+    }
+    setPush(*p_vector, (Object *) dep);
+}
+
+/* Add a dependency to a DogNode in whatever directions are appropriate.
+ *
+ */
+static void
+addDep2(DogNode *node, DogNode *dep, DependencyApplication applies)
+{
+    if ((applies == FORWARDS) || (applies == BOTH)) {
+	addDepToVector(&(node->forward_deps), dep);
+    }
+    if ((applies == BACKWARDS) || (applies == BOTH)) {
+	addDepToVector(&(node->backward_deps), dep);
+    }
+}
+
+
+static DogNode *
+newSubNode(DogNode *node, DependencyApplication applies)
+{
+    DogNode *new = dognodeNew(node->dbobject, OPTIONAL_NODE);
+    new->supernode = node;
+    if ((applies == FORWARDS) || (applies == BOTH)) {
+	new->forward_subnodes = node->forward_subnodes;
+	node->forward_subnodes = new;
+    }
+    if ((applies == BACKWARDS) || (applies == BOTH)) {
+	new->backward_subnodes = node->backward_subnodes;
+	node->backward_subnodes = new;
+    }
+    return new;
+}
+
+static DogNode *
+makeBreakerNode2(DogNode *from_node, String *breaker_type)
+{
+    xmlNode *dbobject = from_node->dbobject;
+    xmlChar *old_fqn = xmlGetProp(dbobject, "fqn");
+    char *fqn_suffix = strstr(old_fqn, ".");
+    char *new_fqn = newstr("%s%s", breaker_type->value, fqn_suffix);
+    xmlNode *breaker_dbobject = xmlCopyNode(dbobject, 1);
+    DogNode *breaker;
+    DogNode *dep;
+    Vector *deps;
+    int i;
+    boolean forwards;
+    xmlSetProp(breaker_dbobject, "type", breaker_type->value);
+    xmlUnsetProp(breaker_dbobject, "cycle_breaker");
+    xmlSetProp(breaker_dbobject, "fqn", new_fqn);
+    xmlFree(old_fqn);
+    skfree(new_fqn);
+
+    breaker = dognodeNew(breaker_dbobject, from_node->build_type);
+    breaker->parent = from_node->parent;
+    breaker->breaker_for = from_node;
+
+    /* Copy dependencies of from_node to breaker.  We will eliminate
+     * unwanted ones later. */
+    
+    for (forwards = 0; forwards <= 1; forwards++) {
+	deps = forwards? from_node->forward_deps: from_node->backward_deps;
+	EACH (deps, i) {
+	    dep = (DogNode *) ELEM(deps, i);
+	    if (forwards) {
+		addDepToVector(&(breaker->forward_deps), dep);
+	    }
+	    else {
+		addDepToVector(&(breaker->backward_deps), dep);
+	    }
+	}
+    }
+    return breaker;
+}
+
+static DogNode *
+getBreakerFor2(DogNode *node, Vector *nodes)
+{
+    String *breaker_type;
+
+    if (!node->breaker) {
+	if (breaker_type = nodeAttribute(node->dbobject, "cycle_breaker")) {
+	    node->breaker = makeBreakerNode2(node, breaker_type);
+	    objectFree((Object *) breaker_type, TRUE);
+	    setPush(nodes, (Object *) node->breaker);
+	}
+    }
+    return node->breaker;
+}
+
+/* Given a cycle breaking node (breaker), the node for which it is a
+ * replacement (depnode), and the node that has a dependency on it
+ * (curnode), update the dependency graph to break the current
+ * dependency cycle.
+ */
+static void 
+processBreaker3(
+    DogNode *curnode, 
+    DogNode *depnode, 
+    DogNode *breaker,
+    boolean forwards)
+{
+    Vector *deps;
+    DogNode *thru = (DogNode *) ELEM(depnode->forward_deps, depnode->dep_idx);
+    DogNode *this;
+    Vector *newdeps;
+    int i;
+
+    /* Eliminiate from breaker any dependency on thru */
+    deps = forwards? breaker->forward_deps: breaker->backward_deps;
+    this = (DogNode *) vectorDel(deps, (Object *) thru);
+    if (this != thru) {
+	RAISE(TSORT_ERROR, 
+	      newstr("Unable to eliminate dependency %s -> %s",
+		     breaker->fqn->value, this->fqn->value));
+    }
+
+    /* Replace the dependency from curnode to depnode with one from
+     * curnode to breaker. */
+    deps = forwards? curnode->forward_deps: curnode->backward_deps;
+    EACH(deps, i) {
+	this = (DogNode *) ELEM(deps, i);
+	if (this == depnode) {
+	    ELEM(deps, i) = (Object *) breaker;
+	}
+    }
+}
+
+
+
+/* Add both forward and back dependencies to a DogNode from the source
+ * xml objects.
+ */
+static void
+addDepsForNode2(DogNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
+{
+    xmlNode *depnode;
+    Object *deps;
+    DogNode *fallback_node;
+    DogNode *sub;
+    DependencyApplication applies;
+    Object *tmp;
+
+    assert(node, "addDepsForNode: no node provided");
+    assert(node->dbobject, "addDepsForNode: node has no dbobject");
+
+    for (depnode = node->dbobject->children;
+	 depnode = nextDependency(depnode);
+	 depnode = depnode->next) 
+    {
+	/* depnode is either a dependency or a dependency-set node and
+	 * so there may be a single dependency or a set of dependencies
+	 * for this depnode.  If there is a set, only one of the
+	 * dependencies from the set needs to be resolved.  We deal with
+	 * that by creating a subnode for dependency sets.
+	 */
+	applies = applicationForDep(depnode);
+	fallback_node = getFallbackNode2(depnode, byfqn);
+	deps = getDepSets(depnode, byfqn, bypqn);
+
+	if (deps && (deps->type == OBJ_DOGNODE) && 
+	    (((DogNode *) deps)->build_type == EXISTS_NODE))
+	{
+	    /* There is no need to record a dependency against this dep,
+	     * as it is an EXISTS_NODE.
+	     */
+	    continue;
+	}
+
+	if (fallback_node || (deps && (deps->type == OBJ_VECTOR))) {
+
+	    if ((!deps) || ((deps->type != OBJ_VECTOR))) {
+		tmp = deps;
+		deps = (Object *) vectorNew(10);
+		if (tmp) {
+		    setPush((Vector *) deps, tmp);
+		}
+	    }
+	    if ((applies == FORWARDS) || (applies == BOTH)) {
+
+		// No failure before here
+		sub = newSubNode(node, FORWARDS);
+		sub->forward_deps = (Vector *) deps;
+		sub->fallback_node = fallback_node;
+	    }
+
+	    if ((applies == BACKWARDS) || (applies == BOTH)) {
+		sub = newSubNode(node, BACKWARDS);
+		if (deps && (applies == BOTH)) {
+		    sub->backward_deps = vectorCopy((Vector *) deps);
+		}
+		else {
+		    sub->backward_deps = (Vector *) deps;
+		}
+		sub->fallback_node = fallback_node;
+	    }
+	}
+	else if (deps) {
+	    addDep2(node, (DogNode *) deps, applies);
+	}
+    }
+    //showDeps2(node);
+}
+
+/* Determine the declared set of dependencies for the nodes, creating
+ * both forward and backward dependencies.
+ */
+static void
+addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
+{
+   DogNode *volatile this = NULL;
+   int volatile i;
+   EACH(nodes, i) {
+       this = (DogNode *) ELEM(nodes, i);
+       assert(this->type == OBJ_DOGNODE, "incorrect node type");
+       addDepsForNode2(this, nodes, byfqn, bypqn);
+   }
+}
+
+static void
+resolveNode(DogNode *node, DogNode *from, boolean forwards, Vector *nodes);
+
+static void
+resolveDeps(DogNode *node, DogNode *from, boolean forwards, Vector *nodes)
+{
+    Vector *volatile deps = forwards? node->forward_deps: node->backward_deps;
+    int volatile i;
+    boolean volatile cyclic_exception;
+    DogNode *volatile dep;
+    DogNode *breaker;
+    DogNode *cycle_node;
+    char *tmpmsg;
+    char *errmsg;
+
+    if (deps) {
+	EACH(deps, i) {
+	    dep = (DogNode *) ELEM(deps, i);
+	    node->dep_idx = i;
+	    BEGIN {
+		cyclic_exception = FALSE;
+		resolveNode(dep, node, forwards, nodes);
+	    }
+	    EXCEPTION(ex);
+	    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+		cyclic_exception = TRUE;
+		cycle_node = (DogNode *) ex->param;
+		errmsg = newstr("%s", ex->text);
+	    }
+	    END;
+	    if (cyclic_exception) {
+		//printSexp(stderr, "Cycling at: ", (Object *) dep);
+		//printSexp(stderr, "  from: ", (Object *) node);
+
+		if (node->supernode) {
+		    /* We are in a subnode, so this is an optional
+		     * dependency.  Unless this is the last dependency
+		     * in the list, we can simply try the next one. */
+		    skfree(errmsg);
+		    if (isLastElem(deps, i)) {
+			RAISE(NOT_IMPLEMENTED_ERROR, 
+			      newstr("Unimplemented: fallback handling"));
+		    }
+		    else {
+			continue;
+		    }
+		}
+		
+		if (breaker = getBreakerFor2(dep, nodes)) {
+		    /* Replace the current dependency on dep with
+		     * one instead on breaker.  Breaker has been created
+		     * with the same dependencies as depnode, so we must
+		     * remove from it the dependency that causes the
+		     * cycle.  Then we replace the current dependency on
+		     * depnode with one instead on breaker and finally
+		     * we retry processing this, modified, dependency. */
+		    
+		    skfree(errmsg);
+		    processBreaker3(node, dep, breaker, forwards);
+		    i--;
+		    continue;
+		}
+
+		/* We were unable to resolve the cyclic dependency in
+ 		 * this node.  Update the errmsg and re-raise it - maybe
+ 		 * one of our callers will be able to resolve it.
+		 */
+		if (node == cycle_node) {
+		    /* We are at the start of the cyclic dependency.
+		     * Set errmsg to describe this, and reset cycle_node
+		     * for the RAISE below. */ 
+		    tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+				    node->fqn->value, errmsg);
+		    cycle_node = NULL;
+		}
+		else if (cycle_node) {
+		    /* We are somewhere in the cycle of deps.  Add the
+		     * current node to the error message. */ 
+		    tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+		}
+		else {
+		    /* We are outside of the cyclic deps.  Add this node
+		     * to the error message so we can see how we got
+		     * to this point.  */ 
+		    tmpmsg = newstr("%s from %s", errmsg, node->fqn->value);
+		}
+
+		skfree(errmsg);
+		node->dep_idx = -1;
+		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
+	    }
+	    //else {
+	    //	printSexp(stderr, "Resolved: ", (Object *) dep);
+	    //	printSexp(stderr, "  from: ", (Object *) node);
+	    //}
+
+	    if (node->supernode) {
+		/* We are in a subnode and have successfully traversed a
+		 * dependency.  Since we only need one dependency from
+		 * our set, we are done. */
+		break;
+	    }
+	}
+    }
+}
+
+static void
+resolveSubNodes2(
+    DogNode *node, 
+    DogNode *from, 
+    boolean forwards,
+    Vector *nodes)
+{
+    DogNode *sub = node;
+    Vector *deps;
+    DogNode *dep;
+    while (sub = forwards? sub->forward_subnodes: sub->backward_subnodes) {
+	resolveNode(sub, from, forwards, nodes);
+    }
+}
+
+static void
+resolveNode(DogNode *node, DogNode *from, boolean forwards, Vector *nodes)
+{
+    assert(node && node->type == OBJ_DOGNODE, 
+	   "resolveNode: node is not a DogNode");
+    switch (node->status) {
+    case VISITING:
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
+    case RESOLVED_F:
+	if (forwards) {
+	    break;
+	}
+    case UNVISITED: 
+	node->status = VISITING;
+	BEGIN {
+	    resolveDeps(node, from, forwards, nodes);
+	    resolveSubNodes2(node, from, forwards, nodes);
+	}
+	EXCEPTION(ex) {
+	    node->status = UNVISITED;
+	    RAISE();
+	}
+	END;
+	node->status = forwards? RESOLVED_F: RESOLVED;
+	break;
+    case RESOLVED:
+	if (!forwards) {
+	    break;
+	}
+    default: 
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected node status: %d", node->status));
+    }
+}
+
+static void
+activateFallback2(DogNode *node, DogNode *fallback, Vector *nodes)
+{
+    DogNode *closer;
+    DogNode *dep;
+    int i;
+    if (fallback->build_type != FALLBACK_NODE) {
+	/* Promote this node from an exists node into a build node, and
+	 * create the matching drop node for it. */
+	fallback->build_type = FALLBACK_NODE;
+	closer = dognodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	fallback->mirror_node = closer;
+	setPush(nodes, (Object *) closer);
+
+	/* Copy deps from build node to drop node.  For fallback nodes,
+	 * all dependendencies wodk in the forward direction as we are
+	 * just going to grant a privilege and then revoke it and the
+	 * role to which the grant and revoke is applied should be the
+	 * only initial dependency. */
+	EACH(fallback->forward_deps, i) {
+	    dep = (DogNode *) ELEM(fallback->forward_deps, i);
+	    addDepToVector(&(closer->forward_deps), dep);
+	}
+    }
+    else {
+	closer = fallback->mirror_node;
+    }
+
+    /* Add dependencies from closer to node, and from node to fallback. */
+    addDepToVector(&(closer->forward_deps), node);
+    addDepToVector(&(node->forward_deps), fallback);
+}
+
+/* 
+ *
+ */
+static void
+resolveGraphs(Vector *nodes)
+{
+    DogNode *node;
+    DogNode *sub;
+    DogNode *dep;
+    int i;
+
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+	resolveNode(node, NULL, TRUE, nodes);
+    }
+
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+	resolveNode(node, NULL, FALSE, nodes);
+    }
+
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+	sub = node;
+	while (sub = sub->forward_subnodes) {
+	    if (sub->dep_idx < 0) {
+		activateFallback2(node, sub->fallback_node, nodes);
+	    }
+	    else {
+		dep = (DogNode *) ELEM(sub->forward_deps, sub->dep_idx);
+		addDepToVector(&(node->forward_deps), dep);
+	    }
+	    //printSexp(stderr, "Promoting :", (Object *) dep);
+	    //printSexp(stderr, " in :", (Object *) node);
+	}
+
+	sub = node;
+	while (sub = sub->backward_subnodes) {
+	    //dbgSexp(sub);
+	    //dbgSexp(sub->forward_subnodes);
+	    //dbgSexp(sub->backward_subnodes);
+	    if (sub->dep_idx < 0) {
+		activateFallback2(node, sub->fallback_node, nodes);
+	    }
+	    else {
+		dep = (DogNode *) ELEM(sub->backward_deps, sub->dep_idx);
+		addDepToVector(&(node->backward_deps), dep);
+	    }
+	    //printSexp(stderr, "Promoting :", (Object *) dep);
+	    //printSexp(stderr, " in :", (Object *) node);
+	}
+    }
+}
+
+static DogNode *
+makeMirror2(DogNode *node, DagNodeBuildType type)
+{
+    DogNode *mirror = dognodeNew(node->dbobject, type);
+    node->mirror_node = mirror;
+    mirror->mirror_node = node;
+    mirror->parent = node->parent;
+    addDepToVector(&(node->forward_deps), mirror);
+    return mirror;
+}
+
+static void
+expandDogNodes(Vector *nodes)
+{
+    int i;
+    DogNode *node;
+    DogNode *mirror;
+    
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+
+	switch (node->build_type) {
+	case BUILD_NODE:
+	case DROP_NODE:
+	case EXISTS_NODE:
+	case FALLBACK_NODE:
+	case ENDFALLBACK_NODE:
+	    /* Nothing to do - all is well */
+	    mirror = NULL;
+	    break;
+	case DIFF_NODE:
+	    node->build_type = DIFFCOMPLETE_NODE;
+	    mirror = makeMirror2(node, DIFFPREP_NODE);
+	    break;
+	case REBUILD_NODE:
+	    node->build_type = BUILD_NODE;
+	    mirror = makeMirror2(node, DROP_NODE);
+	    break;
+	default:
+	    RAISE(TSORT_ERROR, 
+		  newstr("Unexpected build_type: %d", node->build_type));
+	}
+	if (mirror) {
+	    setPush(nodes, (Object *) mirror); 
+	}
+    }
+}
+
+static void
+clearUnneededDeps(Vector *nodes)
+{
+    int i;
+    DogNode *node;
+    
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+	if ((node->build_type == DIFFPREP_NODE) ||
+	    (node->build_type == DROP_NODE))
+	{
+	    /* This node is on the backwards side of the dependency
+	     * graph.  This means that its forward_deps must be derived
+	     * from other nodes backward_deps.  Before we can do that,
+	     * if the node already has forward_deps, they must be
+	     * cleared out. */ 
+	    if (node->forward_deps) {
+		objectFree((Object *) node->forward_deps, FALSE);
+		node->forward_deps = NULL;
+	    }
+	}
+    }
+}
+
+static void
+redirectBackwardDeps(Vector *nodes)
+{
+    int i;
+    int j;
+    DogNode *node;
+    DogNode *depnode;
+    Vector *deps;
+
+    clearUnneededDeps(nodes);
+
+    EACH(nodes, i) {
+	node = (DogNode *) ELEM(nodes, i);
+
+	if ((node->build_type == DIFFPREP_NODE) ||
+	    (node->build_type == DROP_NODE))
+	{
+	    /* Derive other nodes' forward_deps from this node (or its
+	     * mirror's backward_deps. */
+	    if (!(deps = node->backward_deps)) {
+		if (node->mirror_node) {
+		    deps = node->mirror_node->backward_deps;
+		}
+	    }
+	    if (deps) {
+		EACH(deps, j) {
+		    depnode = (DogNode *) ELEM(deps, j);
+		    if (depnode->mirror_node) {
+			depnode = depnode->mirror_node;
+		    }
+		    addDepToVector(&(depnode->forward_deps), node);
+		}
+	    }
+	}
+    }
+}
+
+/* Create a Dag from the supplied doc, returning it as a vector of DocNodes.
+ *
+ */
+Vector *
+dagFromDoc(Document *doc)
+{
+   Vector *volatile nodes = dogNodesFromDoc(doc);
+   Hash *volatile byfqn = hashByFqn2(nodes);
+   Hash *volatile bypqn = NULL;
+   DogNode *volatile this = NULL;
+   int volatile i;
+   
+   BEGIN {
+       identifyParents2(nodes, byfqn);
+       bypqn = hashByPqn2(nodes);
+       addDependencies(nodes, byfqn, bypqn);
+       resolveGraphs(nodes);
+       expandDogNodes(nodes);
+       redirectBackwardDeps(nodes);
+   }
+   EXCEPTION(ex) {
+       objectFree((Object *) nodes, TRUE);
+       objectFree((Object *) bypqn, TRUE);
+       objectFree((Object *) byfqn, FALSE);
+   }
+   END;
+   objectFree((Object *) bypqn, TRUE);
+   objectFree((Object *) byfqn, FALSE);
+
+   return nodes;
 }

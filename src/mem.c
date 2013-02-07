@@ -304,10 +304,6 @@ delChunk(void *chunk)
 	RAISE(MEMORY_ERROR, 
 	      newstr("delChunk: Chunk %p already freed", chunk));
     }
-    if ((free_number > show_free_number - 40) &&
-        free_number <= show_free_number) {
-	printObj((Object *) chunk);
-    }
     if (free_number == show_free_number) {
 	fprintf(stderr, "  Freeing chunk %p: freed as %d, malloc'd as %d\n", 
 		chunk, free_number, previous);

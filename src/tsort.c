@@ -356,6 +356,7 @@ smart_tsort(Hash *allnodes)
 
 #endif
 
+#ifdef wibble
 static void
 tsort_node(Vector *nodes, DagNode *node, Vector *results);
 
@@ -406,6 +407,7 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 			 node->fqn->value, node->status));
     }
 }
+#endif
 
 /* Create an initial sort of our dagnodes.  This identifies which
  * optional dependencies and fallbacks should be followed, and which
@@ -415,6 +417,7 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
  * should be done in dependency order, ie dependent objects before the
  * objects on which they depend).
  */
+/*
 Vector *
 simple_tsort(Vector *nodes)
 {
@@ -436,10 +439,11 @@ simple_tsort(Vector *nodes)
     END;
     return results;
 }
-
+*/
 
 /* Do the sort. 
 */
+#ifdef wibble
 Vector *
 gensort(Document *doc)
 {
@@ -461,54 +465,76 @@ gensort(Document *doc)
     objectFree((Object *) nodes, FALSE);
     return results;
 }
-
+#endif
 
 static void
-new_tsort_node(DagNode *node, Vector *results)
+tsort2_node(Vector *nodes, DogNode *node, Vector *results);
+
+static void
+tsort2_deps(Vector *nodes, DogNode *node, Vector *results)
 {
+    Vector *deps;
     int i;
-    Dependency *dep;
-    switch (node->status) {
-    case SORTED:
-	break;
-    case VISITED:
-	node->status = VISITING;
-	if (node->dependencies) {
-	    EACH(node->dependencies, i) {
-		dep = (Dependency *) ELEM(node->dependencies, i);
-		new_tsort_node(dep->dependency, results);
-	    }
+    DogNode *dep;
+
+    if (deps = node->forward_deps) {
+	EACH(deps, i) {
+	    dep = (DogNode *) ELEM(deps, i);
+	    tsort2_node(nodes, dep, results);
 	}
-	vectorPush(results, (Object *) node);
-	node->status = SORTED;
-	break;
-    case VISITING:
-	RAISE(TSORT_ERROR, 
-	      newstr("Cyclic exception found at %s", node->fqn->value));
-    default:
-	dbgSexp(node);
-	RAISE(TSORT_ERROR, 
-	      newstr("Unexpected node status: %d", node->status));
     }
 }
 
-static Vector *
-new_tsort(Vector *nodes)
+
+static void
+tsort2_node(Vector *nodes, DogNode *node, Vector *results)
 {
-    Vector *results = vectorNew(nodes->elems);
-    DagNode *node;
+    switch (node->status) {
+    case VISITING:
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("Cyclic dep found in %s", node->fqn->value), node);
+    case UNVISITED: 
+    case RESOLVED: 
+	BEGIN {
+	    node->status = VISITING;
+	    tsort2_deps(nodes, node, results);
+	    vectorPush(results, (Object *) node);
+	}
+	EXCEPTION(ex) {
+	    node->status = UNVISITED;
+	    RAISE();
+	}
+	END;
+	node->status = VISITED;
+	break;
+    case VISITED: 
+	break;
+    default:
+	RAISE(TSORT_ERROR,
+		  newstr("Unexpected status for dagnode %s: %d",
+			 node->fqn->value, node->status));
+    }
+}
+
+Vector *
+simple_tsort2(Vector *nodes)
+{
+    Vector *volatile results = 
+	vectorNew(nodes->elems + 10); // Allow for expansion
+    DogNode *node;
     int i;
     BEGIN {
 	EACH(nodes, i) {
-	    node = (DagNode *) ELEM(nodes, i);
-	    new_tsort_node(node, results);
+	    node = (DogNode *) ELEM(nodes, i);
+	    tsort2_node(nodes, node, results);
 	}
     }
-    EXCEPTION(ex) {
+    EXCEPTION(ex);
+    WHEN_OTHERS {
 	objectFree((Object *) results, FALSE);
+	RAISE();
     }
     END;
-    
     return results;
 }
 
@@ -522,8 +548,7 @@ gensort2(Document *doc)
 
     BEGIN {
 	nodes = dagFromDoc(doc);
-	//showVectorDeps(nodes);
-	results = new_tsort(nodes);
+	results = simple_tsort2(nodes);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

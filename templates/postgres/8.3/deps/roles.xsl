@@ -33,14 +33,17 @@
     </dbobject>
   </xsl:template>
 
-  <xsl:template match="privilege">
-    <!-- WHY IS A PRIVILEGE CONSIDERED TO BE A DBOBJECT?  
-         I'm sure there is a good reason but I can't recall it.  If anyone
-	 ever figures it out, please comment the reason here.  MM -->
+  <xsl:template match="role/privilege">
+    <!-- A privilege describes, not the privilege itself, but its
+	 assignment to a role.  There may be dependencies on privileges,
+	 which is why they are considered to be dbobjects.  -->
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>
     <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('privilege.', $priv_name)}">
+      <dependencies>
+	<dependency fqn="{concat('role.', $parent_core)}"/>
+      </dependencies>
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
       </xsl:copy>

@@ -1002,9 +1002,15 @@ copyObjectNode(xmlNode *source)
     copyKidsContents(new, source->children);
     return new;
 }
-
+/*
 static char *
 actionName(DagNode *node)
+{
+    return nameForBuildType(node->build_type);
+}
+*/
+static char *
+actionName2(DogNode *node)
 {
     return nameForBuildType(node->build_type);
 }
@@ -1015,7 +1021,7 @@ addAction(xmlNode *node, char *action)
     Vector *navigation = NULL;
     xmlNewProp(node, "action", action);
 }
-
+#ifdef wibble
 void
 addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
 {
@@ -1039,7 +1045,32 @@ addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
     }
     END;
 }
+#endif
+void
+addNavigationNodes2(xmlNode *parent_node, DogNode *cur, DogNode *target)
+{
+    Vector *volatile navigation = NULL;
+    DogNode *nnode;
+    xmlNode *curnode;
+    int i;
 
+    BEGIN {
+	navigation = navigationToNode2(cur, target);
+	EACH(navigation, i) {
+	    nnode = (DogNode *) ELEM(navigation, i);
+	    curnode = nnode->dbobject;
+	    xmlAddChild(parent_node, curnode);
+	    addAction(curnode, actionName2(nnode));
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) navigation, TRUE);
+    }
+    END;
+}
+
+#ifdef wibble
 void
 treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
 {
@@ -1063,6 +1094,31 @@ treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
     }
     addNavigationNodes(parent_node, prev, NULL);
 }
+#endif
+
+void
+treeFromVector2(xmlNode *parent_node, Vector *sorted_nodes)
+{
+    DogNode *prev = NULL;
+    DogNode *dnode;
+    xmlNode *curnode;
+    int i;
+
+    EACH(sorted_nodes, i) {
+	dnode = (DogNode *) ELEM(sorted_nodes, i);
+	if (dnode->build_type != EXISTS_NODE) {
+	    /* Ignore EXISTS_NODES for the purpose of adding navigation
+	     * nodes.  There is no point in navigating to these nodes as
+	     * we are not going to do anything with them. */
+	    addNavigationNodes2(parent_node, prev, dnode);
+	    curnode = copyObjectNode(dnode->dbobject);
+	    addAction(curnode, actionName2(dnode));
+	    xmlAddChild(parent_node, curnode);
+	    prev = dnode;
+	}
+    }
+    addNavigationNodes2(parent_node, prev, NULL);
+}
 
 static xmlNode *
 execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -1079,11 +1135,11 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = docStackPop();
 	}
-	sorted = gensort(source_doc);
+	sorted = gensort2(source_doc);
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
-	treeFromVector(root, sorted);
+	treeFromVector2(root, sorted);
 	result_doc = documentNew(xmldoc, NULL);
     }
     EXCEPTION(ex);

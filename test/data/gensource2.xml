@@ -2,62 +2,33 @@
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="skittest" time="20090611091918">
   <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
     <cluster type="postgres" version="8.3.7" username="marc">
-      <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-        <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
-      </dbobject>
-      <dbobject type="role" name="keep2" qname="keep2" fqn="role.cluster.keep2">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-        <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:keep2" pqn="grant.cluster.keep2.keep" fqn="grant.cluster.keep2.keep:lose">
-            <context name="owner" value="lose" default="marc"/>
-            <dependencies>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.lose"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency pqn="grant.cluster.lose.keep"/>
-            </dependencies>
-            <grant priv="keep" from="lose" to="keep2" with_admin="yes"/>
-          </dbobject>
-        </role>
-      </dbobject>
-      <dbobject type="role" name="lose" qname="lose" fqn="role.cluster.lose">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-        <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:lose" pqn="grant.cluster.lose.keep" fqn="grant.cluster.lose.keep:keep">
-            <context name="owner" value="keep" default="marc"/>
-            <dependencies>
-              <dependency fqn="role.cluster.lose"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.lose"/>
-            </dependencies>
-            <grant priv="keep" from="keep" to="lose" with_admin="yes"/>
-          </dbobject>
-        </role>
-      </dbobject>
       <dbobject type="role" name="marc" qname="marc" fqn="role.cluster.marc">
         <dependencies>
           <dependency fqn="cluster"/>
         </dependencies>
         <role name="marc" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
           <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser">
+            <dependencies>
+              <dependency fqn="role.cluster.marc"/>
+            </dependencies>
             <privilege priv="superuser"/>
           </dbobject>
           <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit">
+            <dependencies>
+              <dependency fqn="role.cluster.marc"/>
+            </dependencies>
             <privilege priv="inherit"/>
           </dbobject>
           <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole">
+            <dependencies>
+              <dependency fqn="role.cluster.marc"/>
+            </dependencies>
             <privilege priv="createrole"/>
           </dbobject>
           <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb">
+            <dependencies>
+              <dependency fqn="role.cluster.marc"/>
+            </dependencies>
             <privilege priv="createdb"/>
           </dbobject>
           <privilege priv="superuser"/>
@@ -66,27 +37,33 @@
           <privilege priv="createdb"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="marco" qname="marco" fqn="role.cluster.marco">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-        <role name="marco" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" max_connections="-1"/>
-      </dbobject>
       <dbobject type="role" name="postgres" qname="postgres" fqn="role.cluster.postgres">
         <dependencies>
           <dependency fqn="cluster"/>
         </dependencies>
         <role name="postgres" login="y" max_connections="-1">
           <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.postgres.superuser">
+            <dependencies>
+              <dependency fqn="role.cluster.postgres"/>
+            </dependencies>
             <privilege priv="superuser"/>
           </dbobject>
           <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.postgres.inherit">
+            <dependencies>
+              <dependency fqn="role.cluster.postgres"/>
+            </dependencies>
             <privilege priv="inherit"/>
           </dbobject>
           <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.postgres.createrole">
+            <dependencies>
+              <dependency fqn="role.cluster.postgres"/>
+            </dependencies>
             <privilege priv="createrole"/>
           </dbobject>
           <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.postgres.createdb">
+            <dependencies>
+              <dependency fqn="role.cluster.postgres"/>
+            </dependencies>
             <privilege priv="createdb"/>
           </dbobject>
           <privilege priv="superuser"/>
@@ -101,133 +78,13 @@
         </dependencies>
         <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
           <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.regress.superuser">
+            <dependencies>
+              <dependency fqn="role.cluster.regress"/>
+            </dependencies>
             <privilege priv="superuser"/>
           </dbobject>
           <privilege priv="superuser"/>
         </role>
-      </dbobject>
-      <dbobject type="role" name="wibble" qname="wibble" fqn="role.cluster.wibble">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
-        <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:wibble" pqn="grant.cluster.wibble.keep" fqn="grant.cluster.wibble.keep:keep">
-            <context name="owner" value="keep" default="marc"/>
-            <dependencies>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.wibble"/>
-            </dependencies>
-            <grant priv="keep" from="keep" to="wibble" with_admin="yes"/>
-          </dbobject>
-          <dbobject type="grant" subtype="role" name="keep2:wibble" pqn="grant.cluster.wibble.keep2" fqn="grant.cluster.wibble.keep2:keep2">
-            <context name="owner" value="keep2" default="marc"/>
-            <dependencies>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.wibble"/>
-            </dependencies>
-            <grant priv="keep2" from="keep2" to="wibble" with_admin="no"/>
-          </dbobject>
-        </role>
-      </dbobject>
-      <dbobject type="tablespace" name="tbs2" qname="tbs2" fqn="tablespace.cluster.tbs2">
-        <dependencies>
-          <dependency fqn="cluster"/>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <tablespace name="tbs2" owner="regress" location="/var/lib/postgresql/8.3/main/tbs/tbs2">
-          <dbobject type="grant" parent="tablespace.cluster.tbs2" name="create:regress" pqn="grant.cluster.tbs2.create:regress" fqn="grant.cluster.tbs2.create:regress:regress" owner="regress" subtype="tablespace" on="tbs2">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs2"/>
-              <dependency fqn="role.cluster.regress"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="regress" with_grant="yes"/>
-          </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs2" name="create:keep2" pqn="grant.cluster.tbs2.create:keep2" fqn="grant.cluster.tbs2.create:keep2:regress" owner="regress" subtype="tablespace" on="tbs2">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs2"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="keep2" with_grant="no"/>
-          </dbobject>
-        </tablespace>
-      </dbobject>
-      <dbobject type="tablespace" name="tbs3" qname="tbs3" fqn="tablespace.cluster.tbs3">
-        <dependencies>
-          <dependency fqn="cluster"/>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <tablespace name="tbs3" owner="regress" location="/var/lib/postgresql/8.3/main/tbs/tbs3">
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:regress" pqn="grant.cluster.tbs3.create:regress" fqn="grant.cluster.tbs3.create:regress:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs3"/>
-              <dependency fqn="role.cluster.regress"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="regress" with_grant="yes"/>
-          </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:wibble" pqn="grant.cluster.tbs3.create:wibble" fqn="grant.cluster.tbs3.create:wibble:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs3"/>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="wibble" with_grant="no"/>
-          </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:marco" pqn="grant.cluster.tbs3.create:marco" fqn="grant.cluster.tbs3.create:marco:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs3"/>
-              <dependency fqn="role.cluster.marco"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="marco" with_grant="yes"/>
-          </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:keep2" pqn="grant.cluster.tbs3.create:keep2" fqn="grant.cluster.tbs3.create:keep2:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs3"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="keep2" with_grant="yes"/>
-          </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:keep" pqn="grant.cluster.tbs3.create:keep" fqn="grant.cluster.tbs3.create:keep:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs3"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant priv="create" from="regress" to="keep" with_grant="yes"/>
-          </dbobject>
-        </tablespace>
-      </dbobject>
-      <dbobject type="tablespace" name="tbs4" qname="tbs4" fqn="tablespace.cluster.tbs4">
-        <dependencies>
-          <dependency fqn="cluster"/>
-          <dependency fqn="role.cluster.wibble"/>
-        </dependencies>
-        <tablespace name="tbs4" owner="wibble" location="/var/lib/postgresql/8.3/main/tbs/tbs4">
-          <dbobject type="grant" parent="tablespace.cluster.tbs4" name="create:wibble" pqn="grant.cluster.tbs4.create:wibble" fqn="grant.cluster.tbs4.create:wibble:wibble" owner="wibble" subtype="tablespace" on="tbs4">
-            <context name="owner" value="wibble" default="marc"/>
-            <dependencies>
-              <dependency fqn="tablespace.cluster.tbs4"/>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.wibble"/>
-            </dependencies>
-            <grant with_grant="yes" priv="create" from="wibble" to="wibble"/>
-          </dbobject>
-        </tablespace>
       </dbobject>
     </cluster>
   </dbobject>
@@ -374,14 +231,21 @@
           </dbobject>
         </schema>
       </dbobject>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.keep.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.keep2.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.lose.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.marc.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.marco.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.postgres.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.regress.superuser"/>
-      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.wibble.superuser"/>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.marc.superuser">
+        <dependencies>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+      </dbobject>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.postgres.superuser">
+        <dependencies>
+          <dependency fqn="role.cluster.postgres"/>
+        </dependencies>
+      </dbobject>
+      <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.regress.superuser">
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+      </dbobject>
     </database>
   </dbobject>
 </dump>

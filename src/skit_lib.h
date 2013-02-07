@@ -230,6 +230,8 @@ typedef enum {
     DIFFCOMPLETE_NODE,
     BUILD_AND_DROP_NODE,
     OPTIONAL_NODE,
+    FALLBACK_NODE,
+    ENDFALLBACK_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
 
@@ -246,6 +248,7 @@ typedef int BuildTypeBitSet;
 typedef enum {
     UNVISITED = 27,
     VISITING,
+    RESOLVED_F,         /* Node has been resolved forwards */
     RESOLVED,           /* Node has been resolved by resolving_tsort */
     VISITED,            /* Node has been visited by the graph resolver */
     SORTED,             /* Node has been sorted by tsort */
@@ -254,7 +257,7 @@ typedef enum {
     SELECTED_FOR_BUILD	// ditto
 } DagNodeStatus;
 
-typedef struct DagNode {
+typedef struct DagNodeOld {
     ObjType          type;
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
@@ -265,14 +268,20 @@ typedef struct DagNode {
     Vector          *dependencies;   // use objectFree(obj, FALSE);
     Vector          *dependents;     // use objectFree(obj, FALSE);
     Vector          *original_dependencies;
-    struct DagNode  *supernode;
-    struct DagNode  *subnodes;       // Linked list
-    struct DagNode  *breaker_for;    // Reference only
-    struct DagNode  *fallback;  	// Reference only
-    struct DagNode  *mirror_node; 	// Reference only
-    struct DagNode  *parent;   		// Reference only
-} DagNode;
+    struct DagNodeOld  *supernode;
+    struct DagNodeOld  *subnodes;       // Linked list
+    struct DagNodeOld  *breaker_for;    // Reference only
+    struct DagNodeOld  *fallback;  	// Reference only
+    struct DagNodeOld  *mirror_node; 	// Reference only
+    struct DagNodeOld  *parent;   		// Reference only
+} DagNodeOld;
 
+
+typedef enum {
+    FORWARDS = 17,
+    BACKWARDS,
+    BOTH
+} DependencyApplication;
 
 // TODO: Refactor eliminating current DagNodes and Dependencies and 
 // renaming DogNodes to DagNodes
@@ -280,20 +289,29 @@ typedef struct DogNode {
     ObjType          type;
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
+    DagNodeStatus    status;
     DagNodeBuildType build_type;
     int              dep_idx;
-    Vector          *forward_deps;   // use objectFree(obj, FALSE);
-    Vector          *backward_deps;     // use objectFree(obj, FALSE);
-    struct DagNode  *mirror_node; 	// Reference only
-    struct DagNode  *parent;   		// Reference only
+    Vector          *forward_deps;   	// use objectFree(obj, FALSE);
+    Vector          *backward_deps;  	// use objectFree(obj, FALSE);
+    struct DogNode  *mirror_node;    	// Reference only
+    struct DogNode  *parent;   	     	// Reference only
+    struct DogNode  *breaker;           // The breaker for this node
+    struct DogNode  *breaker_for;       // The node for which this is a breaker
+    struct DogNode  *supernode;
+    struct DogNode  *forward_subnodes;       	// Linked list
+    struct DogNode  *backward_subnodes;       	// Linked list
+    struct DogNode  *fallback_node;  
 } DogNode;
+
+
 /* Used to describe a dependency
  */
-typedef struct Dependency {
+typedef struct DependencyOld {
     ObjType          type;
     BuildTypeBitSet  condition;
-    DagNode         *dependency;    // Reference only
-} Dependency;
+    DagNodeOld         *dependency;    // Reference only
+} DependencyOld;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to
@@ -393,11 +411,10 @@ extern Object *objSelect(Object *collection, Object *key);
 extern Object *objNext(Object *collection, Object **p_placeholder);
 extern boolean isCollection(Object *object);
 extern Object *objectFromStr(char *instr);
-extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
+//extern DagNode *dagnodeNew(xmlNode *node, DagNodeBuildType build_type);
+extern DogNode *dognodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
-extern Dependency *dependencyNew(DagNode *dep, BuildTypeBitSet condition);
-extern void dependencyFree(Dependency *dep);
 
 #define isSubnode(node)       (node && node->supernode)
 
@@ -661,7 +678,7 @@ extern void registerPGSQL();
 extern void pgsqlFreeMem();
 
 // deps.c
-extern void showDeps(DagNode *node);
+extern void showDeps(DogNode *node);
 extern void showHashDeps(Hash *nodes);
 extern void showVectorDeps(Vector *nodes);
 
@@ -670,6 +687,8 @@ extern Hash *hashByFqn(Vector *vector);
 extern void prepareDagForBuild(Vector **p_nodes);
 extern Vector *resolving_tsort(Vector *nodelist);
 
+extern Vector *dagFromDoc(Document *doc);
+
 
 
 // tsort.c
@@ -677,7 +696,7 @@ extern Vector *simple_tsort(Vector *nodes);
 extern Vector *gensort(Document *doc);
 
 // navigation.c
-extern Vector *navigationToNode(DagNode *current, DagNode *target);
+extern Vector *navigationToNode(DogNode *current, DogNode *target);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

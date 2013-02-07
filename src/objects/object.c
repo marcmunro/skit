@@ -46,6 +46,7 @@ objTypeName(Object *obj)
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
+    case OBJ_DOGNODE: return "OBJ_DOGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
     return "UNKNOWN_OBJECT_TYPE";
@@ -404,6 +405,7 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
+#ifdef wibble
 static DagNode *
 basicDagNode()
 {
@@ -453,7 +455,47 @@ dagnodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->build_type = build_type;
     return new;
 }
+#endif
 
+static DogNode *
+basicDogNode()
+{
+    DogNode *new = skalloc(sizeof(DogNode));
+    new->type = OBJ_DOGNODE;
+    new->fqn = NULL;
+    new->dbobject = NULL;
+    new->build_type = UNSPECIFIED_NODE;
+    new->status = UNVISITED;
+    new->dep_idx = -1;
+    new->forward_deps = NULL;
+    new->backward_deps = NULL;
+    new->mirror_node = NULL;
+    new->parent = NULL;
+    new->breaker = NULL;
+    new->breaker_for = NULL;
+    new->supernode = NULL;
+    new->forward_subnodes = NULL;
+    new->backward_subnodes = NULL;
+    new->fallback_node = NULL;
+    
+    return new;
+}
+
+DogNode *
+dognodeNew(xmlNode *node, DagNodeBuildType build_type)
+{
+    DogNode *new = basicDogNode();
+    String *fqn;
+
+    assert(node, "dognodeNew: node not provided");
+    fqn = nodeAttribute(node, "fqn");
+    new->fqn = fqn;
+    new->dbobject = node;
+    new->build_type = build_type;
+    return new;
+}
+
+#ifdef wibble
 void
 doDagnodeFree(DagNode *node)
 {
@@ -489,7 +531,46 @@ dagnodeFree(DagNode *node)
 	sub = tmp;
     }
 }
+#endif
 
+void
+doDognodeFree(DogNode *node)
+{
+    objectFree((Object *) node->fqn, TRUE);
+    objectFree((Object *) node->forward_deps, FALSE);
+    objectFree((Object *) node->backward_deps, FALSE);
+    skfree(node);
+}
+
+void
+dognodeFree(DogNode *node)
+{
+    DogNode *sub;
+    DogNode *tmp;
+    if (node->supernode) {
+	/* This is a subnode.  Do not free it, as it will be dealt with
+	 * when the supernode is freed. */
+	return;
+    }
+
+    sub = node->forward_subnodes;
+    while (sub) {
+	tmp = sub->forward_subnodes;
+	doDognodeFree(sub);
+	sub = tmp;
+    }
+
+    sub = node->backward_subnodes;
+    while (sub) {
+	tmp = sub->backward_subnodes;
+	doDognodeFree(sub);
+	sub = tmp;
+    }
+
+    doDognodeFree(node);
+}
+
+#ifdef wibble
 Dependency *
 dependencyNew(DagNode *dep,
 	   BuildTypeBitSet condition)
@@ -506,6 +587,7 @@ dependencyFree(Dependency *dep)
 {
     skfree(dep);
 }
+#endif
 
 /* Free a dynamically allocated object. */
 void
@@ -545,10 +627,8 @@ objectFree(Object *obj, boolean free_contents)
 	    connectionFree((Connection *) obj); break;
 	case OBJ_CURSOR:
 	    cursorFree((Cursor *) obj); break;
-	case OBJ_DAGNODE:
-	    dagnodeFree((DagNode *) obj); break;
-	case OBJ_DEPENDENCY: 
-	    dependencyFree((Dependency *) obj); break;
+	case OBJ_DOGNODE:
+	    dognodeFree((DogNode *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -579,6 +659,8 @@ nameForBuildType(DagNodeBuildType build_type)
     case DIFFCOMPLETE_NODE: return "diffcomplete";
     case OPTIONAL_NODE: return "optional";
     case BUILD_AND_DROP_NODE: return "build and drop";
+    case FALLBACK_NODE: return "fallback";
+    case ENDFALLBACK_NODE: return "endfallback";
     }
     return "UNKNOWNBUILDTYPE";
 }
@@ -646,17 +728,10 @@ objectSexp(Object *obj)
 	return tmp2;
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
-    case OBJ_DAGNODE:
+    case OBJ_DOGNODE:
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
-		      nameForBuildType(((DagNode *) obj)->build_type), 
-		      ((DagNode *) obj)->fqn->value); 
-    case OBJ_DEPENDENCY:
-	tmp = buildBitsStr(((Dependency *) obj)->condition);
-	tmp2 = nameForBuildType(((Dependency *) obj)->dependency->build_type);
-	tmp3 = newstr("<%s {%s}(%s) %s>", objTypeName(obj), tmp, tmp2,
-		      ((Dependency *) obj)->dependency->fqn->value);
-	skfree(tmp);
-	return tmp3;
+		      nameForBuildType(((DogNode *) obj)->build_type), 
+		      ((DogNode *) obj)->fqn->value); 
     case OBJ_CURSOR:
 	return cursorStr((Cursor *) obj);
     case OBJ_TUPLE:
@@ -892,6 +967,7 @@ objectFromStr(char *instr)
     return obj;
 }
 
+/*
 boolean
 checkDagnode(DagNode *node, void *chunk)
 {
@@ -913,6 +989,7 @@ checkDagnode(DagNode *node, void *chunk)
     }
     return found;
 }
+*/
 
 boolean
 checkObj(Object *obj, void *chunk)
@@ -924,7 +1001,7 @@ checkObj(Object *obj, void *chunk)
 	case OBJ_STRING: return checkString((String *) obj, chunk);
 	case OBJ_SYMBOL: return checkSymbol((Symbol *) obj, chunk);
 	case OBJ_MISC: /* MISC objects are not skalloc'd */ return FALSE;
-	case OBJ_DAGNODE: return checkDagnode((DagNode *) obj, chunk);
+	    //case OBJ_DAGNODE: return checkDagnode((DagNode *) obj, chunk);
 	case OBJ_INT4: 
 	    if (checkChunk(obj, chunk)) {
 		printSexp(stderr, "...within Int4 ", obj);

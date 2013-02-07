@@ -20,6 +20,30 @@
 #include "../src/exceptions.h"
 #include "suites.h"
 
+static Hash *
+dagnodeHash(Vector *vector)
+{
+    int i;
+    DogNode *node;
+    String *key;
+    Object *old;
+    Hash *hash = hashNew(TRUE);
+
+    EACH(vector, i) {
+	node = (DogNode *) ELEM(vector, i);
+	assert(node->type == OBJ_DOGNODE, "Incorrect node type");
+	key = stringDup(node->fqn);
+
+	if (hashGet(hash, (Object *) key)) {
+	    objectFree((Object *) key, TRUE);
+	}
+	else {
+	    hashAdd(hash, (Object *) key, (Object *) node);
+	}
+    }
+    return hash;
+}
+
 static
 void eval(char *str)
 {
@@ -31,6 +55,7 @@ void eval(char *str)
     skfree(tmp);
 }
 
+/*
 static boolean
 hasDependency(DagNode *node, DagNode *dep)
 {
@@ -54,7 +79,9 @@ hasDependency(DagNode *node, DagNode *dep)
     }
     return FALSE;
 }
+*/
 
+ /*
 static boolean
 hasDep(Hash *hash, char *from, char *to)
 {
@@ -77,7 +104,9 @@ hasDep(Hash *hash, char *from, char *to)
     objectFree((Object *) key, TRUE);
     return hasDependency(fnode, tnode);
 }
+ */
 
+  /*
 static void
 requireDep(Hash *hash, char *from, char *to)
 {
@@ -93,7 +122,8 @@ requireNoDep(Hash *hash, char *from, char *to)
 	fail("Unwanted dep exists from %s to %s", from, to);
     }
 }
-
+  */
+#ifdef wibble
 static boolean
 hasDeps(Hash *hash, char *from, ...)
 {
@@ -122,7 +152,9 @@ hasDeps(Hash *hash, char *from, ...)
 
     return dep_elems == count;
 }
+#endif
 
+#ifdef wibble
 static void
 requireDeps(Hash *hash, char *from, ...)
 {
@@ -156,7 +188,206 @@ requireDeps(Hash *hash, char *from, ...)
 	}
     }
 }
+#endif
 
+static boolean
+hasDependency2(DogNode *node, DogNode *dep)
+{
+    Vector *vector = node->forward_deps;
+    Object *depobj;
+    int i;
+    if (vector) {
+	for (i = 0; i < vector->elems; i++) {
+	    depobj = vector->contents->vector[i];
+	    if (depobj->type == OBJ_DOGNODE) {
+		if (dep == (DogNode *) depobj) {
+		    return TRUE;
+		}
+	    }
+	}
+    }
+    return FALSE;
+}
+
+static DagNodeBuildType
+buildTypeFromName(char *name)
+{
+    char *prefix;
+    char *dotpos;
+    int prefix_len;
+
+    if (dotpos = strchr(name, '.')) {
+	prefix_len = dotpos - name;
+	if (strncmp(name, "build", prefix_len) == 0) {
+	    return BUILD_NODE;
+	}
+	if (strncmp(name, "drop", prefix_len) == 0) {
+	    return DROP_NODE;
+	}
+	if (strncmp(name, "fallback", prefix_len) == 0) {
+	    return FALLBACK_NODE;
+	}
+	if (strncmp(name, "endfallback", prefix_len) == 0) {
+	    return ENDFALLBACK_NODE;
+	}
+    }
+    return UNSPECIFIED_NODE;
+}
+
+static int
+buildPrefixLen(DagNodeBuildType type)
+{
+    switch (type) {
+    case BUILD_NODE: return 6;
+    case DROP_NODE: return 5;
+    case FALLBACK_NODE: return 9;
+    case ENDFALLBACK_NODE: return 12;
+    case UNSPECIFIED_NODE: return 0;
+    default:
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("Unhandled build type %d in buildPrefixLen", 
+		     (int) type));
+    }
+}
+
+static DogNode *
+findDagNode(Hash *hash, char *name)
+{
+    DagNodeBuildType type = buildTypeFromName(name);
+    String *fqn = stringNew(name);
+    DogNode *node = (DogNode *) hashGet(hash, (Object *) fqn);
+
+    if (!node) {
+	/* Try removing any build type prefix from the name and see if
+	 * there is a match that way. */
+	objectFree((Object *) fqn, TRUE);
+	fqn = stringNew(name + buildPrefixLen(type));
+	node = (DogNode *) hashGet(hash, (Object *) fqn);
+    }
+
+    if (node) {
+	if (type != UNSPECIFIED_NODE) {
+	    if (node->build_type != type) {
+		node = node->mirror_node;
+	    }
+	    if (node) {
+		objectFree((Object *) fqn, TRUE);
+		fqn = NULL;
+		assert(node->build_type == type,
+		       "Cannot find node for %s", name); 
+	    }
+	}
+    }
+    objectFree((Object *) fqn, TRUE);
+    return node;
+}
+
+static boolean
+hasDep2(Hash *hash, char *from, char *to)
+{
+    DogNode *fnode = (DogNode *) findDagNode(hash, from);
+    DogNode *tnode = (DogNode *) findDagNode(hash, to);
+
+    if (!fnode) {
+	fail("Cannot find source node %s ", from);
+    }
+
+    if (!tnode) {
+	fail("Cannot find dependency %s ", to);
+    }
+    
+    return hasDependency2(fnode, tnode);
+}
+
+static void
+requireDep2(Hash *hash, char *from, char *to)
+{
+    if (!hasDep2(hash, from, to)) {
+	fail("No dep exists from %s to %s", from, to);
+    }
+}
+
+static void
+requireDeps2(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DogNode *fromnode;
+    int dep_elems;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	requireDep2(hash, from, to);
+	count++;
+    }
+    va_end(params);
+    fromnode = (DogNode *) findDagNode(hash, from);
+
+    if (!fromnode) {
+	fail("Cannot find %s ", from);
+    }
+    else {
+	dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
+	
+	if (dep_elems != count) {
+	    fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
+		 fromnode->fqn->value, count, fromnode->forward_deps->elems);
+	}
+    }
+}
+
+static boolean
+chkDep2(Hash *hash, char *from, char *to)
+{
+    DogNode *fnode = (DogNode *) findDagNode(hash, from);
+    DogNode *tnode = (DogNode *) findDagNode(hash, to);
+
+    if (!fnode) {
+	return FALSE;
+    }
+
+    if (!tnode) {
+	return FALSE;
+    }
+    
+    return hasDependency2(fnode, tnode);
+}
+
+static boolean
+hasDeps2(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DogNode *fromnode;
+    int dep_elems;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	if (!chkDep2(hash, from, to)) {
+	    return FALSE;
+	}
+	count++;
+    }
+    va_end(params);
+    return TRUE;
+    fromnode = (DogNode *) findDagNode(hash, from);
+
+    if (!fromnode) {
+	fail("Cannot find %s ", from);
+    }
+    else {
+	dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
+	
+	if (dep_elems != count) {
+	    return FALSE;
+	}
+    }
+    return TRUE;
+}
+
+#ifdef wibble
 static void
 requireOptionalDeps(Hash *hash, char *from, ...)
 {
@@ -211,8 +442,9 @@ requireOptionalDeps(Hash *hash, char *from, ...)
 	     "(expecting %d)", fromnode->fqn->value, count);
     }
 }
+#endif
 
-
+#ifdef wibble
 static void
 requireOptionalDependencies(Hash *hash, char *from, ...)
 {
@@ -254,8 +486,48 @@ requireOptionalDependencies(Hash *hash, char *from, ...)
 	
     fail("No optional dependencies found in %s", fromnode->fqn->value);
 }
+#endif
 
+static void
+requireOptionalDependencies2(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DogNode *fromnode;
+    DogNode *tonode;
+    String *key;
+    int dep_elems = 0;
+    Vector *deplist = vectorNew(10);
+    int i;
 
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	vectorPush(deplist, (Object*) stringNew(to));
+	count++;
+    }
+    va_end(params);
+    fromnode = (DogNode *) findDagNode(hash, from);
+    if (!fromnode) {
+	fail("Cannot find %s ", from);
+    }
+
+    dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
+    EACH(deplist, i) {
+	key = (String *) ELEM(deplist, i);
+	tonode = (DogNode *) findDagNode(hash, key->value);
+	if (hasDependency2(fromnode, tonode)) {
+	    objectFree((Object *) deplist, TRUE);
+	    return;
+	}
+    }
+
+    objectFree((Object *) deplist, TRUE);
+	
+    fail("No optional dependencies found in %s", fromnode->fqn->value);
+}
+
+#ifdef wibble
 static void
 requireOptionalDependents(Hash *hash, char *from, ...)
 {
@@ -295,10 +567,49 @@ requireOptionalDependents(Hash *hash, char *from, ...)
 	
     fail("No optional dependents found in %s", tonode->fqn->value);
 }
+#endif
+
+static void
+requireOptionalDependents2(Hash *hash, char *from, ...)
+{
+    va_list params;
+    char *to;
+    int count = 0;
+    DogNode *tonode;
+    DogNode *fromnode;
+    String *key;
+    int dep_elems = 0;
+    Vector *deplist = vectorNew(10);
+    int i;
+
+    va_start(params, from);
+    while (to = va_arg(params, char *)) {
+	vectorPush(deplist, (Object*) stringNew(to));
+	count++;
+    }
+    va_end(params);
+    tonode = (DogNode *) findDagNode(hash, from);
+    if (!tonode) {
+	fail("Cannot find %s ", key->value);
+    }
+
+    dep_elems = (tonode->forward_deps)? tonode->forward_deps->elems: 0;
+    EACH(deplist, i) {
+	key = (String *) ELEM(deplist, i);
+	fromnode = (DogNode *) findDagNode(hash, key->value);
+	if (hasDependency2(fromnode, tonode)) {
+	    objectFree((Object *) deplist, TRUE);
+	    return;
+	}
+    }
+    objectFree((Object *) deplist, TRUE);
+	
+    fail("No optional dependents found in %s", tonode->fqn->value);
+}
 
 
 
-
+#ifdef wibble
 static char *
 xnodeName(char *basename, Vector *nodes)
 {
@@ -312,7 +623,7 @@ xnodeName(char *basename, Vector *nodes)
     }
     return NULL;
 }
-
+#endif
 
 /* Trivially check the inBuildTypeBitSet function.
  */
@@ -353,25 +664,26 @@ START_TEST(depset_dag1_build)
 
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	//nodes = dagFromDoc(doc);
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
 
-	nodes = nodesFromDoc(doc);
-	prepareDagForBuild((Vector **) &nodes);
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 
-	requireDeps(nodes_by_fqn, "role.cluster.r1", "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", "role.cluster.r3", NULL);
+	requireDeps2(nodes_by_fqn, "role.cluster.r1", "role.cluster.r3", NULL);
+	requireDeps2(nodes_by_fqn, "role.cluster.r2", "role.cluster.r3", NULL);
 
-	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r3", 
+	requireOptionalDependencies2(nodes_by_fqn, "role.cluster.r3", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r4", NULL);
 
-	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r4", 
+	requireOptionalDependencies2(nodes_by_fqn, "role.cluster.r4", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r5", NULL);
 
-	requireDeps(nodes_by_fqn, "role.cluster.r5", NULL);
+	requireDeps2(nodes_by_fqn, "role.cluster.r5", NULL);
 
 
 
@@ -381,7 +693,6 @@ START_TEST(depset_dag1_build)
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	dbgSexp(nodes);
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -415,17 +726,17 @@ START_TEST(depset_dag1_drop)
 
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_depset.xml");
-	//nodes = dagFromDoc(doc);
-	nodes = nodesFromDoc(doc);
-	prepareDagForBuild((Vector **) &nodes);
+	nodes = dagFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 
-	requireOptionalDependents(nodes_by_fqn, "role.cluster.r3", 
+	requireOptionalDependents2(nodes_by_fqn, "role.cluster.r3", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r4", NULL);
 
-	requireOptionalDependents(nodes_by_fqn, "role.cluster.r4", 
+	requireOptionalDependents2(nodes_by_fqn, "role.cluster.r4", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r5", NULL);
 
@@ -435,7 +746,6 @@ START_TEST(depset_dag1_drop)
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	dbgSexp(nodes);
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -464,50 +774,50 @@ START_TEST(depset_dag1_both)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(1800);
+	//showMalloc(901);
 	//showFree(415);
 
 	eval("(setq drop t)");
 	eval("(setq build t)");
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	//nodes = dagFromDoc(doc);
-	nodes = nodesFromDoc(doc);
-	prepareDagForBuild((Vector **) &nodes);
+	nodes = dagFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
 	//showVectorDeps(nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 
-	requireDeps(nodes_by_fqn, "role.cluster.r1", 
+	requireDeps2(nodes_by_fqn, "role.cluster.r1", 
 		    "drop.role.cluster.r1", "role.cluster.r3", NULL);
-	requireDeps(nodes_by_fqn, "role.cluster.r2", 
+	requireDeps2(nodes_by_fqn, "role.cluster.r2", 
 		    "drop.role.cluster.r2", "role.cluster.r3", NULL);
 
-	requireDep(nodes_by_fqn, "role.cluster.r3", "drop.role.cluster.r3");
-	requireOptionalDependents(nodes_by_fqn, "role.cluster.r3", 
+	requireDep2(nodes_by_fqn, "role.cluster.r3", "drop.role.cluster.r3");
+	requireOptionalDependents2(nodes_by_fqn, "role.cluster.r3", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r4", NULL);
 
-	requireDep(nodes_by_fqn, "role.cluster.r4", "drop.role.cluster.r4");
-	requireOptionalDependencies(nodes_by_fqn, "role.cluster.r4", 
+	requireDep2(nodes_by_fqn, "role.cluster.r4", "drop.role.cluster.r4");
+	requireOptionalDependencies2(nodes_by_fqn, "role.cluster.r4", 
 			    "role.cluster.r1", "role.cluster.r2", 
 			    "role.cluster.r5", NULL);
 
-	requireDeps(nodes_by_fqn, "role.cluster.r5", 
+	requireDeps2(nodes_by_fqn, "role.cluster.r5", 
 		    "drop.role.cluster.r5", NULL);
 
 	/* No guaranteed deps for drop r1 */
 	/* No guaranteed deps for drop r2 */
 
-	requireDep(nodes_by_fqn, "drop.role.cluster.r3", 
+	requireDep2(nodes_by_fqn, "drop.role.cluster.r3", 
 		   "drop.role.cluster.r1");
-	requireDep(nodes_by_fqn, "drop.role.cluster.r3", 
+	requireDep2(nodes_by_fqn, "drop.role.cluster.r3", 
 		   "drop.role.cluster.r2");
-	requireOptionalDependents(nodes_by_fqn, "drop.role.cluster.r3", 
+	requireOptionalDependents2(nodes_by_fqn, "drop.role.cluster.r3", 
 			    "drop.role.cluster.r1", "drop.role.cluster.r2", 
 			    "drop.role.cluster.r4", NULL);
 
 	/* No guaranteed deps for drop r4 */
-	requireOptionalDependents(nodes_by_fqn, "drop.role.cluster.r4", 
+	requireOptionalDependents2(nodes_by_fqn, "drop.role.cluster.r4", 
 			    "drop.role.cluster.r1", "drop.role.cluster.r2", 
 			    "drop.role.cluster.r5", NULL);
 
@@ -519,7 +829,6 @@ START_TEST(depset_dag1_both)
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	dbgSexp(nodes);
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -536,7 +845,7 @@ START_TEST(depset_dag1_both)
 }
 END_TEST
 
-
+#ifdef wibble
 START_TEST(depset_diff)
 {
     Document *volatile doc = NULL;
@@ -574,6 +883,7 @@ START_TEST(depset_diff)
     }
 }
 END_TEST
+#endif
 
 
 START_TEST(cyclic_build)
@@ -587,92 +897,70 @@ START_TEST(cyclic_build)
     BEGIN {
 	initBuiltInSymbols();
 	initTemplatePath(".");
-	//showMalloc(813);
-	//showFree(572);
+	//showMalloc(1395);
+	//showFree(1504);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
-	prepareDagForBuild((Vector **) &nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	//nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
+	//prepareDagForBuild((Vector **) &nodes);
+	//nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 	
-	/* The following assumes that v1 will be the node that gets a
-	 * cycle breaker.  This does not have to be the case, and 
-	 * other sets of options should be allowed and checked for by
-	 * these tests.  TODO: Add those extra tests, or consider other
-	 * criteria for passing. */
-
-	requireDeps(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc", NULL);
-
-	if (hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "privilege.cluster.marc.superuser", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", 
-		    "privilege.cluster.marc.superuser", NULL)) 
+	if (hasDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+		     "build.viewbase.skittest.public.v1",
+		     "schema.skittest.public", "role.cluster.marc",
+		     "privilege.cluster.marc.superuser", NULL)) 
 	{
-	    /* All is well is this case */
+	    // V3 --> VIEWBASE 1
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.view.skittest.public.v2",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.view.skittest.public.v3",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
+			 "schema.skittest.public", "role.cluster.marc", NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+		     "build.viewbase.skittest.public.v3",
+		     "schema.skittest.public", "role.cluster.marc",
+			  "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    // V2 --> VIEWBASE 3
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+			 "build.view.skittest.public.v1",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.view.skittest.public.v2",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v3", 
+			 "schema.skittest.public", "role.cluster.marc", NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+		     "build.viewbase.skittest.public.v3",
+		     "schema.skittest.public", "role.cluster.marc",
+		     "privilege.cluster.marc.superuser", NULL))
+	{
+	    // V1 --> VIEWBASE 2
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.view.skittest.public.v3",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+			 "build.view.skittest.public.v1",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v2", 
+			 "schema.skittest.public", "role.cluster.marc", NULL);
 	}
 	else {
-	    fail("No complete dependency set found for %s",
-		 "view.skittest.public.v3");
-	}
-
-	if (hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "view.skittest.public.v3",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc", 
-		    "privilege.cluster.marc.superuser", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "view.skittest.public.v3",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc", 
-		    "grant.skittest.public.usage:public:regress",
-		    "privilege.cluster.marc.superuser", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "view.skittest.public.v3",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc", 
-		    "grant.skittest.public.usage:public:regress", NULL))
-	{
-	    /* All is well is this case */
-	}
-	else {
-	    fail("No complete dependency set found for %s",
-		 "view.skittest.public.v2");
-	}
-
-	if (hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
-		    "view.skittest.public.v2",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "privilege.cluster.marc.superuser", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
-		    "view.skittest.public.v2",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress",
-		    "privilege.cluster.marc.superuser", NULL) ||
-	    hasDeps(nodes_by_fqn, "view.skittest.public.v1", 
-		    "view.skittest.public.v2",
-		    "build.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "grant.skittest.public.usage:public:regress", NULL))
-
-	{
-	    /* All is well is this case */
-	}
-	else {
-	    fail("No complete dependency set found for %s",
-		 "view.skittest.public.v1");
+	    fail("No cycle breaker found");
 	}
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -714,28 +1002,69 @@ START_TEST(cyclic_drop)
 	//showFree(572);
 	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	//prepareDagForBuild((Vector **) &nodes);
+	//nodes_by_fqn = hashByFqn(nodes);
 	
+	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 
-	/* The following assumes that v1 will be the node that gets a
-	 * cycle breaker.  This does not have to be the case, and 
-	 * other sets of options should be allowed and checked for by
-	 * these tests.  TODO: Add those extra tests */
+	if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v1",
+		     "drop.view.skittest.public.v3", NULL))
+	{
+	    // V3 <-- VIEWBASE 1
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v3",
+			 "drop.view.skittest.public.v2", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL);
 
-	requireDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1", 
-		    NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		    "drop.viewbase.skittest.public.v1", 
-		    "view.skittest.public.v2", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "drop.viewbase.skittest.public.v1", 
-		    "view.skittest.public.v1", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
-		    "drop.viewbase.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v1", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v2",
+			  "drop.view.skittest.public.v1", NULL))
+	{
+	    // V1 <-- VIEWBASE 2
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v3",
+			 "drop.view.skittest.public.v2", NULL);
+
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v2", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v3",
+			  "drop.view.skittest.public.v2", NULL))
+	{
+	    // V2 <-- VIEWBASE 3
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL);
+
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v3", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else {
+	    fail("No cycle breaker found");
+	}
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -777,48 +1106,134 @@ START_TEST(cyclic_both)
 	eval("(setq drop t)");
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	nodes = nodesFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
-	nodes_by_fqn = hashByFqn(nodes);
+	//prepareDagForBuild((Vector **) &nodes);
+	//nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
-	
-	/* The following assumes that v1 will be the node that gets a
-	 * cycle breaker.  This does not have to be the case, and 
-	 * other sets of options should be allowed and checked for by
-	 * these tests.  TODO: Add those extra tests */
-	requireDeps(nodes_by_fqn, "rebuild.viewbase.skittest.public.v1", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "drop.viewbase.skittest.public.v1", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		    "schema.skittest.public", "role.cluster.marc",
-		    "rebuild.viewbase.skittest.public.v1", 
-		    "privilege.cluster.marc.superuser",
-		    "drop.view.skittest.public.v3", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		    "schema.skittest.public", "view.skittest.public.v3",
-		    "role.cluster.marc",
-		    "privilege.cluster.marc.superuser",
-		    "rebuild.viewbase.skittest.public.v1", 
-		    "drop.view.skittest.public.v2", NULL);
-	requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
-		    "schema.skittest.public", "view.skittest.public.v2",
-		    "role.cluster.marc",
-		    "privilege.cluster.marc.superuser",
-		    "rebuild.viewbase.skittest.public.v1", 
-		    "drop.view.skittest.public.v1", NULL);
+	if (hasDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+		     "build.viewbase.skittest.public.v1",
+		     "schema.skittest.public", "role.cluster.marc",
+		     "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    // V3 --> VIEWBASE 1
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.view.skittest.public.v2",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.view.skittest.public.v3",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v2", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
+			 "schema.skittest.public", "role.cluster.marc", 
+			 "drop.viewbase.skittest.public.v1", NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+		     "build.viewbase.skittest.public.v3",
+		     "schema.skittest.public", "role.cluster.marc",
+			  "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    fail("FAIL 2");
+	    // V2 --> VIEWBASE 3
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+			 "build.view.skittest.public.v1",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v3", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.view.skittest.public.v2",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v3", 
+			 "schema.skittest.public", "role.cluster.marc", 
+			 "drop.viewbase.skittest.public.v3", NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+		     "build.viewbase.skittest.public.v3",
+		     "schema.skittest.public", "role.cluster.marc",
+		     "privilege.cluster.marc.superuser", NULL))
+	{
+	    fail("FAIL 3");
+	    // V1 --> VIEWBASE 2
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.view.skittest.public.v3",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v2", NULL);
+	    requireDeps2(nodes_by_fqn, "view.skittest.public.v3", 
+			 "build.view.skittest.public.v1",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", 
+			 "drop.view.skittest.public.v3", NULL);
+	    requireDeps2(nodes_by_fqn, "build.viewbase.skittest.public.v2", 
+			 "schema.skittest.public", "role.cluster.marc", 
+			 "drop.viewbase.skittest.public.v2", NULL);
+	}
+	else {
+	    fail("No cycle breaker found in build side");
+	}
 
-	requireDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1", 
-		    NULL);
-	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3", 
-		    "drop.viewbase.skittest.public.v1", 
-		    "drop.view.skittest.public.v2", NULL);
-	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2", 
-		    "drop.view.skittest.public.v1", 
-		    "drop.viewbase.skittest.public.v1", NULL);
+	if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v1",
+		     "drop.view.skittest.public.v3", NULL))
+	{
+	    // V3 <-- VIEWBASE 1
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v3",
+			 "drop.view.skittest.public.v2", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL);
 
-	requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1", 
-		    "drop.viewbase.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v1", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v2",
+			  "drop.view.skittest.public.v1", NULL))
+	{
+	    // V1 <-- VIEWBASE 2
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v3",
+			 "drop.view.skittest.public.v2", NULL);
+
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v2", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else if (hasDeps2(nodes_by_fqn, "drop.viewbase.skittest.public.v3",
+			  "drop.view.skittest.public.v2", NULL))
+	{
+	    // V2 <-- VIEWBASE 3
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL);
+	    requireDeps2(nodes_by_fqn, "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL);
+
+	    requireDeps2(nodes_by_fqn, "drop.schema.skittest.public", 
+			 "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v2",
+			 "drop.view.skittest.public.v3",
+			 "drop.viewbase.skittest.public.v3", 
+			 "drop.grant.skittest.public.usage:public:regress", 
+			 NULL);
+	}
+	else {
+	    fail("No cycle breaker found in drop side");
+	}
+
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -858,26 +1273,30 @@ START_TEST(fallback)
 	//showMalloc(642);
 	//showFree(5641);
 	eval("(setq build t)");
+	eval("(setq drop t)");
 	doc = getDoc("test/data/gensource_fallback.xml");
 	//doc = getDoc("tmp.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
+	//nodes = nodesFromDoc(doc);
 
 
-	prepareDagForBuild((Vector **) &nodes);
+	//prepareDagForBuild((Vector **) &nodes);
+	//nodes_by_fqn = hashByFqn(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
-	nodes_by_fqn = hashByFqn(nodes);
-	
 
-	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+	requireDeps2(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);
-	requireDeps(nodes_by_fqn, "table.x.public.x", 
-		    "schema.x.public", "role.cluster.x",
+	requireDeps2(nodes_by_fqn, "table.x.public.x", 
+		    "role.cluster.x","schema.x.public", 
 		    "tablespace.cluster.pg_default", 
-		    "fallback.grant.x.superuser", NULL);
-	requireDeps(nodes_by_fqn, "grant.x.public.x.trigger:x:x",
+		    "fallback.grant.x.superuser", 
+	             "drop.table.x.public.x", NULL);
+	requireDeps2(nodes_by_fqn, "grant.x.public.x.trigger:x:x",
 		    "table.x.public.x", "role.cluster.x",
-		    "fallback.grant.x.superuser", NULL);
-	requireDeps(nodes_by_fqn, "drop.fallback.grant.x.superuser", 
+		    "fallback.grant.x.superuser", 
+		     "drop.grant.x.public.x.trigger:x:x", NULL);
+	requireDeps2(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
 		    "role.cluster.x", 
 		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
 		    "grant.x.public.x.references:x:x", 
@@ -910,7 +1329,7 @@ START_TEST(fallback)
 END_TEST
 
 
-
+#ifdef wibble
 /* Conditional dependencies tests. */
 START_TEST(cond)
 {
@@ -960,7 +1379,9 @@ START_TEST(cond)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef wibble
 START_TEST(cyclic_build2)
 {
     Document *volatile doc = NULL;
@@ -1006,7 +1427,7 @@ START_TEST(cyclic_build2)
     }
 }
 END_TEST
-
+#endif
 
 Suite *
 deps_suite(void)
@@ -1018,15 +1439,15 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);
-    ADD_TEST(tc_core, depset_diff);
+    //ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
-    ADD_TEST(tc_core, cond);
+    //ADD_TEST(tc_core, cond);
 
     ADD_TEST(tc_core, fallback);
 				
-    ADD_TEST(tc_core, cyclic_build2);
+    //ADD_TEST(tc_core, cyclic_build2);
     suite_add_tcase(s, tc_core);
 
     return s;
