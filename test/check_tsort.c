@@ -80,7 +80,7 @@ build_name_eq(DagNode *node, char *looking_for)
 }
 
 static char *
-test_build_order2(Vector *results, char *list_str)
+test_build_order(Vector *results, char *list_str)
 {
     Object *tmp;
     String *name;
@@ -107,61 +107,6 @@ test_build_order2(Vector *results, char *list_str)
 		break;
 	    }
 	    
-	    i++;
-	    if (i >= results->elems) {
-		/* The last name in the list was not found. */
-		result = newstr("Error: %s is out of order in %s", 
-				name->value, list_str);
-		objectFree((Object *) list, TRUE);
-		return result;
-	    }
-	}
-
-	tmp = (Object *) list;
-	list = (Cons *) list->cdr;
-	objectFree((Object *) name, TRUE);
-	objectFree(tmp, FALSE);
-    }
-    return NULL;
-}
-
-static void
-check_build_order2(Vector *results, char *list_str)
-{
-    char *err = test_build_order2(results, list_str);
-    if (err) {
-	fail(err);
-    }
-}
-
-#ifdef wibble
-static char *
-test_build_order(Vector *results, char *list_str)
-{
-    Object *tmp;
-    String *name;
-    DagNode *node;
-    Cons *list = (Cons *) objectFromStr(list_str);
-    char *result;
-    assert(list,
-	   "check_build_order: failed to build list");
-    assert(list->type == OBJ_CONS,
-	   "check_build_order: parameter must be a list");
-    assert(list->car,
-	   "check_build_order: parameter must have contents");
-
-    int i = 0;
-    while (list) {
-	name = (String *) list->car;
-	assert(name->type == OBJ_STRING,
-	       "check_build_order: list item is not a string");
-
-	while (i < results->elems) {
-	    node = (DagNode *) results->contents->vector[i];
-	    if (streq(node->fqn->value, name->value)) {
-		/* We have a match, go on to the next name */
-		break;
-	    }
 	    i++;
 	    if (i >= results->elems) {
 		/* The last name in the list was not found. */
@@ -226,7 +171,6 @@ check_build_order_or(Vector *results, ...)
 	fail(msg);
     }
 }
-#endif
 
 START_TEST(check_gensort)
 {
@@ -255,34 +199,34 @@ START_TEST(check_gensort)
 	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order2(results, "('drop.database.cluster.skittest' "
+	check_build_order(results, "('drop.database.cluster.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.cluster.skittest')");
-	check_build_order2(results, "('drop.role.cluster.keep' 'drop.cluster' "
+	check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
 		      "'cluster' 'role.cluster.keep')");
-	check_build_order2(results, "('drop.role.cluster.keep2' 'drop.cluster' "
+	check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
 		      "'cluster' 'role.cluster.keep2')");
-	check_build_order2(results, "('drop.role.cluster.lose' 'drop.cluster' "
+	check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
 		      "'cluster' 'role.cluster.lose')");
-	check_build_order2(results, "('drop.role.cluster.marc' 'drop.cluster' "
+	check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
 		      "'cluster' 'role.cluster.marc')");
-	check_build_order2(results, "('drop.role.cluster.marco' 'drop.cluster' "
+	check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
 		      "'cluster' 'role.cluster.marco')");
-	check_build_order2(results, "('drop.role.cluster.wibble' "
+	check_build_order(results, "('drop.role.cluster.wibble' "
 		      "'drop.cluster' 'cluster' 'role.cluster.wibble')");
-	check_build_order2(results, "('drop.grant.cluster.lose.keep:keep' "
+	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
 		      "'role.cluster.lose' "
 		      "'grant.cluster.lose.keep:keep')");
-	check_build_order2(results, "('role.cluster.keep' "
+	check_build_order(results, "('role.cluster.keep' "
 		      "'grant.cluster.lose.keep:keep')");
-	check_build_order2(results, 
+	check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
 		      "'role.cluster.regress' "
 		      "'tablespace.cluster.tbs2' "
 	              "'grant.cluster.tbs2.create:keep2:regress')");
-	check_build_order2(results, 
+	check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
 		      "'role.cluster.keep2' "
@@ -333,34 +277,34 @@ START_TEST(check_gensort2)
     results = gensort(doc);
     //printSexp(stderr, "RESULTS: ", (Object *) results);
 
-    check_build_order2(results, "('drop.database.cluster.skittest' "
+    check_build_order(results, "('drop.database.cluster.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.cluster.skittest')");
-    check_build_order2(results, "('drop.role.cluster.keep' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.keep' 'drop.cluster' "
 		      "'cluster' 'role.cluster.keep')");
-    check_build_order2(results, "('drop.role.cluster.keep2' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.keep2' 'drop.cluster' "
 		      "'cluster' 'role.cluster.keep2')");
-    check_build_order2(results, "('drop.role.cluster.lose' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.lose' 'drop.cluster' "
 		      "'cluster' 'role.cluster.lose')");
-    check_build_order2(results, "('drop.role.cluster.marc' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.marc' 'drop.cluster' "
 		      "'cluster' 'role.cluster.marc')");
-    check_build_order2(results, "('drop.role.cluster.marco' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.marco' 'drop.cluster' "
 		      "'cluster' 'role.cluster.marco')");
-    check_build_order2(results, "('drop.role.cluster.wibble' 'drop.cluster' "
+    check_build_order(results, "('drop.role.cluster.wibble' 'drop.cluster' "
 		      "'cluster' 'role.cluster.wibble')");
-    check_build_order2(results, "('drop.grant.cluster.lose.keep:keep' "
+    check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
 		      "'role.cluster.lose' "
 		      "'grant.cluster.lose.keep:keep')");
-    check_build_order2(results, "('role.cluster.keep' "
+    check_build_order(results, "('role.cluster.keep' "
 		      "'grant.cluster.lose.keep:keep')");
-    check_build_order2(results, 
+    check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
 		      "'role.cluster.regress' "
 		      "'tablespace.cluster.tbs2' "
 	              "'grant.cluster.tbs2.create:keep2:regress')");
-    check_build_order2(results, 
+    check_build_order(results, 
 		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
 		      "'drop.tablespace.cluster.tbs2' "
 		      "'role.cluster.keep2' "
@@ -486,39 +430,19 @@ START_TEST(check_cyclic_gensort)
 	//showVectorDeps(results);
 	printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order2(results, "('drop.database.skittest' "
+	check_build_order(results, "('drop.database.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.skittest')");
-	check_build_order2(results, "('drop.role.cluster.keep' "
-			  "'role.cluster.keep')");
-	check_build_order2(results, "('drop.role.cluster.keep2' "
-		      "'role.cluster.keep2')");
-	check_build_order2(results, "('drop.role.cluster.lose' "
-		      "'role.cluster.lose')");
-	check_build_order2(results, "('drop.role.cluster.marc' "
+	check_build_order(results, "('drop.role.cluster.marc' "
 		      "'role.cluster.marc')");
-	check_build_order2(results, "('drop.role.cluster.marco' "
-		      "'role.cluster.marco')");
-	check_build_order2(results, "('drop.role.cluster.wibble' "
-		      "'role.cluster.wibble')");
-	check_build_order2(results, "('drop.grant.cluster.lose.keep:keep' "
-		      "'role.cluster.lose' "
-		      "'grant.cluster.lose.keep:keep')");
-	check_build_order2(results, "('role.cluster.keep' "
-		      "'grant.cluster.lose.keep:keep')");
-	check_build_order2(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'role.cluster.regress' "
-	              "'grant.cluster.tbs2.create:keep2:regress')");
-	check_build_order2(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
-		      "'tablespace.cluster.tbs2' "
-	              "'grant.cluster.tbs2.create:keep2:regress')");
 	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("CHECK THE TESTS BELOW THIS EXCEPTION"));
+	      newstr("Fix the issue at line 442 in check_tsort.c"));
 #ifdef wibble
+looks like the build order for the drop is not correct.  This may be
+because things have changed in the way cycles are now handled, or it 
+may be that the cycle handling is incorrect.
+#endif
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
@@ -547,7 +471,7 @@ START_TEST(check_cyclic_gensort)
 			     "('build.viewbase.skittest.public.v2' "
 			     "'view.skittest.public.v1')",
 			      NULL);
-#endif
+
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
     }
@@ -591,7 +515,7 @@ START_TEST(check_cyclic_gensort2)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.skittest' "
@@ -741,7 +665,7 @@ START_TEST(diff)
 	//showMalloc(981);
 	doc = getDoc("test/data/gensource_diff.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort2(doc);
+	results = gensort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -1016,7 +940,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, navigation);
     ADD_TEST(tc_core, navigation2);
     // Add these tests back when a new deps and tsort algorithm is created
-    //ADD_TEST(tc_core, check_cyclic_gensort);
+    ADD_TEST(tc_core, check_cyclic_gensort);
     //ADD_TEST(tc_core, check_cyclic_gensort2);
     ADD_TEST(tc_core, check_cyclic_exception);
     //ADD_TEST(tc_core, diff);
