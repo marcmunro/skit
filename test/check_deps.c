@@ -609,10 +609,7 @@ START_TEST(cyclic_build)
 	//showFree(1504);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
-	//nodes = nodesFromDoc(doc);
 	nodes = dagFromDoc(doc);
-	//prepareDagForBuild((Vector **) &nodes);
-	//nodes_by_fqn = hashByFqn(nodes);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 	

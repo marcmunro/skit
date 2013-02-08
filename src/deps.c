@@ -13,95 +13,46 @@
  * 
 
 
-
-
  * The dependencies between objects are identfied and added to the
- * source xml stream by the adddeps.xsl xsl transform.  An intial set of
- * dependencies based solely on this information, and the parent child
- * relationships between objects is determined by nodesFromDoc().
+ * source xml stream by the adddeps.xsl xsl transform.  
+ * dagFromDoc() reads the transformed document and creates a Directed
+ * Acyclic Graph (DAG) of DagNodes from it.
+ * The DAG is created in the following steps:
  * 
- * In converting this basic dependency graph into a DAG we have to deal
- * with the following issues:
- * - there are optional dependencies
- * - we may have both drop and build actions for some or all nodes
- * - there may be cyclic dependencies
- *
- * This is a new implementation of deps handling.  The set of
- * dependencies defined in the document graph must eventually form a
- * DAG.  There are two distinct challenges that we face in doing this:
- * 1) optional dependencies
- * 2) cyclic dependencies
- *
- * Both of these issues are dealt with in the resolving_tsort()
- * function.  This traverses the graph, eliminating optional
- * dependencies and placing breaker nodes where needed in order to deal
- * with cyclic dependencies.  Once this function is complete, the
- * resulting dependency graph is a true DAG.
- *
- * Optional dependencies are handled as follows.  Consider a dependency
- * specification that looks something like this:
- * A -> (B or C)
- *
- * Although this can be dealt with by making the tsort code smart enough
- * to handle optional dependencies, there is no usable way to invert the
- * resulting graph.  The naive solution:
- * (B or C) -> A
- * 
- * leads to a pair of nodes on the left hand side of the dependency,
- * which is not something the standard tsort algorithm can be easily
- * modified to deal with.  Since we need to be able to invert the
- * dependency graph (in order to handle generation of drop scripts, and
- * also to manage the drop parts of code generation for diffs), we need
- * a better solution.  The adopted solution is to make nodes with
- * optional dependencies contain a subnode for each optional part, and
- * to make resolving tsort able to deal with subnodes.  Consider the
- * following graph definition: A -> (B or C) A -> D F -> A
- *
- * Using subnodes, this becomes:
- * A1 -> B
- * A2 -> C 
- * A -> D
- * F -> A
- * 
- * This has the advantage of being able to be inverted without multiple
- * nodes appearing on the left hand side of the dependencies.
- * 
- * Cyclic dependencies are handled by adding a cycle breaking node.
- * Only a limited number of database objects are capable of being dealt
- * with in this way, so only those dbobjects will specify cycle
- * breakers.  In postgres, views are able to be defined in terms of each
- * other.  The following code creates a pair of views that are mutually
- * dependent (though not very useful):
- *   create view x as select 1 as a, 2 as b;
- *   create view y as select * from x;
- *   create or replace view x as select * from y;
- *
- * From the DAG point of view, given the following cyclic dependency
- * graph:
- *   A -> B
- *   B -> A
- *   B -> C
- *   A -> D
- * We resolve the cyclic dependency by adding a cycle breaker for one of
- * the nodes in the cycle (eg B).  This gives us the following
- * dependencies:
- * B -> A
- * B -> C
- * A -> B'
- * A -> D
- * B'-> C
- * 
- * Our cycle breaking strategy:
- * - if we have a cycle breaker available we use it
- *   Done in tsort_deps
- * - if we have a bunch of optional dependencies, none of which are
- *   satisfied, and we have a fallback available, we use it.
- *   Done where??????
- * - if we have a bunch of optional dependents, none of which have been
- *   satisfied, and we have a fallback available, we use it.
- *   Done where??????
+ * 1) DagNodes are created for each node in the document by
+ *    dagNodesFromDoc() 
+ * 2) The dependencies from the document are recorded into each DagNode,
+ *    by addDependencies().  Build dependencies are added to the
+ *    forward_deps element, and drop dependencies to the backward_deps
+ *    element.  Both sets of dependencies are added in the build
+ *    direction.
+ * 3) A dependency set is a set of dependencies only one of which must
+ *    be satisfied.  If no dependency from a set can be satisfied, a
+ *    fallback may be provided.  Dependency sets are implemented as
+ *    subnodes of the parent DagNode.  Multiple dependency sets are
+ *    recorded as a linked list of subnodes.  Adding dependency sets is
+ *    also handled by addDependencies().
+ * 4) The graphs created by the set of forward_deps, and by the set of
+ *    backward_deps are separately resolved into true DAGs.  This
+ *    process identifies which dependency from a set is to be used,
+ *    whether fallbacks are to be used, and in the case of cylcic
+ *    dependencies, how cycle breaking nodes are added to the DAGs.
+ *    This process of resolving the DAGs can only be done in the build
+ *    direction, which is why the two sets of dependencies are both
+ *    recorded in the same direction.  Done by resolveGraphs().
+ * 5) Depending on the type of build, and the actions defined for the
+ *    dagnodes, individual dagnodes may be duplicated into a mirror pair
+ *    (of build and drop nodes, or diffprep and diffcomplete nodes).
+ *    The diffprep and drop nodes will later have their dependencies
+ *    inverted.  This is done by expandDagNodes().
+ * 6) The backward_deps set of dependencies is inverted for diffprep and
+ *    drop nodes from each forward build direction node to its
+ *    corresponding backward direction node (if any).  The inversion
+ *    creates forward_deps in the mirror nodes.  This leaves us with a
+ *    complete DAG formed from the forward_deps.  The original
+ *    backward_deps elements play no further part.  This is done by
+ *    redirectBackwardDeps()
  */
-
 #include <string.h>
 #include "skit_lib.h"
 #include "exceptions.h"
@@ -188,6 +139,7 @@ cons2Vector(Cons *cons)
     return vector;
 }
 
+/* This used to be useful and is likely to be useful again 
 BuildTypeBitSet 
 conditionForDep(xmlNode *node)
 {
@@ -226,223 +178,7 @@ conditionForDep(xmlNode *node)
     }
     return 0;
 }
-
-static DagNodeBuildType
-buildTypeForNode(Node *node)
-{
-    String *diff;
-    String *action;
-    String *tmp;
-    String *fallback;
-    String *fqn;
-    char *errmsg = NULL;
-    DagNodeBuildType build_type = UNSPECIFIED_NODE;
-
-    if (fallback = nodeAttribute(node->node , "fallback")) {
-	objectFree((Object *) fallback, TRUE);
-	/* By default, we don't want to do anything for a fallback
- 	 * node.  Marking it as an exists node achieves that.  The
- 	 * build_type will be modified if anything needs to actually
- 	 * reference the fallback node.  */
-	build_type = EXISTS_NODE;
-    }
-    else if (diff = nodeAttribute(node->node , "diff")) {
-	if (streq(diff->value, DIFFSAME)) {
-	    build_type = EXISTS_NODE;
-	}
-	else if (streq(diff->value, DIFFKIDS)) {
-	    build_type = EXISTS_NODE;
-	}
-	else if (streq(diff->value, DIFFNEW)) {
-	    build_type = BUILD_NODE;
-	}
-	else if (streq(diff->value, DIFFGONE)) {
-	    build_type = DROP_NODE;
-	}
-	else if (streq(diff->value, DIFFDIFF)) {
-	    build_type = DIFF_NODE;
-	}
-	else if (streq(diff->value, ACTIONREBUILD)) {
-	    build_type = REBUILD_NODE;
-	}
-	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
-	    errmsg = newstr("identifyBuildTypes: unexpected diff "
-			    "type \"%s\" in %s", diff->value, fqn->value);
-	}
-	objectFree((Object *) diff, TRUE);
-    }
-    else if (action = nodeAttribute(node->node , "action")) { 
-	tmp = action;
-	action = stringLower(action);
-	objectFree((Object *) tmp, TRUE);
-	if (streq(action->value, ACTIONBUILD)) {
-	    build_type = BUILD_NODE;
-	}
-	else if (streq(action->value, ACTIONDROP)) {
-	    build_type = DROP_NODE;
-	}
-	else if (streq(action->value, ACTIONREBUILD)) {
-	    build_type = REBUILD_NODE;
-	}
-	else if (streq(action->value, ACTIONNONE)) {
-	    build_type = EXISTS_NODE;
-	}
-	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
-	    errmsg = newstr("identifyBuildTypes: unexpected action "
-			    "type \"%s\" in %s", action->value, fqn->value);
-	}
-	objectFree((Object *) action, TRUE);
-    }
-    else {
-	if (dereference(symbolGetValue("build"))) {
-	    if (dereference(symbolGetValue("drop"))) {
-		build_type = REBUILD_NODE;
-	    }
-	    else {
-		build_type = BUILD_NODE;
-	    }
-	}
-	else {
-	    if (dereference(symbolGetValue("drop"))) {
-		build_type = DROP_NODE;
-	    }
-	    else {
-		fqn = nodeAttribute(((Node *) node)->node, "fqn");
-		errmsg = newstr("identifyBuildTypes: cannot identify "
-				"build type for node %s", 
-				diff->value, fqn->value);
-	    }
-	}
-    }
-    if (errmsg) {
-	objectFree((Object *) fqn, TRUE);
-	RAISE(TSORT_ERROR, errmsg);
-    }
-
-    return build_type;
-}
-
-
-
-
-#define CURDEP(node) ELEM(node->dependencies, node->dep_idx)
-
-
-
-
-/* 
- * Dependency handling in skit has 2 features that prevent the standard
- * topological sort from being directly used:
- * 1) We allow optional dependencies
- * 2) Cyclic dependencies can happen
- *
- * This means that the dependency graph as derived directly from the
- * input stream does not form a Directed Acyclic Graph (DAG) which is
- * required by the standard tsort algorithms.  Skit deals with this by
- * using a resolving process to convert the dependency graph into a true
- * DAG.  The dependency resolver is based upon the standard tsort
- * algorithm.
- *
- * The basic unit of the dependency graph is th DagNode.  Each dbobject
- * in the source document is initially converted into 1 or 2 DagNodes,
- * one for each action.  If a generate run consists of both build and
- * drop, one DagNode will be created for each of Build and Drop.  In the
- * case of diffs, a diff is converted into 2 DagNodes: DiffPrep and
- * DiffComplete.  For dbobjects that are left unchanges in a diff
- * stream, a single Exists node is created.
- *
- * Each set of optional dependencies is handled by creating a subnode of
- * a DagNode.  Only one dependency (or dependent) of a subnode needs to
- * be satisfied.  If no dependencies are satisfied, a fallback node may
- * be provided.  Typically a fallback node is used when granting
- * privileges on objects.  The dependency-set (set of optional
- * dependencies) in such a case might be on the grantor having been
- * assigned the privilege, or public having been assigned the privilege,
- * or the grantor having been assigned superuser privilege.  If none of
- * these are satisifed the fallback would be to use a superuser to
- * assign the privilege.
- *
- * Cyclic dependencies are handled by allowing cycle-breaker nodes to be
- * added to the graph, these resolve the cyclic dependency by creating
- * an intermediate version of an object that is not dependent on other
- * objects in the cycle.
- *
- * The algorithm for the resolver is as follows:
- * TODO: Rewrite this based upon a successful implementation
- * 
- * fn visit_node(node, from, list)
- *   node->status := VISITING;
- *   for dep = each dependency(node)
- *     begin
- *       resolve_node(dep, dep, list)
- *     exception when cyclic_exception
- *       if is_sub_node(node) then
- *         if dep is last dep of node then
- * 	  if has_fallback then
- * 	    deploy fallback to supernode
- * 	  else
- * 	    raise
- * 	  end if
- * 	end if;
- *       else
- *         if has_breaker(node) then
- * 	  deploy_breaker
- * 	else
- * 	  raise
- * 	end if
- *       end if
- *     end
- *   end loop
- *   node->status := VISITED
- *   if is_sub_node(node) then
- *     record the dep from which we were traversed to
- *   else
- *     append node to list
- *   end if
- * end fn
- * 
- * fn resolve_node(node, from list)
- *   case node->status
- *   VISITED: break
- *   VISITING: 
- *     if is_sub_node(node) then
- *       if there are unvisited dependents then
- *         -- We can continue in the hope that one of the others will apply
- * 	return
- *       else
- *         if there is a fallback then
- * 	  deploy fallback
- * 	else
- * 	  raise cyclic_exception
- * 	end if
- *       end if
- *     else
- *       raise cyclic_exception
- *     end if
- *   UNVISITED: visit_node(node, from, list)
- *   end case
- * end fn
- * 
- * fn resolver(vector)
- *   for node = each node in vector loop
- *     resolve_node(node, null, vector)
- *   end loop
- * 
- *   for node = each node in vector loop
- *     if the node is not VISITED then
- *       raise an exception
- *     end if
- *     if the node is a subnode then
- *       move the selected dependency (or dependent) to the supernode
- *       remove the subnode and associated dependencies and dependents
- *     end if
- *   end loop
- * end fn
- * 
- * 
- */
+*/
 
 static Object *
 getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
@@ -789,7 +525,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 	    node->parent = (DagNode *) hashGet(nodes_by_fqn, 
 					       (Object *) parent_fqn);
 	    assert(node->parent, 
-		   "identifyParents2: parent of %s (%s) not found",
+		   "identifyParents: parent of %s (%s) not found",
 		   node->fqn->value, parent_fqn->value);
 	    objectFree((Object *) parent_fqn, TRUE);
 	}
@@ -1011,6 +747,11 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
     breaker = dagNodeNew(breaker_dbobject, from_node->build_type);
     breaker->parent = from_node->parent;
     breaker->breaker_for = from_node;
+
+    /* Make the breaker node a child of dbobject so that it will be
+     * freed later. */
+    (void) xmlAddChild(dbobject, breaker_dbobject);
+
 
     /* Copy dependencies of from_node to breaker.  We will eliminate
      * unwanted ones later. */
@@ -1331,6 +1072,9 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
     }
 }
 
+/* Add a fallback node to a DAG in the case when no dependency from a
+ * dependency set can be satisfied.
+ */
 static void
 activateFallback(DagNode *node, DagNode *fallback, Vector *nodes)
 {
@@ -1364,8 +1108,13 @@ activateFallback(DagNode *node, DagNode *fallback, Vector *nodes)
     addDepToVector(&(node->forward_deps), fallback);
 }
 
-/* 
- *
+
+/* Takes the dependency graphs (forward_deps and backward_deps), and
+ * resolves them into tru DAGs, elimminating cycles, and choosing a
+ * single appropriate dependency (or fallback) from each dependency set.
+ * The algorithm for resolving the graph is essentially a classic tsort
+ * algorithm, with cyclic exceptions trapped and handled by choosing a
+ * different optional dependency, or adding a cycle breaker.
  */
 static void
 resolveGraphs(Vector *nodes)
@@ -1418,6 +1167,11 @@ resolveGraphs(Vector *nodes)
     }
 }
 
+/* Create a drop side (of the DAG) mirror node for an existing node,
+ * which will be left on the build side of the dag.  Note that the build
+ * node will depend on the drop node (as the drop must be performed
+ * before it can be (re)built.
+ */
 static DagNode *
 makeMirror(DagNode *node, DagNodeBuildType type)
 {
@@ -1429,6 +1183,12 @@ makeMirror(DagNode *node, DagNodeBuildType type)
     return mirror;
 }
 
+/* Based on the build operation being performed, and any node-specific
+ * build actions, some nodes may need to appear on both sides of the DAH
+ * (the build and the drop side).  An example of this would be a rebuild
+ * node.  This function determines which nodes need to be duplicated in
+ * this way, and creates mirror nodes for them.
+ */
 static void
 expandDagNodes(Vector *nodes)
 {
@@ -1466,6 +1226,12 @@ expandDagNodes(Vector *nodes)
     }
 }
 
+/* Does what the name suggests.  If this node is on the backward side of
+ * the dependency graph (the drop side of things) and it has
+ * forward_deps defined (this will be the case if we are only performing
+ * a drop), we clear out the forward_deps prior to recreating them by
+ * inverting the backward_deps.
+ */
 static void
 clearUnneededDeps(Vector *nodes)
 {
@@ -1490,6 +1256,11 @@ clearUnneededDeps(Vector *nodes)
     }
 }
 
+/* For nodes in the backwards build direction, create inverted
+ * dependencies based on the original nodes backward_deps.  Note that
+ * those backward_deps may be different from the node's forward_deps due
+ * to conditional dependencies.
+ */
 static void
 redirectBackwardDeps(Vector *nodes)
 {
@@ -1528,7 +1299,8 @@ redirectBackwardDeps(Vector *nodes)
 }
 
 /* Create a Dag from the supplied doc, returning it as a vector of DocNodes.
- *
+ * See the file header comment for a more detailed description of what
+ * this does.
  */
 Vector *
 dagFromDoc(Document *doc)

@@ -110,7 +110,7 @@ TEST_TO_TARG = echo "$(TESTS)" | (read suite test; \
 		else echo $${suite}__$${test}.$@; fi)
 
 skgrind grind: skit_test valgrind/suppressions
-	@rm valgrind.log
+	@rm -f valgrind.log
 	@$(MAKE) `$(TEST_TO_TARG)`
 
 
