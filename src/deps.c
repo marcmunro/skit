@@ -67,6 +67,49 @@
 #define EXISTS_STR "exists"
 #define DIFF_STR "diff"
 
+void
+showDeps(DagNode *node)
+{
+    DagNode *sub;
+    if (node) {
+	printSexp(stderr, "NODE: ", (Object *) node);
+	printSexp(stderr, "-->", (Object *) node->forward_deps);
+	sub = node->forward_subnodes;
+	while (sub) {
+	    if (sub->forward_deps || sub->fallback_node) {
+		printSexp(stderr, "optional->", (Object *) sub->forward_deps);
+		if (sub->fallback_node) {
+		    printSexp(stderr, "flbk->", (Object *) sub->fallback_node);
+		}
+	    }
+	    sub = sub->forward_subnodes;
+	}
+	printSexp(stderr, "<==", (Object *) node->backward_deps);
+	sub = node->backward_subnodes;
+	while (sub) {
+	    if (sub->backward_deps || sub->fallback_node) {
+		printSexp(stderr, "optional<=", (Object *) sub->backward_deps);
+		if (sub->fallback_node) {
+		    printSexp(stderr, "flbk<=", (Object *) sub->fallback_node);
+		}
+	    }
+	    sub = sub->backward_subnodes;
+	}
+    }
+}
+
+void
+showVectorDeps(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    EACH (nodes, i) {
+        node = (DagNode *) ELEM(nodes, i);
+        showDeps(node);
+    }
+}
+
+
 /* Predicate identifying whether a node is of a specific type.
  */
 static boolean
@@ -138,47 +181,6 @@ cons2Vector(Cons *cons)
     }
     return vector;
 }
-
-/* This used to be useful and is likely to be useful again 
-BuildTypeBitSet 
-conditionForDep(xmlNode *node)
-{
-    String *condition_str = nodeAttribute(node, "condition");
-    String separators = {OBJ_STRING, " ()"};
-    Cons *contents;
-    Cons *elem;
-    char *head;
-    BuildTypeBitSet bitset = 0;
-    boolean inverted = FALSE;
-
-    if (condition_str) {
-	stringLowerOld(condition_str);
-	elem = contents = stringSplit(condition_str, &separators);
-	while (elem) {
-	    head = ((String *) elem->car)->value;
-	    if (streq(head, "build")) {
-		bitset |= BUILD_NODE_BIT;
-	    }
-	    else if (streq(head, "drop")) {
-		bitset |= DROP_NODE_BIT;
-	    }
-	    else if (streq(head, "not")) {
-		inverted = TRUE;
-	    }
-	    else {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("no conditional dep handling for token %s", head));
-	    }
-	    elem = (Cons *) elem->cdr;
-	}
-
-	objectFree((Object *) condition_str, TRUE);
-	objectFree((Object *) contents, TRUE);
-	return inverted? (ALL_BUILDTYPE_BITS - bitset): bitset;
-    }
-    return 0;
-}
-*/
 
 static Object *
 getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
@@ -270,37 +272,6 @@ getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
 
 
 
-
-void
-showDeps(DagNode *node)
-{
-    DagNode *sub;
-    if (node) {
-	printSexp(stderr, "NODE: ", (Object *) node);
-	printSexp(stderr, "-->", (Object *) node->forward_deps);
-	sub = node->forward_subnodes;
-	while (sub) {
-	    if (sub->forward_deps || sub->fallback_node) {
-		printSexp(stderr, "optional->", (Object *) sub->forward_deps);
-		if (sub->fallback_node) {
-		    printSexp(stderr, "flbk->", (Object *) sub->fallback_node);
-		}
-	    }
-	    sub = sub->forward_subnodes;
-	}
-	printSexp(stderr, "<==", (Object *) node->backward_deps);
-	sub = node->backward_subnodes;
-	while (sub) {
-	    if (sub->backward_deps || sub->fallback_node) {
-		printSexp(stderr, "optional<=", (Object *) sub->backward_deps);
-		if (sub->fallback_node) {
-		    printSexp(stderr, "flbk<=", (Object *) sub->fallback_node);
-		}
-	    }
-	    sub = sub->backward_subnodes;
-	}
-    }
-}
 
 /*
  * Identify the type of build action expected for the supplied dbobject
