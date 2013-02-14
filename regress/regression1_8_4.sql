@@ -1069,6 +1069,10 @@ comment on conversion myconv is
 'conversion comment';
 
 
+-- Now a cyclic view definition
+create view v1 as select 'a' as a, 'b' as b;
+create view v2 as select * from v1;
+create or replace view v1 as select * from v2;
 
 DBEOF
 

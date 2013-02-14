@@ -1269,6 +1269,70 @@ redirectBackwardDeps(Vector *nodes)
     }
 }
 
+static void
+swapBackwardBreakers(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    DagNode *dropnode;
+    DagNode *breaker;
+    String *fqntmp;
+    xmlNode *dbobjecttmp;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	if (breaker = node->breaker_for) {
+	    if ((node->build_type == DIFFPREP_NODE) ||
+		(node->build_type == DROP_NODE))
+	    {
+		dropnode = node;
+	    }
+	    else {
+		dropnode = node->mirror_node;
+	    }
+	    if (dropnode) {
+		assert(dropnode,
+		       "swapBackwardBreakers: no dropnode");
+		assert(dropnode->type == OBJ_DAGNODE,
+		       "swapBackwardBreakers: invalid dropnode object");
+
+		if (!((breaker->build_type == DIFFPREP_NODE) ||
+		      (breaker->build_type == DROP_NODE)))
+		{
+		    breaker = breaker->mirror_node;
+		}
+		assert(breaker,
+		       "swapBackwardBreakers: no breaker");
+		assert(breaker->type == OBJ_DAGNODE,
+		       "swapBackwardBreakers: invalid breaker object");
+
+		/* We now invert the meaning of the dropnode and its
+		 * cycle breaker.  This is due to the need to invert the
+		 * order of operations for dropping a cycle breaker,
+		 * from the order used to create it.  Sadly, it is not
+		 * enough to simply invert the order of dependencies.
+		 * This is because when creating cyclic objects, the
+		 * cycle breaker must be created first.  When dropping
+		 * them, the cycle breaker must also occur first, but by
+		 * inverting the order of depenendencies (as is
+		 * necessary) it will be last.  The safe and simple
+		 * solution is this inversion.  To invert the actions
+		 * that will be performed, all that is necessary is to
+		 * swap the fqns.
+		 */
+		fqntmp = dropnode->fqn;
+		dbobjecttmp = dropnode->dbobject;
+
+		dropnode->fqn = breaker->fqn;
+		dropnode->dbobject = breaker->dbobject;
+
+		breaker->fqn = fqntmp;
+		breaker->dbobject = dbobjecttmp;
+	    }
+	}
+    }
+}
+
 /* Create a Dag from the supplied doc, returning it as a vector of DocNodes.
  * See the file header comment for a more detailed description of what
  * this does.
@@ -1289,6 +1353,7 @@ dagFromDoc(Document *doc)
        resolveGraphs(nodes);
        expandDagNodes(nodes);
        redirectBackwardDeps(nodes);
+       swapBackwardBreakers(nodes);
    }
    EXCEPTION(ex) {
        objectFree((Object *) nodes, TRUE);

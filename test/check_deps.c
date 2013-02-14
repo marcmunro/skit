@@ -714,14 +714,22 @@ START_TEST(cyclic_drop)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 
-	if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1",
+
+	/* Note that viewbase and view positions in the sorted output
+	 * will have been inverted when compared to the build direction.
+	 * This is due to the action of swapBackwardBreakers.  The
+	 * comments (eg V3 <-- VIEWBASE 1) show the original pre-swap
+	 * dependencies (for historical reasons and to make it easier
+	 * to compare with the tests for cyclic_build). */
+
+	if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
 		     "drop.view.skittest.public.v3", NULL))
 	{
 	    // V3 <-- VIEWBASE 1
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
 			 "drop.view.skittest.public.v2", NULL);
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
-			 "drop.view.skittest.public.v1", NULL);
+			 "drop.viewbase.skittest.public.v1", NULL);
 
 	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
 			 "drop.view.skittest.public.v1",
@@ -731,14 +739,14 @@ START_TEST(cyclic_drop)
 			 "drop.grant.skittest.public.usage:public:regress", 
 			 NULL);
 	}
-	else if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v2",
+	else if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
 			  "drop.view.skittest.public.v1", NULL))
 	{
 	    // V1 <-- VIEWBASE 2
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
 			 "drop.view.skittest.public.v3", NULL);
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
-			 "drop.view.skittest.public.v2", NULL);
+			 "drop.viewbase.skittest.public.v2", NULL);
 
 	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
 			 "drop.view.skittest.public.v1",
@@ -748,14 +756,14 @@ START_TEST(cyclic_drop)
 			 "drop.grant.skittest.public.usage:public:regress", 
 			 NULL);
 	}
-	else if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v3",
+	else if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
 			  "drop.view.skittest.public.v2", NULL))
 	{
 	    // V2 <-- VIEWBASE 3
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
 			 "drop.view.skittest.public.v1", NULL);
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
-			 "drop.view.skittest.public.v3", NULL);
+			 "drop.viewbase.skittest.public.v3", NULL);
 
 	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
 			 "drop.view.skittest.public.v1",

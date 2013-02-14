@@ -428,7 +428,7 @@ START_TEST(check_cyclic_gensort)
 	simple_sort = symbolNew("simple-sort");    
 	results = gensort(doc);
 	//showVectorDeps(results);
-	printSexp(stderr, "RESULTS: ", (Object *) results);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
@@ -436,13 +436,7 @@ START_TEST(check_cyclic_gensort)
 		      "'database.skittest')");
 	check_build_order(results, "('drop.role.cluster.marc' "
 		      "'role.cluster.marc')");
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("Fix the issue at line 442 in check_tsort.c"));
-#ifdef wibble
-looks like the build order for the drop is not correct.  This may be
-because things have changed in the way cycles are now handled, or it 
-may be that the cycle handling is incorrect.
-#endif
+
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
@@ -493,7 +487,6 @@ may be that the cycle handling is incorrect.
 END_TEST
 
 /* As check_cyclic_gensort but using smart sort */
-#ifdef wibble
 START_TEST(check_cyclic_gensort2)
 {
     Document *volatile doc = NULL;
@@ -509,47 +502,23 @@ START_TEST(check_cyclic_gensort2)
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
-	//showMalloc(1104);
+	//showMalloc(6795);
 	ignore = evalSexp(tmp = newstr("(setq drop t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
 	results = gensort(doc);
+	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "
 		      "'dbincluster.cluster.skittest' "
 		      "'database.skittest')");
-	check_build_order(results, "('drop.role.cluster.keep' "
-		      "'role.cluster.keep')");
-	check_build_order(results, "('drop.role.cluster.keep2' "
-		      "'role.cluster.keep2')");
-	check_build_order(results, "('drop.role.cluster.lose' "
-		      "'role.cluster.lose')");
 	check_build_order(results, "('drop.role.cluster.marc' "
 		      "'role.cluster.marc')");
-	check_build_order(results, "('drop.role.cluster.marco' "
-		      "'role.cluster.marco')");
-	check_build_order(results, "('drop.role.cluster.wibble' "
-		      "'role.cluster.wibble')");
-	check_build_order(results, "('drop.grant.cluster.lose.keep:keep' "
-		      "'role.cluster.lose' "
-		      "'grant.cluster.lose.keep:keep')");
-	check_build_order(results, "('role.cluster.keep' "
-		      "'grant.cluster.lose.keep:keep')");
-	check_build_order(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
-		      "'role.cluster.regress' "
-		      "'tablespace.cluster.tbs2' "
-	              "'grant.cluster.tbs2.create:keep2:regress')");
-	check_build_order(results, 
-		      "('drop.grant.cluster.tbs2.create:keep2:regress' "
-		      "'drop.tablespace.cluster.tbs2' "
-		      "'tablespace.cluster.tbs2' "
-	              "'grant.cluster.tbs2.create:keep2:regress')");
+
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
@@ -598,7 +567,7 @@ START_TEST(check_cyclic_gensort2)
     }
 }
 END_TEST
-#endif
+
 
 START_TEST(check_cyclic_exception)
 {
@@ -941,8 +910,9 @@ tsort_suite(void)
     ADD_TEST(tc_core, navigation2);
     // Add these tests back when a new deps and tsort algorithm is created
     ADD_TEST(tc_core, check_cyclic_gensort);
-    //ADD_TEST(tc_core, check_cyclic_gensort2);
+    ADD_TEST(tc_core, check_cyclic_gensort2);
     ADD_TEST(tc_core, check_cyclic_exception);
+
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     ADD_TEST(tc_core, depset);
