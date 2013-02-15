@@ -96,6 +96,12 @@ buildTypeFromName(char *name)
 	if (strncmp(name, "endfallback", prefix_len) == 0) {
 	    return ENDFALLBACK_NODE;
 	}
+	if (strncmp(name, "diffprep", prefix_len) == 0) {
+	    return DIFFPREP_NODE;
+	}
+	if (strncmp(name, "diffcomplete", prefix_len) == 0) {
+	    return DIFFCOMPLETE_NODE;
+	}
     }
     return UNSPECIFIED_NODE;
 }
@@ -108,6 +114,8 @@ buildPrefixLen(DagNodeBuildType type)
     case DROP_NODE: return 5;
     case FALLBACK_NODE: return 9;
     case ENDFALLBACK_NODE: return 12;
+    case DIFFPREP_NODE: return 9;
+    case DIFFCOMPLETE_NODE: return 13;
     case UNSPECIFIED_NODE: return 0;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -556,7 +564,6 @@ START_TEST(depset_dag1_both)
 }
 END_TEST
 
-#ifdef wibble
 START_TEST(depset_diff)
 {
     Document *volatile doc = NULL;
@@ -573,18 +580,39 @@ START_TEST(depset_diff)
 
 	eval("(setq drop t)");
 	eval("(setq build t)");
+	/* This xmlfile is created from the diff regression test:
+	 * ./skit --diff regress/scratch/regressdb_dump3a.xml \
+	 *      regress/scratch/regressdb_dump3b.xml \
+	 *        >test/data/diffstream1.xml
+	 */
 	doc = getDoc("test/data/diffstream1.xml");
-	nodes = nodesFromDoc(doc);
+	nodes = dagFromDoc(doc);
 
-	prepareDagForBuild((Vector **) &nodes);
-	//showVectorDeps(nodes);
+	//deps for tbs2 should be different in prep and complete stages
+	showVectorDeps(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
+
+	requireDep(nodes_by_fqn, "diffcomplete.tablespace.cluster.tbs2", 
+		   "diffcomplete.role.cluster.keep");
+	requireNoDep(nodes_by_fqn, "diffcomplete.tablespace.cluster.tbs2", 
+		   "diffcomplete.role.cluster.regress");
+	requireDep(nodes_by_fqn, "diffprep.role.cluster.regress",
+	           "diffprep.tablespace.cluster.tbs2");
+	requireNoDep(nodes_by_fqn, "diffprep.role.cluster.keep",
+	           "diffprep.tablespace.cluster.tbs2");
+	
+	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
 	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
     }
     END;
 
@@ -594,7 +622,6 @@ START_TEST(depset_diff)
     }
 }
 END_TEST
-#endif
 
 
 START_TEST(cyclic_build)
@@ -1089,7 +1116,7 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);
-    //ADD_TEST(tc_core, depset_diff);
+    ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);

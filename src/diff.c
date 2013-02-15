@@ -384,7 +384,7 @@ addNodeDeps(xmlNode *result_parent, xmlNode *node, char *rstrict)
 	    dep = xmlCopyNode(this, 1);
 	    xmlAddChild(result_parent, dep);
 	    if (rstrict) {
-		(void) xmlNewProp(dep, "restrict", (xmlChar *) rstrict);
+		(void) xmlNewProp(dep, "condition", (xmlChar *) rstrict);
 	    }
 	}
 	this = getElement(this->next);
@@ -438,21 +438,21 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     if (attr1) {
 	if (attr2) {
 	    if (!streq(attr1->value, attr2->value)) {
-		status = "Diff";
+		status = DIFFDIFF;
 		old = attr1;
 		new = attr2;
 		attr1 = attr2 = NULL;
 	    }
 	}
 	else {
-	    status = "Gone";
+	    status = DIFFGONE;
 	    old = attr1;
 	    attr1 = NULL;
 	}
     }
     else {
 	if (attr2) {
-	    status = "New";
+	    status = DIFFNEW;
 	    new = attr2;
 	    attr2 = NULL;
 	}
@@ -877,8 +877,8 @@ dbobjectDiff(xmlNode *dbobject1, xmlNode *dbobject2,
 		    *diffs = TRUE;
 		    difftype = IS_UNKNOWN;
 		}
-		addNodeDeps(result, dbobject1, "old"); 
-		addNodeDeps(result, dbobject2, "new"); 
+		addNodeDeps(result, dbobject1, "drop"); 
+		addNodeDeps(result, dbobject2, "build"); 
 		/* If there is an old context, we use that in preference
 		 * to any new context.  */
 		context = copyContext(dbobject1);

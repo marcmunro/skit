@@ -60,24 +60,24 @@
     </xsl:call-template>
   </xsl:template>
 
-  <xsl:template match="element[@type='comment']">
-    <xsl:call-template name="comment">
-      <xsl:with-param name="objnode" select="../../*[name() = ../@type]"/>
-      <xsl:with-param name="text">
-	<xsl:choose>
-	  <xsl:when test="@status = 'Gone'">
-	    <xsl:value-of select="'null'"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:value-of select="comment/text()"/>
-	  </xsl:otherwise>
-	</xsl:choose>
-      </xsl:with-param>
-    </xsl:call-template>
-
+  <xsl:template name="commentdiff">
+    <xsl:for-each select="../element[@type='comment']">
+      <xsl:call-template name="comment">
+	<xsl:with-param name="objnode" select="../*[name() = ../@type]"/>
+	<xsl:with-param name="text">
+	  <xsl:choose>
+	    <xsl:when test="@status = 'gone'">
+	      <xsl:value-of select="'null'"/>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:value-of select="comment/text()"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:with-param>
+      </xsl:call-template>
+    </xsl:for-each>
   </xsl:template>
-
-
+  
   <xsl:template name="set_owner">
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@owner != //cluster/@username">

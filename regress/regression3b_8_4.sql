@@ -35,7 +35,7 @@ create database "regressdb" with
 \connect regressdb
 
 comment on database "regressdb" is
-'New comment';
+'new comment';
 \connect postgres
 
 \set tbs2dir '''':home'/regress/REGRESSDB/tbs/tbs2'''

@@ -58,8 +58,10 @@
       </print>
     </xsl:if>	
 
-    <xsl:if test="../@action='diff'">
+    <xsl:if test="../@action='diffcomplete'">
       <print>
+	<!-- TODO: CHANGE the select expression below: -->
+<!-- stuff below needs to be re-implemented
 	<xsl:for-each select="../diffs/attribute">
           <xsl:if test="@name='connections'">
             <xsl:text>alter database </xsl:text>
@@ -92,22 +94,21 @@
 	    <xsl:text>&quot;&#x0A;</xsl:text>
 	  </xsl:if>
 	</xsl:for-each>
-	<xsl:for-each select="../diffs/element">
-          <xsl:if test="@type='comment'">
-	    <xsl:text>&#x0A;comment on database </xsl:text>
-	    <xsl:value-of select="../../@qname"/>
-	    <xsl:text> is </xsl:text>
-            <xsl:choose>
-	      <xsl:when test="@status='Gone'">
-		<xsl:text>null;&#x0A;</xsl:text>
-	      </xsl:when>
-	      <xsl:otherwise>
-	        <xsl:text>&#x0A;</xsl:text>
-		<xsl:value-of select="comment"/>
-		<xsl:text>;&#x0A;</xsl:text>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:if>
+-->
+	<xsl:for-each select="../element[@type='comment']">
+	  <xsl:text>&#x0A;comment on database </xsl:text>
+	  <xsl:value-of select="../@qname"/>
+	  <xsl:text> is </xsl:text>
+	  <xsl:choose>
+	    <xsl:when test="@status='gone'">
+	      <xsl:text>null;&#x0A;</xsl:text>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:text>&#x0A;</xsl:text>
+	      <xsl:value-of select="comment"/>
+	      <xsl:text>;&#x0A;</xsl:text>
+	    </xsl:otherwise>
+	  </xsl:choose>
 	</xsl:for-each>
 	<xsl:text>&#x0A;</xsl:text>
       </print>

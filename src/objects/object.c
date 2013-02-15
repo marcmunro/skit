@@ -45,7 +45,7 @@ objTypeName(Object *obj)
     case OBJ_CURSOR: return "OBJ_CURSOR";
     case OBJ_TUPLE: return "OBJ_TUPLE";
     case OBJ_MISC: return "OBJ_MISC";
-    case OBJ_DAGNODE: return "OBJ_DOGNODE";
+    case OBJ_DAGNODE: return "OBJ_DAGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
     return "UNKNOWN_OBJECT_TYPE";

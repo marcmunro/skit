@@ -162,6 +162,17 @@ static xmlNode *
 nextDependency(xmlNode *cur) 
 {
     xmlNode *node = firstElement(cur);
+    xmlNode *nextset;
+    if ((!node) && cur && cur->parent) {
+	if (cur->parent->next) {
+	    nextset = firstElement(cur->parent->next);
+	}
+	if (nextset && isDependencies(nextset)) {
+	    if (nextset->children) {
+		return nextDependency(nextset->children);
+	    }
+	}
+    }
     while (node && !isDepNode(node)) {
 	node = firstElement(node->next);
     }
@@ -181,96 +192,6 @@ cons2Vector(Cons *cons)
     }
     return vector;
 }
-
-static Object *
-getDepSet(xmlNode *node, boolean inverted, Hash *byfqn, Hash *bypqn)
-{
-    xmlNode *depnode;
-    Object *depsobj = NULL;
-    Object *elem;
-    Vector *depsvec = NULL;
-    String *restrict = nodeAttribute(node, "restrict");
-    String *qn;
-    boolean dep_applies;
-
-    if (restrict) {
-	dep_applies = (streq(restrict->value, "old") && inverted) ||
-	    (streq(restrict->value, "new") && !inverted);
-	objectFree((Object *) restrict, TRUE);
-    }
-    else {
-	dep_applies = TRUE;
-    }
-    
-    if (dep_applies) {
-	if (isDependencySet(node)) {
-	    for (depnode = node->children;
-		 depnode = nextDependency(depnode);
-		 depnode = depnode->next) 
-	    {
-		if (depsobj = getDepSet(depnode, inverted, byfqn, bypqn)) {
-		    if (depsvec) {
-			if (isVector(depsobj)) {
-			    vectorAppend(depsvec, (Vector *) depsobj);
-			}
-			else {
-			    vectorPush(depsvec, depsobj);
-			}
-		    }
-		    else {
-			if (isVector(depsobj)) {
-			    depsvec = (Vector *) depsobj;
-			}
-			else {
-			    depsvec = vectorNew(10);
-			    vectorPush(depsvec, depsobj);
-			}
-		    }
-		}
-	    }
-	    depsobj = (Object *) depsvec;
-	}
-	else {
-	    if (qn = nodeAttribute(node, "fqn")) {
-		if (elem = hashGet(byfqn, (Object *) qn)) {
-		    depsobj = (Object *) elem;
-		}
-	    }
-	    else if (qn = nodeAttribute(node, "pqn")) {
-		if (elem = hashGet(bypqn, (Object *) qn)) {
-		    if (((Cons *) elem)->cdr) {
-			dbgNode(node);
-			dbgSexp(elem);
-			RAISE(NOT_IMPLEMENTED_ERROR, 
-			      newstr("pqn multiple elements unhandled"));
-		    }
-		    else {
-			depsobj = dereference(((Cons *) elem)->car);
-		    }
-		}
-	    }
-	    objectFree((Object *) qn, TRUE);
-	}
-    }
-
-    return depsobj;
-}
-
-/* Deresolve any elements that were resolved as part of a cyclic
- * dependency loop.  We will re-resolve them later if we can.
- */
-
-/*
-
- COMMENT NEEDED HERE DESCRIBING THE LATEST ALGORITHM FOR GENERATING A
- DAG FROM OUR SOMEWHAT UNSTRUCTURED SET OF DEPENDENCIES
-
-*/
-
-
-
-
-
 
 
 /*
@@ -384,13 +305,19 @@ addDagNodeToVector(Object *this, Object *vector)
 {
     Node *node = (Node *) this;
     DagNodeBuildType build_type;
-    DagNode *dagnode;
+    DagNode *dagnode = NULL;
 
-    if (streq(node->node->name, "dbobject")) {
-	dagnode = dagNodeNew(node->node, UNSPECIFIED_NODE);
-	dagnode->build_type = buildTypeForDagNode(node);
-	vectorPush((Vector *) vector, (Object *) dagnode);
+    BEGIN {
+	if (streq(node->node->name, "dbobject")) {
+	    dagnode = dagNodeNew(node->node, UNSPECIFIED_NODE);
+	    dagnode->build_type = buildTypeForDagNode(node);
+	    vectorPush((Vector *) vector, (Object *) dagnode);
+	}
     }
+    EXCEPTION(ex) {
+	objectFree((Object *) dagnode, TRUE);
+    }
+    END;
 
     return NULL;
 }
@@ -540,6 +467,7 @@ applicationForDep(xmlNode *node)
     char *head;
     DependencyApplication result;
     boolean inverted = FALSE;
+    xmlNode *parent;
 
     if (condition_str) {
 	stringLowerOld(condition_str);
@@ -565,6 +493,11 @@ applicationForDep(xmlNode *node)
 	objectFree((Object *) condition_str, TRUE);
 	objectFree((Object *) contents, TRUE);
 	return result;
+    }
+    else {
+	if (isDependencies(node->parent)) {
+	    return applicationForDep(node->parent);
+	}
     }
     return BOTH;
 }
@@ -1174,6 +1107,8 @@ expandDagNodes(Vector *nodes)
 	case BUILD_NODE:
 	case DROP_NODE:
 	case EXISTS_NODE:
+	case DIFFPREP_NODE:
+	case DIFFCOMPLETE_NODE:
 	case FALLBACK_NODE:
 	case ENDFALLBACK_NODE:
 	    /* Nothing to do - all is well */

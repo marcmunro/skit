@@ -912,6 +912,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docForNode(root_node);
 	}
 
+//dbgSexp(source_doc);
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	if (!result_doc) {
 	       RAISE(XML_PROCESSING_ERROR,
