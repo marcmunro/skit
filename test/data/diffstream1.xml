@@ -1,0 +1,381 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20130214084231" dbname2="regressdb" time2="20130214084217" retain_deps="true">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster" diff="diffkids">
+    <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.13" host="/var/run/postgresql" skit_xml_version="0.1" username="marc"/>
+    <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <element status="gone" type="comment">
+        <comment>'keep'</comment>
+      </element>
+      <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
+    </dbobject>
+    <dbobject type="role" name="keep2" qname="keep2" fqn="role.cluster.keep2" diff="new">
+      <dependencies>
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <role name="keep2" login="n" max_connections="-1"/>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.keep2.inherit" diff="new">
+        <dependencies>
+          <dependency fqn="role.cluster.keep2"/>
+        </dependencies>
+        <privilege priv="inherit"/>
+      </dbobject>
+    </dbobject>
+    <dbobject type="role" name="marc" qname="marc" fqn="role.cluster.marc" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <role name="marc" login="y" max_connections="-1"/>
+      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <privilege priv="superuser"/>
+      </dbobject>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <privilege priv="inherit"/>
+      </dbobject>
+      <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <privilege priv="createrole"/>
+      </dbobject>
+      <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <privilege priv="createdb"/>
+      </dbobject>
+    </dbobject>
+    <dbobject type="role" name="regress" qname="regress" fqn="role.cluster.regress" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <element status="diff" type="config" key="type">
+        <config type="client_min_messages" value="warning"/>
+        <attribute name="value" status="Diff" old="notice" new="warning"/>
+      </element>
+      <element status="new" type="privilege" key="priv">
+        <privilege priv="superuser"/>
+      </element>
+      <element status="new" type="comment">
+        <comment>'new comment'</comment>
+      </element>
+      <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+        <config type="client_min_messages" value="warning"/>
+        <comment>'new comment'</comment>
+      </role>
+      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.regress.superuser" diff="new">
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <privilege priv="superuser"/>
+      </dbobject>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.regress.inherit" diff="gone">
+        <dependencies>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <privilege priv="inherit"/>
+      </dbobject>
+    </dbobject>
+    <dbobject type="role" name="wibble" qname="wibble" fqn="role.cluster.wibble" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <attribute name="expires" status="Diff" old="2007-03-02 00:00:00-08" new="2007-03-01 00:00:00-08"/>
+      <element status="diff" type="comment">
+        <comment>'after'</comment>
+        <diffs>
+          <text>
+            <old>'before'</old>
+            <new>'after'</new>
+          </text>
+        </diffs>
+      </element>
+      <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1">
+        <comment>'after'</comment>
+      </role>
+    </dbobject>
+    <dbobject type="tablespace" name="pg_default" qname="pg_default" fqn="tablespace.cluster.pg_default" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+      <tablespace name="pg_default" owner="marc" location=""/>
+    </dbobject>
+    <dbobject type="tablespace" name="tbs2" qname="tbs2" fqn="tablespace.cluster.tbs2" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.keep"/>
+      </dependencies>
+      <attribute name="owner" status="Diff" old="regress" new="keep"/>
+      <element status="diff" type="comment">
+        <comment>'This is the second tablespace'</comment>
+        <diffs>
+          <text>
+            <old>'This is the 2nd tablespace'</old>
+            <new>'This is the second tablespace'</new>
+          </text>
+        </diffs>
+      </element>
+      <tablespace name="tbs2" owner="keep" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs2">
+        <comment>'This is the second tablespace'</comment>
+      </tablespace>
+    </dbobject>
+    <dbobject type="tablespace" name="tbs3" qname="tbs3" fqn="tablespace.cluster.tbs3" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <tablespace name="tbs3" owner="regress" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs3"/>
+      <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:regress" pqn="grant.cluster.tbs3.create:regress" fqn="grant.cluster.tbs3.create:regress:regress" owner="regress" subtype="tablespace" on="tbs3" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="tablespace.cluster.tbs3"/>
+          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="tablespace.cluster.tbs3"/>
+          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <context name="owner" value="regress" default="marc"/>
+        <grant from="regress" to="regress" with_grant="no" priv="create"/>
+      </dbobject>
+      <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:keep" pqn="grant.cluster.tbs3.create:keep" fqn="grant.cluster.tbs3.create:keep:regress" owner="regress" subtype="tablespace" on="tbs3" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="tablespace.cluster.tbs3"/>
+          <dependency fqn="role.cluster.keep"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="tablespace.cluster.tbs3"/>
+          <dependency fqn="role.cluster.keep"/>
+          <dependency fqn="role.cluster.regress"/>
+        </dependencies>
+        <context name="owner" value="regress" default="marc"/>
+        <grant from="regress" to="keep" with_grant="no" priv="create"/>
+      </dbobject>
+    </dbobject>
+    <dbobject type="tablespace" name="tbs4" qname="tbs4" fqn="tablespace.cluster.tbs4" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.wibble"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+        <dependency fqn="role.cluster.wibble"/>
+      </dependencies>
+      <attribute name="location" status="Diff" old="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs4" new="/home/marc/proj/skit/regress/REGRESSDB/tbs/TBS4"/>
+      <tablespace name="tbs4" owner="wibble" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/TBS4"/>
+    </dbobject>
+    <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.cluster.regressdb" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="cluster"/>
+        <dependency fqn="tablespace.cluster.tbs3"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="cluster"/>
+        <dependency fqn="tablespace.cluster.tbs3"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
+        <comment>'New comment'</comment>
+      </database>
+    </dbobject>
+    <dbobject type="role" name="lose" qname="lose" fqn="role.cluster.lose" diff="gone">
+      <dependencies>
+        <dependency fqn="cluster"/>
+      </dependencies>
+      <role name="lose" login="y" max_connections="-1"/>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.lose.inherit" diff="gone">
+        <dependencies>
+          <dependency fqn="role.cluster.lose"/>
+        </dependencies>
+        <privilege priv="inherit"/>
+      </dbobject>
+    </dbobject>
+  </dbobject>
+  <dbobject type="database" visit="true" name="regressdb" qname="regressdb" fqn="database.regressdb" diff="diff">
+    <dependencies condition="drop">
+      <dependency fqn="dbincluster.cluster.regressdb"/>
+    </dependencies>
+    <dependencies condition="build">
+      <dependency fqn="dbincluster.cluster.regressdb"/>
+    </dependencies>
+    <element status="diff" type="comment">
+      <comment>'New comment'</comment>
+      <diffs>
+        <text>
+          <old>'old comment'</old>
+          <new>'New comment'</new>
+        </text>
+      </diffs>
+    </element>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
+      <comment>'New comment'</comment>
+    </database>
+    <dbobject type="grant" parent="database.regressdb" name="temporary:public" pqn="grant.regressdb.temporary:public" fqn="grant.regressdb.temporary:public:regress" owner="regress" subtype="database" on="regressdb" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <context name="owner" value="regress" default="marc"/>
+      <grant with_grant="no" priv="temporary" to="public" from="regress"/>
+    </dbobject>
+    <dbobject type="grant" parent="database.regressdb" name="connect:public" pqn="grant.regressdb.connect:public" fqn="grant.regressdb.connect:public:regress" owner="regress" subtype="database" on="regressdb" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <context name="owner" value="regress" default="marc"/>
+      <grant with_grant="no" priv="connect" to="public" from="regress"/>
+    </dbobject>
+    <dbobject type="schema" name="public" qname="public" fqn="schema.regressdb.public" diff="none">
+      <dependencies condition="drop">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+      <schema name="public" owner="marc" privs="{marc=UC/marc,=UC/marc}">
+        <comment>'standard public schema'</comment>
+      </schema>
+      <dbobject type="grant" parent="schema.regressdb.public" name="usage:marc" pqn="grant.regressdb.public.usage:marc" fqn="grant.regressdb.public.usage:marc:marc" owner="marc" subtype="schema" on="public" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <context name="owner" value="marc" default="marc"/>
+        <grant from="marc" to="marc" with_grant="no" priv="usage"/>
+      </dbobject>
+      <dbobject type="grant" parent="schema.regressdb.public" name="create:marc" pqn="grant.regressdb.public.create:marc" fqn="grant.regressdb.public.create:marc:marc" owner="marc" subtype="schema" on="public" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <context name="owner" value="marc" default="marc"/>
+        <grant from="marc" to="marc" with_grant="no" priv="create"/>
+      </dbobject>
+      <dbobject type="grant" parent="schema.regressdb.public" name="usage:public" pqn="grant.regressdb.public.usage:public" fqn="grant.regressdb.public.usage:public:marc" owner="marc" subtype="schema" on="public" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <context name="owner" value="marc" default="marc"/>
+        <grant from="marc" to="public" with_grant="no" priv="usage"/>
+      </dbobject>
+      <dbobject type="grant" parent="schema.regressdb.public" name="create:public" pqn="grant.regressdb.public.create:public" fqn="grant.regressdb.public.create:public:marc" owner="marc" subtype="schema" on="public" diff="none">
+        <dependencies condition="drop">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <dependencies condition="build">
+          <dependency fqn="schema.regressdb.public"/>
+          <dependency fqn="role.cluster.marc"/>
+        </dependencies>
+        <context name="owner" value="marc" default="marc"/>
+        <grant from="marc" to="public" with_grant="no" priv="create"/>
+      </dbobject>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.keep.superuser" diff="new">
+      <dependencies>
+        <dependency fqn="role.cluster.keep"/>
+      </dependencies>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.keep2.superuser" diff="new">
+      <dependencies>
+        <dependency fqn="role.cluster.keep2"/>
+      </dependencies>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.marc.superuser" diff="new">
+      <dependencies>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.regress.superuser" diff="new">
+      <dependencies>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.wibble.superuser" diff="new">
+      <dependencies>
+        <dependency fqn="role.cluster.wibble"/>
+      </dependencies>
+    </dbobject>
+    <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.lose.superuser" diff="gone">
+      <dependencies>
+        <dependency fqn="role.cluster.lose"/>
+      </dependencies>
+    </dbobject>
+  </dbobject>
+</dump>

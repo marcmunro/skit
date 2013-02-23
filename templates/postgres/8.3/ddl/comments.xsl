@@ -17,6 +17,9 @@
   <xsl:template match="dbobject/comment">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
       	  <xsl:text>&#x0A;-- Comment for automatically generated</xsl:text>
 	  <xsl:text> operator family</xsl:text>
       	  <xsl:text>&#x0A;comment on operator family </xsl:text>

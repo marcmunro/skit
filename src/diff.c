@@ -791,9 +791,11 @@ copyContents(xmlNode *next)
     if (from) {
 	copy = xmlCopyNode(from, 2);
 	from = getElement(from->children);
-	while (from && !(streq("dbobject", (char *) from->name))) {
-	    new = xmlCopyNode(from, 1);
-	    xmlAddChild(copy, new);
+	while (from) {
+	    if (!(streq("dbobject", (char *) from->name))) {
+		new = xmlCopyNode(from, 1);
+		xmlAddChild(copy, new);
+	    }
 	    from = getElement(from->next);
 	}
     }

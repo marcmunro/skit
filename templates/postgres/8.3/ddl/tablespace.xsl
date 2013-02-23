@@ -9,6 +9,9 @@
   <xsl:template match="dbobject/tablespace">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
           <xsl:text>\echo tablespace </xsl:text>
@@ -31,12 +34,14 @@
 	<xsl:if test="@location=''">
 	  <xsl:text> */&#x0A;</xsl:text>
 	</xsl:if>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;\echo Not dropping tablespace </xsl:text>
         <xsl:value-of select="../@name"/>
         <xsl:text> as it may</xsl:text>
@@ -56,6 +61,9 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">
             <xsl:text>&#x0A;alter tablespace </xsl:text>
@@ -83,6 +91,9 @@
 
     <xsl:if test="../@action='diffprep'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">
 	    <xsl:variable name="old_fqn" 
@@ -103,9 +114,6 @@
 	    </xsl:if>
 	  </xsl:if>
 	</xsl:for-each>
-
-	<xsl:call-template name="commentdiff"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

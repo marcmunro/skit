@@ -9,6 +9,9 @@
   <xsl:template match="dbobject[@type='dbincluster']/database">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:text>&#x0A;create database </xsl:text>
 	<xsl:value-of select="../@qname"/>
 	<xsl:text> with&#x0A;</xsl:text>
@@ -22,13 +25,14 @@
 	<xsl:text>&#x0A; connection limit = </xsl:text>
 	<xsl:value-of select="@connections"/>
 	<xsl:text>;&#x0A;</xsl:text>
-	<xsl:apply-templates/>
-	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:text>&#x0A;-- drop database </xsl:text>
 	<xsl:value-of select="../@qname"/>
 	<xsl:text>;&#x0A;&#x0A;</xsl:text>
@@ -42,24 +46,23 @@
 
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;psql -d </xsl:text>
         <xsl:value-of select="../@name"/>
         <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
 	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
         <xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
-	<xsl:if test="comment">
-	  <xsl:text>&#x0A;comment on database </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is&#x0A;</xsl:text>
-	  <xsl:value-of select="comment"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:if>
-	<xsl:text>&#x0A;</xsl:text>
+	<xsl:apply-templates/>
       </print>
     </xsl:if>	
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<!-- TODO: CHANGE the select expression below: -->
 <!-- stuff below needs to be re-implemented
 	<xsl:for-each select="../diffs/attribute">
@@ -116,6 +119,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>DBEOF&#x0A;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	

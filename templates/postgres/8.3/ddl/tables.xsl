@@ -39,6 +39,9 @@
   <xsl:template match="dbobject/table">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
           <xsl:text>\echo table </xsl:text>
@@ -133,6 +136,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
         <xsl:text>&#x0A;\echo drop table </xsl:text>
         <xsl:value-of select="../@qname"/>

@@ -9,6 +9,9 @@
   <xsl:template match="dbobject/domain">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
           <xsl:text>\echo domain </xsl:text>
@@ -42,6 +45,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;drop domain </xsl:text>
         <xsl:value-of select="skit:dbquote(@schema,@name)"/>
         <xsl:text>;&#x0A;&#x0A;</xsl:text>

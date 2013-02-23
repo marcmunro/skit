@@ -6,10 +6,13 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="dbobject/role">
+  <xsl:template match="dbobject[@type='role']/role">
 
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;create role </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:choose>
@@ -41,11 +44,13 @@
           <xsl:value-of select="@expires"/>
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
+
 	<xsl:if test="not(privilege/@priv='inherit')">
           <xsl:text>alter role </xsl:text>
           <xsl:value-of select="../@qname"/>
           <xsl:text> with noinherit;&#x0A;</xsl:text>
 	</xsl:if>
+
 	<xsl:for-each select="config">
           <xsl:text>alter role </xsl:text>
           <xsl:value-of select="../../@qname"/>
@@ -72,12 +77,14 @@
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:for-each>
 	<xsl:apply-templates/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;\echo Not dropping or revoking </xsl:text>
         <xsl:text>privs from role </xsl:text>
         <xsl:value-of select="../@name"/>
@@ -91,51 +98,71 @@
       </print>     
     </xsl:if>
 
-    <xsl:if test="../@action='diff'">
+    <xsl:if test="../@action='diffcomplete'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
-	<xsl:for-each select="../diffs">
-	  <xsl:for-each select="element/config">
-	    <!-- This assumes config elements will always be diffs
-		 TODO: Verify this.  -->
-            <xsl:text>alter role </xsl:text>
-            <xsl:value-of select="../../../@qname"/>
-            <xsl:text> set </xsl:text>
-            <xsl:value-of select="@type"/>
-            <xsl:text> = </xsl:text>
-            <xsl:value-of select="@value"/>
-            <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:for-each>
-	  <xsl:for-each select="attribute">
-            <xsl:text>alter role </xsl:text>
-            <xsl:value-of select="../../@qname"/>
-	    <xsl:choose>
-	      <xsl:when test="@name = 'expires'">
-		<xsl:text> valid until &apos;</xsl:text>
-		<xsl:value-of select="@new"/>
-		<xsl:text>&apos;;&#x0A;</xsl:text>
-	      </xsl:when>
-	    </xsl:choose>
-	  </xsl:for-each>
-	  <xsl:for-each select="element/privilege">
-	    <!-- Privilege elements will always be either new or gone. -->
-            <xsl:text>alter role </xsl:text>
-            <xsl:value-of select="../../../@qname"/>
-            <xsl:text> with </xsl:text>
-	    <xsl:if test="../@status='Gone'">
-              <xsl:text>no</xsl:text>
-	    </xsl:if>
-            <xsl:value-of select="@priv"/>
-            <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:for-each>
-
-	  <xsl:apply-templates/>
+        <xsl:text>&#x0A;</xsl:text>
+	<xsl:for-each select="../element/config">
+	  <xsl:text>alter role </xsl:text>
+	  <xsl:value-of select="../../@qname"/>
+	  <xsl:text> set </xsl:text>
+	  <xsl:value-of select="@type"/>
+	  <xsl:text> = </xsl:text>
+	  <xsl:value-of select="@value"/>
+	  <xsl:text>;&#x0A;</xsl:text>
 	</xsl:for-each>
+
+	<xsl:for-each select="../attribute">
+	  <xsl:text>alter role </xsl:text>
+	  <xsl:value-of select="../@qname"/>
+	  <xsl:choose>
+	    <xsl:when test="@name = 'expires'">
+	      <xsl:text> valid until &apos;</xsl:text>
+	      <xsl:value-of select="@new"/>
+	      <xsl:text>&apos;;&#x0A;</xsl:text>
+	    </xsl:when>
+	  </xsl:choose>
+	</xsl:for-each>
+
+	<xsl:call-template name="commentdiff"/>
         <xsl:text>&#x0A;</xsl:text>
-      </print>     
+      </print>
     </xsl:if>
 
+    <xsl:if test="../@action='arrive'">
+      <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
+      </print>
+    </xsl:if>	
   </xsl:template>
 
+
+  <xsl:template match="dbobject[@type='privilege' and @diff]">
+    <!-- Privileges are only handled on an individual basis when
+         processing diffs.  When creating a build and/or drop script,
+	 privileges are handled as part of the role.  -->
+    <xsl:if test="@action='build'">
+      <print>
+	<xsl:text>alter role </xsl:text>
+	<xsl:value-of select="@role_qname"/>
+	<xsl:text> with </xsl:text>
+	<xsl:value-of select="privilege/@priv"/>
+	<xsl:text>;&#x0A;</xsl:text>
+      </print>
+    </xsl:if>
+    <xsl:if test="@action='drop'">
+      <print>
+	<xsl:text>alter role </xsl:text>
+	<xsl:value-of select="@role_qname"/>
+	<xsl:text> with no</xsl:text>
+	<xsl:value-of select="privilege/@priv"/>
+	<xsl:text>;&#x0A;</xsl:text>
+      </print>
+    </xsl:if>
+  </xsl:template>
 </xsl:stylesheet>
 

@@ -9,6 +9,9 @@
   <xsl:template match="dbobject/operator_family">
     <xsl:if test="(../@action='build') and (@auto_generated!='t')">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
@@ -67,6 +70,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
       	<xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 	  

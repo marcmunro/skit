@@ -9,6 +9,9 @@
   <xsl:template match="dbobject/cast">
     <xsl:if test="../@action='build'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
       	<xsl:text>create cast(</xsl:text>
         <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
@@ -42,6 +45,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
       	<xsl:text>&#x0A;</xsl:text>
       	<xsl:text>drop cast(</xsl:text>
         <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>

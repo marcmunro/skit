@@ -40,7 +40,8 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>
     <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@name)}"
-	      fqn="{concat('privilege.', $priv_name)}">
+	      fqn="{concat('privilege.', $priv_name)}"
+	      role_qname="{skit:dbquote(../@name)}">
       <dependencies>
 	<dependency fqn="{concat('role.', $parent_core)}"/>
       </dependencies>
