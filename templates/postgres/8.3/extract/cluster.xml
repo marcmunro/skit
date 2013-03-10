@@ -38,6 +38,7 @@
 			            (replace privileges /\\{(.*)\\}/ '\1') 
 				    /(.)\\*/ '*\1 ')
 		                  ',')"/>
+	  <skit:exec expr="(debug 'automatic' automatic)"/>
 	  <skit:foreach from="privs_list" var="privs_str">
 	    <skit:let>
 	      <skit:var name="privinfo" expr="(split privs_str '/=')"/>
@@ -64,13 +65,11 @@
 			<skit:attr name="to" expr="to"/>
 			<skit:attr name="with_grant" expr="with_grant"/>
 			<skit:attr name="priv" expr="privname"/>
-<!--
-			<skit:if test="(string-in 'abc' (list 'def' 'ghi' 'abc'))">
-			  <skit:attr name="stringy" expr="'yes'"/>
-			</skit:if>
+
 			<skit:if test="(select automatic to)">
+			  <skit:exec expr="(debug 'automatic=>' (list privname to))"/>
 			  <skit:attr name="automatic" expr="'yes'"/>
-			</skit:if>-->
+			</skit:if>
 		      </grant>
 		    </skit:if>
 		  </skit:foreach>

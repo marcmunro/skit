@@ -227,39 +227,6 @@
 	  </comment>
 	</skit:if>
 
-	<skit:if test="(not (select tuple 'privs'))">
-          <!-- No privileges defined for this table, so create
-      	       default grants for the implicit privs -->
-          <grant with_grant="yes" priv="trigger" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="references" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="rule" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="select" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="insert" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="update" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-          <grant with_grant="yes" priv="delete" default="yes">
-      	    <skit:attr name="from" field="owner"/>
-      	    <skit:attr name="to" field="owner"/>
-          </grant>
-	</skit:if>
-
 	<skit:exec_function name="grants_from_privs"
     			    privileges="(select tuple 'privs')"/>
       </skit:let>

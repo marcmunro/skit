@@ -46,33 +46,31 @@
   <!-- Object-level grants -->
   <xsl:template match="dbobject[@subtype!='role']/grant">
     <xsl:if test="../@action='build'">
-      <xsl:if test="not(@default='yes')">
-      	<print>
-	  <xsl:call-template name="set_owner_from"/>
-
-      	  <xsl:text>grant </xsl:text>
-      	  <xsl:value-of select="@priv"/>
-      	  <xsl:text> on </xsl:text>
-	  <xsl:choose>
-	    <xsl:when test="../@subtype = 'view'">
-      	      <xsl:text>table</xsl:text>
-	    </xsl:when>
-	    <xsl:otherwise>
-      	      <xsl:value-of select="../@subtype"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
-      	  <xsl:text> </xsl:text>
-      	  <xsl:value-of select="../@on"/>
-      	  <xsl:text> to </xsl:text>
-      	  <xsl:value-of select="skit:dbquote(@to)"/>
-      	  <xsl:if test="@with_grant = 'yes'">
-      	    <xsl:text> with grant option</xsl:text>
-      	  </xsl:if>
-      	  <xsl:text>;&#x0A;</xsl:text>
-
-	  <xsl:call-template name="reset_owner_from"/>
-      	</print>
-      </xsl:if>
+      <print>
+	<xsl:call-template name="set_owner_from"/>
+	
+	<xsl:text>grant </xsl:text>
+	<xsl:value-of select="@priv"/>
+	<xsl:text> on </xsl:text>
+	<xsl:choose>
+	  <xsl:when test="../@subtype = 'view'">
+	    <xsl:text>table</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of select="../@subtype"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:text> </xsl:text>
+	<xsl:value-of select="../@on"/>
+	<xsl:text> to </xsl:text>
+	<xsl:value-of select="skit:dbquote(@to)"/>
+	<xsl:if test="@with_grant = 'yes'">
+	  <xsl:text> with grant option</xsl:text>
+	</xsl:if>
+	<xsl:text>;&#x0A;</xsl:text>
+	
+	<xsl:call-template name="reset_owner_from"/>
+      </print>
     </xsl:if>
     
   

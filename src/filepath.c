@@ -148,7 +148,7 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
     int matches;
     int i;
     int cmp;
-    //printSexp(stderr, "VERSION: ", version);
+
     for (i = 0; i < roots->elems; i++) {
 	root = (String *) roots->contents->vector[i];
 
@@ -223,10 +223,7 @@ findFile(String *filename)
     Object *ver = symbolGetValue("dbver");
     char   *path;
     String *result;
-    //printSexp(stderr, "ROOTS: ", roots);
-    //printSexp(stderr, "TMPLATE: ", tmpltdir);
-    //printSexp(stderr, "DBDIR: ", dbdir);
-    //printSexp(stderr, "VER: ", value);
+
     if (!ver) {
 	ver = symbolGetValue("dbver-from-source");
     }

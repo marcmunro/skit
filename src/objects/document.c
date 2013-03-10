@@ -169,11 +169,19 @@ filenameFromUri(const char *URI)
 {
     String *filename;
     String *path;
+    char *start;
 
     if ((URI == NULL) || (strncmp(URI, "skitfile:", 9))) {
         return NULL;
     }
-    filename = stringNewByRef(newstr("%s", URI + 9));
+    start = URI + 9;
+    while (*start == '/') {
+	if (*start == '\0') {
+	    RAISE(GENERAL_ERROR, newstr("Disaster in filenameFromUri"));
+	}
+	start++;
+    }
+    filename = stringNewByRef(newstr("%s", start));
     path = findFile(filename);
     objectFree((Object *) filename, TRUE);
     return path;

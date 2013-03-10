@@ -34,18 +34,6 @@
       <skit:if test="(not (select tuple 'privs'))">
         <!-- No privileges defined for this sequence, so create
       	     default grants for the implicit privs -->
-        <grant with_grant="yes" priv="select" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="update" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
-        <grant with_grant="yes" priv="usage" default="yes">
-      	  <skit:attr name="from" field="owner"/>
-      	  <skit:attr name="to" field="owner"/>
-        </grant>
       </skit:if>
 
       <skit:exec_function name="grants_from_privs"
