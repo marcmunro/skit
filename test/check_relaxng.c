@@ -82,7 +82,6 @@ START_TEST(check_list)
     Document *rng_doc;
     int result;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
 
     result = validate("list.xml", "template.rng");
@@ -99,7 +98,6 @@ START_TEST(check_deps)
     Document *rng_doc;
     int result;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
 
     result = validate("add_deps.xml", "template.rng");
@@ -116,7 +114,6 @@ START_TEST(check_connect)
     Document *rng_doc;
     int result;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
 
     result = validate("connect.xml", "template.rng");
@@ -143,7 +140,6 @@ START_TEST(check_extract)
     Document *rng_doc;
     int result;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     evalStr("(setq dbver (version '8.3'))");
 
@@ -161,7 +157,6 @@ START_TEST(check_test2)
     Document *rng_doc;
     int result;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     evalStr("(setq dbver (version '8.3'))");
 

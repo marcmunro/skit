@@ -18,7 +18,7 @@
 
 .PHONY: regress regress_cluster cluster_is_up rdbstart wait_for_rdb \
 	wait_while_proc rdbstop drop_regress_cluster regression_test1 \
-	regression_test2
+	regression_test2 regression_test3 prep
 
 
 REGRESS_DIR = regress
@@ -120,7 +120,12 @@ regression_env:
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP=\"$(PG_DUMP)\"; "
 
-regression_test1: skit drop_regress_db
+regression_test_precond:
+	@if [ ! -d $(REGRESS_DIR)/REGRESSDB ]; then \
+	    $(MAKE) --no-print-directory regress_cluster; \
+	fi
+
+regression_test1: skit regression_test_precond drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -129,8 +134,7 @@ regression_test1: skit drop_regress_db
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 1
 
-regression_test2: skit drop_regress_db \
-		$(REGRESS_DIR)/scratch/regressdb_both1.sql
+regression_test2: skit regression_test_precond drop_regress_db
 	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
@@ -140,8 +144,7 @@ regression_test2: skit drop_regress_db \
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 2
 
-regression_test3: skit drop_regress_db \
-		$(REGRESS_DIR)/scratch/regressdb_both1.sql
+regression_test3: skit regression_test_precond drop_regress_db
 	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
@@ -150,6 +153,15 @@ regression_test3: skit drop_regress_db \
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 3
+
+prep: regression_test_precond drop_regress_db
+	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP="$(PG_DUMP)"; \
+	 $(REGRESS_RUN) prep
 
 regress: skit regress_cluster regression_test1 regression_test2 
 	@$(MAKE) --no-print-directory drop_regress_cluster

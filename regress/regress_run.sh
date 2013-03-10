@@ -21,36 +21,33 @@ build_db()
 {
     echo ...creating base objects... 1>&2
     echo ==== BUILDING DB FROM ${REGRESS_DIR}/$1 $2====
-    sh ${REGRESS_DIR}/$1 2>&1 | errcheck
+    exitonerr sh ${REGRESS_DIR}/$1 
     echo ==== FINISHED BUILD FROM $1 ====
 }
 
 dump_db()
 {
     echo $3taking db snapshot... 1>&2
-    ${PG_DUMP} $1 >${REGRESS_DIR}/$2
-    errexit
+    exitonfail ${PG_DUMP} $1 >${REGRESS_DIR}/$2
 }
 
 dump_db_globals()
 {
     echo $3taking db globals snapshot... 1>&2
-    pg_dumpall -p ${REGRESSDB_PORT} --globals-only >${REGRESS_DIR}/$2
-    errexit
+    exitonfail pg_dumpall -p ${REGRESSDB_PORT} --globals-only >${REGRESS_DIR}/$2
 }
 
 extract()
 {
     echo $3running skit extract... 1>&2
-    ./skit --extract --connect "$1" >${REGRESS_DIR}/$2
-    errexit
+    exitonfail ./skit --extract --connect "$1" >${REGRESS_DIR}/$2
 }
 
 scatter()
 {
     echo ...running skit extract with scatter... 1>&2
-    ./skit --extract --connect "$1" --scatter --path=${REGRESS_DIR}/$2
-    errexit
+    exitonfail ./skit --extract --connect "$1" --scatter \
+	--path=${REGRESS_DIR}/$2
 }
 
 gendrop()
@@ -81,8 +78,7 @@ execdrop()
 {
     echo ...executing drop script... 1>&2
     echo ==== RUNNING DROP SCRIPT $1 ==== 
-    sh ${REGRESS_DIR}/$1 2>&1 | errcheck
-    errexit
+    exitonerr sh ${REGRESS_DIR}/$1
     echo ...checking that database is empty... 1>&2
     pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | wc -l | \
             grep ^1$ >/dev/null
@@ -94,9 +90,8 @@ gendiff()
 {
     echo ......generating diff... 1>&2
     echo "==== RUNNING SKIT DIFF $1 $2 -> $3 ===="
-    ./skit --diff ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
+    exitonfail ./skit --diff ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
 	--generate >${REGRESS_DIR}/tmp
-    errexit
 
     echo .........editing diff script to enable dangerous drop statements... 1>&2
     sed -e  "/drop role[ \"]*`whoami`[\";]/! s/^-- //" \
@@ -117,8 +112,7 @@ execbuild()
 {
     echo ...executing build script... 1>&2
     echo ==== RUNNING BUILD SCRIPT $1 ==== 
-    sh ${REGRESS_DIR}/$1 2>&1 | errcheck
-    errexit
+    exitonerr sh ${REGRESS_DIR}/$1
 }
 
 # This should be used in place of cmd; errexit as it gives better feedback.
@@ -126,11 +120,27 @@ execbuild()
 #
 exitonfail()
 {
-    $*
+    cmd=$1
+    shift
+    ${cmd} "$@"
     status=$?
     if [ ${status} != 0 ]; then
 	echo "FAILED, EXECUTING:" 1>&2
-	echo $* 1>&2
+	echo ${cmd} $* 1>&2
+	echo "EXITING" 1>&2
+	exit ${status}
+    fi
+}
+
+exitonerr()
+{
+    cmd=$1
+    shift
+    ${cmd} "$@" 2>&1 | errcheck
+    status=$?
+    if [ ${status} != 0 ]; then
+	echo "FAILED, EXECUTING:" 1>&2
+	echo ${cmd} $* 1>&2
 	echo "EXITING" 1>&2
 	exit ${status}
     fi
@@ -198,10 +208,10 @@ regression_test1()
 
 regression_test2()
 {
-    echo "Running regression test 2 (scatter, gather, ignore-contexts)..." 1>&2
+    echo "Running regression test 2 (scatter, gather, no privs, no contexts)..." 1>&2
     mkdir regress/scratch 2>/dev/null
     rm -rf scratch/dbdump/*
-    build_db regression1_`pguver`.sql
+    build_db tmp2_`pguver`.sql
     dump_db regressdb scratch/regressdb_test2a.dmp ...
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/dbdump
@@ -267,6 +277,35 @@ regression_test3()
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2
+}
+
+# Prep the regression test database for use in temporary unit tests
+# This allows make unit to be used for testing against a real database
+# while we are developing new functionality.
+# This function is very tightly coupled with the unit tests it supports
+# and will be re-written and modified as needed.
+#
+prep_for_unit_test()
+{
+    echo "Prepping for unit tests..." 1>&2
+    mkdir regress/scratch 2>/dev/null
+    rm -rf scratch/dbdump/*
+    # Get up to date dumps of each of 2 starting databases
+    build_db regression3b_`pguver`.sql
+    echo ...Creating target diff database... 1>&2
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3b.xml ...
+    echo ...running skit generate to drop target database... 1>&2
+    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql \
+	     --ignore-contexts
+    execdrop scratch/regressdb_drop3b.sql
+    echo ...Creating source diff database... 1>&2
+    build_db regression3a_`pguver`.sql
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3a.xml ...
+    ./skit --diff regress/scratch/regressdb_dump3a.xml \
+	 regress/scratch/regressdb_dump3b.xml \
+	     >test/data/diffstream1.xml
 }
 
 verfrompath()
@@ -346,7 +385,10 @@ if [ "x$1" = "x3" ]; then
     shift
 fi
 
-
+if [ "x$1" = "xprep" ]; then
+    prep_for_unit_test >>${REGRESS_LOG}
+    shift
+fi
 
 
 exit

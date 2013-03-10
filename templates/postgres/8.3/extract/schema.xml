@@ -15,18 +15,12 @@
 	</comment>
       </skit:if>
 
-      <skit:if test="(not (select tuple 'privs'))">
-  	<grant with_grant="yes" priv="create">
-  	  <skit:attr name="from" field="owner"/>
-  	  <skit:attr name="to" field="owner"/>
-  	</grant>
-  	<grant with_grant="yes" priv="usage">
-  	  <skit:attr name="from" field="owner"/>
-  	  <skit:attr name="to" field="owner"/>
-  	</grant>
-      </skit:if>
       <skit:exec_function name="grants_from_privs"
   			  privileges="(select tuple 'privs')"/>
+<!--
+			  automatic="&lt; 
+			    (select tuple 'owner') 'create' 'usage')
+			    (public' 'create' 'usage'))&gt;" -->
 
       <xi:include href="skitfile:extract/domains.xml"/>
       <xi:include href="skitfile:extract/enums.xml"/>

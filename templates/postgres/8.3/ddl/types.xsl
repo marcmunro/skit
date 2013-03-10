@@ -107,7 +107,6 @@
 
 	<xsl:apply-templates/>
 	<xsl:call-template name="reset_owner"/>
-	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -123,7 +122,7 @@
 	       the input, output, etc functions are also dropped -->
           <xsl:text> cascade</xsl:text>
 	</xsl:if>
-        <xsl:text>;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

@@ -39,7 +39,6 @@
 	</xsl:if>
       	<xsl:text>;&#x0A;</xsl:text>
 	<xsl:apply-templates/>  <!-- Deal with comments -->
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

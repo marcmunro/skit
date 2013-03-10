@@ -30,7 +30,6 @@ START_TEST(optiontest)
     char *tmp;
     Document *doc;
 
-    initBuiltInSymbols();
     initTemplatePath("test/");
     filename = stringNew(tmp = newstr("add_deps.xml"));
     path = findFile(filename);
@@ -111,7 +110,6 @@ START_TEST(docfromfile)
     char *tmp;
     Document *doc;
 
-    initBuiltInSymbols();
     initTemplatePath("test/");
 
     filename = stringNew(tmp = newstr("include.xml"));
@@ -138,7 +136,6 @@ START_TEST(adddeps)
 {
     String *filename = stringNew("test/testfiles/x.xml");
     Document *doc;
-    initBuiltInSymbols();
     initTemplatePath("test/");
 
     loadInFile(filename);

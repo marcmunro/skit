@@ -297,12 +297,21 @@ SIMPLE_TEST(simple_list2,
 	    "Incorrect string representation of list(2)\n")
 
 SIMPLE_TEST(vector1, 
-	    objectReadCheck("[(1 . (2 3))]", "[(1 2 3)]"),
+	    objectReadCheck("[1 2 3]", "[1 2 3]"),
 	    "Incorrect string representation of vector(1)\n")
+
+SIMPLE_TEST(vector2, 
+	    objectReadCheck("[1 (+ 2 0) (+ 2 1)]", "[1 (+ 2 0) (+ 2 1)]"),
+	    "Incorrect string representation of vector(2)\n")
 
 SIMPLE_TEST(hash1, 
 	    objectReadCheck("<(1 . 2) (2 . 3)>", "<(1 . 2) (2 . 3)>"),
 	    "Incorrect string representation of hash(1)\n")
+
+SIMPLE_TEST(hash2, 
+	    objectReadCheck("<((+ 0 1) . 2) (2 . (+ 1 2))>", 
+			    "<(1 . 2) (2 . 3)>"),
+	    "Incorrect string representation of hash(2)\n")
 
 SIMPLE_TEST(nil, 
 	    objectReadCheck("(nil () nil)", "(nil nil nil)"),
@@ -488,8 +497,6 @@ START_TEST(split_str2)
     char *str;
     char *failstr;
 
-    initBuiltInSymbols();
-
     sexpstr = newstr("(split '1.2.3' '.')");
     version = evalSexp(sexpstr);
     skfree(sexpstr);
@@ -512,8 +519,6 @@ START_TEST(version_chk1)
     char *sexpstr;
     Object *version1;
     Object *version2;
-
-    initBuiltInSymbols();
 
     sexpstr = newstr("(version '8.44.17')");
     version1 = evalSexp(sexpstr);
@@ -538,8 +543,6 @@ START_TEST(quote_chk1)
     Object *obj1;
     char *str;
 
-    initBuiltInSymbols();
-
     sexpstr = newstr("(quote '8.44.17')");
     obj1 = evalSexp(sexpstr);
     skfree(sexpstr);
@@ -559,8 +562,6 @@ START_TEST(promote)
 {
     char *sexpstr;
     Object *obj;
-
-    initBuiltInSymbols();
 
     sexpstr = newstr("(try-to-int '473')");
     obj = evalSexp(sexpstr);
@@ -599,8 +600,6 @@ START_TEST(map)
     char *sexpstr;
     Object *obj;
 
-    initBuiltInSymbols();
-
     sexpstr = newstr("(map try-to-int ('473' '67a' '42'))");
     obj = evalSexp(sexpstr);
     skfree(sexpstr);
@@ -629,7 +628,6 @@ START_TEST(setq)
     char *tmp;
     Object *obj;
 
-    initBuiltInSymbols();
     evalStr("(setq dbver (version '8.1'))");
     sexpstr = newstr("dbver");
     obj = evalSexp(sexpstr);
@@ -661,7 +659,6 @@ START_TEST(regexp)
     objectFree((Object *) source, TRUE);
     objectFree((Object *) match, TRUE);
     objectFree((Object *) result, TRUE);
-    initBuiltInSymbols();
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -671,7 +668,6 @@ START_TEST(symbol_scope1)
     Symbol *wibble;
     Symbol *wibble2;
     String *tmp;
-    initBuiltInSymbols();
 
     wibble = symbolNew("wibble");
     wibble2 = symbolNew("wibble2");
@@ -719,7 +715,6 @@ START_TEST(symbol_scope2)
 {
     Symbol *wibble;
     Symbol *wibble2;
-    initBuiltInSymbols();
 
     wibble = symbolNew("wibble");
     wibble2 = symbolNew("wibble2");
@@ -749,7 +744,6 @@ START_TEST(symbol_scope3)
 {
     Symbol *wibble;
     Symbol *wibble2;
-    initBuiltInSymbols();
 
     wibble2 = symbolNew("wibble2");
     setScopeForSymbol(wibble2);
@@ -885,7 +879,6 @@ START_TEST(concat)
     char *tmp;
     String *result;
 
-    initBuiltInSymbols();
     result = (String *) evalSexp(sexpstr);
     fail_unless(result->type == OBJ_STRING,
 		tmp = newstr("concat: incorrect result type: %d", 
@@ -911,8 +904,6 @@ START_TEST(cons_concat)
     char *resultstr = objectSexp((Object *) result);
     char *tmp;
 
-    initBuiltInSymbols();
-
     fail_unless(streq(resultstr, "(1 2 3 4 5 6)"),
 		tmp = newstr("consConcat: incorrect concatenation result: %s", 
 			     resultstr));
@@ -929,7 +920,6 @@ START_TEST(cons_remove1)
     Cons *first = list;
     char *resultstr;
     char *tmp;
-    initBuiltInSymbols();
 
     list = consRemove(list, first);
     resultstr = objectSexp((Object *) list);
@@ -949,7 +939,6 @@ START_TEST(cons_remove2)
     Cons *second = (Cons *) list->cdr;
     char *resultstr;
     char *tmp;
-    initBuiltInSymbols();
 
     list = consRemove(list, second);
     resultstr = objectSexp((Object *) list);
@@ -963,25 +952,315 @@ START_TEST(cons_remove2)
 }
 END_TEST
 
-START_TEST(cons_remove3)
+START_TEST(string_eq1)
 {
-    Cons *list = (Cons *) objectFromStr("(1 2 3)");
-    Cons *third = (Cons *) ((Cons *) list->cdr)->cdr;
-    char *resultstr;
-    char *tmp;
-    initBuiltInSymbols();
+    Object *list = objectFromStr("(string= 'abc' (concat 'a' 'bc'))");
+    Object *result = objectEval(list);
 
-    list = consRemove(list, third);
-    resultstr = objectSexp((Object *) list);
-    fail_unless(streq(resultstr, "(1 2)"),
-		tmp = newstr("consRemove: incorrect removal result (3): %s", 
-			     resultstr));
-    skfree(tmp);
-    skfree(resultstr);
     objectFree((Object *) list, TRUE);
     FREEMEMWITHCHECK;
 }
 END_TEST
+
+START_TEST(hasherr)
+{
+    Object *list = NULL;
+
+    BEGIN {
+	list = objectFromStr("<(1 . 2) (2 . (3))>");
+	fail("hasherr: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "Cannot execute 3 as a function in expr") &&
+	      strstr(ex->text, "\"<((1 . 2) (2 3))>\""))) 
+	{
+	    fail("hasherr: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("hasherr: incorrect exception type %d", ex->signal);
+    }
+    END;
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(listerr)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(list 1 2 3 (4 5 6))");
+	result = trappedObjectEval(list);
+	fail("listerr: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "Cannot execute 4 as a function in expr") &&
+	      strstr(ex->text, "\"(list 1 2 3 (4 5 6))\""))) 
+	{
+	    fail("listerr: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("listerr: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(setqerr)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(setq a (4 5 6))");
+	result = trappedObjectEval(list);
+	fail("setq: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	
+	if (!(strstr(ex->text, "Cannot execute 4 as a function in expr") &&
+	      strstr(ex->text, "\"(setq a (4 5 6))\""))) 
+	{
+	    fail("setqerr: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("setqerr: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in1)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 'abc' (list 'abd' 'hhh' 'abc'))");
+	result = trappedObjectEval(list);
+	if (result && (result->type == OBJ_STRING) &&
+	    streq(((String *) result)->value, "abc"))
+	{
+	    objectFree(result, TRUE);
+	}
+	else {
+	    char *sexp = objectSexp(result);
+	    fail(newstr("string_in1: Unexpected result: %s", sexp));
+	}
+    }
+    EXCEPTION(ex) ;
+    WHEN_OTHERS {
+	fprintf(stderr, "%s\n", ex->backtrace);
+	fail("string_in1 fails with exception");
+    }
+    END;
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in2)
+{
+    Object *list = objectFromStr("(string-in 'abc' (list 'abd' 'hhh' 'ab'))");
+    Object *result = trappedObjectEval(list);
+
+    if (result) {
+	char *sexp = objectSexp(result);
+	fail(newstr("string_in2: Unexpected result: %s", sexp));
+    }
+
+    objectFree((Object *) list, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in_err1)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in)");
+	result = trappedObjectEval(list);
+	fail("string-in_err1: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "missing arg no 1"))) 
+	{
+	    fail("string_in_err1: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err1: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in_err2)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 1)");
+	result = trappedObjectEval(list);
+	fail("string-in_err2: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "invalid arg (no 1)"))) 
+	{
+	    fail("string_in_err2: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err2: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in_err3)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 'abc')");
+	result = trappedObjectEval(list);
+	fail("string-in_err3: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "missing arg no 2"))) 
+	{
+	    fail("string_in_err3: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err3: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in_err4)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 'abc' 'abc')");
+	result = trappedObjectEval(list);
+	fail("string-in_err4: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "invalid arg (no 2)"))) 
+	{
+	    fail("string_in_err4: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err4: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+START_TEST(string_in_err5)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 'abc' (list 'abc') 99)");
+	result = trappedObjectEval(list);
+	fail("string-in_err5: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "too many args"))) 
+	{
+	    fail("string_in_err5: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err5: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(string_in_err6)
+{
+    Object *list;
+    Object *result;
+
+    BEGIN {
+	list = objectFromStr("(string-in 'abc' (list 'abq' 1))");
+	result = trappedObjectEval(list);
+	fail("string-in_err6: failed to raise exception");
+    }
+    EXCEPTION(ex) ;
+    WHEN(LIST_ERROR){
+	objectFree((Object *) list, TRUE);
+	if (!(strstr(ex->text, "invalid arg"))) 
+	{
+	    fail("string_in_err6: Incorrect error message: \"%s\"", ex->text);
+	}
+	/* We reach his point only if all is as expected.  */
+    }
+    WHEN_OTHERS{
+	fail("string_in_err6: incorrect exception type %d", ex->signal);
+    }
+    END;
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 
 Suite *
 objects_suite(void)
@@ -999,6 +1278,7 @@ objects_suite(void)
     ADD_TEST(tc_core, integer_list);
     ADD_TEST(tc_core, list_with_list);
     ADD_TEST(tc_core, list_with_nil);
+    ADD_TEST(tc_core, listerr);
     ADD_TEST(tc_core, alist);
     ADD_TEST(tc_core, alist_extract);
     ADD_TEST(tc_core, simple_list2);
@@ -1007,7 +1287,10 @@ objects_suite(void)
     ADD_TEST(tc_core, broken_list3);
     ADD_TEST(tc_core, broken_list4);
     ADD_TEST(tc_core, vector1);
+    ADD_TEST(tc_core, vector2);
     ADD_TEST(tc_core, hash1);
+    ADD_TEST(tc_core, hash2);
+    ADD_TEST(tc_core, hasherr);
     ADD_TEST(tc_core, nil);
     ADD_TEST(tc_core, emptyhash);
     ADD_TEST(tc_core, is_alist1);
@@ -1040,7 +1323,17 @@ objects_suite(void)
     ADD_TEST(tc_core, cons_concat);
     ADD_TEST(tc_core, cons_remove1);
     ADD_TEST(tc_core, cons_remove2);
-    ADD_TEST(tc_core, cons_remove3);
+    ADD_TEST(tc_core, string_eq1);
+    ADD_TEST(tc_core, string_in1);
+    ADD_TEST(tc_core, string_in2);
+    ADD_TEST(tc_core, string_in_err1);
+    ADD_TEST(tc_core, string_in_err2);
+    ADD_TEST(tc_core, string_in_err3);
+    ADD_TEST(tc_core, string_in_err4);
+    ADD_TEST(tc_core, string_in_err5);
+    ADD_TEST(tc_core, string_in_err6);
+    ADD_TEST(tc_core, setqerr);
+
     suite_add_tcase(s, tc_core);
 
     return s;

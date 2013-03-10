@@ -35,7 +35,6 @@
         <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
 	<xsl:text>&#x0A;alter table only </xsl:text>
@@ -128,7 +127,6 @@
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 
 	<xsl:call-template name="reset_owner"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -142,7 +140,7 @@
         <xsl:value-of select="../@table_qname"/>
 	<xsl:text>&#x0A;  drop constraint </xsl:text>
 	<xsl:value-of select="skit:dbquote(@name)"/>
-        <xsl:text>;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>;&#x0A;</xsl:text>
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>

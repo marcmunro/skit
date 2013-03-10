@@ -349,16 +349,20 @@ Object *
 symbolExec(Symbol *sym, Object *obj)
 {
     Object *result;
+    char *tmp;
+    char *errmsg;
     //printSexp(stderr, "SymbolExec: ", sym); 
     //printSexp(stderr, "  -- ", obj); 
-    assert(sym && sym->type == OBJ_SYMBOL, "symbolExec arg is not a symbol");
-    if (sym->fn) {
+    if (sym && (sym->type == OBJ_SYMBOL) && sym->fn) {
 	result = (*sym->fn)(obj);
 	//printSexp(stderr, "SymbolExec: result", result); 
 	return result;
     }
-    RAISE(LIST_ERROR, 
-	  newstr("symbolExec: symbol %s has no function", sym->name));
+    tmp = objectSexp((Object *) sym);
+    
+    errmsg = newstr("Cannot execute %s as a function", tmp);
+    skfree(tmp);
+    RAISE(LIST_ERROR, errmsg);
 }
 
 boolean

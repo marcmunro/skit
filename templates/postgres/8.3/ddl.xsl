@@ -15,6 +15,10 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- Don't do anything with text nodes matched by calls to
+       apply-templates -->
+  <xsl:template match="text()"/>
+
   <!-- Template for dealing with comments.  This is invoked simply by
        using xsl:apply-templates from within the template for the 
        current dbobject -->
@@ -79,6 +83,9 @@
   </xsl:template>
   
   <xsl:template name="set_owner">
+    <!-- Explicit set session authorization created when ignore-contexts
+        is true, for those cases where we must always do this in spite of
+        the ignore-contexts flag.  -->
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@owner != //cluster/@username">
 	<xsl:text>set session authorization &apos;</xsl:text>

@@ -142,7 +142,6 @@ START_TEST(adddeps_options)
     Int4 *sources;
     Int4 *wibble;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
     BEGIN {
 	param_list = process_args(3, args);
@@ -202,7 +201,6 @@ START_TEST(template_options)
     Int4 *sources;
     Int4 *wibble;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -258,7 +256,6 @@ START_TEST(too_many_sources)
     Document *doc;
     Cons *param_list;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -285,7 +282,6 @@ START_TEST(missing_file)
     Document *doc;
     Cons *param_list;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -315,7 +311,6 @@ START_TEST(too_few_sources)
     String *action_key = stringNew("action");
     String *action;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
     param_list = process_args(2, args);
     param_hash = (Hash *) param_list->car;
@@ -348,7 +343,6 @@ START_TEST(incomplete_extract)
     String *action_key = stringNew("action");
     String *action;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     param_list = process_args(2, args);
     param_hash = (Hash *) param_list->car;
@@ -378,7 +372,6 @@ START_TEST(missing_template)
     Document *doc;
     Cons *param_list;
 
-    initBuiltInSymbols();
     initTemplatePath("./tests");
 
     BEGIN {
@@ -408,7 +401,6 @@ START_TEST(multiple_options)
     Int4 *sources;
     Symbol *grants;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -464,7 +456,6 @@ START_TEST(unknown_type)
     Document *doc;
     Cons *param_list = NULL;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -491,7 +482,6 @@ START_TEST(no_option_name)
     Document *doc;
     Cons *param_list = NULL;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -518,7 +508,6 @@ START_TEST(no_alias_name)
     Document *doc;
     Cons *param_list = NULL;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -545,7 +534,6 @@ START_TEST(value_and_default)
     Document *doc;
     Cons *param_list = NULL;
 
-    initBuiltInSymbols();
     initTemplatePath("./test");
 
     BEGIN {
@@ -601,7 +589,6 @@ START_TEST(dbtype)
     char *args[] = {"./skit", "--dbtype", "postgres"};
     Document *doc;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
 
     BEGIN {
@@ -622,7 +609,6 @@ START_TEST(dbtype_unknown)
     char *args[] = {"./skit", "--dbtype", "wibble"};
     Document *doc;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
 
     BEGIN {
@@ -649,7 +635,6 @@ START_TEST(connect)
 		    "dbname = 'skittest' port = '54329'"};
     Symbol *sym;
     char *tmp;
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
 
@@ -676,7 +661,6 @@ START_TEST(connect2)
 		    "dbname='skittest' port = '5432'"};
     Symbol *sym;
     char *tmp;
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
 
@@ -736,7 +720,6 @@ START_TEST(gather)
     char *bt;
     fileinfo_t *fi;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -776,7 +759,6 @@ START_TEST(scatter)
     char *bt;
     fileinfo_t *fi;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -821,7 +803,6 @@ START_TEST(extract)
     char *bt;
     fileinfo_t *fi;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -863,7 +844,6 @@ START_TEST(generate)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -899,7 +879,6 @@ START_TEST(dep2)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -929,7 +908,6 @@ START_TEST(deps2)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
@@ -959,13 +937,12 @@ END_TEST
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--print", "--full", "--xxxx"};
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "--generate", "--debug", "--full", "--xxxx"};
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(3563);
     //showMalloc(5865);
@@ -1005,7 +982,6 @@ START_TEST(diffgen)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //registerTestSQL();
     //showFree(1205);
@@ -1041,7 +1017,6 @@ START_TEST(difflist)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //registerTestSQL();
     //showFree(1205);
@@ -1076,7 +1051,6 @@ START_TEST(diff2)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(3563);
     //showMalloc(5865);
@@ -1113,7 +1087,6 @@ do_list(void *ignore)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(2826);
     //showMalloc(4611);
@@ -1162,7 +1135,6 @@ do_deps(void *ignore)
     Document *doc;
     char *bt;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(4247);
     //showMalloc(1909);
@@ -1240,7 +1212,7 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 				
     // Populate the regression test database
-    //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
+    ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects
     //ADD_TEST(tc_core, deps2); // Testing deps for columns
 

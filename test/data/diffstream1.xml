@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20130214084231" dbname2="regressdb" time2="20130214084217" retain_deps="true">
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20130225171503" dbname2="regressdb" time2="20130225171450" retain_deps="true">
   <dbobject type="cluster" visit="true" name="cluster" fqn="cluster" diff="diffkids">
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.13" host="/var/run/postgresql" skit_xml_version="0.1" username="marc"/>
     <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep" diff="diff">
@@ -18,8 +18,10 @@
       <dependencies>
         <dependency fqn="cluster"/>
       </dependencies>
-      <role name="keep2" login="n" max_connections="-1"/>
-      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.keep2.inherit" diff="new">
+      <role name="keep2" login="n" max_connections="-1">
+        <privilege priv="inherit"/>
+      </role>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.keep2.inherit" role_qname="keep2" diff="new">
         <dependencies>
           <dependency fqn="role.cluster.keep2"/>
         </dependencies>
@@ -33,8 +35,13 @@
       <dependencies condition="build">
         <dependency fqn="cluster"/>
       </dependencies>
-      <role name="marc" login="y" max_connections="-1"/>
-      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser" diff="none">
+      <role name="marc" login="y" max_connections="-1">
+        <privilege priv="superuser"/>
+        <privilege priv="inherit"/>
+        <privilege priv="createrole"/>
+        <privilege priv="createdb"/>
+      </role>
+      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser" role_qname="marc" diff="none">
         <dependencies condition="drop">
           <dependency fqn="role.cluster.marc"/>
         </dependencies>
@@ -43,7 +50,7 @@
         </dependencies>
         <privilege priv="superuser"/>
       </dbobject>
-      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit" diff="none">
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit" role_qname="marc" diff="none">
         <dependencies condition="drop">
           <dependency fqn="role.cluster.marc"/>
         </dependencies>
@@ -52,7 +59,7 @@
         </dependencies>
         <privilege priv="inherit"/>
       </dbobject>
-      <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole" diff="none">
+      <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole" role_qname="marc" diff="none">
         <dependencies condition="drop">
           <dependency fqn="role.cluster.marc"/>
         </dependencies>
@@ -61,7 +68,7 @@
         </dependencies>
         <privilege priv="createrole"/>
       </dbobject>
-      <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb" diff="none">
+      <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb" role_qname="marc" diff="none">
         <dependencies condition="drop">
           <dependency fqn="role.cluster.marc"/>
         </dependencies>
@@ -80,7 +87,7 @@
       </dependencies>
       <element status="diff" type="config" key="type">
         <config type="client_min_messages" value="warning"/>
-        <attribute name="value" status="Diff" old="notice" new="warning"/>
+        <attribute name="value" status="diff" old="notice" new="warning"/>
       </element>
       <element status="new" type="privilege" key="priv">
         <privilege priv="superuser"/>
@@ -91,14 +98,15 @@
       <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
         <config type="client_min_messages" value="warning"/>
         <comment>'new comment'</comment>
+        <privilege priv="superuser"/>
       </role>
-      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.regress.superuser" diff="new">
+      <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.regress.superuser" role_qname="regress" diff="new">
         <dependencies>
           <dependency fqn="role.cluster.regress"/>
         </dependencies>
         <privilege priv="superuser"/>
       </dbobject>
-      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.regress.inherit" diff="gone">
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.regress.inherit" role_qname="regress" diff="gone">
         <dependencies>
           <dependency fqn="role.cluster.regress"/>
         </dependencies>
@@ -112,7 +120,7 @@
       <dependencies condition="build">
         <dependency fqn="cluster"/>
       </dependencies>
-      <attribute name="expires" status="Diff" old="2007-03-02 00:00:00-08" new="2007-03-01 00:00:00-08"/>
+      <attribute name="expires" status="diff" old="2007-03-02 00:00:00-08" new="2007-03-01 00:00:00-08"/>
       <element status="diff" type="comment">
         <comment>'after'</comment>
         <diffs>
@@ -146,7 +154,7 @@
         <dependency fqn="cluster"/>
         <dependency fqn="role.cluster.keep"/>
       </dependencies>
-      <attribute name="owner" status="Diff" old="regress" new="keep"/>
+      <attribute name="owner" status="diff" old="regress" new="keep"/>
       <element status="diff" type="comment">
         <comment>'This is the second tablespace'</comment>
         <diffs>
@@ -208,7 +216,7 @@
         <dependency fqn="cluster"/>
         <dependency fqn="role.cluster.wibble"/>
       </dependencies>
-      <attribute name="location" status="Diff" old="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs4" new="/home/marc/proj/skit/regress/REGRESSDB/tbs/TBS4"/>
+      <attribute name="location" status="diff" old="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs4" new="/home/marc/proj/skit/regress/REGRESSDB/tbs/TBS4"/>
       <tablespace name="tbs4" owner="wibble" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/TBS4"/>
     </dbobject>
     <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.cluster.regressdb" diff="none">
@@ -219,19 +227,21 @@
       </dependencies>
       <dependencies condition="build">
         <dependency fqn="cluster"/>
-        <dependency fqn="tablespace.cluster.tbs3"/>
+        <dependency fqn="tablespace.cluster.pg_default"/>
         <dependency fqn="role.cluster.regress"/>
       </dependencies>
-      <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
-        <comment>'New comment'</comment>
+      <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="4">
+        <comment>'new comment'</comment>
       </database>
     </dbobject>
     <dbobject type="role" name="lose" qname="lose" fqn="role.cluster.lose" diff="gone">
       <dependencies>
         <dependency fqn="cluster"/>
       </dependencies>
-      <role name="lose" login="y" max_connections="-1"/>
-      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.lose.inherit" diff="gone">
+      <role name="lose" login="y" max_connections="-1">
+        <privilege priv="inherit"/>
+      </role>
+      <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.lose.inherit" role_qname="lose" diff="gone">
         <dependencies>
           <dependency fqn="role.cluster.lose"/>
         </dependencies>
@@ -246,17 +256,19 @@
     <dependencies condition="build">
       <dependency fqn="dbincluster.cluster.regressdb"/>
     </dependencies>
+    <attribute name="tablespace" status="diff" old="tbs3" new="pg_default"/>
+    <attribute name="connections" status="diff" old="-1" new="4"/>
     <element status="diff" type="comment">
-      <comment>'New comment'</comment>
+      <comment>'new comment'</comment>
       <diffs>
         <text>
           <old>'old comment'</old>
-          <new>'New comment'</new>
+          <new>'new comment'</new>
         </text>
       </diffs>
     </element>
-    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
-      <comment>'New comment'</comment>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="4">
+      <comment>'new comment'</comment>
     </database>
     <dbobject type="grant" parent="database.regressdb" name="temporary:public" pqn="grant.regressdb.temporary:public" fqn="grant.regressdb.temporary:public:regress" owner="regress" subtype="database" on="regressdb" diff="none">
       <dependencies condition="drop">
@@ -281,6 +293,19 @@
       </dependencies>
       <context name="owner" value="regress" default="marc"/>
       <grant with_grant="no" priv="connect" to="public" from="regress"/>
+    </dbobject>
+    <dbobject type="language" name="plpgsql" qname="plpgsql" fqn="language.regressdb.plpgsql" diff="diff">
+      <dependencies condition="drop">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.marc"/>
+      </dependencies>
+      <dependencies condition="build">
+        <dependency fqn="database.regressdb"/>
+        <dependency fqn="role.cluster.regress"/>
+      </dependencies>
+      <context name="owner" value="marc" default="marc"/>
+      <attribute name="owner" status="diff" old="marc" new="regress"/>
+      <language name="plpgsql" owner="regress" handler_schema="pg_catalog" handler_function="plpgsql_call_handler" validator_schema="pg_catalog" validator_function="plpgsql_validator"/>
     </dbobject>
     <dbobject type="schema" name="public" qname="public" fqn="schema.regressdb.public" diff="none">
       <dependencies condition="drop">

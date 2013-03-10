@@ -97,7 +97,8 @@ toVector(Cons *cons)
     vector = vectorNew(elems);
     while (cons) {
     	obj = consPop(&cons);
-    	(void) vectorPush(vector, obj);
+    	(void) vectorPush(vector, obj); //objectEval(obj));
+	//objectFree(obj, TRUE);
     }
     return vector;
 }

@@ -14,7 +14,7 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create or replace view </xsl:text>
+	<xsl:text>&#x0A;create or replace view </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text> as&#x0A;  </xsl:text>
         <xsl:value-of select="source/text()"/>
@@ -23,12 +23,14 @@
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 
 	<xsl:call-template name="reset_owner"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
+        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 	<xsl:text>&#x0A;drop view </xsl:text>
         <xsl:value-of select="../@qname"/>
@@ -47,7 +49,7 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create or replace view </xsl:text>
+	<xsl:text>&#x0A;create or replace view </xsl:text>
         <xsl:value-of select="../@qname"/>
 	<xsl:text> as select &#x0A;</xsl:text>
 	<xsl:for-each select="column">
@@ -62,7 +64,6 @@
 	<xsl:text>;&#x0A;</xsl:text>
 
 	<xsl:call-template name="reset_owner"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
   </xsl:template>

@@ -372,6 +372,7 @@ extern void pSexp(Object *obj);
 extern boolean isObject(Object *obj);
 extern Object *objectCopy(Object *obj);
 extern Object *objectEval(Object *obj);
+extern Object *trappedObjectEval(Object *obj);
 extern void traceOn(boolean on);
 extern Object *evalSexp(char *str);
 extern ObjReference *objRefNew(Object *obj);

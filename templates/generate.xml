@@ -24,6 +24,9 @@
         \-\-i[gnore-contexts]
 	TODO: check this works, and create the comment if it makes sense
 
+        \-\-de[bug]
+	TODO: check this works, and create the comment if it makes sense
+
         \-\-s[simple-sort]
 	Use a basic tsort rather than skit's more sophisticated sort for
 	identifying the order of statements issued.
@@ -38,6 +41,7 @@
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
     <option name='ec*hoes' type='flag' default='true'/>
+    <option name='de*bug' type='flag' default='false'/>
 
     <!-- This causes the context handling code that optimises context
          switches, to be disabled.  The only context that we have right

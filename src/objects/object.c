@@ -25,6 +25,9 @@ static Object close_angle = {OBJ_CLOSE_ANGLE};
 char *
 objTypeName(Object *obj)
 {
+    if (!obj) {
+	return "NULL";
+    }
     switch (obj->type) {
     case OBJ_UNDEFINED: return "OBJ_UNDEFINED";
     case OBJ_INT4: return "OBJ_INT4"; 
@@ -323,6 +326,21 @@ objectRead(TokenStr *sexp)
     return NULL;
 }
 
+Object *
+trappedObjectRead(TokenStr *sexp)
+{
+    BEGIN {
+	RETURN(objectRead(sexp));
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	RAISE(ex->signal, newstr("%s while reading \"%s\"", 
+				 ex->text, sexp->instr));
+    }
+    END;
+}
+
+
 /* Raise a TYPE_MISMATCH exception on behalf of a caller.  */
 void
 objectCmpFail(Object *obj1, Object *obj2)
@@ -589,6 +607,7 @@ objectSexp(Object *obj)
     if (!obj) {
 	return newstr("nil");
     }
+
     switch(obj->type) {
     case OBJ_INT4:
 	return newstr("%d", ((Int4 *)obj)->value);
@@ -609,9 +628,11 @@ objectSexp(Object *obj)
     case OBJ_EXCEPTION: 
 	return newstr("<Exception: %s>", ((Exception *) obj)->backtrace);
     case OBJ_FN_REFERENCE:
-	return newstr("<%s %p>", objTypeName(obj), ((FnReference *) obj)->fn);
+	return newstr("<%s %p>", objTypeName(obj), 
+		      ((FnReference *) obj)->fn);
     case OBJ_CONNECTION:
-	return newstr("<%s %p>", objTypeName(obj), ((Connection *) obj)->conn);
+	return newstr("<%s %p>", objTypeName(obj), 
+		      ((Connection *) obj)->conn);
     case OBJ_XMLNODE:
 	tmp = nodestr(((Node *)obj)->node);
 	tmp2 = newstr("<%s (%s)>", objTypeName(obj), tmp);
@@ -636,7 +657,6 @@ objectSexp(Object *obj)
 	fails = newstr("objectSexp: Unhandled type: %d\n", obj->type);
 	RAISE(UNHANDLED_OBJECT_TYPE, fails);
     }
-    
 }
 
 /* Create a deep copy of a cons cell. */
@@ -748,6 +768,28 @@ objectEval(Object *obj)
     return NULL;
 }
 
+
+/* As objectEval but with a nicely formatted exception message.
+ */
+Object *
+trappedObjectEval(Object *obj)
+{
+    BEGIN {
+	RETURN(objectEval(obj));
+    }
+    EXCEPTION(ex);
+    WHEN(LIST_ERROR) {
+	char *sexp = objectSexp(obj);
+	char *msg = newstr("%s in expr \"%s\"", ex->text, sexp);
+	//fprintf(stderr, "TRAPPED: %s\n", ex->text);
+	skfree(sexp);
+	RAISE(ex->signal, msg);
+    }
+    END;
+
+    return NULL;
+}
+
 /* Evaluate a string expression. */
 Object *
 evalSexp(char *str)
@@ -756,9 +798,9 @@ evalSexp(char *str)
     Object *result = NULL;
     TokenStr token_str = {str, '\0', NULL};
 
-    if (obj = objectRead(&token_str)) {
+    if (obj = trappedObjectRead(&token_str)) {
 	BEGIN {
-	    result = objectEval(obj);
+	    result = trappedObjectEval(obj);
 	}
 	EXCEPTION(ex);
 	FINALLY {

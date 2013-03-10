@@ -159,13 +159,33 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
     return previous_contents;
 }
 
+void
+freeAlist(Cons *cons)
+{
+    Cons *next;
+    while (cons) {
+	next = (Cons *) cons->cdr;
+	if (next) {
+	    assert(next->type == OBJ_CONS, 
+		   "freelist: next is not a cons cell");
+	}
+
+	objectFree((Object *) cons->car, TRUE);
+	objectFree((Object *) cons, FALSE);
+	cons = next;
+    }
+}
+
 /* Create a hash from a Cons-cell alist, moving the objects from the
  * alist into the vector, and destroying the list. */
 Hash *
 toHash(Cons *cons)
 {
-    Hash *hash;
+    Hash *hash = NULL;
     Cons *entry;
+    Object *car;
+    Object *cdr;
+    Cons *this = cons;
 
     if (!consIsAlist(cons)) {
 	RAISE(TYPE_MISMATCH, 
@@ -173,16 +193,34 @@ toHash(Cons *cons)
     }
     hash = hashNew(TRUE);
     
-    /* Now, get each alist entry from the list and add it to the hash, 
-     * destroying the list as we go. */
-    while (cons) {
-	assert((cons->type == OBJ_CONS), "toHash: Not a cons cell");
-    	entry = (Cons *) consPop(&cons);
-	assert((entry->type == OBJ_CONS), "toHash: Invalid alist entry");
-	// TODO: Maybe check result of addHash below
-	(void) hashAdd(hash, entry->car, entry->cdr);
-	objectFree((Object *) entry, FALSE);
+    BEGIN {
+	/* Now, get each alist entry from the list and add it to the
+	 * hash */
+	while (this) {
+	    car = cdr = NULL;
+	    assert((this->type == OBJ_CONS), "toHash: Not a cons cell");
+	    entry = (Cons *) this->car;
+	    this = (Cons *) this->cdr;
+	    assert((entry->type == OBJ_CONS), "toHash: Invalid alist entry");
+	    car = objectEval(entry->car);
+	    cdr = objectEval(entry->cdr);
+	    (void) hashAdd(hash, car, cdr);
+	}
     }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	char *sexp = objectSexp((Object *) cons);
+	char *msg = newstr("%s in expr \"<%s>\"", ex->text, sexp);
+	skfree(sexp);
+	freeAlist(cons);
+	objectFree((Object *) hash, TRUE);
+	objectFree((Object *) car, TRUE);
+	objectFree((Object *) cdr, TRUE);
+	RAISE(ex->signal, msg);
+    }
+    END;
+
+    freeAlist(cons);  /* Destroy the list we were passed. */
     return hash;
 }
 

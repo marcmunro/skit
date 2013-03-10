@@ -303,6 +303,7 @@ main(int argc, char *argv[])
 	}
     }
     if (!suppressions) {
+	initBuiltInSymbols();
 	ADD_SUITE(objects);
 	ADD_SUITE(options);
 	ADD_SUITE(exceptions);

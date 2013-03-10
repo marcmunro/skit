@@ -368,6 +368,8 @@ START_TEST(build_type_bitsets)
     if (!inBuildTypeBitSet(btbs, DIFF_NODE)) {
 	fail("Failed to find DIFF_NODE in bitset");
     }
+
+    FREEMEMWITHCHECK;
 }
 END_TEST
 
@@ -382,7 +384,6 @@ START_TEST(depset_dag1_build)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(654);
 	//showFree(724);
@@ -442,7 +443,6 @@ START_TEST(depset_dag1_drop)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(23);
 	//showFree(724);
@@ -493,7 +493,6 @@ START_TEST(depset_dag1_both)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(901);
 	//showFree(415);
@@ -573,7 +572,6 @@ START_TEST(depset_diff)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(23);
 	//showFree(724);
@@ -584,12 +582,13 @@ START_TEST(depset_diff)
 	 * ./skit --diff regress/scratch/regressdb_dump3a.xml \
 	 *      regress/scratch/regressdb_dump3b.xml \
 	 *        >test/data/diffstream1.xml
+	 * Run "make prep" to refresh this file.
 	 */
 	doc = getDoc("test/data/diffstream1.xml");
 	nodes = dagFromDoc(doc);
 
 	//deps for tbs2 should be different in prep and complete stages
-	showVectorDeps(nodes);
+	//showVectorDeps(nodes);
 	nodes_by_fqn = dagnodeHash(nodes);
 
 	requireDep(nodes_by_fqn, "diffcomplete.tablespace.cluster.tbs2", 
@@ -633,7 +632,6 @@ START_TEST(cyclic_build)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(1395);
 	//showFree(1504);
@@ -731,7 +729,6 @@ START_TEST(cyclic_drop)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(813);
 	//showFree(572);
@@ -837,7 +834,6 @@ START_TEST(cyclic_both)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(813);
 	//showFree(572);
@@ -1003,7 +999,6 @@ START_TEST(fallback)
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
-	initBuiltInSymbols();
 	initTemplatePath(".");
 	//showMalloc(642);
 	//showFree(5641);
@@ -1065,7 +1060,6 @@ START_TEST(cond)
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
 
-    initBuiltInSymbols();
     initTemplatePath(".");
     //showFree(4247);
     //showMalloc(1390);

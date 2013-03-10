@@ -52,7 +52,6 @@ START_TEST(find_x)
 {
     char *tmp;
     char *result;
-    initBuiltInSymbols();
 
     result = find_in_8_2("root");
     fail_unless(streq("test/templates/root", result), 

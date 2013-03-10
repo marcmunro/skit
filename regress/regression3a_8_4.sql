@@ -48,4 +48,8 @@ create tablespace "tbs4" owner "wibble"
   location :tbs4dir;
 
 CLUSTEREOF
- 
+
+psql -d regressdb << EOF
+
+create language plpgsql;
+EOF

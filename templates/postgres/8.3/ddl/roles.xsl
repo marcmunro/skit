@@ -7,7 +7,6 @@
    version="1.0">
 
   <xsl:template match="dbobject[@type='role']/role">
-
     <xsl:if test="../@action='build'">
       <print>
         <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
@@ -45,10 +44,22 @@
           <xsl:text>&apos;;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:if test="not(privilege/@priv='inherit')">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../@qname"/>
-          <xsl:text> with noinherit;&#x0A;</xsl:text>
+	<xsl:if test="not(../@diff)">
+	  <!-- If we are doing diffs, allow the privilege handling
+	       template below to deal with privs. -->
+	  <xsl:if test="not(privilege/@priv='inherit')">
+	    <xsl:text>alter role </xsl:text>
+	    <xsl:value-of select="../@qname"/>
+	    <xsl:text> with noinherit;&#x0A;</xsl:text>
+	  </xsl:if>
+
+	  <xsl:for-each select="privilege">
+	    <xsl:text>alter role </xsl:text>
+	    <xsl:value-of select="../../@qname"/>
+	    <xsl:text> with </xsl:text>
+	    <xsl:value-of select="@priv"/>
+	    <xsl:text>;&#x0A;</xsl:text>
+	  </xsl:for-each>
 	</xsl:if>
 
 	<xsl:for-each select="config">
@@ -60,13 +71,7 @@
           <xsl:value-of select="@value"/>
           <xsl:text>;&#x0A;</xsl:text>
 	</xsl:for-each>
-	<xsl:for-each select="privilege">
-	  <xsl:text>alter role </xsl:text>
-	  <xsl:value-of select="../../@qname"/>
-	  <xsl:text> with </xsl:text>
-	  <xsl:value-of select="@priv"/>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:for-each>
+
 	<xsl:for-each select="profile">
           <xsl:text>alter role </xsl:text>
           <xsl:value-of select="../../@qname"/>
@@ -95,7 +100,7 @@
         <xsl:text>-- drop role </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;</xsl:text>
-      </print>     
+      </print> 
     </xsl:if>
 
     <xsl:if test="../@action='diffcomplete'">
@@ -127,19 +132,17 @@
 	</xsl:for-each>
 
 	<xsl:call-template name="commentdiff"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='arrive'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT ARRIVE</xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>	
   </xsl:template>
-
 
   <xsl:template match="dbobject[@type='privilege' and @diff]">
     <!-- Privileges are only handled on an individual basis when

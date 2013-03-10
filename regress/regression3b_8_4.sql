@@ -29,9 +29,9 @@ create tablespace "tbs3" owner "regress"
 
 create database "regressdb" with
  owner "regress"
- encoding 'UTF8'
- tablespace "tbs3"
- connection limit = -1;
+ encoding 'UTF-8'
+ tablespace "pg_default"
+ connection limit = 4;
 \connect regressdb
 
 comment on database "regressdb" is
@@ -53,4 +53,15 @@ create tablespace "tbs4" owner "wibble"
   location :tbs4dir;
 
 CLUSTEREOF
+
+psql -d regressdb << EOF
+
+set session authorization regress;
+create language plpgsql;
+reset session authorization;
+
+revoke usage on language plpgsql from public;
+grant usage on language plpgsql to keep2;
+
+EOF
  

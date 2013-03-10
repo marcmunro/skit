@@ -789,6 +789,7 @@ getParam(xmlNode *template_node, xmlNode *cur_node)
     BEGIN {
 	if (expr = nodeAttribute(template_node, name->value)) {
 	    value = evalSexp(expr->value);
+	    //dbgSexp(value);
 	}
 	else {
 	    if (dflt = nodeAttribute(cur_node, "default")) {
@@ -888,6 +889,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *volatile stylesheet = NULL;
     Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
+    Object *debug = symbolGetValue("debug");
     xmlNode *scratch;
     xmlNode *result;
     xmlNode *root_node;
@@ -912,7 +914,10 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docForNode(root_node);
 	}
 
-//dbgSexp(source_doc);
+	if (debug) {
+	    printSexp(stderr, "", (Object *) source_doc);
+	}
+
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
 	if (!result_doc) {
 	       RAISE(XML_PROCESSING_ERROR,

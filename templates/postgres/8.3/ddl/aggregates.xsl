@@ -48,7 +48,6 @@
 
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:call-template name="reset_owner"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -75,7 +74,6 @@
 	<xsl:text>);&#x0A;</xsl:text>
 	  
 	<xsl:call-template name="reset_owner"/>
-      	<xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

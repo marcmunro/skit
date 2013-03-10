@@ -58,7 +58,7 @@ consPush(Cons **head, Object *obj)
 
     if (*head) {
 	assert((*head)->type == OBJ_CONS, 
-	       "consPush head is not a cons cell pointer");
+	       "consPush: head is not a cons cell pointer");
     }
     cons = consNew(obj, (Object *) *head);
     *head = cons;
@@ -75,7 +75,7 @@ consPop(Cons **head)
 
     if (*head) {
 	assert((*head)->type == OBJ_CONS, 
-	       "consPush head is not a cons cell pointer");
+	       "consPop: head is not a cons cell pointer");
     }
     cons = *head;
     obj = cons->car;

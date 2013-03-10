@@ -126,6 +126,8 @@ create language "plpgsql";
 comment on language "plpgsql" is
 'Procedural language';
 
+--revoke usage on language plpgsql from public;
+
 \echo updating schema "public";
 
 create or replace function "public"."addint4"(
@@ -213,10 +215,6 @@ comment on type "public"."mychar" is
 \echo updating schema "public";
 
 set session authorization 'regress';
-grant usage on schema "public" to "public";
-reset session authorization;
-
-set session authorization 'regress';
 grant create on schema "public" to "public";
 reset session authorization;
 \echo Done with schema "public";
@@ -283,8 +281,6 @@ reset session authorization;
 grant usage on language "plpgsql" to "keep2" with grant option;
 
 grant usage on language "plpgsql" to "keep";
-
-grant usage on language "plpgsql" to "public";
 
 grant usage on language "plpgsql" to "wibble";
 

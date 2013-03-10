@@ -31,7 +31,6 @@
         <xsl:value-of select="skit:dbquote(@owner)"/>
         <xsl:text>;&#x0A;</xsl:text>
 	<xsl:apply-templates/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -42,7 +41,7 @@
         <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;drop schema </xsl:text>
         <xsl:value-of select="../@qname"/>
-        <xsl:text>;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 

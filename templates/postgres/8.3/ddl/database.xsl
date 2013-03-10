@@ -35,7 +35,7 @@
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:text>&#x0A;-- drop database </xsl:text>
 	<xsl:value-of select="../@qname"/>
-	<xsl:text>;&#x0A;&#x0A;</xsl:text>
+	<xsl:text>;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -63,41 +63,42 @@
         <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
-	<!-- TODO: CHANGE the select expression below: -->
-<!-- stuff below needs to be re-implemented
-	<xsl:for-each select="../diffs/attribute">
-          <xsl:if test="@name='connections'">
-            <xsl:text>alter database </xsl:text>
-	    <xsl:value-of select="../../@qname"/>
-	    <xsl:text> connection limit </xsl:text>
-	    <xsl:value-of select="@new"/>
-	    <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:if>
-          <xsl:if test="@name='owner'">
-            <xsl:text>alter database </xsl:text>
-	    <xsl:value-of select="../../@qname"/>
-	    <xsl:text> owner to </xsl:text>
-	    <xsl:value-of select="@new"/>
-	    <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:if>
-          <xsl:if test="@name='tablespace'">
-            <xsl:text>\echo WARNING: database default tablespace</xsl:text>
-	    <xsl:text> changes from &quot;</xsl:text>
-	    <xsl:value-of select="@old"/>
-	    <xsl:text>&quot; to &quot;</xsl:text>
-	    <xsl:value-of select="@new"/>
-	    <xsl:text>&quot;&#x0A;</xsl:text>
-	  </xsl:if>
-          <xsl:if test="@name='encoding'">
+
+        <xsl:text>&#x0A;</xsl:text>
+	<xsl:for-each select="../attribute[@name='connections']">
+	  <xsl:text>alter database </xsl:text>
+	  <xsl:value-of select="../@qname"/>
+	  <xsl:text> connection limit </xsl:text>
+	  <xsl:value-of select="@new"/>
+	  <xsl:text>;&#x0A;</xsl:text>
+	</xsl:for-each>
+
+	<xsl:for-each select="../attribute[@name='owner']">
+	  <xsl:text>alter database </xsl:text>
+	  <xsl:value-of select="../@qname"/>
+	  <xsl:text> owner to </xsl:text>
+	  <xsl:value-of select="@new"/>
+	  <xsl:text>;&#x0A;</xsl:text>
+	</xsl:for-each>
+
+	<xsl:for-each select="../attribute[@name='tablespace']">
+	  <xsl:text>\echo WARNING: database default tablespace</xsl:text>
+	  <xsl:text> changes from &quot;</xsl:text>
+	  <xsl:value-of select="@old"/>
+	  <xsl:text>&quot; to &quot;</xsl:text>
+	  <xsl:value-of select="@new"/>
+	  <xsl:text>&quot;&#x0A;</xsl:text>
+	</xsl:for-each>
+
+	<xsl:for-each select="../attribute[@name='encoding']">
             <xsl:text>\echo WARNING: database character encoding</xsl:text>
 	    <xsl:text> changes from &quot;</xsl:text>
 	    <xsl:value-of select="@old"/>
 	    <xsl:text>&quot; to &quot;</xsl:text>
 	    <xsl:value-of select="@new"/>
 	    <xsl:text>&quot;&#x0A;</xsl:text>
-	  </xsl:if>
 	</xsl:for-each>
--->
+
 	<xsl:for-each select="../element[@type='comment']">
 	  <xsl:text>&#x0A;comment on database </xsl:text>
 	  <xsl:value-of select="../@qname"/>
@@ -132,7 +133,7 @@
         <xsl:value-of select="../@name"/>
         <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
 	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
-        <xsl:text>set escape_string_warning = off;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 

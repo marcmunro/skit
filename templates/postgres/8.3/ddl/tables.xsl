@@ -130,7 +130,6 @@
 	</xsl:for-each>
 
 	<xsl:call-template name="reset_owner"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -144,7 +143,7 @@
         <xsl:value-of select="../@qname"/>
         <xsl:text>&#x0A;drop table </xsl:text>
         <xsl:value-of select="../@qname"/>
-        <xsl:text>;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>;&#x0A;</xsl:text>
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>

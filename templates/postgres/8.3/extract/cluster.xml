@@ -24,6 +24,7 @@
 
       <skit:function name="grants_from_privs">
 	<skit:parameter name="privileges"/>
+	<skit:parameter name="automatic" default="nil"/>
 	<skit:if test="privileges">
 	  <!-- The first regexp below removes the braces around the
 	       privileges string.  The second one reverses the order of
@@ -63,6 +64,13 @@
 			<skit:attr name="to" expr="to"/>
 			<skit:attr name="with_grant" expr="with_grant"/>
 			<skit:attr name="priv" expr="privname"/>
+<!--
+			<skit:if test="(string-in 'abc' (list 'def' 'ghi' 'abc'))">
+			  <skit:attr name="stringy" expr="'yes'"/>
+			</skit:if>
+			<skit:if test="(select automatic to)">
+			  <skit:attr name="automatic" expr="'yes'"/>
+			</skit:if>-->
 		      </grant>
 		    </skit:if>
 		  </skit:foreach>

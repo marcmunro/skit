@@ -32,6 +32,50 @@ raiseMsg(char *template, char *fn_name, Object *obj)
     RAISE(LIST_ERROR, errmsg);
 }
 
+static Object *
+nextParam(char * fn_name, Cons **p_list, ObjType type, 
+	  boolean required, boolean evaluate, int param_no)
+{
+    Object *elem;
+    if (!*p_list) {
+	RAISE(LIST_ERROR, 
+	      newstr("%s: missing arg no %d", fn_name, param_no));
+    }
+    if ((*p_list)->type != OBJ_CONS) {
+	RAISE(LIST_ERROR, 
+	      newstr("%s: invalid args.  Expecting a list, got %s",
+		     fn_name, objTypeName((Object *) *p_list)));
+    }
+    
+    if (elem = (*p_list)->car) {
+	if (evaluate) {
+	    elem = objectEval(elem);
+	}
+	else {
+	    elem = objectCopy(elem);
+	}
+
+	if (elem->type != type) {
+	    char *sexp = objectSexp(elem);
+	    char *msg = newstr("%s: invalid arg (no %d).  Expecting %s got %s", 
+			       fn_name, param_no, objTypeName(elem), sexp);
+	    skfree(sexp);
+	    objectFree(elem, TRUE);
+	    RAISE(LIST_ERROR, msg);
+	}
+    }
+    else {
+	if (required) {
+	    RAISE(LIST_ERROR, 
+		  newstr("%s: missing required paramer %d", fn_name, param_no));
+	}
+    }
+
+    *p_list = (Cons *) (*p_list)->cdr;
+    return elem;
+}
+
+
 static void
 raiseIfNotList(char *fn_name, Object *obj)
 {
@@ -98,7 +142,7 @@ static void
 raiseIfMoreArgs(char *fn_name, Object *obj)
 {
     if (obj) {
-	raiseMsg("%s: too many args: %s",  fn_name, obj);
+	raiseMsg("%s: too many args at %s",  fn_name, obj);
     }
 }
 
@@ -143,20 +187,7 @@ fnSetq(Object *obj)
     obj_to_eval = next? next->car: NULL;
     new = objectEval(obj_to_eval);
 
-#ifdef DEBUG
-    curstr = objectSexp(symGet(sym));
-    newstr = objectSexp(new);
-    fprintf(stderr, "Setq %s to %s (was %s)\n",
-	    sym->name, newstr, curstr);
-    skfree(curstr);
-    skfree(newstr);
-    sym->svalue = NULL;
-#endif
-
-
-    //fprintf(stderr, "BEFORE\n");
     symSet(sym, new);
-    //fprintf(stderr, "AFTER\n");
     return (Object *) objRefNew(new);
 }
 
@@ -485,6 +516,41 @@ fnStringEq(Object *obj)
 
     return NULL;
 }
+
+/* TODO: Rewrite the other symbol functions to use nextParam, like this:
+ */
+static Object *
+fnStringIn(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    String *str2;
+    Cons *arg2 = NULL;
+    String *arg1 = (String *) nextParam("string_in", &cons, OBJ_STRING, 
+				TRUE, TRUE, 1);
+    BEGIN {
+	arg2 = (Cons*) nextParam("string_in", &cons, OBJ_CONS, TRUE, TRUE, 2);
+	raiseIfMoreArgs("string-in", (Object *) cons);
+
+	cons = arg2;
+	while (cons) {
+	    str2 = (String *) cons->car;
+	    raiseIfNotString("string-in", str2);
+	    if (streq(arg1->value, str2->value)) {
+		objectFree((Object *) arg2, TRUE);
+		RETURN((Object *) arg1);
+	    }
+	    cons = (Cons *) cons->cdr;
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) arg1, TRUE);
+	objectFree((Object *) arg2, TRUE);
+    }
+    END;
+    return NULL;
+}
+
 
 static Object *
 fnReplace(Object *obj)
@@ -817,6 +883,7 @@ initBaseSymbols()
     symbolCreate("list", &fnList, NULL);
     symbolCreate("dbquote", &fnDBQuote, NULL);
     symbolCreate("string=", &fnStringEq, NULL);
+    symbolCreate("string-in", &fnStringIn, NULL);
     symbolCreate("select", &fnSelect, NULL);
     symbolCreate("replace", &fnReplace, NULL);
     symbolCreate("not", &fnNot, NULL);

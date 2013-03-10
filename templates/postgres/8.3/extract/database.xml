@@ -15,16 +15,7 @@
        </comment>
      </skit:if>
      <skit:let>
-       <skit:if test="(not (select dbinfo 'privs'))">
-	 <grant with_grant="no" priv="temporary" to="public">
-	   <skit:attr name="from" expr="(select tuple 'owner')"/>
-	 </grant>
-	 <grant with_grant="no" priv="connect" to="public">
-	   <skit:attr name="from" field="owner"/>
-	 </grant>
-	 <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->
-
-       </skit:if>
+       <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->
        <skit:exec_function name="grants_from_privs"
 			   privileges="(select dbinfo 'privs')"/>
      </skit:let>	

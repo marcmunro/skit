@@ -55,7 +55,7 @@
 	</xsl:if>
         <xsl:text>-- drop tablespace </xsl:text>
         <xsl:value-of select="../@qname"/>
-        <xsl:text>;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>;&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
@@ -85,7 +85,6 @@
 	</xsl:for-each>
 
 	<xsl:call-template name="commentdiff"/>
-        <xsl:text>&#x0A;</xsl:text>
       </print>
     </xsl:if>
 
