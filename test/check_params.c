@@ -806,7 +806,7 @@ START_TEST(extract)
     initTemplatePath(".");
     registerTestSQL();
     //showFree(1205);
-    //showMalloc(4635);
+    showMalloc(32894);
     //trackMalloc(138807);
 
     BEGIN {
@@ -815,7 +815,7 @@ START_TEST(extract)
 	//resetdirect(fi);
 	//process_args2(10, args);
 	//doc = docStackPop();
-	printSexp(stderr, "DOC:", (Object *) doc);
+	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
 	//fail("extract done!");
     }

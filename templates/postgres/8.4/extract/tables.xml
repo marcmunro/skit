@@ -196,7 +196,12 @@
 	</skit:if>
 
 	<skit:exec_function name="grants_from_privs"
-    			    privileges="(select tuple 'privs')"/>
+			    privileges="(select tuple 'privs')"
+			    automatic="&lt; 
+			     ((select tuple 'owner') . 
+			         (list 'insert' 'select' 'update'
+				       'delete' 'truncate' 'references' 
+				       'trigger'))&gt;"/>
       </skit:let>
       <xi:include href="skitfile:extract/triggers.xml"/>
       <xi:include href="skitfile:extract/rules.xml"/>

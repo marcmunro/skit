@@ -16,8 +16,12 @@
      </skit:if>
      <skit:let>
        <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->
-       <skit:exec_function name="grants_from_privs"
-			   privileges="(select dbinfo 'privs')"/>
+      <skit:exec_function name="grants_from_privs"
+  			  privileges="(select tuple 'privs')"
+			  automatic="&lt; 
+			     ((select tuple 'owner') . 
+			         (list 'create' 'connect' 'temporary'))
+			      ('public' . (list 'connect' 'temporary'))&gt;"/>
      </skit:let>	
 
      <skit:let>

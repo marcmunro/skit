@@ -1,7 +1,12 @@
 -- List all non-empty, non-system schemata.
 select n.nspname as name,
        s.rolname as owner,
-       n.nspacl as privs,
+       -- Explicitly show default privs if they are not given.
+       -- Defaults are create and usage to public and to owner.
+       case when n.nspacl is null 
+       then '{=UC/' || s.rolname || ',' || s.rolname || 
+              '=UC/' || s.rolname || '}'
+       else n.nspacl::text end as privs,
        quote_literal(obj_description(n.oid, 'pg_namespace')) as comment
 from   pg_catalog.pg_namespace n
        inner join pg_catalog.pg_authid s

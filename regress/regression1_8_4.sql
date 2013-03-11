@@ -359,9 +359,6 @@ language plpgsql stable strict;
 comment on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") is
 'function';
 
-set session authorization 'regress';
-grant execute on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") to "public";
-reset session authorization;
 
 create or replace function "public"."plpgsql2"(
     _z in "pg_catalog"."int4",

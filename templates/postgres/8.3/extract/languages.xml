@@ -19,7 +19,10 @@
      </skit:if>
 
      <skit:exec_function name="grants_from_privs"
-			 privileges="(select tuple 'privs')"/>
+			 privileges="(select tuple 'privs')"
+			 automatic="&lt; 
+			     ((select tuple 'owner') . 'usage')
+			      ('public' . 'usage')&gt;"/>
     </language>
   </skit:runsql>
 </skit:inclusion>
