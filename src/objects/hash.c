@@ -420,6 +420,95 @@ hashEach(Hash *hash, HashEachFn *fn, Object *arg)
 }
 
 
+/* This is called from g_hash_table_foreach to return an alist 
+ * containing objReferences to the keys and values. */
+static void
+nextlistFromHash(
+    gpointer key,
+    gpointer contents,
+    gpointer param)
+{
+    Cons **p_alist = (Cons **) param;
+    Cons *cur_alist = *p_alist;
+    Cons *contents_cons = (Cons *) contents;
+    ObjReference *keyref = objRefNew(contents_cons->car);
+    ObjReference *contentsref = objRefNew(contents_cons->cdr);
+    Cons *new_entry = consNew((Object *) keyref, (Object *) contentsref);
+    Cons *new_head = consNew((Object *) new_entry, (Object *) cur_alist);
+    *p_alist = new_head;
+}
+
+
+/* Generate an alist from the hash, containing references to keys and
+ * contents.  The list will be dynamically allocated and all of its cons
+ * cells must be freed, but the keys and contents must not. */
+static Cons *
+listForHashNext(Hash *hash)
+{
+    Cons *alist = NULL;
+    Cons **p_alist = &alist;
+
+    g_hash_table_foreach(hash->hash, nextlistFromHash, (gpointer) p_alist);
+    return alist;
+}
+
+/* Itereator function for iterating over a Hash using iterate().
+ */
+Object *
+hashNext(Hash *hash, Object **p_placeholder)
+{
+    Cons *alist;
+    Cons *next;
+    Object *result = NULL;
+
+    if (*p_placeholder) {
+	/* Clear the previous list entry. */
+	alist = (Cons *) *p_placeholder;
+	next = (Cons *) alist->cdr;
+	objectFree((Object *) alist, FALSE);
+	alist = next;
+    }
+    else {
+	/* No existing placeholder so generate a new list representing
+	 * the hash. */
+	alist = (Cons *) listForHashNext(hash);
+    }
+
+    *p_placeholder = (Object *) alist;  /* Save the current list entry */
+    if (alist) {
+	result = alist->car;
+	alist->car = NULL;  /* The result will be freed by the caller so
+			     * remove it from the list from where it
+			     * would be freed when freeing
+			     * *p_placeholder. */
+    }
+    return result;
+}
+
+Object *
+hashNextOld(Hash *hash, Object **p_placeholder)
+{
+    Cons *alist;
+    Object *result;
+
+    if (!*p_placeholder) {
+	*p_placeholder = (Object *) listForHashNext(hash);
+	return ((Cons *) *p_placeholder)->car;
+    }
+    alist = (Cons *) *p_placeholder;
+    if (alist->cdr) {
+	alist = (Cons *) alist->cdr;
+	result = alist->car;
+    }
+    else {
+	alist = (Cons *) alist->cdr;
+	result = NULL;
+    }
+    objectFree(*p_placeholder, FALSE);
+    *p_placeholder = (Object *) alist;
+    return result;
+}
+
 static Object *
 hashDropEntry(Cons *node_entry, Object *ignore)
 {

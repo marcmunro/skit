@@ -55,9 +55,6 @@
     </dbobject>
   </xsl:template>
 
-  <!-- DB object grants -->
-  <!-- pqn format for this type of grant is: grant.<parent_name>.<priv>:<to>
-       -->
   <xsl:template match="grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="grant_name" select="concat($parent_core, '.', 
@@ -169,6 +166,65 @@
       </xsl:copy>
     </dbobject>
   </xsl:template>
+
+  <!-- DB object revokes 
+       These are used only to revoke automatically granted privileges.  
+       Such revocations are made explicit because they will not
+       otherwise be performed.  Nothing must depend on the revoke
+       object, and it will only depend on the object for which the
+       privilege is revoked, and the role to which it is revoked. 
+  -->
+  <xsl:template match="revoke">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <dbobject type="revoke" 
+	      fqn="{concat('revoke.', $parent_core, '.', @to)}"
+	      owner="{../@owner}">
+      <!-- TODO: Refactor this and the equivalent in the grant template
+	   (above) to be use a common callable template.
+      -->
+      <xsl:attribute name="subtype">
+	<xsl:choose>
+	  <xsl:when test="name(..)='sequence'">
+	    <xsl:value-of select="'table'"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of select="name(..)"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:attribute>
+      <xsl:attribute name="on">
+	<xsl:choose>
+	  <xsl:when test="name(..)='function'">
+	    <xsl:for-each select="..">
+	      <xsl:call-template name="function-qname"/>
+	    </xsl:for-each>
+	  </xsl:when>
+	  <xsl:when test="../@schema">
+	    <xsl:value-of select="skit:dbquote(../@schema, ../@name)"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of select="skit:dbquote(../@name)"/>
+	  </xsl:otherwise>
+	</xsl:choose>	
+      </xsl:attribute>
+
+      <dependencies>
+	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
+	<!-- Roles -->
+	<xsl:if test="@to != 'public'">
+	  <dependency fqn="{concat('role.cluster.', @to)}"/>
+	</xsl:if>
+
+      </dependencies>
+      <xsl:copy>
+	<xsl:copy-of select="@*"/>
+	<xsl:apply-templates>
+	  <xsl:with-param name="parent_core" select="@name"/>
+	</xsl:apply-templates>
+      </xsl:copy>
+    </dbobject>
+  </xsl:template>
+
 
 
 </xsl:stylesheet>

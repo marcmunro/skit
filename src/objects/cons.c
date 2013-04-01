@@ -353,6 +353,7 @@ consNth(Cons *list, int n)
 Object *
 consGet(Cons *list, Object *key)
 {
+    Object *elem;
     Object *result;
     Int4 *newkey;
     if (key->type == OBJ_INT4) {
@@ -363,6 +364,21 @@ consGet(Cons *list, Object *key)
 	result = consNth(list, newkey->value);
 	objectFree((Object *) newkey, TRUE);
 	return result;
+    }
+    else if (key->type == OBJ_REGEXP) {
+	while (list) {
+	    elem = list->car;
+	    if (elem->type != OBJ_STRING) {
+		RAISE(LIST_ERROR, 
+		      newstr("consGet: invalid element type (%s) "
+			     "for regexp search of list", objTypeName(key)));
+	    }
+	    if (regexpMatch((Regexp *) key, (String *) elem)) {
+		return elem;
+	    }
+	    list = (Cons *) list->cdr;
+	}
+	return NULL;
     }
     else {
 	RAISE(LIST_ERROR, newstr("consGet: invalid type (%s) for key",
@@ -377,7 +393,6 @@ consNext(Cons *list, Object **p_placeholder)
     ObjReference *placeholder = (ObjReference *) *p_placeholder;
     Cons *position;
     Object *result;
-
     if (!placeholder) {
 	/* This is the first iteration so set up the placeholder which
 	 * will keep track of where we are.  When this is set to null, 

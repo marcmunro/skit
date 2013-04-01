@@ -32,11 +32,78 @@ raiseMsg(char *template, char *fn_name, Object *obj)
     RAISE(LIST_ERROR, errmsg);
 }
 
+
 static Object *
-nextParam(char * fn_name, Cons **p_list, ObjType type, 
+nextParam(char * fn_name, Cons **p_list, ObjType type,
+          boolean required, boolean evaluate, int param_no)
+{
+    Object *elem;
+    ObjType objtype;
+
+    if (!*p_list) {
+        RAISE(LIST_ERROR,
+              newstr("%s: missing arg no %d", fn_name, param_no));
+    }
+    if ((*p_list)->type != OBJ_CONS) {
+        RAISE(LIST_ERROR,
+              newstr("%s: invalid args.  Expecting a list, got %s",
+                     fn_name, objTypeName((Object *) *p_list)));
+    }
+
+    if (elem = (*p_list)->car) {
+        if (evaluate) {
+            elem = objectEval(elem);
+        }
+        else {
+            elem = objectCopy(elem);
+        }
+
+	if (type != OBJ_UNDEFINED) {
+	    if (elem) {
+		objtype = dereference(elem)->type;
+
+		if (objtype != type) {
+		    char *sexp = objectSexp(elem);
+		    char *msg = newstr("%s: invalid arg (no %d).  "
+				       "Expecting %s got %s: %s",
+				       fn_name, param_no, typeName(type),
+				       typeName(objtype), sexp);
+		    skfree(sexp);
+		    objectFree(elem, TRUE);
+		    RAISE(LIST_ERROR, msg);
+		}
+	    }
+	    else {
+		if (required) {
+		    RAISE(LIST_ERROR,
+			  newstr("%s: invalid arg (no %d).  "
+				 "Expecting %s got null",
+				 fn_name, param_no, typeName(type)));
+		}
+	    }
+	}
+    }
+    else {
+        if (required) {
+            RAISE(LIST_ERROR,
+                  newstr("%s: missing required paramer %d", fn_name, param_no));
+        }
+    }
+
+    *p_list = (Cons *) (*p_list)->cdr;
+    return elem;
+}
+
+
+static Object *
+nextParamNew(char * fn_name, Cons **p_list, ObjType type, 
 	  boolean required, boolean evaluate, int param_no)
 {
     Object *elem;
+    Object *deref;
+    char *sexp;
+    char *msg;
+
     if (!*p_list) {
 	RAISE(LIST_ERROR, 
 	      newstr("%s: missing arg no %d", fn_name, param_no));
@@ -54,14 +121,29 @@ nextParam(char * fn_name, Cons **p_list, ObjType type,
 	else {
 	    elem = objectCopy(elem);
 	}
+	
+	if (type != OBJ_UNDEFINED) {
+	    if (elem) {
+		deref = dereference(elem);
+		
+		if (deref->type != type) {
+		    sexp = objectSexp(elem);
+		    msg = newstr("%s: invalid arg (no %d).  "
+				 "Expecting %s got %s:%s", 
+				 fn_name, param_no, typeName(type), 
+				 objTypeName(deref), sexp);
+		    skfree(sexp);
+		    objectFree(elem, TRUE);
+		}
+	    }
+	    else {
+		msg = newstr("%s: invalid arg (no %d).  Expecting %s got null", 
+			     fn_name, param_no, typeName(type));
+	    }
 
-	if (elem->type != type) {
-	    char *sexp = objectSexp(elem);
-	    char *msg = newstr("%s: invalid arg (no %d).  Expecting %s got %s", 
-			       fn_name, param_no, objTypeName(elem), sexp);
-	    skfree(sexp);
-	    objectFree(elem, TRUE);
-	    RAISE(LIST_ERROR, msg);
+	    if (msg) {
+		RAISE(LIST_ERROR, msg);
+	    }
 	}
     }
     else {
@@ -423,26 +505,25 @@ static Object *
 fnDebug(Object *obj)
 {
     Cons *cons = (Cons *) obj;
-    String *label;
-    char *sexp;
-    Object *volatile result;
+    Object *volatile result = NULL;
+    char *volatile sexp = NULL;
+    String *volatile label = NULL;
 
-    raiseIfNotList("debug", obj);
-    label = (String *) cons->car;
-    raiseIfNotString("debug", label);
-    raiseIfNotList("debug", cons->cdr);
-    cons = (Cons *) cons->cdr;
-    result = objectEval(cons->car);
     BEGIN {
+	label = (String *) nextParam("debug", &cons, OBJ_STRING, TRUE, TRUE, 1);
+	result = nextParam("debug", &cons, OBJ_UNDEFINED, TRUE, TRUE, 2);
 	sexp = objectSexp(result);
+	fprintf(stderr, "DEBUG %s: %s\n", label->value, sexp);
     }
-    EXCEPTION(ex) {
-	objectFree(result, TRUE);
+    EXCEPTION(ex);
+    FINALLY {
+	if (sexp) {
+	    skfree(sexp);
+	}
+	objectFree((Object *) label, TRUE);
+	objectFree((Object *) result, TRUE);
     }
     END;
-    fprintf(stderr, "DEBUG %s: %s\n", label->value, sexp);
-    skfree(sexp);
-    objectFree((Object *) result, TRUE);
     return NULL;
 }
 
@@ -491,66 +572,40 @@ static Object *
 fnStringEq(Object *obj)
 {
     Cons *cons = (Cons *) obj;
-    String* arg1;
-    String* arg2;
+    Object *arg1 = nextParam("string=", &cons, OBJ_STRING, FALSE, TRUE, 1);
+    Object *arg2 = nextParam("string=", &cons, OBJ_STRING, FALSE, TRUE, 2);
+    Object *result = NULL;
 
-    raiseIfNotList("string=", obj);
-    evalCar(cons);
-    if (arg1 = (String *) dereference(cons->car)) {
-	raiseIfNotString("string= (first arg)", arg1);
-	cons = (Cons *) cons->cdr;
-	raiseIfNotList("string=", (Object *) cons);
-	evalCar(cons);
-    }
-    else {
-	return NULL;
-    }
-    if (arg2 = (String *) dereference(cons->car)) {
-	raiseIfNotString("string= (first arg)", arg2);
-	raiseIfMoreArgs("string=", cons->cdr);
-
-	if (streq(arg1->value, arg2->value)) {
-	    return (Object *) symbolGet("t");
-	}
+    if (arg1 && arg2 && 
+	streq(((String *) dereference(arg1))->value, 
+	      ((String *) dereference(arg2))->value)) {
+	result = (Object *) symbolGet("t");
     }
 
-    return NULL;
+    objectFree((Object *) arg1, TRUE);
+    objectFree((Object *) arg2, TRUE);
+    return result;
 }
 
-/* TODO: Rewrite the other symbol functions to use nextParam, like this:
- */
 static Object *
-fnStringIn(Object *obj)
+fnStringMatch(Object *obj)
 {
     Cons *cons = (Cons *) obj;
-    String *str2;
-    Cons *arg2 = NULL;
-    String *arg1 = (String *) nextParam("string_in", &cons, OBJ_STRING, 
-				TRUE, TRUE, 1);
-    BEGIN {
-	arg2 = (Cons*) nextParam("string_in", &cons, OBJ_CONS, TRUE, TRUE, 2);
-	raiseIfMoreArgs("string-in", (Object *) cons);
+    Object *result = NULL;
+    Regexp* arg1 = (Regexp *) nextParam("string-match", &cons, OBJ_REGEXP, 
+					TRUE, TRUE, 1);
+    String* arg2 = (String *) nextParam("string-match", &cons, OBJ_STRING, 
+					FALSE, TRUE, 2);
 
-	cons = arg2;
-	while (cons) {
-	    str2 = (String *) cons->car;
-	    raiseIfNotString("string-in", str2);
-	    if (streq(arg1->value, str2->value)) {
-		objectFree((Object *) arg2, TRUE);
-		RETURN((Object *) arg1);
-	    }
-	    cons = (Cons *) cons->cdr;
-	}
+    if (arg2 && regexpMatch((Regexp *) dereference((Object *) arg1), 
+			    (String *) dereference((Object *) arg2))) {
+	result = (Object *) symbolGet("t");
     }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) arg1, TRUE);
-	objectFree((Object *) arg2, TRUE);
-    }
-    END;
-    return NULL;
+
+    objectFree((Object *) arg1, TRUE);
+    objectFree((Object *) arg2, TRUE);
+    return result;
 }
-
 
 static Object *
 fnReplace(Object *obj)
@@ -804,6 +859,20 @@ fnMinus(Object *obj)
     return (Object *) result;
 }
 
+/* Convert a string into a regexp */
+static Object *
+fnRegexp(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *result = NULL;
+    Object *obj1 = nextParam("re", &cons, OBJ_STRING, TRUE, TRUE, 1);
+    String *str = (String *) dereference(obj1);
+    result = (Object *) regexpNew(str->value);
+    objectFree(obj1, TRUE);
+
+    return result;
+}
+
 static Object *
 fnHashAdd(Object *obj)
 {
@@ -868,22 +937,28 @@ initBaseSymbols()
     String *xml_version = stringNew(SKIT_XML_VERSION);
 
     (void) symbolCopy(&symbol_t);
+
+    /* The XX comments below identify functions that have been
+     * converted to use the nextParam function, which is aimed at
+     * simplifying the handling of babylisp expressions.
+     * TODO: Refactor more of these functions. */
+
     symbolCreate("setq", &fnSetq, NULL);
     symbolCreate("join", &fnJoin, NULL);
     symbolCreate("split", &fnSplit, NULL);
     symbolCreate("try-to-int", &fnInt4Promote, NULL);
     symbolCreate("map", &fnMap, NULL);
     symbolCreate("version", &fnVersion, NULL);
-    symbolCreate("current-timestamp",  &fnCurTimestamp, NULL);
+    symbolCreate("current-timestamp",  &fnCurTimestamp, NULL);  
     symbolCreate("params", NULL, NULL);
-    symbolCreate("debug", &fnDebug, NULL);
+    symbolCreate("debug", &fnDebug, NULL);                      /*XX*/
     symbolCreate("tuple", NULL, NULL);
     symbolCreate("tuplestack", NULL, NULL);
     symbolCreate("quote", &fnQuote, NULL);
     symbolCreate("list", &fnList, NULL);
     symbolCreate("dbquote", &fnDBQuote, NULL);
-    symbolCreate("string=", &fnStringEq, NULL);
-    symbolCreate("string-in", &fnStringIn, NULL);
+    symbolCreate("string=", &fnStringEq, NULL);                 /*XX*/
+    symbolCreate("string-match", &fnStringMatch, NULL);         /*XX*/
     symbolCreate("select", &fnSelect, NULL);
     symbolCreate("replace", &fnReplace, NULL);
     symbolCreate("not", &fnNot, NULL);
@@ -895,6 +970,7 @@ initBaseSymbols()
     symbolCreate("cdr", &fnCdr, NULL);
     symbolCreate("+", &fnPlus, NULL);
     symbolCreate("-", &fnMinus, NULL);
+    symbolCreate("re", &fnRegexp, NULL);                        /*XX*/
     symbolCreate("hashadd", &fnHashAdd, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
     symbolCreate("skit_xml_version", NULL, (Object *) xml_version);

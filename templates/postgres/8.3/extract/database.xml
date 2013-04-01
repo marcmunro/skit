@@ -18,6 +18,7 @@
        <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->
       <skit:exec_function name="grants_from_privs"
   			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
 			  automatic="&lt; 
 			     ((select tuple 'owner') . 
 			         (list 'create' 'connect' 'temporary'))

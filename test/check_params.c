@@ -734,7 +734,7 @@ START_TEST(gather)
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
+	//fail("gather done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -742,7 +742,7 @@ START_TEST(gather)
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
 	//RAISE();
-	//fail("extract fails with exception");
+	//fail("gather fails with exception");
     }
     END;
 
@@ -773,7 +773,7 @@ START_TEST(scatter)
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
+	//fail("scatter done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -781,7 +781,7 @@ START_TEST(scatter)
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
 	//RAISE();
-	//fail("extract fails with exception");
+	//fail("scatter fails with exception");
     }
     END;
 
@@ -805,9 +805,8 @@ START_TEST(extract)
 
     initTemplatePath(".");
     registerTestSQL();
-    //showFree(1205);
-    showMalloc(32894);
-    //trackMalloc(138807);
+    //showFree(6265);
+    //showMalloc(20129);
 
     BEGIN {
 	//fi = redirect("/dev/null");

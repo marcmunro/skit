@@ -158,7 +158,7 @@ regexpReplace(String *src, Regexp *regexp, String *replacement)
     char *buf = src->value;
     regoff_t start;
     regoff_t end;
-    int     flags = 0;
+    int flags = 0;
 
     rvec = splitReplacementStr(replacement);
     results = vectorNew(1000);
@@ -184,6 +184,19 @@ regexpReplace(String *src, Regexp *regexp, String *replacement)
     objectFree((Object *) results, TRUE);
     return final;
 }
+
+boolean
+regexpMatch(Regexp *regexp, String *str)
+{
+    regex_t *re = &(regexp->regexp);
+    char *buf = str->value;
+    regmatch_t match[1]; 
+    int flags = 0;
+    int result = regexec(re, buf, 0, match, flags);
+
+    return result == 0;
+}
+
 
 /* Return a string containing only the replaced part of the regex */
 String *

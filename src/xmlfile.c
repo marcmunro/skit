@@ -541,7 +541,7 @@ iterate(Object *collection, String *filter,
 	objectFree((Object *) key, TRUE);
 	objectFree((Object *) idxname, TRUE);
 	objectFree((Object *) varname, TRUE);
-	objectFree(placeholder, TRUE);
+	objectFree((Object *) placeholder, TRUE);
     }
     END;
 
@@ -620,7 +620,6 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile fromname = nodeAttribute(template_node, "from");
     String *volatile filter = nodeAttribute(template_node, "filter");
-    String *expr;
     Object *collection;
     xmlNode *child = NULL;
     boolean doit = TRUE;
@@ -632,12 +631,10 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    collection = symbolGetValue(fromname->value);
 	}
 	else {
-	    expr = nodeAttribute(template_node, "expr");
-	    if (!expr) {
+	    if (!hasExpr(template_node, &collection)) {
 		RAISE(XML_PROCESSING_ERROR, 
 		      newstr("from or expr must be specified for foreach"));
 	    }
-	    collection = evalSexp(expr->value);
 	}
 	
 	if (collection) {
@@ -652,6 +649,11 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     EXCEPTION(ex);
     FINALLY {
+	if (!fromname) {
+	    /* Collection was determined from an expression, so it
+	     * must be freed. */
+	    objectFree(collection, TRUE);
+	}
 	objectFree((Object *) fromname, TRUE);
 	objectFree((Object *) filter, TRUE);
     }
@@ -671,13 +673,12 @@ static xmlNode *
 execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile expr = nodeAttribute(template_node, "test");
-    Object *expr_result;
+    Object *expr_result = NULL;
     xmlNode *result = NULL;
     BEGIN {
 	if (expr) {
 	    if (expr_result = evalSexp(expr->value)) {
 		result = processChildren(template_node, parent_node, depth + 1);
-		objectFree((Object *) expr_result, TRUE);
 	    }
 	}
 	else {
@@ -687,6 +688,7 @@ execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     EXCEPTION(ex);
     FINALLY {
+	objectFree((Object *) expr_result, TRUE);
 	objectFree((Object *) expr, TRUE);
     }
     END;

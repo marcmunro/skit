@@ -22,13 +22,10 @@ static Object close_paren = {OBJ_CLOSE_PAREN};
 static Object close_bracket = {OBJ_CLOSE_BRACKET};
 static Object close_angle = {OBJ_CLOSE_ANGLE};
 
-char *
-objTypeName(Object *obj)
+char * 
+typeName(ObjType type)
 {
-    if (!obj) {
-	return "NULL";
-    }
-    switch (obj->type) {
+    switch (type) {
     case OBJ_UNDEFINED: return "OBJ_UNDEFINED";
     case OBJ_INT4: return "OBJ_INT4"; 
     case OBJ_STRING: return "OBJ_STRING";
@@ -52,6 +49,15 @@ objTypeName(Object *obj)
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     }
     return "UNKNOWN_OBJECT_TYPE";
+}
+
+char *
+objTypeName(Object *obj)
+{
+    if (obj) {
+	return typeName(obj->type);
+    }
+    return "NULL";
 }
 
 Tuple *
@@ -853,6 +859,8 @@ objNext(Object *collection, Object **p_placeholder)
     Object *result;
     collection = dereference(collection);
     switch (collection->type) {
+    case OBJ_HASH: 
+	return hashNext((Cons *) collection, p_placeholder); 
     case OBJ_CONS: 
 	return consNext((Cons *) collection, p_placeholder); 
     case OBJ_CURSOR: 
@@ -875,6 +883,7 @@ isCollection(Object *object)
     case OBJ_CONS: 
     case OBJ_CURSOR:
     case OBJ_STRING:
+    case OBJ_HASH:
 	return TRUE;
     }
     return FALSE;

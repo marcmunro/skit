@@ -357,6 +357,7 @@ extern Cons *consRemove(Cons *cons, Cons *remove);
 extern Cons *consCopy(Cons *list);
 
 // object.c
+extern char * typeName(ObjType type);
 extern Tuple *tupleNew(Cursor *cursor);
 extern char *objTypeName(Object *obj);
 extern Int4 *int4New(int value);
@@ -440,6 +441,7 @@ extern Hash *hashCopy(Hash *hash);
 extern int hashElems(Hash *hash);
 extern Vector *vectorFromHash(Hash *hash);
 extern boolean checkHash(Hash *hash, void *chunk);
+extern Object *hashNext(Hash *hash, Object **p_placeholder);
 
 // string.c
 extern String *stringNew(const char *value);

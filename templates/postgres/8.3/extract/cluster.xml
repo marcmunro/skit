@@ -21,30 +21,83 @@
 		          ('c' . 'connect')
 		          ('T' . 'temporary')
 		      &gt;"/>
+      <skit:var name="privchars" 
+		expr="&lt;('select'     . 'r')
+		          ('update'     . 'w')
+		          ('insert'     . 'a')
+		          ('delete'     . 'd')
+		          ('truncate'   . 'D')
+		          ('references' . 'x')
+		          ('trigger'    . 't')
+		          ('execute'    . 'X')
+		          ('usage'      . 'U')
+		          ('create'     . 'C')
+		          ('connect'    . 'c')
+		          ('temporary'  . 'T')
+		      &gt;"/>
 
       <skit:function name="grants_from_privs">
 	<skit:parameter name="privileges"/>
-	<skit:parameter name="automatic" default="nil"/>
+	<skit:parameter name="automatic"/>
+	<skit:parameter name="owner"/>
 	<skit:if test="privileges">
-	  <!-- The first regexp below removes the braces around the
-	       privileges string.  The second one reverses the order of
-	       characters followed by asterisks and adds a space so that
-	       the asterisk precedes the character it previously
-	       followed, and the expression becomes splittable around
-	       space characters.
+	  <!-- The first regexp below adds an explicit public string
+	       wherever there is an implicit (empty one).  The second
+	       regexp removes the braces around the privileges string.
+	       The third one reverses the order of characters followed
+	       by asterisks and adds a space so that the asterisk
+	       precedes the character it previously followed, and the
+	       expression becomes splittable around space characters.
 	    -->
 	  <skit:var name="privs_list"
 		    expr="(split (replace 
-			            (replace privileges /\\{(.*)\\}/ '\1') 
+			            (replace (replace privileges 
+				               /([{,])=/ '\1public=')
+				      /\\{(.*)\\}/ '\1') 
 				    /(.)\\*/ '*\1 ')
 		                  ',')"/>
+
+	  <!-- Identify any grants that should have been provided
+	       automatically, but have not been. -->
+	  <skit:foreach from="automatic" var="this">
+	    <skit:var name="to" expr="(car this)"/>
+	    <skit:var name="privset" 
+		      expr="(select privs_list 
+			              (re (concat to '=.*/' owner)))"/>
+	    <skit:if test="(not privset)">
+	      <!-- None of the expected automatic privs have been found,
+		   create a shortcut revoke for all privs. -->
+	      <revoke>
+		<skit:attr name="from" expr="owner"/>
+		<skit:attr name="to" expr="to"/>
+		<skit:attr name="priv" expr="'all'"/>
+	      </revoke>
+	    </skit:if>
+	    <skit:if test="privset">
+	      <!-- Check whether all expected automatic privs are present,
+		   creating revokes for any that are not. -->
+	      
+	      <skit:var name="granted" expr="(replace privset 
+					       /.*=([A-Za-z]*).*/ '\1')"/>
+	      <skit:foreach expr="(cdr this)" var="actual">
+		<skit:if test="(not (string-match 
+			                (re (select privchars actual))
+					granted))">
+		
+		  <revoke>
+		    <skit:attr name="from" expr="owner"/>
+		    <skit:attr name="to" expr="to"/>
+		    <skit:attr name="priv" expr="actual"/>
+		  </revoke>
+		</skit:if>
+	      </skit:foreach>
+	    </skit:if>
+	  </skit:foreach>
+
 	  <skit:foreach from="privs_list" var="privs_str">
 	    <skit:let>
 	      <skit:var name="privinfo" expr="(split privs_str '/=')"/>
-	      <skit:var name="tofield" expr="(select privinfo 0)"/>
-	      <skit:var name="to" expr="(or (and (string= tofield '') 
-					          'public')
-					    tofield)"/>
+	      <skit:var name="to" expr="(select privinfo 0)"/>
 	      <skit:var name="privs" 
 			expr="(split (select privinfo 1) ' ')"/>
 	      <skit:var name="from" expr="(select privinfo 2)"/>
