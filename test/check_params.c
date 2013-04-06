@@ -809,18 +809,10 @@ START_TEST(extract)
     //showMalloc(20129);
 
     BEGIN {
-	//fi = redirect("/dev/null");
 	process_args2(8, args);
-	//resetdirect(fi);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	//resetdirect(fi);
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
 	//RAISE();
@@ -838,7 +830,7 @@ START_TEST(generate)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
-                    "--generate", "--build",  "--print", "--full"};
+                    "--generate", "--drop",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -850,11 +842,6 @@ START_TEST(generate)
 
     BEGIN {
 	process_args2(8, args);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1211,8 +1198,8 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 				
     // Populate the regression test database
-    ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate); // during development of new db objects
+    //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
+    ADD_TEST(tc_core, generate); // during development of new db objects
     //ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??

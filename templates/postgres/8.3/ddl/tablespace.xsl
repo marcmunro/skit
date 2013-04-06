@@ -9,7 +9,7 @@
   <xsl:template match="dbobject/tablespace">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;</xsl:text>
@@ -30,16 +30,19 @@
         <xsl:text>&#x0A;  location &apos;</xsl:text>
         <xsl:value-of select="@location"/>
         <xsl:text>&apos;;&#x0A;</xsl:text>
-	<xsl:apply-templates/>
+
 	<xsl:if test="@location=''">
 	  <xsl:text> */&#x0A;</xsl:text>
 	</xsl:if>
+
+	<xsl:apply-templates/>
+
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;\echo Not dropping tablespace </xsl:text>
@@ -90,7 +93,7 @@
 
     <xsl:if test="../@action='diffprep'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">

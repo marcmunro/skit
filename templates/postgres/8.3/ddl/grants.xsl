@@ -80,7 +80,10 @@
   
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
+        <xsl:text>\echo </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner_from"/>
@@ -106,6 +109,23 @@
       </print>
     </xsl:if>
     
+  </xsl:template>
+
+  <xsl:template match="revoke">
+    <xsl:call-template name="set_owner_from"/>
+    <xsl:value-of 
+	select="concat('revoke ', @priv, ' on ')"/>
+    <xsl:choose>
+      <xsl:when test="name(..) = 'view'">
+	<xsl:text>table</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="name(..)"/>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:value-of 
+	select="concat(' ', ../../@qname, ' from ', @to, ';&#x0A;')"/>
+    <xsl:call-template name="reset_owner_from"/>
   </xsl:template>
 
 

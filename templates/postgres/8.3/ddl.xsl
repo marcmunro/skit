@@ -81,7 +81,7 @@
       </xsl:call-template>
     </xsl:for-each>
   </xsl:template>
-  
+
   <xsl:template name="set_owner">
     <!-- Explicit set session authorization created when ignore-contexts
         is true, for those cases where we must always do this in spite of

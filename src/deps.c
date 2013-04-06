@@ -820,6 +820,38 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
 }
 
 static void
+addFallbackDeps(DagNode *node, Vector *nodes)
+{
+    DagNode *fallback;
+    DagNode *endfallback;
+    if (!(fallback = node->fallback_node)) {
+	RAISE(TSORT_ERROR, 
+	      newstr("No fallback found for dependency-set in %s",
+		  node->fqn->value));
+    }
+    
+    if (!(endfallback = fallback->mirror_node)) {
+	/* Create an endfallback node.  This only needs to be done the
+	 * first time the fallback node is referenced. */
+	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	fallback->mirror_node = endfallback;
+	setPush(nodes, (Object *) endfallback);
+
+	/* Since the fallback_node is being referenced for the first
+	 * time, set the build_type which would have previously been
+	 * EXISTS_NODE to prevent it from doing anything. */
+	fallback->build_type = FALLBACK_NODE;
+
+    }
+
+    /* Add deps from supernode to fallback, and from endfallback to
+     * supernode */
+    
+    addDepToVector(&(node->supernode->forward_deps), fallback);
+    addDepToVector(&(endfallback->forward_deps), node->supernode);
+}
+
+static void
 resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes);
 
 static void
@@ -855,16 +887,9 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 
 		if (node->supernode) {
 		    /* We are in a subnode, so this is an optional
-		     * dependency.  Unless this is the last dependency
-		     * in the list, we can simply try the next one. */
-		    skfree(errmsg);
-		    if (isLastElem(deps, i)) {
-			RAISE(NOT_IMPLEMENTED_ERROR, 
-			      newstr("Unimplemented: fallback handling"));
-		    }
-		    else {
-			continue;
-		    }
+		     * dependency and we can just try the next one.
+		     */
+		     continue;
 		}
 		
 		if (breaker = getBreakerFor(dep, nodes)) {
@@ -919,9 +944,18 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 		/* We are in a subnode and have successfully traversed a
 		 * dependency.  Since we only need one dependency from
 		 * our set, we are done. */
-		break;
+		return;
 	    }
 	}
+    }
+
+    if (node->supernode) {
+	/* We are processing a set of optional dependencies but have not
+	 * found any that satisfy or we would have already returned to
+	 * the caller.  Now we must invoke our fallback.
+	 */
+
+	addFallbackDeps(node, nodes);
     }
 }
 
