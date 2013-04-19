@@ -830,18 +830,18 @@ START_TEST(generate)
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
 		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
-                    "--generate", "--drop",  "--print", "--full"};
+                    "--generate", "--debug", "--build",  "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
 
     initTemplatePath(".");
     registerTestSQL();
-    //showFree(1205);
-    //showMalloc(299978);
+    //showFree(31515);
+    //showMalloc(31962);
 
     BEGIN {
-	process_args2(8, args);
+	process_args2(9, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1199,7 +1199,7 @@ params_suite(void)
 				
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate); // during development of new db objects
+    //ADD_TEST(tc_core, generate); // during development of new db objects
     //ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??
@@ -1211,35 +1211,4 @@ params_suite(void)
 }
 
 
-/*
-PLAN: 
-
-      FIX: currently this is broken.  Use diffgen unit test to see the
-      broken script created.  The problems are:
-      a) the drop type is happening outside of the psql commands.
-      b) column.x.public.x.y depends on the type and must be rebuilt
-      
-      1) Ensure rebuild diffs are handled the same as other rebulds
-      This requires element diffs to work so that we can use a "type"
-      difference to create a diff rebuild node.
-
-      2) Have diffs processed as pairs of objects; either:
-      a) drop and build if a diff requires recreation (as for types, for
-      example) 
-      b) diffprep and diffcomplete, otherwise
-
-      The drop or diffprep nodes will use "old" dependencies (check the
-      restrict attribute of the dependencies element).  The build or
-      diffcomplete nodes will use the new dependencies.
-
-      This requires changing the dep handling to be able to deal with
-      these new diff node types.
-
-      Once this is done, we can start testing the rebuild mechanism.
-      Diff test files have been prepared in ../test/data/diffs_1_a.xml
-      and ../test/data/diffs_1_b.xml
-
-      See check_params diff2 and difflist for initial test teplates
-*/
-      
    

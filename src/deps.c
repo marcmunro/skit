@@ -78,9 +78,6 @@ showDeps(DagNode *node)
 	while (sub) {
 	    if (sub->forward_deps || sub->fallback_node) {
 		printSexp(stderr, "optional->", (Object *) sub->forward_deps);
-		if (sub->fallback_node) {
-		    printSexp(stderr, "flbk->", (Object *) sub->fallback_node);
-		}
 	    }
 	    sub = sub->forward_subnodes;
 	}
@@ -89,9 +86,6 @@ showDeps(DagNode *node)
 	while (sub) {
 	    if (sub->backward_deps || sub->fallback_node) {
 		printSexp(stderr, "optional<=", (Object *) sub->backward_deps);
-		if (sub->fallback_node) {
-		    printSexp(stderr, "flbk<=", (Object *) sub->fallback_node);
-		}
 	    }
 	    sub = sub->backward_subnodes;
 	}
@@ -820,35 +814,42 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
 }
 
 static void
+activateFallback(DagNode *fallback, Vector *nodes)
+{
+    DagNode *endfallback;
+
+    if (fallback->build_type != FALLBACK_NODE) {
+	/* Promote this node from an exists node into a build node, and
+	 * create the matching drop node for it. */
+	fallback->build_type = FALLBACK_NODE;
+	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	fallback->mirror_node = endfallback;
+	setPush(nodes, (Object *) endfallback);
+
+	/* Add dependencies from endfallback to fallback. */
+	addDep(endfallback, fallback, FORWARDS);
+    }
+}
+
+
+
+static void
 addFallbackDeps(DagNode *node, Vector *nodes)
 {
     DagNode *fallback;
     DagNode *endfallback;
+    DagNode *super = node->supernode;
+
     if (!(fallback = node->fallback_node)) {
 	RAISE(TSORT_ERROR, 
 	      newstr("No fallback found for dependency-set in %s",
 		  node->fqn->value));
     }
-    
-    if (!(endfallback = fallback->mirror_node)) {
-	/* Create an endfallback node.  This only needs to be done the
-	 * first time the fallback node is referenced. */
-	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
-	fallback->mirror_node = endfallback;
-	setPush(nodes, (Object *) endfallback);
+    activateFallback(fallback, nodes);
+    endfallback = fallback->mirror_node;
 
-	/* Since the fallback_node is being referenced for the first
-	 * time, set the build_type which would have previously been
-	 * EXISTS_NODE to prevent it from doing anything. */
-	fallback->build_type = FALLBACK_NODE;
-
-    }
-
-    /* Add deps from supernode to fallback, and from endfallback to
-     * supernode */
-    
-    addDepToVector(&(node->supernode->forward_deps), fallback);
-    addDepToVector(&(endfallback->forward_deps), node->supernode);
+    addDep(super, fallback, BOTH);
+    addDep(endfallback, super, FORWARDS);
 }
 
 static void
@@ -889,7 +890,8 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 		    /* We are in a subnode, so this is an optional
 		     * dependency and we can just try the next one.
 		     */
-		     continue;
+		    skfree(errmsg);
+		    continue;
 		}
 		
 		if (breaker = getBreakerFor(dep, nodes)) {
@@ -1010,45 +1012,8 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
     }
 }
 
-/* Add a fallback node to a DAG in the case when no dependency from a
- * dependency set can be satisfied.
- */
-static void
-activateFallback(DagNode *node, DagNode *fallback, Vector *nodes)
-{
-    DagNode *closer;
-    DagNode *dep;
-    int i;
-    if (fallback->build_type != FALLBACK_NODE) {
-	/* Promote this node from an exists node into a build node, and
-	 * create the matching drop node for it. */
-	fallback->build_type = FALLBACK_NODE;
-	closer = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
-	fallback->mirror_node = closer;
-	setPush(nodes, (Object *) closer);
-
-	/* Copy deps from build node to drop node.  For fallback nodes,
-	 * all dependendencies wodk in the forward direction as we are
-	 * just going to grant a privilege and then revoke it and the
-	 * role to which the grant and revoke is applied should be the
-	 * only initial dependency. */
-	EACH(fallback->forward_deps, i) {
-	    dep = (DagNode *) ELEM(fallback->forward_deps, i);
-	    addDepToVector(&(closer->forward_deps), dep);
-	}
-    }
-    else {
-	closer = fallback->mirror_node;
-    }
-
-    /* Add dependencies from closer to node, and from node to fallback. */
-    addDepToVector(&(closer->forward_deps), node);
-    addDepToVector(&(node->forward_deps), fallback);
-}
-
-
 /* Takes the dependency graphs (forward_deps and backward_deps), and
- * resolves them into tru DAGs, elimminating cycles, and choosing a
+ * resolves them into true DAGs, elimminating cycles, and choosing a
  * single appropriate dependency (or fallback) from each dependency set.
  * The algorithm for resolving the graph is essentially a classic tsort
  * algorithm, with cyclic exceptions trapped and handled by choosing a
@@ -1076,31 +1041,18 @@ resolveGraphs(Vector *nodes)
 	node = (DagNode *) ELEM(nodes, i);
 	sub = node;
 	while (sub = sub->forward_subnodes) {
-	    if (sub->dep_idx < 0) {
-		activateFallback(node, sub->fallback_node, nodes);
-	    }
-	    else {
+	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->forward_deps, sub->dep_idx);
 		addDepToVector(&(node->forward_deps), dep);
 	    }
-	    //printSexp(stderr, "Promoting :", (Object *) dep);
-	    //printSexp(stderr, " in :", (Object *) node);
 	}
 
 	sub = node;
 	while (sub = sub->backward_subnodes) {
-	    //dbgSexp(sub);
-	    //dbgSexp(sub->forward_subnodes);
-	    //dbgSexp(sub->backward_subnodes);
-	    if (sub->dep_idx < 0) {
-		activateFallback(node, sub->fallback_node, nodes);
-	    }
-	    else {
+	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->backward_deps, sub->dep_idx);
 		addDepToVector(&(node->backward_deps), dep);
 	    }
-	    //printSexp(stderr, "Promoting :", (Object *) dep);
-	    //printSexp(stderr, " in :", (Object *) node);
 	}
     }
 }
@@ -1176,12 +1128,13 @@ static void
 clearUnneededDeps(Vector *nodes)
 {
     int i;
+    int j;
     DagNode *node;
-    
+    DagNode *depnode;
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 	if ((node->build_type == DIFFPREP_NODE) ||
-	    (node->build_type == DROP_NODE))
+	    (node->build_type == DROP_NODE)) 
 	{
 	    /* This node is on the backwards side of the dependency
 	     * graph.  This means that its forward_deps must be derived
@@ -1192,6 +1145,19 @@ clearUnneededDeps(Vector *nodes)
 		objectFree((Object *) node->forward_deps, FALSE);
 		node->forward_deps = NULL;
 	    }
+	}
+	else if (node->build_type == FALLBACK_NODE) {
+	    /* Remove forward-deps that are to DIFFPREP or DROP nodes. */
+	    if (node->forward_deps) {
+		EACH(node->forward_deps, j) {
+		    depnode = (DagNode *) ELEM(node->forward_deps, j);
+		    if ((depnode->build_type == DIFFPREP_NODE) ||
+			(depnode->build_type == DROP_NODE)) 
+		    {
+			vectorRemove(node->forward_deps, j);
+		    }
+		}
+	    }	    
 	}
     }
 }
@@ -1228,10 +1194,30 @@ redirectBackwardDeps(Vector *nodes)
 	    if (deps) {
 		EACH(deps, j) {
 		    depnode = (DagNode *) ELEM(deps, j);
-		    if (depnode->mirror_node) {
-			depnode = depnode->mirror_node;
+		    if (depnode->build_type == FALLBACK_NODE) {
+			/* This is a special case.  Dependencies on
+			 * fallback nodes are not inverted. */
+			addDepToVector(&(node->forward_deps), depnode);
 		    }
-		    addDepToVector(&(depnode->forward_deps), node);
+		    else {
+			if (depnode->mirror_node) {
+			    depnode = depnode->mirror_node;
+			}
+			addDepToVector(&(depnode->forward_deps), node);
+		    }
+		}
+	    }
+	}
+	else if (node->build_type == FALLBACK_NODE) {
+	    if (deps = node->backward_deps) {
+		EACH(deps, j) {
+		    depnode = (DagNode *) ELEM(deps, j);
+		    if ((depnode->build_type == DIFFPREP_NODE) ||
+			(depnode->build_type == DROP_NODE)) 
+		    {
+			addDepToVector(&(depnode->forward_deps), 
+				       node->mirror_node);
+		    }
 		}
 	    }
 	}
@@ -1302,6 +1288,36 @@ swapBackwardBreakers(Vector *nodes)
     }
 }
 
+DagNode *
+getNode(Hash *byfqn, char *fqn)
+{
+    String *key = stringNew(fqn);
+    DagNode *node = (DagNode *) hashGet(byfqn, (Object *) key);;
+    objectFree((Object *) key, TRUE);
+    return node;
+}
+
+/*
+showFallbackDeps(Hash *byfqn)
+{
+    DagNode *node;
+    node = getNode(byfqn, "fallback.grant.wibble.superuser");
+    showDeps(node);
+    if (node->mirror_node) {
+	showDeps(node->mirror_node);
+    }
+    node = getNode(byfqn, "table.regressdb.public.thing");
+    showDeps(node);
+    if (node->mirror_node) {
+	showDeps(node->mirror_node);
+    }
+    node = getNode(byfqn, "role.cluster.wibble");
+    showDeps(node);
+    if (node->mirror_node) {
+	showDeps(node->mirror_node);
+    }
+    }*/
+
 /* Create a Dag from the supplied doc, returning it as a vector of DocNodes.
  * See the file header comment for a more detailed description of what
  * this does.
@@ -1319,10 +1335,22 @@ dagFromDoc(Document *doc)
        identifyParents(nodes, byfqn);
        bypqn = hashByPqn(nodes);
        addDependencies(nodes, byfqn, bypqn);
+//fprintf(stderr, "============INITIAL==============\n");
+//showFallbackDeps(byfqn);
+//showVectorDeps(nodes);
        resolveGraphs(nodes);
+//fprintf(stderr, "============RESOLVED==============\n");
+//showFallbackDeps(byfqn);
+//showVectorDeps(nodes);
        expandDagNodes(nodes);
+//fprintf(stderr, "============EXPANDED==============\n");
+//showFallbackDeps(byfqn);
+// showVectorDeps(nodes);
        redirectBackwardDeps(nodes);
        swapBackwardBreakers(nodes);
+//fprintf(stderr, "============REDIRECTED==============\n");
+//showFallbackDeps(byfqn);
+//showVectorDeps(nodes);
    }
    EXCEPTION(ex) {
        objectFree((Object *) nodes, TRUE);

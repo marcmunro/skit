@@ -50,7 +50,7 @@
         <xsl:text> as it may</xsl:text>
         <xsl:text> contain objects in other dbs;&#x0A;</xsl:text>
         <xsl:text>\echo To perform the drop uncomment the</xsl:text>
-	<xsl:text>  following line:&#x0A;</xsl:text>
+	<xsl:text> following line:&#x0A;</xsl:text>
 	<xsl:if test="@name='pg_default'">
 	  <!-- If the tablespace is pg_default, try even harder not to
 	       drop it! -->

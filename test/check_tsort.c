@@ -347,7 +347,7 @@ START_TEST(navigation)
     xmlDocSetRootElement(xmldoc, root);
     result_doc = documentNew(xmldoc, NULL);
 
-    treeFromVector(root, sorted);
+    docFromVector(root, sorted);
 
     //dbgSexp(result_doc);
 
@@ -388,7 +388,7 @@ START_TEST(navigation2)
     xmlDocSetRootElement(xmldoc, root);
     result_doc = documentNew(xmldoc, NULL);
 
-    treeFromVector(root, sorted);
+    docFromVector(root, sorted);
 
     //dbgSexp(result_doc);
 
@@ -704,7 +704,7 @@ START_TEST(depset)
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(1190);
+	//showMalloc(859);
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");

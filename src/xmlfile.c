@@ -1018,27 +1018,24 @@ actionName(DagNode *node)
 }
 
 static void
-addAction(xmlNode *node, char *action)
+addActionNode(xmlNode *root, xmlNode *node, char *action)
 {
-    Vector *navigation = NULL;
     xmlNewProp(node, "action", action);
+    xmlAddChild(root, node);
 }
 
-void
-addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
+static void
+addNavigationNodes(xmlNode *root_node, DagNode *cur, DagNode *target)
 {
     Vector *volatile navigation = NULL;
-    DagNode *nnode;
-    xmlNode *curnode;
+    DagNode *this;
     int i;
 
     BEGIN {
 	navigation = navigationToNode(cur, target);
 	EACH(navigation, i) {
-	    nnode = (DagNode *) ELEM(navigation, i);
-	    curnode = nnode->dbobject;
-	    xmlAddChild(parent_node, curnode);
-	    addAction(curnode, actionName(nnode));
+	    this = (DagNode *) ELEM(navigation, i);
+	    addActionNode(root_node, this->dbobject, actionName(this));
 	}
     }
     EXCEPTION(ex);
@@ -1048,29 +1045,50 @@ addNavigationNodes(xmlNode *parent_node, DagNode *cur, DagNode *target)
     END;
 }
 
-void
-treeFromVector(xmlNode *parent_node, Vector *sorted_nodes)
+static void
+addActionNodes(xmlNode *root_node, Vector *sorted_nodes, int from, int to)
 {
-    DagNode *prev = NULL;
-    DagNode *dnode;
+    DagNode *next;
+    xmlNode *copy;
+    int i;
+    for (i = from; i <= to; i++) {
+	next = (DagNode *) ELEM(sorted_nodes, i);
+	if (next->build_type != EXISTS_NODE) {
+	    copy = copyObjectNode(next->dbobject);
+	    addActionNode(root_node, copy, actionName(next));
+	}
+    }
+}
+
+void
+docFromVector(xmlNode *root_node, Vector *sorted_nodes)
+{
+    DagNode *nav_from = NULL;
+    DagNode *nav_to;
+    DagNode *next;
     xmlNode *curnode;
+    int from_idx = 0;
     int i;
 
     EACH(sorted_nodes, i) {
-	dnode = (DagNode *) ELEM(sorted_nodes, i);
-	if (dnode->build_type != EXISTS_NODE) {
-	    /* Ignore EXISTS_NODES for the purpose of adding navigation
-	     * nodes.  There is no point in navigating to these nodes as
-	     * we are not going to do anything with them. */
-	    addNavigationNodes(parent_node, prev, dnode);
-	    curnode = copyObjectNode(dnode->dbobject);
-	    addAction(curnode, actionName(dnode));
-	    xmlAddChild(parent_node, curnode);
-	    prev = dnode;
+	nav_to = (DagNode *) ELEM(sorted_nodes, i);
+	if ((nav_to->build_type == EXISTS_NODE) ||
+	    (nav_to->build_type == FALLBACK_NODE) ||
+	    (nav_to->build_type == ENDFALLBACK_NODE))
+	{
+	    /* No navigation for these types of node */
+	    continue;
 	}
+
+	addNavigationNodes(root_node, nav_from, nav_to);
+	addActionNodes(root_node, sorted_nodes, from_idx, i);
+	nav_from = nav_to;
+	from_idx = i + 1;
     }
-    addNavigationNodes(parent_node, prev, NULL);
+    addActionNodes(root_node, sorted_nodes, from_idx, sorted_nodes->elems - 1);
+    addNavigationNodes(root_node, nav_from, NULL);
 }
+
 
 static xmlNode *
 execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -1091,7 +1109,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
-	treeFromVector(root, sorted);
+	docFromVector(root, sorted);
 	result_doc = documentNew(xmldoc, NULL);
     }
     EXCEPTION(ex);

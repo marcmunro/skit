@@ -1022,7 +1022,7 @@ START_TEST(fallback)
 		    "fallback.grant.x.superuser", 
 		     "drop.grant.x.public.x.trigger:x:x", NULL);
 	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
-		    "role.cluster.x", 
+		    "fallback.grant.x.superuser",
 		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
 		    "grant.x.public.x.references:x:x", 
 		    "grant.x.public.x.rule:x:x", 

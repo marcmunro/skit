@@ -38,10 +38,15 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
 static void
 tsort_node(Vector *nodes, DagNode *node, Vector *results)
 {
+    DagNode *cycle_node;
+    boolean cyclic_exception = FALSE;
+    char *errmsg;
+    char *tmpmsg;
+
     switch (node->status) {
     case VISITING:
 	RAISE(TSORT_CYCLIC_DEPENDENCY, 
-	      newstr("Cyclic dep found in %s", node->fqn->value), node);
+	      newstr("%s", node->fqn->value), node);
     case UNVISITED: 
     case RESOLVED: 
 	BEGIN {
@@ -49,11 +54,31 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 	    tsort_deps(nodes, node, results);
 	    vectorPush(results, (Object *) node);
 	}
-	EXCEPTION(ex) {
-	    node->status = UNVISITED;
-	    RAISE();
+	EXCEPTION(ex);
+	WHEN(TSORT_CYCLIC_DEPENDENCY) {
+	    cyclic_exception = TRUE;
+	    cycle_node = (DagNode *) ex->param;
+	    errmsg = newstr("%s", ex->text);
 	}
 	END;
+	if (cyclic_exception) {
+	    if (node == cycle_node) {
+		/* We are at the start of the cyclic dependency.
+		 * Set errmsg to describe this, and reset cycle_node
+		 * for the RAISE below. */ 
+		tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+				node->fqn->value, errmsg);
+		cycle_node = NULL;
+	    }
+	    else  {
+		/* We are somewhere in the cycle of deps.  Add the
+		 * current node to the error message. */ 
+		tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+	    }
+	    
+	    skfree(errmsg);
+	    RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
+	}
 	node->status = VISITED;
 	break;
     case VISITED: 

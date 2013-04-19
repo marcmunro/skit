@@ -7,15 +7,21 @@
    version="1.0">
 
   <xsl:template match="dbobject[@type='fallback']">
-    <xsl:if test="@action='build'">
+    <xsl:if test="@action='fallback'">
       <print>
-        <xsl:text>&#x0A;&#x0A;GRANTGRANTGRANTGRANTGRANTGRANT&#x0A;&#x0A;</xsl:text>
+        <xsl:text>---- DBOBJECT FALLBACK</xsl:text> <!-- QQQ -->
+	<xsl:value-of
+	    select="concat('&#x0A;&#x0A;alter user ', @to,
+		           ' with superuser;&#x0A;')"/>
       </print>
     </xsl:if>
 
-    <xsl:if test="@action='drop'">
+    <xsl:if test="@action='endfallback'">
       <print>
-        <xsl:text>&#x0A;&#x0A;UNGRANTUNGRANTUNGRANTUNGRANTUNGRANTUNGRANT&#x0A;&#x0A;</xsl:text>
+        <xsl:text>---- DBOBJECT END FALLBACK</xsl:text> <!-- QQQ -->
+	<xsl:value-of
+	    select="concat('&#x0A;&#x0A;alter user ', @to,
+		           ' with nosuperuser;&#x0A;')"/>
       </print>
     </xsl:if>
   </xsl:template>

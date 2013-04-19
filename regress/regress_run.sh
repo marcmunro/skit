@@ -211,8 +211,7 @@ regression_test2()
     echo "Running regression test 2 (scatter, gather, no privs, no contexts)..." 1>&2
     mkdir regress/scratch 2>/dev/null
     rm -rf scratch/dbdump/*
-    build_db tmp2_`pguver`.sql
-exit 2
+    build_db regression2_`pguver`.sql
     dump_db regressdb scratch/regressdb_test2a.dmp ...
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/dbdump

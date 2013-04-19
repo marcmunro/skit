@@ -860,7 +860,7 @@ objNext(Object *collection, Object **p_placeholder)
     collection = dereference(collection);
     switch (collection->type) {
     case OBJ_HASH: 
-	return hashNext((Cons *) collection, p_placeholder); 
+	return hashNext((Hash *) collection, p_placeholder); 
     case OBJ_CONS: 
 	return consNext((Cons *) collection, p_placeholder); 
     case OBJ_CURSOR: 
