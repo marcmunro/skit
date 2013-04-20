@@ -79,34 +79,37 @@
     
   
     <xsl:if test="../@action='drop'">
-      <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>\echo </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:call-template name="set_owner_from"/>
+      <!-- If this is an automatic grant we can avoid doing the revoke.  -->
+      <xsl:if test="not (@automatic='yes')">
+	<print>
+	  <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
+	  <xsl:value-of select="../@fqn"/>
+          <xsl:text>&#x0A;</xsl:text>
+          <xsl:text>\echo </xsl:text> <!-- QQQ -->
+	  <xsl:value-of select="../@fqn"/>
+          <xsl:text>&#x0A;</xsl:text>
+	  <xsl:call-template name="set_owner_from"/>
 
-	<xsl:text>revoke </xsl:text>
-	<xsl:value-of select="@priv"/>
-	<xsl:text> on </xsl:text>
-	<xsl:choose>
-	  <xsl:when test="../@subtype = 'view'">
-      	    <xsl:text>table</xsl:text>
-	  </xsl:when>
-	  <xsl:otherwise>
-      	    <xsl:value-of select="../@subtype"/>
-	  </xsl:otherwise>
-	</xsl:choose>
-	<xsl:text> </xsl:text>
-	<xsl:value-of select="../@on"/>
-	<xsl:text> from </xsl:text>
-	<xsl:value-of select="skit:dbquote(@to)"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	  <xsl:text>revoke </xsl:text>
+	  <xsl:value-of select="@priv"/>
+	  <xsl:text> on </xsl:text>
+	  <xsl:choose>
+	    <xsl:when test="../@subtype = 'view'">
+	      <xsl:text>table</xsl:text>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:value-of select="../@subtype"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	  <xsl:text> </xsl:text>
+	  <xsl:value-of select="../@on"/>
+	  <xsl:text> from </xsl:text>
+	  <xsl:value-of select="skit:dbquote(@to)"/>
+	  <xsl:text>;&#x0A;</xsl:text>
 
-	<xsl:call-template name="reset_owner_from"/>
-      </print>
+	  <xsl:call-template name="reset_owner_from"/>
+        </print>
+      </xsl:if>
     </xsl:if>
     
   </xsl:template>
