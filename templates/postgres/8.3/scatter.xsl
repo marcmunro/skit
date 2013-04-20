@@ -126,11 +126,19 @@
 	 provides a directive to skit to write a single file for the
 	 given database object.  
       -->
-    <xsl:if test="@type!='comment'">
+    <xsl:if test="@type!='comment' and @type!='privilege' and
+		  @type!='column' and @type!='dump' and
+		  @type!='fallback'">
       <!-- The only comments which are dbobjects are for operator
 	   families (for reasons of dependency handling).  As those
 	   comments also appear in the operator family definition,
-	   there is no need to process such elements. -->
+	   there is no need to process such elements. 
+	   Privileges are ignored as they are recorded in their
+	   containing roles.
+	   Missing types are explicitly ignored.
+	   Columns are dealt with in their containing objects.
+	   Fallbacks have no business being here.
+      -->
       <xsl:element name="skit:scatter">
 	<xsl:attribute name="path">
 	  <xsl:choose>
@@ -221,7 +229,7 @@
 					   ../@name, '/rules/')"/>
 	    </xsl:when>	
 	    <xsl:otherwise>
-	      <xsl:value-of select="'UNHANDLED/'"/>
+	      <xsl:value-of select="concat('UNHANDLED/', name(..))"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:attribute>

@@ -1858,7 +1858,7 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    root_node = processChildren(template_node, NULL, depth + 1);
 	    source_doc = docForNode(root_node);
 	}
-
+	dbgSexp(source_doc);
 	if (!source_doc) {
 	       RAISE(XML_PROCESSING_ERROR,
 		     newstr("Failed to get contents for skit:process"));
