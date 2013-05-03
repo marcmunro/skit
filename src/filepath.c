@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 
 static glob_t glob_buf;
@@ -55,6 +56,55 @@ next_match()
 {
     return glob_buf.gl_pathv[glob_buf_idx++];
 }
+
+
+void
+searchdir(Hash *hash, char *path, char *pattern)
+{
+    char *realpath;
+    DIR *dir;
+    struct dirent *direntry;
+    char * nextpath;
+    char *hashkey;
+
+    if (streq(path, "")) {
+	realpath = newstr(".");
+    }
+    else {
+	realpath = newstr(path);
+    }
+    if (realpath[strlen(realpath) - 1] == '/') {
+	realpath[strlen(realpath) - 1] = '\0';
+    }
+
+    dir = opendir(realpath);
+    if (!dir) {
+	perror(realpath);
+	exit(1);
+    }
+
+    while (direntry = readdir(dir)) {
+	if (direntry->d_type == DT_DIR) {
+	    if (streq(direntry->d_name, ".") || streq(direntry->d_name, "..")) {
+		continue;
+	    }
+	    nextpath = newstr("%s/%s", realpath, direntry->d_name);
+	    searchdir(hash, nextpath, pattern);
+	    skfree(nextpath);
+	}
+	else {
+	    /* Assume the dirent is for a file */
+	    if (fnmatch(pattern, direntry->d_name) == 0) {
+		hashkey = newstr("%s/%s", realpath, direntry->d_name);
+		hashAdd(hash, (Object *) stringNewByRef(hashkey), 
+		        (Object *) symbolGet("t"));
+	    }
+	}
+    }
+    skfree(realpath);
+    closedir(dir);
+}
+
 
 // Try finding filename in path/filename, path/dbdir/filename and
 // path/dbdir/*/filename.  Return -1 if the file was found in one of the
@@ -363,3 +413,12 @@ makePath(char *path)
     }
 }
 
+void
+delFile(char *filename)
+{
+   if (unlink(filename)) {
+	RAISE(FILEPATH_ERROR,
+	      newstr("Unable to unlink file: %s (%s)\n", 
+		     filename, strerror(errno)));
+    }
+}

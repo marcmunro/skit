@@ -165,7 +165,7 @@ skitfileMatch(const char * URI)
 }
 
 static String *
-filenameFromUri(const char *URI)
+filenameFromUri(char *URI)
 {
     String *filename;
     String *path;
@@ -192,7 +192,7 @@ static void *
 skitfileOpen(const char *URI) 
 {
     file_context *fc;
-    String *path = filenameFromUri(URI);
+    String *path = filenameFromUri((char *) URI);
     String *my_uri;
 
     //fprintf(stderr, "Opening %s\n", URI);

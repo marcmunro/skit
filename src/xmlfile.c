@@ -24,7 +24,7 @@
 #include <libxslt/xsltInternals.h>
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
-
+#include <unistd.h>
 
 static String empty_str = {OBJ_STRING, ""};
 static String boolean_str = {OBJ_STRING, "boolean"};
@@ -1414,6 +1414,74 @@ add_footer(xmlNode *prev, xmlNode *footer_node)
     }
 }
 
+static Hash *scatterfiles = NULL;
+
+/* Create, it it doesn't exist, a list of xml files in path.  This will
+ * be used to determine when pre-existing database objects have been
+ * deleted.
+ */
+static Hash *
+initScatterFiles(char *path)
+{
+    if (!scatterfiles) {
+	scatterfiles = hashNew(TRUE);
+	makePath(path);
+	searchdir(scatterfiles, path, "*.xml");
+    }
+    return scatterfiles;
+}
+
+static Object *
+reportOldFile(Cons *entry, Object *params_node)
+{
+    String *key = (String *) entry->car;
+    Cons *value = (Cons *) entry->cdr;
+    Triple *triple = (Triple *) params_node;
+    Object *checkonly = triple->obj1;
+    Object *silent = triple->obj2;
+    Node *node = (Node *) triple->obj3;
+    xmlNode *tmp_root = node->node;
+    char *node_text;
+    xmlNode *new_node;
+
+    if (!checkonly) {
+	delFile(key->value);
+    }
+    if (!silent) {
+	new_node = xmlNewNode(NULL, (xmlChar *) "print");
+	node_text = newstr("OLD: %s\n", key->value);
+	(void) xmlNodeAddContent(new_node, (xmlChar *) node_text);
+	xmlAddChild(tmp_root, new_node);
+	skfree(node_text);
+    }
+
+    return (Object *) value;  /* Return the original contents of the hash
+			       * entry */
+}
+
+
+static xmlNode *
+reportScatterFiles()
+{
+    if (scatterfiles) {
+	xmlNode *tmp_root = xmlNewNode(NULL, (xmlChar *) "oldfiles");
+	Node *node = nodeNew(tmp_root);
+	Triple triple = {
+	    OBJ_TRIPLE,
+	    symbolGetValue("checkonly"),
+	    symbolGetValue("silent"),
+	    (Object *) node};
+	hashEach((Hash *) scatterfiles, reportOldFile, (Object *) &triple);
+
+	objectFree((Object *) scatterfiles, TRUE);
+	scatterfiles = NULL;
+	objectFree((Object *) node, FALSE);
+	return tmp_root;
+    }
+    return NULL;
+}
+
+
 static xmlNode *
 writeScatterFile(String *path, String *name, xmlNode *node,
 		 Document *template)
@@ -1421,7 +1489,7 @@ writeScatterFile(String *path, String *name, xmlNode *node,
     String *pathroot = (String *) symbolGetValue("path");
     char *dirpath = newstr("%s/%s", pathroot->value, path->value);
     String *volatile fullpath = 
-	stringNewByRef(newstr("%s/%s", dirpath, name->value));
+	stringNewByRef(newstr("%s%s", dirpath, name->value));
     Document *volatile prev_doc = NULL;
     Document *volatile new_doc = NULL;
     String *volatile header = NULL;
@@ -1442,11 +1510,19 @@ writeScatterFile(String *path, String *name, xmlNode *node,
     Object *verbose = symbolGetValue("verbose");
     Object *checkonly = symbolGetValue("checkonly");
     Object *silent = symbolGetValue("silent");
+    Object *found;
+    Hash *files = initScatterFiles(dirpath);
 
     BEGIN {
-	prev_doc = simpleDocFromFile(fullpath);
+	found = hashGet(files, (Object *) fullpath);
 	scatter_root = firstElement(node->children);
-	if (prev_doc) {
+	if (found) {
+	    prev_doc = simpleDocFromFile(fullpath);
+	    if (!prev_doc) {
+		RAISE(FILEPATH_ERROR,
+		      newstr("Expected file \"%s\" not found", 
+			     fullpath->value));
+	    }
 	    /* Find the first node below the dump node in both versions
 	     * of the document */
 	    prev_root = xmlDocGetRootElement(prev_doc->doc);
@@ -1463,6 +1539,7 @@ writeScatterFile(String *path, String *name, xmlNode *node,
 		header_node = get_header_node(prev_root);
 		footer_node = get_footer_node(prev_root);
 	    }
+	    (void *) hashDel(files, (Object *) fullpath);
 	}
 	else {
 	    diff = IS_NEW;
@@ -1528,6 +1605,7 @@ scatterFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile path = nodeAttribute(template_node, "path");
     String *volatile name;
+    Hash *existing_files;
     Document *template = NULL;
     xmlNode *result = NULL;
 
@@ -1836,6 +1914,18 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+static void
+addChildren(xmlNode *to, xmlNode *from)
+{
+    xmlNode *this = from->children;
+    xmlNode *new;
+    while (this) {
+	new = xmlCopyNode(this, 1);
+	xmlAddChild(to, new);
+	this = this->next;
+    }
+    xmlFreeNode(from);
+}
 
 static xmlNode *
 execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
@@ -1845,6 +1935,7 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *result_doc = NULL;
     xmlNode *result;
     xmlNode *root_node;
+    xmlNode *oldfiles;
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
@@ -1858,13 +1949,15 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    root_node = processChildren(template_node, NULL, depth + 1);
 	    source_doc = docForNode(root_node);
 	}
-	dbgSexp(source_doc);
 	if (!source_doc) {
 	       RAISE(XML_PROCESSING_ERROR,
 		     newstr("Failed to get contents for skit:process"));
 	}
 	root_node = xmlDocGetRootElement(source_doc->doc);
 	result = processChildren(root_node, parent_node, depth + 1);
+	if (oldfiles = reportScatterFiles()) {
+	    addChildren(parent_node, oldfiles);
+	}
 	result_doc = docForNode(root_node);
     }
     EXCEPTION(ex);

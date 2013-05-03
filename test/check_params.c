@@ -752,9 +752,9 @@ END_TEST
 
 START_TEST(scatter)
 {
-    char *args[] = {"./skit", "-t", "scatter.xml", "-q",
+    char *args[] = {"./skit", "-t", "scatter.xml",
 		    "test/data/cond_test.xml", "--path", 
-		    "./dbdump", "--checkonly"};
+		    "regress/scratch/dbdump", "--verbose", "--checkonly"};
     Document *doc;
     char *bt;
     fileinfo_t *fi;
@@ -1203,7 +1203,7 @@ params_suite(void)
     //ADD_TEST(tc_core, deps2); // Testing deps for columns
 
     // ??
-    ADD_TEST(tc_core, scatter);
+    //ADD_TEST(tc_core, scatter);
 
     suite_add_tcase(s, tc_core);
 

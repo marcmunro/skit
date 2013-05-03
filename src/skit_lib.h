@@ -579,6 +579,7 @@ extern Document *simpleDocFromFile(String *path);
 extern void makePath(char *path);
 extern Document *scatterTemplate(String *path);
 extern void documentFreeMem();
+extern void delFile(char *filename);
 
 // xmlfile.c
 extern void parseXSLStylesheet(Document *doc);

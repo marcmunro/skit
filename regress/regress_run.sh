@@ -214,13 +214,6 @@ regression_test2()
     build_db regression2_`pguver`.sql
     dump_db regressdb scratch/regressdb_test2a.dmp ...
 
-# Remove the following
-echo ARRGGGGG
-extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
-	    scratch/regressdb_dump2.xml ...
-
-
-
     scatter "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/dbdump
     

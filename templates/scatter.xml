@@ -9,7 +9,6 @@
   <skit:options>
     <option name='sources' type='integer' value='1'/>
     <option name='p*ath' type='string' default="."/>
-    <option name='default_template' type='string' value="templates/template.xml"/>
     <option name='t*emplate' type='string'/>
     <option name='v*erbose' type='flag'/>
     <option name='ch*eckonly' type='flag'/>
