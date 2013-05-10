@@ -1,0 +1,49 @@
+
+diffs:
+     schemata
+    conversions
+    types
+    domains
+    casts
+    operators
+    operator_classes
+    operator_families
+    sequences
+    functions
+    aggregates
+    tables
+    constraints
+    indices
+    rules
+    views
+    triggers
+
+generate:
+  - ensure vertical spacing is good in code generated for diffs
+  - eliminate QQQ commented lines in ddl/*.xsl
+  - use the concat function rather than sequences of text value-of text, etc
+    see the revoke template for an example.  This is more readable and
+    more compact.  Should therefore be faster.
+
+smart tsort:
+    new tsort function
+    change name of tsort selection from simple_tsort to fast_tsort
+
+make the echoes option functional in generate 
+change name of ignore-contexts option in generate
+
+grep
+
+docs:
+    man page
+    user guide
+    doxygen
+    developers guide
+
+8.4 changes
+9.0 changes
+9.1 changes
+9.2 changes
+
+
+
