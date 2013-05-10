@@ -80,7 +80,7 @@
   
     <xsl:if test="../@action='drop'">
       <!-- If this is an automatic grant we can avoid doing the revoke.  -->
-      <xsl:if test="not (@automatic='yes')">
+      <xsl:if test="../@diff or not (@automatic='yes')">
 	<print>
 	  <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	  <xsl:value-of select="../@fqn"/>

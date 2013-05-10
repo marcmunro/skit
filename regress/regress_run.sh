@@ -157,16 +157,18 @@ errexit()
     fi
 }
 
+# Do differences on 2 dump files, ignoring lines that match the contents of 
+# an optional 3rd file
 diffdump()
 {
     echo ......comparing pg_dump snapshots... 1>&2
-    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
+    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 $3
 }
 
 diffglobals()
 {
     echo ......comparing pg_dumpall snapshots... 1>&2
-    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2
+    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 $3
 }
 
 diffextract()
@@ -262,9 +264,10 @@ regression_test3()
     echo "...checking db equivalence to target..." 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...
-    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp
-    diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp
+    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp 
 
+    diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp \
+	regress/regression3_`pguver`_allowed_diffs
     echo "...diff target->source..." 1>&2
     gendiff scratch/regressdb_dump3b.xml scratch/regressdb_dump3a.xml \
 	scratch/regressdb_diff3b2a.sql
@@ -273,8 +276,10 @@ regression_test3()
     echo "...checking db equivalence to source ..." 1>&2
     dump_db regressdb scratch/regressdb_test3a2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3a2.gdmp ...
-    diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp
-    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp
+    diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp \
+	regress/regression3_`pguver`_allowed_diffs2
+    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp \
+	regress/regression3_`pguver`_allowed_diffs
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2

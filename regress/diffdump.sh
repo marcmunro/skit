@@ -56,6 +56,18 @@ eliminate_redundant_grants()
         {print}'
 }
 
+# If there are allowed_diffs, we eliminate them from the source files.
+eliminate_allowed()
+{
+    if [ "x$1" = "x2" ]; then
+	grep '^>' $2
+    else
+	grep '^<' $2
+    fi | cut -c 3- >fgrep.tmp
+    grep -v -f fgrep.tmp - 
+    rm -f fgrep.tmp
+}
+
 # This does some minor filtering on the source files, to ensure 
 # diffs that are irrelevant are not found.  Also sorts the files
 # so that they will have contents in the same order.
@@ -69,15 +81,19 @@ sort_attributes()
 
 prep_input()
 {
-    eliminate_redundant_grants | sort_attributes
+    if [ "x$2" = "x" ]; then
+	cat - 
+    else
+	eliminate_allowed $1 $2
+    fi | eliminate_redundant_grants | sort_attributes
 }
 
 
-prep_input < $1 >$1.tmp
-prep_input < $2 >$2.tmp
+prep_input 1 $3 < $1 >$1.tmp
+prep_input 2 $3 < $2 >$2.tmp
 echo "=== RUNNING DIFF $1 $2"
 diff -b $1.tmp $2.tmp; status=$?
-rm -f $1.tmp
+#rm -f $1.tmp $2.tmp
 if [ ${status} -ne 0 ]; then
     echo 1>&2
     echo "Differences found between $1 and $2.  Bailing out..." 1>&2
