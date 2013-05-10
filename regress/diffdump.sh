@@ -93,7 +93,7 @@ prep_input 1 $3 < $1 >$1.tmp
 prep_input 2 $3 < $2 >$2.tmp
 echo "=== RUNNING DIFF $1 $2"
 diff -b $1.tmp $2.tmp; status=$?
-#rm -f $1.tmp $2.tmp
+rm -f $1.tmp $2.tmp
 if [ ${status} -ne 0 ]; then
     echo 1>&2
     echo "Differences found between $1 and $2.  Bailing out..." 1>&2
