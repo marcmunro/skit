@@ -4,6 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
+  <!-- Changes to language names are not handled.  -->
   <dbobject type="language" key="name">
     <attribute name="owner"/>
     <element type="comment">

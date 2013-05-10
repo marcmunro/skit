@@ -135,7 +135,6 @@ regression_test1: skit regression_test_precond drop_regress_db
 	 $(REGRESS_RUN) 1
 
 regression_test2: skit regression_test_precond drop_regress_db
-	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -145,7 +144,6 @@ regression_test2: skit regression_test_precond drop_regress_db
 	 $(REGRESS_RUN) 2
 
 regression_test3: skit regression_test_precond drop_regress_db
-	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -163,7 +161,8 @@ prep: regression_test_precond drop_regress_db
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) prep
 
-regress: skit regress_cluster regression_test1 regression_test2 
+regress: skit regress_cluster regression_test1 regression_test2 \
+		regression_test3
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 

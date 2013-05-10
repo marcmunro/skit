@@ -56,9 +56,9 @@ CLUSTEREOF
 
 psql -d regressdb << EOF
 
-set session authorization regress;
 create language plpgsql;
-reset session authorization;
+alter language plpgsql owner to regress;
+comment on language plpgsql is 'PROCEDural';
 
 revoke usage on language plpgsql from public;
 grant usage on language plpgsql to keep2;
