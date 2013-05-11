@@ -125,7 +125,8 @@ regression_test_precond:
 	    $(MAKE) --no-print-directory regress_cluster; \
 	fi
 
-regression_test1: skit regression_test_precond drop_regress_db
+regression_test1: skit regression_test_precond
+	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -134,7 +135,8 @@ regression_test1: skit regression_test_precond drop_regress_db
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 1
 
-regression_test2: skit regression_test_precond drop_regress_db
+regression_test2: skit regression_test_precond
+	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -143,7 +145,8 @@ regression_test2: skit regression_test_precond drop_regress_db
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 2
 
-regression_test3: skit regression_test_precond drop_regress_db
+regression_test3: skit regression_test_precond
+	@$(MAKE) --no-print-directory drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
 	 export REGRESS_LOG=$(REGRESS_LOG); \
@@ -152,6 +155,9 @@ regression_test3: skit regression_test_precond drop_regress_db
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 3
 
+# This integrates with unit testing so that unit tests can be run
+# from the regression test data while development and testing is
+# under way.
 prep: regression_test_precond drop_regress_db
 	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
 	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \

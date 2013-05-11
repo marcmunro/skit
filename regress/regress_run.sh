@@ -264,7 +264,8 @@ regression_test3()
     echo "...checking db equivalence to target..." 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...
-    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp 
+    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp \
+	regress/regression3_`pguver`_allowed_diffs
 
     diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp \
 	regress/regression3_`pguver`_allowed_diffs
@@ -279,7 +280,7 @@ regression_test3()
     diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp \
 	regress/regression3_`pguver`_allowed_diffs2
     diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp \
-	regress/regression3_`pguver`_allowed_diffs
+	regress/regression3_`pguver`_allowed_diffs2
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2

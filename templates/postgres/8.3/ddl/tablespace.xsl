@@ -64,7 +64,7 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">

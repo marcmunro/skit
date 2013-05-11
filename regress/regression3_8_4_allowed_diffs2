@@ -2,5 +2,10 @@
 # which can be ignored.
 # To add allowed diffs to this file copy and paste the lines output
 # from the diffcheck.sh command into this (or an equivalent) file.
+> REVOKE ALL ON TABLESPACE tbs2 FROM PUBLIC;
 > GRANT ALL ON LANGUAGE plpgsql TO PUBLIC;
 > REVOKE ALL ON LANGUAGE plpgsql FROM PUBLIC;
+> GRANT ALL ON SCHEMA .* TO PUBLIC;
+> REVOKE ALL ON SCHEMA .* FROM PUBLIC;
+< GRANT ALL ON SCHEMA .* TO PUBLIC;
+< REVOKE ALL ON SCHEMA .* FROM PUBLIC;

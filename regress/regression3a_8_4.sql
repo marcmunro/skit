@@ -52,4 +52,18 @@ CLUSTEREOF
 psql -d regressdb << EOF
 
 create language plpgsql;
+
+create schema wibble authorization regress;
+comment on schema wibble is 'This is owned by regress';
+
+create schema wibble2;
+
+grant create on schema wibble2 to keep;
+revoke usage on schema wibble2 from public;
+
+create schema wibble3;
+comment on schema wibble3 is 'This is wibble3';
+
+
+
 EOF

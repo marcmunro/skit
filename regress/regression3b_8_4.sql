@@ -61,7 +61,21 @@ alter language plpgsql owner to regress;
 comment on language plpgsql is 'PROCEDural';
 
 revoke usage on language plpgsql from public;
-grant usage on language plpgsql to keep2;
+grant usage on language plpgsql to keep;
+
+create schema wibble;
+
+create schema wibble2;
+comment on schema wibble2 is 'wibble2';
+
+create schema wibble3;
+comment on schema wibble3 is 'This is wibble3 again';
+
+grant create on schema wibble3 to keep;
+revoke usage on schema wibble3 from public;
+
+
+
 
 EOF
  

@@ -383,9 +383,8 @@ hashByPqn(Vector *vector)
 	    xmlFree(pqn);
 	    new = (Object *) objRefNew((Object *) node);
 	    if (entry = (Cons *) hashGet(hash, (Object *) key)) {
-       RAISE(NOT_IMPLEMENTED_ERROR, 
-			  newstr("CRAP"));
 		consAppend(entry, new);
+		objectFree((Object *) key, TRUE);
 	    }
 	    else {
 		entry = consNew(new, NULL);

@@ -6,8 +6,6 @@
 
   <dbobject type="schema" key="name">
     <attribute name="owner"/>
-    <!-- TODO: Deal with privs - this file is only partially implemented
-         (for testing rebuild mechanism in diffs) -->
     <element type="comment">
       <text/>
     </element>

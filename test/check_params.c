@@ -1196,7 +1196,7 @@ params_suite(void)
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
-				
+
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate); // during development of new db objects

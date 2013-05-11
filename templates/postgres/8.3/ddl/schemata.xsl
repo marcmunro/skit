@@ -9,7 +9,7 @@
   <xsl:template match="dbobject/schema">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
 	<xsl:if test="skit:eval('echoes') = 't'">
@@ -36,7 +36,7 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
         <xsl:text>&#x0A;</xsl:text>
         <xsl:text>&#x0A;drop schema </xsl:text>
@@ -44,6 +44,25 @@
         <xsl:text>;&#x0A;</xsl:text>
       </print>
     </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
+	<xsl:for-each select="../attribute">
+	  <xsl:if test="@name='owner'">
+            <xsl:text>&#x0A;alter schema </xsl:text>
+            <xsl:value-of select="../@qname"/>
+            <xsl:text> owner to </xsl:text>
+            <xsl:value-of select="skit:dbquote(@new)"/>
+            <xsl:text>;&#x0A;</xsl:text>
+	  </xsl:if>
+	  </xsl:for-each>
+	<xsl:call-template name="commentdiff"/>
+      </print>
+    </xsl:if>
+
 
   </xsl:template>
 </xsl:stylesheet>
