@@ -54,7 +54,7 @@ create tablespace "tbs4" owner "wibble"
 
 CLUSTEREOF
 
-psql -d regressdb << EOF
+psql -d regressdb -U regress << 'EOF'
 
 create language plpgsql;
 alter language plpgsql owner to regress;
@@ -68,13 +68,34 @@ create schema wibble;
 create schema wibble2;
 comment on schema wibble2 is 'wibble2';
 
-create schema wibble3;
-comment on schema wibble3 is 'This is wibble3 again';
-
-grant create on schema wibble3 to keep;
-revoke usage on schema wibble3 from public;
+create schema schema2;
+comment on schema schema2 is 'This is wibble3 again';
 
 
+grant create on schema schema2 to keep;
+revoke usage on schema schema2 from public;
+
+create 
+function schema2.myconv(integer, integer, cstring, internal, integer)
+  returns void as '$libdir/ascii_and_mic', 'ascii_to_mic' language c;
+
+create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
+alter conversion myconv owner to keep;
+
+
+comment on conversion myconv is
+'conversion comment has changed';
+
+revoke all on schema schema2 from keep;
+
+create conversion schema2.myconv2 for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
+alter conversion schema2.myconv2 owner to keep;
+
+comment on conversion schema2.myconv2 is
+'New conversion';
+
+-- TODO: TEST THE FOLLOWING:
+-- CREATE THE CONVERSSION AS AN UNPRIVILEGED USED WITH NO RIGHTS ON THE SCHEMA
 
 
 EOF

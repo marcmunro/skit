@@ -16,10 +16,6 @@
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       ancestor::schema/@name, '.create:public')}"/>
-      <dependency pqn="{concat('grant.', 
-		       ancestor::database/@name, '.', 
-		       ancestor::schema/@name, '.create:', 
-		       //cluster/@username)}"/>
       <xsl:if test="$owner">
 	<dependency pqn="{concat('grant.', 
 			 ancestor::database/@name, '.', 
@@ -33,10 +29,6 @@
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       ancestor::schema/@name, '.usage:public')}"/>
-      <dependency pqn="{concat('grant.', 
-		       ancestor::database/@name, '.', 
-		       ancestor::schema/@name, '.usage:', 
-		       //cluster/@username)}"/>
       <xsl:if test="$owner">
 	<dependency pqn="{concat('grant.', 
 			 ancestor::database/@name, '.', 

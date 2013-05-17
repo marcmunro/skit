@@ -4,6 +4,7 @@ create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
 alter role "regress" valid until 'infinity';
 alter role "regress" set client_min_messages = 'notice';
+alter role "regress" with superuser;
 
 create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
@@ -49,7 +50,7 @@ create tablespace "tbs4" owner "wibble"
 
 CLUSTEREOF
 
-psql -d regressdb << EOF
+psql -d regressdb -U regress << 'EOF'
 
 create language plpgsql;
 
@@ -61,9 +62,17 @@ create schema wibble2;
 grant create on schema wibble2 to keep;
 revoke usage on schema wibble2 from public;
 
-create schema wibble3;
-comment on schema wibble3 is 'This is wibble3';
+create schema schema2;
+comment on schema schema2 is 'This is schema2';
 
+create 
+function schema2.myconv(integer, integer, cstring, internal, integer)
+  returns void as '$libdir/ascii_and_mic', 'ascii_to_mic' language c;
+
+create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
+
+comment on conversion myconv is
+'conversion comment';
 
 
 EOF

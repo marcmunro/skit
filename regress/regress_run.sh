@@ -181,6 +181,7 @@ regression_test1()
 {
     echo "Running regression test 1 (build and drop, simple-sort)..." 1>&2
     mkdir regress/scratch 2>/dev/null
+    #build_db regression3b_`pguver`.sql
     build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
 

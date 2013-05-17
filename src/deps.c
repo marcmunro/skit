@@ -528,7 +528,7 @@ appendDep(Object *cur, Object *new)
  * TODO: rename to getDepSet after refactoring away the old version
  */
 static Object *
-getDepSets(xmlNode *node, Hash *byfqn, Hash *bypqn)
+getDepSet(xmlNode *node, Hash *byfqn, Hash *bypqn)
 {
     xmlNode *depnode;
     Object *dep;
@@ -541,7 +541,7 @@ getDepSets(xmlNode *node, Hash *byfqn, Hash *bypqn)
 	     depnode = nextDependency(depnode);
 	     depnode = depnode->next) 
 	{
-	    dep = getDepSets(depnode, byfqn, bypqn);
+	    dep = getDepSet(depnode, byfqn, bypqn);
 	    if (dep) {
 		if ((dep->type == OBJ_DAGNODE) &&
 		    (((DagNode *) dep)->build_type == EXISTS_NODE)) {
@@ -550,7 +550,10 @@ getDepSets(xmlNode *node, Hash *byfqn, Hash *bypqn)
 		     * just this simple dependency.  So we clean up and
 		     * exit.
 		     */
-		    objectFree(result, FALSE);
+
+		    if (result && result->type == OBJ_VECTOR) {
+			objectFree(result, FALSE);
+		    }
 		    return dep;
 		}
 		else {
@@ -751,7 +754,7 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 	 */
 	applies = applicationForDep(depnode);
 	fallback_node = getFallbackNode(depnode, byfqn);
-	deps = getDepSets(depnode, byfqn, bypqn);
+	deps = getDepSet(depnode, byfqn, bypqn);
 
 	if (deps && (deps->type == OBJ_DAGNODE) && 
 	    (((DagNode *) deps)->build_type == EXISTS_NODE))
@@ -807,6 +810,9 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
    int volatile i;
    EACH(nodes, i) {
        this = (DagNode *) ELEM(nodes, i);
+       if (streq(this->fqn->value, "conversion.regressdb.schema2.myconv2")) {
+	   dbgSexp(this);
+       }
        assert(this->type == OBJ_DAGNODE, "incorrect node type");
        addDepsForNode(this, nodes, byfqn, bypqn);
    }
@@ -1090,7 +1096,6 @@ expandDagNodes(Vector *nodes)
 
 	switch (node->build_type) {
 	case BUILD_NODE:
-	case DROP_NODE:
 	case EXISTS_NODE:
 	case DIFFPREP_NODE:
 	case DIFFCOMPLETE_NODE:
@@ -1098,6 +1103,28 @@ expandDagNodes(Vector *nodes)
 	case ENDFALLBACK_NODE:
 	    /* Nothing to do - all is well */
 	    mirror = NULL;
+	    break;
+	case DROP_NODE:
+	    /* Any non-drop node that depends on a drop node at this
+	     * point must have its dependency inverted.  We belive this
+	     * is safe to do (ie will not cause extra cycles to be
+	     * created).  The reasoning is as follows.  Consider this
+	     * dependency: 
+	     *   build x --> drop grant y
+	     * this is equivalent to:
+	     *   build x --> exists grant y <-- drop grant y
+	     * because the build depends on the existence of the grant.
+	     # We are going to convert this to:
+	     *   build x <-- drop grant y
+	     * Since the exists node can have no dependencies, no change
+	     * there can have any effect on adding cycles, and since the
+	     * only things that can legimately depend on drops are other
+	     * drops, or the build associated with a drop (for a rebuild
+	     * node), there can be no dependency path from build x to
+	     * drop grant y.
+	     */
+	    printSexp(stderr, "DROP NODE", node);
+	    // TODO: implement the above.
 	    break;
 	case DIFF_NODE:
 	    node->build_type = DIFFCOMPLETE_NODE;
@@ -1334,22 +1361,22 @@ dagFromDoc(Document *doc)
        identifyParents(nodes, byfqn);
        bypqn = hashByPqn(nodes);
        addDependencies(nodes, byfqn, bypqn);
-//fprintf(stderr, "============INITIAL==============\n");
+fprintf(stderr, "============INITIAL==============\n");
 //showFallbackDeps(byfqn);
-//showVectorDeps(nodes);
+showVectorDeps(nodes);
        resolveGraphs(nodes);
-//fprintf(stderr, "============RESOLVED==============\n");
+fprintf(stderr, "============RESOLVED==============\n");
 //showFallbackDeps(byfqn);
-//showVectorDeps(nodes);
+showVectorDeps(nodes);
        expandDagNodes(nodes);
-//fprintf(stderr, "============EXPANDED==============\n");
+fprintf(stderr, "============EXPANDED==============\n");
 //showFallbackDeps(byfqn);
-// showVectorDeps(nodes);
+ showVectorDeps(nodes);
        redirectBackwardDeps(nodes);
        swapBackwardBreakers(nodes);
-//fprintf(stderr, "============REDIRECTED==============\n");
+fprintf(stderr, "============REDIRECTED==============\n");
 //showFallbackDeps(byfqn);
-//showVectorDeps(nodes);
+showVectorDeps(nodes);
    }
    EXCEPTION(ex) {
        objectFree((Object *) nodes, TRUE);

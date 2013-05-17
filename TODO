@@ -1,6 +1,84 @@
 
+current issue:
+  privs for changing ownership of conversions:
+  ERROR:  must be member of role "regress"
+
+  This has raised some general dependency problems in conversions, which
+  should be tested for all other objects as well. 
+
+  current state is that creating myconv2 fails.  This appears to be
+  because create on schema2 has been revoked from public.  That seems a
+  bit wrong.
+
+  unit test params diffgen currently exercises this issue, showing the
+  deps at each stage of dagFromDoc
+
+  These dependencies look wrong (the conditional dep from myconv2 to the
+  drop grant):
+
+NODE: <OBJ_DAGNODE (build) conversion.regressdb.schema2.myconv2>
+-->[<OBJ_DAGNODE (diff) schema.regressdb.schema2> <OBJ_DAGNODE (diff) role.cluster.keep>]
+optional->[<OBJ_DAGNODE (drop) grant.regressdb.schema2.create:public:regress>]
+<==[<OBJ_DAGNODE (diff) schema.regressdb.schema2> <OBJ_DAGNODE (diff) role.cluster.keep>]
+optional<=[<OBJ_DAGNODE (drop) grant.regressdb.schema2.usage:public:regress>]
+
+
+  There is also a conditional dbgSexp at deps.c:814 which is the the
+  place to start debugging from. 
+
+DISCUSSION:
+We cannot create dependencies on drops, except for the case when a build
+depends on its own drop.  The dependency of the conversion above is to
+either:
+ - the owner of the conversion having create priv on the schema
+ - the owner of the conversion having superuser
+ - public having create priv on the schema
+
+In our case public does have create priv, but it is about to be dropped.
+
+The solution is to create an exists node related to the drop node.  Our
+dependency is on the exists node.  The drop node also depends on the
+exists node.  Once we have resolved the deps, we eliminate deps on
+exists nodes, by making instead a dependency from the drop node to our
+node.
+
+so we start with:
+
+   Build conv --> Exists grant <-- Drop Grant
+
+and this becomes:
+
+    Build Conv <-- Drop Grant
+
+This should be safe (ie should not create any extra cycles) because:
+- an exists node has no dependencies
+- nothing should depend on our drop node except other drops
+
+Therefore: 
+- there should be no existing path from the build conv node to the
+  drop grant node
+- there is no path from the Exists Grant node to anywhere.
+
+So this should be safe.
+
+PLAN:
+  1) For nodes that are pure drop nodes, create a partner exists node.
+  2) Create dependecies on the exists nodes rather than the drop nodes
+  3) After resolving the graph, process any dependencies on exists nodes
+     as described above.
+
+ACTUAL:
+  Equivalent to the above is inverting the dep from build conv to drop
+  grant after the graph has been resolved.
+
+  TODO: IMPLEMENT THIS AT DEPS.C: 1127
+
+
+todo item in regression3b_8_4.sql:  
+
 diffs:
-    conversions
+    conversions  (after which we should do the concat thing below in generate)
+    functions
     types
     domains
     casts
@@ -8,7 +86,6 @@ diffs:
     operator_classes
     operator_families
     sequences
-    functions
     aggregates
     tables
     constraints

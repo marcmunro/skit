@@ -112,6 +112,7 @@ reset session authorization;
 CLUSTEREOF
  
 psql -d regressdb -U bark <<'DBEOF'
+
  
 alter schema "public" owner to "regress";
  

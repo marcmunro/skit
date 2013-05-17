@@ -4,15 +4,11 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="schema" key="name">
+  <dbobject type="conversion" key="fqn">
     <attribute name="owner"/>
     <element type="comment">
       <text/>
     </element>
-
-    <xi:include href="skitfile:diff/types.xml"/>
-    <xi:include href="skitfile:diff/functions.xml"/>
-    <xi:include href="skitfile:diff/conversions.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

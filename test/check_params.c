@@ -827,21 +827,15 @@ END_TEST
 START_TEST(generate)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
-		    "--connect", 
-		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
-                    "--generate", "--debug", "--build",  "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
+    char *args[] = {"./skit", "--generate", "x"};
 
     initTemplatePath(".");
     registerTestSQL();
-    //showFree(31515);
-    //showMalloc(31962);
+    showFree(4626);
+    showMalloc(4283);
 
     BEGIN {
-	process_args2(9, args);
+	process_args2(3, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -959,10 +953,10 @@ END_TEST
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "test/data/diffs_1_a.xml", 
-		    "test/data/diffs_1_b.xml", 
-		    //"regress/scratch/regressdb_dump3a.xml", 
-		    //"regress/scratch/regressdb_dump3b.xml", 
+		    //"test/data/diffs_1_a.xml", 
+		    //"test/data/diffs_1_b.xml", 
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--generate"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
@@ -1186,7 +1180,7 @@ params_suite(void)
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diffgen);
 
     //ADD_TEST(tc_core, gather);
 
