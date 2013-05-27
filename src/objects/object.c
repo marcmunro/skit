@@ -441,6 +441,8 @@ basicDagNode()
     new->dep_idx = -1;
     new->forward_deps = NULL;
     new->backward_deps = NULL;
+    new->tmp_fdeps = NULL;
+    new->tmp_bdeps = NULL;
     new->mirror_node = NULL;
     new->parent = NULL;
     new->breaker = NULL;

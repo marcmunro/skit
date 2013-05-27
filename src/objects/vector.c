@@ -349,3 +349,25 @@ checkVector(Vector *vec, void *chunk)
     }
     return found;
 }
+
+void
+vectorClose(Vector *vec)
+{
+    int from;
+    int to;
+    Object *elem;
+
+    assert(vec->type == OBJ_VECTOR, 
+	   "vectorClose: arg is not a vector");
+
+    for (to = from = 0; from < vec->elems; from++) {
+	if (elem = vec->contents->vector[from]) {
+	    if (to != from) {
+		vec->contents->vector[to] = elem;
+	    }
+	    to++;
+	}
+    }
+    vec->elems = to;
+}
+

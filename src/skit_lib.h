@@ -220,25 +220,25 @@ typedef struct Cursor {
 typedef enum {
     BUILD_NODE = 0,
     DROP_NODE,
-    DIFF_NODE,
-    EXISTS_NODE,
     REBUILD_NODE,
-    ARRIVE_NODE,
-    DEPART_NODE,
-    DIFFPREP_NODE,
-    DIFFCOMPLETE_NODE,
-    BUILD_AND_DROP_NODE,
-    OPTIONAL_NODE,
+    DIFF_NODE,
     FALLBACK_NODE,
     ENDFALLBACK_NODE,
+    EXISTS_NODE,
+    BUILD_AND_DROP_NODE,
+    DIFFPREP_NODE,
+    DIFFCOMPLETE_NODE,
+    OPTIONAL_NODE,
+    ARRIVE_NODE,
+    DEPART_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
 
 #define BUILD_NODE_BIT 1
 #define DROP_NODE_BIT 2
-#define DIFF_NODE_BIT 4
-#define EXISTS_NODE_BIT 8
-#define ALL_BUILDTYPE_BITS 15
+#define DIFF_NODE_BIT 8
+#define EXISTS_NODE_BIT 32
+#define ALL_BUILDTYPE_BITS 43
 
 typedef int BuildTypeBitSet;
 #define inBuildTypeBitSet(btbs, bt)		\
@@ -274,6 +274,8 @@ typedef struct DagNode {
     int              dep_idx;
     Vector          *forward_deps;   	// use objectFree(obj, FALSE);
     Vector          *backward_deps;  	// use objectFree(obj, FALSE);
+    Vector          *tmp_fdeps;  	// use objectFree(obj, FALSE);
+    Vector          *tmp_bdeps;  	// use objectFree(obj, FALSE);
     struct DagNode  *mirror_node;    	// Reference only
     struct DagNode  *parent;   	     	// Reference only
     struct DagNode  *breaker;           // The breaker for this node
@@ -408,6 +410,7 @@ extern void vectorSort(Vector *vec, ComparatorFn *fn);
 extern boolean vectorSearch(Vector *vec, Object *obj, int *p_index);
 extern Object *setPush(Vector *vector, Object *obj);
 extern boolean checkVector(Vector *vec, void *chunk);
+extern void vectorClose(Vector *vec);
 #define setPop vectorPop
 #define setStr vectorStr
 #define setGet vectorSet

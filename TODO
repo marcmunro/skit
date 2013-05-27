@@ -1,4 +1,12 @@
 
+Part way through some dependency management refactoring to prepare for
+the stuff below.  work is proceding in deps.c around line 1228 to make
+integration of the two dags (forward and backward) into a single dag,
+using a data driven approach.  This appears to work for build and drop
+including cycle handling and fallbacks.  No handling yet for diffs.
+After this is done some code cleanups should be possible - removing old
+dead code.
+
 current issue:
   privs for changing ownership of conversions:
   ERROR:  must be member of role "regress"

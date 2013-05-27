@@ -129,7 +129,8 @@
 #define INDEX_ERROR             57
 #define TSORT_ERROR             58
 #define TSORT_CYCLIC_DEPENDENCY 59
-#define UNKNOWN_EXCEPTION       60
+#define DEPS_ERROR              60
+#define UNKNOWN_EXCEPTION       61
 
 /* Create a new exception object, pushing it onto the exception stack. 
  * exceptionNotRaised is TRUE on entry to this block, and the block

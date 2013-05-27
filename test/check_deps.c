@@ -766,6 +766,7 @@ START_TEST(cyclic_drop)
 	else if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
 			  "drop.view.skittest.public.v1", NULL))
 	{
+	    fprintf(stderr, "BBBBBBBBBBBBB\n");
 	    // V1 <-- VIEWBASE 2
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
 			 "drop.view.skittest.public.v3", NULL);
@@ -783,6 +784,7 @@ START_TEST(cyclic_drop)
 	else if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
 			  "drop.view.skittest.public.v2", NULL))
 	{
+	    fprintf(stderr, "CCCCCCCCCCCCCCCCCCCC\n");
 	    // V2 <-- VIEWBASE 3
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
 			 "drop.view.skittest.public.v1", NULL);

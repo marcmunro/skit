@@ -1088,8 +1088,10 @@ static void
 expandDagNodes(Vector *nodes)
 {
     int i;
+    int j;
     DagNode *node;
     DagNode *mirror;
+    DagNode *dep;
     
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
@@ -1101,30 +1103,9 @@ expandDagNodes(Vector *nodes)
 	case DIFFCOMPLETE_NODE:
 	case FALLBACK_NODE:
 	case ENDFALLBACK_NODE:
+	case DROP_NODE:
 	    /* Nothing to do - all is well */
 	    mirror = NULL;
-	    break;
-	case DROP_NODE:
-	    /* Any non-drop node that depends on a drop node at this
-	     * point must have its dependency inverted.  We belive this
-	     * is safe to do (ie will not cause extra cycles to be
-	     * created).  The reasoning is as follows.  Consider this
-	     * dependency: 
-	     *   build x --> drop grant y
-	     * this is equivalent to:
-	     *   build x --> exists grant y <-- drop grant y
-	     * because the build depends on the existence of the grant.
-	     # We are going to convert this to:
-	     *   build x <-- drop grant y
-	     * Since the exists node can have no dependencies, no change
-	     * there can have any effect on adding cycles, and since the
-	     * only things that can legimately depend on drops are other
-	     * drops, or the build associated with a drop (for a rebuild
-	     * node), there can be no dependency path from build x to
-	     * drop grant y.
-	     */
-	    printSexp(stderr, "DROP NODE", node);
-	    // TODO: implement the above.
 	    break;
 	case DIFF_NODE:
 	    node->build_type = DIFFCOMPLETE_NODE;
@@ -1140,6 +1121,23 @@ expandDagNodes(Vector *nodes)
 	}
 	if (mirror) {
 	    setPush(nodes, (Object *) mirror); 
+	}
+    }
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	if ((node->build_type == DIFFPREP_NODE) ||
+	    (node->build_type == DROP_NODE)) 
+	{
+	    /* Add the appropriate forward_deps to this mirror node */
+	    if (mirror = node->mirror_node) {
+		if (mirror->backward_deps) {
+		    EACH(mirror->backward_deps, j) {
+			dep = (DagNode *) ELEM(mirror->backward_deps, j);
+			dep = dep->mirror_node? dep->mirror_node: dep;
+			addDepToVector(&(node->forward_deps), dep);
+		    }
+		}
+	    }
 	}
     }
 }
@@ -1188,6 +1186,107 @@ clearUnneededDeps(Vector *nodes)
     }
 }
 
+typedef enum {
+    COPY, IGNORE, INVERT, MIRROR, ERROR, UNSURE
+} redirectActionType;
+
+static redirectActionType redirect_action
+    [EXISTS_NODE][EXISTS_NODE][2] = 
+{
+    /* Array is indexed by [node->build_type][depnode->build_type]
+     *      [build_direction (ie backwards before forwards)] */
+    /* BUILD */ 
+    {{IGNORE, COPY}, {ERROR, ERROR},      /* BUILD, DROP */
+     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* DROP */ 
+    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
+     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {COPY, IGNORE}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* REBUILD */ 
+    {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
+     {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {UNSURE, COPY}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* DIFF */ 
+    {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
+     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* FALLBACK */ 
+    {{IGNORE, COPY}, {INVERT, IGNORE},      /* BUILD, DROP */
+     {IGNORE, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* ENDFALLBACK */ 
+    {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
+     {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {ERROR, ERROR}}      /* FALLBACK, ENDFALLBACK */
+};
+
+
+/* This will populate the tmp[bf]_deps vectors from forward_deps and
+ * backward_deps.  We use the tmp versions in order keep this function
+ * from stomping on its own results.  Once this function has run, the
+ * tmp versions must replace the current versions.
+ */
+static void
+doRedirection(
+    DagNode *node,
+    Vector *deps,
+    int idx,
+    boolean forwards)
+{
+    DagNode *depnode = (DagNode *) ELEM(deps, idx);
+    redirectActionType action;
+
+    if ((node->build_type > EXISTS_NODE) ||
+        (depnode->build_type > EXISTS_NODE)) 
+    {
+	RAISE(DEPS_ERROR, 
+	      newstr("%s dep from (%s) %s to (%s) %s not handled.", 
+		     forwards? "Forward": "Backward",
+		     nameForBuildType(node->build_type),
+		     node->fqn->value, 
+		     nameForBuildType(depnode->build_type),
+		     depnode->fqn->value));
+    }
+    else if ((node->build_type == EXISTS_NODE) || 
+	     (depnode->build_type == EXISTS_NODE)) 
+    {
+	action = IGNORE;
+    }
+    else {
+	action = redirect_action[node->build_type]
+	             [depnode->build_type][forwards];
+    }
+
+    switch (action) {
+    case COPY:
+	addDepToVector(&node->tmp_fdeps, depnode);
+	return;
+    case INVERT:
+	addDepToVector(&depnode->tmp_fdeps, node);
+	return;
+    case MIRROR:
+	addDepToVector(&depnode->tmp_bdeps, node);
+	return;
+    case UNSURE:
+	/* I think this is to be ignored but I could be wrong.  This
+	 * label is a placeholder to encourage further thought and
+	 * testing. */
+    case IGNORE:
+	break;
+    case ERROR:
+	showDeps(node);
+	showDeps(depnode);
+	RAISE(DEPS_ERROR, 
+	      newstr("%s dep from (%s) %s to (%s) %s not handled.", 
+		     forwards? "Forward": "Backward",
+		     nameForBuildType(node->build_type),
+		     node->fqn->value, 
+		     nameForBuildType(depnode->build_type),
+		     depnode->fqn->value));
+    }
+}
+
 /* For nodes in the backwards build direction, create inverted
  * dependencies based on the original nodes backward_deps.  Note that
  * those backward_deps may be different from the node's forward_deps due
@@ -1199,14 +1298,39 @@ redirectBackwardDeps(Vector *nodes)
     int i;
     int j;
     DagNode *node;
-    DagNode *depnode;
     Vector *deps;
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	EACH(node->forward_deps, j) {
+	    doRedirection(node, node->forward_deps, j, TRUE);
+	}
 
+	EACH(node->backward_deps, j) {
+	    doRedirection(node, node->backward_deps, j, FALSE);
+	}
+	if (node->forward_deps) {
+	    vectorClose(node->forward_deps);
+	}
+    }
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	objectFree((Object *) node->forward_deps, FALSE);
+	objectFree((Object *) node->backward_deps, FALSE);
+	node->forward_deps = node->tmp_fdeps;
+	node->backward_deps = node->tmp_bdeps;
+    }
+}
+
+#ifdef wibble
     clearUnneededDeps(nodes);
 
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 
+
+	if (streq(node->fqn->value, "conversion.regressdb.schema2.myconv2")) {
+	    dbgSexp(node);
+	}
 	if ((node->build_type == DIFFPREP_NODE) ||
 	    (node->build_type == DROP_NODE))
 	{
@@ -1249,6 +1373,7 @@ redirectBackwardDeps(Vector *nodes)
 	}
     }
 }
+#endif
 
 static void
 swapBackwardBreakers(Vector *nodes)
@@ -1360,23 +1485,23 @@ dagFromDoc(Document *doc)
    BEGIN {
        identifyParents(nodes, byfqn);
        bypqn = hashByPqn(nodes);
+
        addDependencies(nodes, byfqn, bypqn);
-fprintf(stderr, "============INITIAL==============\n");
-//showFallbackDeps(byfqn);
-showVectorDeps(nodes);
+//fprintf(stderr, "============INITIAL==============\n");
+//showVectorDeps(nodes);
+
        resolveGraphs(nodes);
-fprintf(stderr, "============RESOLVED==============\n");
-//showFallbackDeps(byfqn);
-showVectorDeps(nodes);
-       expandDagNodes(nodes);
-fprintf(stderr, "============EXPANDED==============\n");
-//showFallbackDeps(byfqn);
- showVectorDeps(nodes);
+//fprintf(stderr, "============RESOLVED==============\n");
+//showVectorDeps(nodes);
+
        redirectBackwardDeps(nodes);
        swapBackwardBreakers(nodes);
-fprintf(stderr, "============REDIRECTED==============\n");
-//showFallbackDeps(byfqn);
-showVectorDeps(nodes);
+//fprintf(stderr, "============REDIRECTED==============\n");
+//showVectorDeps(nodes);
+
+       expandDagNodes(nodes);
+//fprintf(stderr, "============EXPANDED==============\n");
+//showVectorDeps(nodes);
    }
    EXCEPTION(ex) {
        objectFree((Object *) nodes, TRUE);
