@@ -1194,27 +1194,27 @@ static redirectActionType redirect_action
     [EXISTS_NODE][EXISTS_NODE][2] = 
 {
     /* Array is indexed by [node->build_type][depnode->build_type]
-     *      [build_direction (ie backwards before forwards)] */
+     *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
-    {{IGNORE, COPY}, {ERROR, ERROR},      /* BUILD, DROP */
-     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {IGNORE, COPY}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
+     {ERROR, ERROR}, {IGNORE, COPY},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
-     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {COPY, IGNORE}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    {{ERROR, ERROR}, {INVERT, IGNORE},    /* BUILD, DROP */
+     {ERROR, ERROR}, {INVERT, IGNORE},    /* REBUILD, DIFF */
+     {COPY, IGNORE}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
      {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {UNSURE, COPY}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+     {UNSURE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
     {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
-     {ERROR, ERROR}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+     {ERROR, ERROR}, {MIRROR, COPY},      /* REBUILD, DIFF */
+     {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
-    {{IGNORE, COPY}, {INVERT, IGNORE},      /* BUILD, DROP */
+    {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
      {IGNORE, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+     {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
     {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
      {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
@@ -1237,23 +1237,14 @@ doRedirection(
     DagNode *depnode = (DagNode *) ELEM(deps, idx);
     redirectActionType action;
 
-    if ((node->build_type > EXISTS_NODE) ||
-        (depnode->build_type > EXISTS_NODE)) 
-    {
-	RAISE(DEPS_ERROR, 
-	      newstr("%s dep from (%s) %s to (%s) %s not handled.", 
-		     forwards? "Forward": "Backward",
-		     nameForBuildType(node->build_type),
-		     node->fqn->value, 
-		     nameForBuildType(depnode->build_type),
-		     depnode->fqn->value));
-    }
-    else if ((node->build_type == EXISTS_NODE) || 
+    if ((node->build_type == EXISTS_NODE) || 
 	     (depnode->build_type == EXISTS_NODE)) 
     {
 	action = IGNORE;
     }
-    else {
+    else if ((node->build_type < EXISTS_NODE) &&
+	     (depnode->build_type < EXISTS_NODE))
+    {
 	action = redirect_action[node->build_type]
 	             [depnode->build_type][forwards];
     }
@@ -1273,18 +1264,18 @@ doRedirection(
 	 * label is a placeholder to encourage further thought and
 	 * testing. */
     case IGNORE:
-	break;
-    case ERROR:
-	showDeps(node);
-	showDeps(depnode);
-	RAISE(DEPS_ERROR, 
-	      newstr("%s dep from (%s) %s to (%s) %s not handled.", 
-		     forwards? "Forward": "Backward",
-		     nameForBuildType(node->build_type),
-		     node->fqn->value, 
-		     nameForBuildType(depnode->build_type),
-		     depnode->fqn->value));
+	return;
     }
+
+    showDeps(node);
+    showDeps(depnode);
+    RAISE(DEPS_ERROR, 
+	  newstr("%s dep from (%s) %s to (%s) %s not handled.", 
+		 forwards? "Forward": "Backward",
+		 nameForBuildType(node->build_type),
+		 node->fqn->value, 
+		 nameForBuildType(depnode->build_type),
+		 depnode->fqn->value));
 }
 
 /* For nodes in the backwards build direction, create inverted
@@ -1299,26 +1290,38 @@ redirectBackwardDeps(Vector *nodes)
     int j;
     DagNode *node;
     Vector *deps;
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	EACH(node->forward_deps, j) {
-	    doRedirection(node, node->forward_deps, j, TRUE);
-	}
+    BEGIN {
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    EACH(node->forward_deps, j) {
+		doRedirection(node, node->forward_deps, j, TRUE);
+	    }
 
-	EACH(node->backward_deps, j) {
-	    doRedirection(node, node->backward_deps, j, FALSE);
+	    EACH(node->backward_deps, j) {
+		doRedirection(node, node->backward_deps, j, FALSE);
+	    }
+	    if (node->forward_deps) {
+		vectorClose(node->forward_deps);
+	    }
 	}
-	if (node->forward_deps) {
-	    vectorClose(node->forward_deps);
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    objectFree((Object *) node->forward_deps, FALSE);
+	    objectFree((Object *) node->backward_deps, FALSE);
+	    node->forward_deps = node->tmp_fdeps;
+	    node->backward_deps = node->tmp_bdeps;
+	    node->tmp_fdeps = NULL;
+	    node->tmp_bdeps = NULL;
 	}
     }
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	objectFree((Object *) node->forward_deps, FALSE);
-	objectFree((Object *) node->backward_deps, FALSE);
-	node->forward_deps = node->tmp_fdeps;
-	node->backward_deps = node->tmp_bdeps;
+    EXCEPTION(ex) {
+	EACH(nodes, i) {
+	    node = (DagNode *) ELEM(nodes, i);
+	    objectFree((Object *) node->tmp_fdeps, FALSE);
+	    objectFree((Object *) node->tmp_bdeps, FALSE);
+	}
     }
+    END;
 }
 
 #ifdef wibble
@@ -1483,6 +1486,7 @@ dagFromDoc(Document *doc)
    int volatile i;
    
    BEGIN {
+//dbgSexp(doc);
        identifyParents(nodes, byfqn);
        bypqn = hashByPqn(nodes);
 
@@ -1495,11 +1499,11 @@ dagFromDoc(Document *doc)
 //showVectorDeps(nodes);
 
        redirectBackwardDeps(nodes);
-       swapBackwardBreakers(nodes);
 //fprintf(stderr, "============REDIRECTED==============\n");
 //showVectorDeps(nodes);
 
        expandDagNodes(nodes);
+       swapBackwardBreakers(nodes);
 //fprintf(stderr, "============EXPANDED==============\n");
 //showVectorDeps(nodes);
    }

@@ -422,6 +422,7 @@ START_TEST(check_cyclic_gensort)
 	doc = getDoc("test/data/gensource2.xml");
 	simple_sort = symbolNew("simple-sort");    
 	results = gensort(doc);
+	//dbgSexp(doc);
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
