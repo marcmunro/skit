@@ -40,18 +40,18 @@
  *    This process of resolving the DAGs can only be done in the build
  *    direction, which is why the two sets of dependencies are both
  *    recorded in the same direction.  Done by resolveGraphs().
- * 5) Depending on the type of build, and the actions defined for the
- *    dagnodes, individual dagnodes may be duplicated into a mirror pair
- *    (of build and drop nodes, or diffprep and diffcomplete nodes).
- *    The diffprep and drop nodes will later have their dependencies
- *    inverted.  This is done by expandDagNodes().
- * 6) The backward_deps set of dependencies is inverted for diffprep and
+ * 5) The backward_deps set of dependencies is inverted for diffprep and
  *    drop nodes from each forward build direction node to its
  *    corresponding backward direction node (if any).  The inversion
  *    creates forward_deps in the mirror nodes.  This leaves us with a
  *    complete DAG formed from the forward_deps.  The original
  *    backward_deps elements play no further part.  This is done by
- *    redirectBackwardDeps()
+ *    redirectDeps()
+ * 6) Depending on the type of build, and the actions defined for the
+ *    dagnodes, individual dagnodes may be duplicated into a mirror pair
+ *    (of build and drop nodes, or diffprep and diffcomplete nodes).
+ *    The diffprep and drop nodes will later have their dependencies
+ *    inverted.  This is done by expandDagNodes().
  */
 #include <string.h>
 #include "skit_lib.h"
@@ -810,9 +810,6 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
    int volatile i;
    EACH(nodes, i) {
        this = (DagNode *) ELEM(nodes, i);
-       if (streq(this->fqn->value, "conversion.regressdb.schema2.myconv2")) {
-	   dbgSexp(this);
-       }
        assert(this->type == OBJ_DAGNODE, "incorrect node type");
        addDepsForNode(this, nodes, byfqn, bypqn);
    }
@@ -1068,9 +1065,13 @@ resolveGraphs(Vector *nodes)
  * before it can be (re)built.
  */
 static DagNode *
-makeMirror(DagNode *node, DagNodeBuildType type)
+makeMirror(DagNode *node, DagNodeBuildType type, char *prefix)
 {
     DagNode *mirror = dagNodeNew(node->dbobject, type);
+    String *new_fqn = stringNewByRef(newstr("%s.%s", prefix,
+					    mirror->fqn->value));
+    objectFree((Object *) mirror->fqn, TRUE);
+    mirror->fqn = new_fqn;
     node->mirror_node = mirror;
     mirror->mirror_node = node;
     mirror->parent = node->parent;
@@ -1109,11 +1110,11 @@ expandDagNodes(Vector *nodes)
 	    break;
 	case DIFF_NODE:
 	    node->build_type = DIFFCOMPLETE_NODE;
-	    mirror = makeMirror(node, DIFFPREP_NODE);
+	    mirror = makeMirror(node, DIFFPREP_NODE, "prep");
 	    break;
 	case REBUILD_NODE:
 	    node->build_type = BUILD_NODE;
-	    mirror = makeMirror(node, DROP_NODE);
+	    mirror = makeMirror(node, DROP_NODE, "drop");
 	    break;
 	default:
 	    RAISE(TSORT_ERROR, 
@@ -1142,52 +1143,8 @@ expandDagNodes(Vector *nodes)
     }
 }
 
-/* Does what the name suggests.  If this node is on the backward side of
- * the dependency graph (the drop side of things) and it has
- * forward_deps defined (this will be the case if we are only performing
- * a drop), we clear out the forward_deps prior to recreating them by
- * inverting the backward_deps.
- */
-static void
-clearUnneededDeps(Vector *nodes)
-{
-    int i;
-    int j;
-    DagNode *node;
-    DagNode *depnode;
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	if ((node->build_type == DIFFPREP_NODE) ||
-	    (node->build_type == DROP_NODE)) 
-	{
-	    /* This node is on the backwards side of the dependency
-	     * graph.  This means that its forward_deps must be derived
-	     * from other nodes backward_deps.  Before we can do that,
-	     * if the node already has forward_deps, they must be
-	     * cleared out. */ 
-	    if (node->forward_deps) {
-		objectFree((Object *) node->forward_deps, FALSE);
-		node->forward_deps = NULL;
-	    }
-	}
-	else if (node->build_type == FALLBACK_NODE) {
-	    /* Remove forward-deps that are to DIFFPREP or DROP nodes. */
-	    if (node->forward_deps) {
-		EACH(node->forward_deps, j) {
-		    depnode = (DagNode *) ELEM(node->forward_deps, j);
-		    if ((depnode->build_type == DIFFPREP_NODE) ||
-			(depnode->build_type == DROP_NODE)) 
-		    {
-			vectorRemove(node->forward_deps, j);
-		    }
-		}
-	    }	    
-	}
-    }
-}
-
 typedef enum {
-    COPY, IGNORE, INVERT, MIRROR, ERROR, UNSURE
+    COPY, IGNORE, INVERT, MIRROR, BCOPY, ERROR, UNSURE
 } redirectActionType;
 
 static redirectActionType redirect_action
@@ -1196,12 +1153,12 @@ static redirectActionType redirect_action
     /* Array is indexed by [node->build_type][depnode->build_type]
      *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
-    {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
+    {{IGNORE, COPY}, {IGNORE, INVERT},    /* BUILD, DROP */
      {ERROR, ERROR}, {IGNORE, COPY},      /* REBUILD, DIFF */
      {IGNORE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
     {{ERROR, ERROR}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {ERROR, ERROR}, {INVERT, IGNORE},    /* REBUILD, DIFF */
+     {ERROR, ERROR}, {BCOPY, COPY},       /* REBUILD, DIFF */
      {COPY, IGNORE}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
@@ -1213,7 +1170,7 @@ static redirectActionType redirect_action
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
     {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {IGNORE, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {IGNORE, COPY},      /* REBUILD, DIFF */
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
     {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
@@ -1253,6 +1210,9 @@ doRedirection(
     case COPY:
 	addDepToVector(&node->tmp_fdeps, depnode);
 	return;
+    case BCOPY:
+	addDepToVector(&node->tmp_bdeps, depnode);
+	return;
     case INVERT:
 	addDepToVector(&depnode->tmp_fdeps, node);
 	return;
@@ -1284,7 +1244,7 @@ doRedirection(
  * to conditional dependencies.
  */
 static void
-redirectBackwardDeps(Vector *nodes)
+redirectDeps(Vector *nodes)
 {
     int i;
     int j;
@@ -1323,60 +1283,6 @@ redirectBackwardDeps(Vector *nodes)
     }
     END;
 }
-
-#ifdef wibble
-    clearUnneededDeps(nodes);
-
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-
-
-	if (streq(node->fqn->value, "conversion.regressdb.schema2.myconv2")) {
-	    dbgSexp(node);
-	}
-	if ((node->build_type == DIFFPREP_NODE) ||
-	    (node->build_type == DROP_NODE))
-	{
-	    /* Derive other nodes' forward_deps from this node (or its
-	     * mirror's backward_deps. */
-	    if (!(deps = node->backward_deps)) {
-		if (node->mirror_node) {
-		    deps = node->mirror_node->backward_deps;
-		}
-	    }
-	    if (deps) {
-		EACH(deps, j) {
-		    depnode = (DagNode *) ELEM(deps, j);
-		    if (depnode->build_type == FALLBACK_NODE) {
-			/* This is a special case.  Dependencies on
-			 * fallback nodes are not inverted. */
-			addDepToVector(&(node->forward_deps), depnode);
-		    }
-		    else {
-			if (depnode->mirror_node) {
-			    depnode = depnode->mirror_node;
-			}
-			addDepToVector(&(depnode->forward_deps), node);
-		    }
-		}
-	    }
-	}
-	else if (node->build_type == FALLBACK_NODE) {
-	    if (deps = node->backward_deps) {
-		EACH(deps, j) {
-		    depnode = (DagNode *) ELEM(deps, j);
-		    if ((depnode->build_type == DIFFPREP_NODE) ||
-			(depnode->build_type == DROP_NODE)) 
-		    {
-			addDepToVector(&(depnode->forward_deps), 
-				       node->mirror_node);
-		    }
-		}
-	    }
-	}
-    }
-}
-#endif
 
 static void
 swapBackwardBreakers(Vector *nodes)
@@ -1423,7 +1329,7 @@ swapBackwardBreakers(Vector *nodes)
 		 * This is because when creating cyclic objects, the
 		 * cycle breaker must be created first.  When dropping
 		 * them, the cycle breaker must also occur first, but by
-		 * inverting the order of depenendencies (as is
+		 * inverting the order of dependencies (as is
 		 * necessary) it will be last.  The safe and simple
 		 * solution is this inversion.  To invert the actions
 		 * that will be performed, all that is necessary is to
@@ -1498,7 +1404,7 @@ dagFromDoc(Document *doc)
 //fprintf(stderr, "============RESOLVED==============\n");
 //showVectorDeps(nodes);
 
-       redirectBackwardDeps(nodes);
+       redirectDeps(nodes);
 //fprintf(stderr, "============REDIRECTED==============\n");
 //showVectorDeps(nodes);
 

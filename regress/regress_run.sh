@@ -228,7 +228,8 @@ regression_test2()
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......
-    diffdump scratch/regressdb_test2a.dmp scratch/regressdb_test2b.dmp
+    diffdump scratch/regressdb_test2a.dmp scratch/regressdb_test2b.dmp \
+	regress/regression3_`pguver`_allowed_diffs
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 2 complete 1>&2

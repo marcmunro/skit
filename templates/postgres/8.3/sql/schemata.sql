@@ -2,10 +2,9 @@
 select n.nspname as name,
        s.rolname as owner,
        -- Explicitly show default privs if they are not given.
-       -- Defaults are create and usage to public and to owner.
+       -- Defaults are create and usage to owner.
        case when n.nspacl is null 
-       then '{=UC/' || s.rolname || ',' || s.rolname || 
-              '=UC/' || s.rolname || '}'
+       then '{' || s.rolname || '=UC/' || s.rolname || '}'
        else n.nspacl::text end as privs,
        quote_literal(obj_description(n.oid, 'pg_namespace')) as comment
 from   pg_catalog.pg_namespace n

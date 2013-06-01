@@ -847,39 +847,39 @@ START_TEST(cyclic_both)
 	//showVectorDeps(nodes);
 
 	if (hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		     "build.viewbase.skittest.public.v1",
+		     "viewbase.skittest.public.v1",
 		     "schema.skittest.public", "role.cluster.marc",
 		     "privilege.cluster.marc.superuser", NULL)) 
 	{
 	    // V3 --> VIEWBASE 1
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
-			 "build.view.skittest.public.v2",
+			 "view.skittest.public.v2",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
-			 "drop.view.skittest.public.v1", NULL);
+			 "drop.viewbase.skittest.public.v1", NULL);
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
-			 "build.view.skittest.public.v3",
+			 "view.skittest.public.v3",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
 			 "drop.view.skittest.public.v2", NULL);
 	    requireDeps(nodes_by_fqn, "build.viewbase.skittest.public.v1", 
 			 "schema.skittest.public", "role.cluster.marc", 
-			 "drop.viewbase.skittest.public.v1", NULL);
+			 "drop.view.skittest.public.v1", NULL);
 	}
 	else if (hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		     "build.viewbase.skittest.public.v3",
+		     "viewbase.skittest.public.v3",
 		     "schema.skittest.public", "role.cluster.marc",
 			  "privilege.cluster.marc.superuser", NULL)) 
 	{
-	    fail("FAIL 2");
+	    fail("FAIL 2"); // Fix the following test if this fail happens
 	    // V2 --> VIEWBASE 3
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
-			 "build.view.skittest.public.v1",
+			 "view.skittest.public.v1",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
 			 "drop.view.skittest.public.v3", NULL);
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v1", 
-			 "build.view.skittest.public.v2",
+			 "view.skittest.public.v2",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
 			 "drop.view.skittest.public.v1", NULL);
@@ -888,19 +888,19 @@ START_TEST(cyclic_both)
 			 "drop.viewbase.skittest.public.v3", NULL);
 	}
 	else if (hasDeps(nodes_by_fqn, "view.skittest.public.v2", 
-		     "build.viewbase.skittest.public.v3",
+		     "viewbase.skittest.public.v3",
 		     "schema.skittest.public", "role.cluster.marc",
 		     "privilege.cluster.marc.superuser", NULL))
 	{
-	    fail("FAIL 3");
+	    fail("FAIL 3");// Fix the following test if this fail happens
 	    // V1 --> VIEWBASE 2
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v2", 
-			 "build.view.skittest.public.v3",
+			 "view.skittest.public.v3",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
 			 "drop.view.skittest.public.v2", NULL);
 	    requireDeps(nodes_by_fqn, "view.skittest.public.v3", 
-			 "build.view.skittest.public.v1",
+			 "view.skittest.public.v1",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", 
 			 "drop.view.skittest.public.v3", NULL);
@@ -912,14 +912,14 @@ START_TEST(cyclic_both)
 	    fail("No cycle breaker found in build side");
 	}
 
-	if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v1",
-		     "drop.view.skittest.public.v3", NULL))
+	if (hasDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
+		     "drop.viewbase.skittest.public.v1", NULL))
 	{
-	    // V3 <-- VIEWBASE 1
+	    // V2 --> VIEWBASE 1
 	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
 			 "drop.view.skittest.public.v2", NULL);
-	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
-			 "drop.view.skittest.public.v1", NULL);
+	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL);
 
 	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
 			 "drop.view.skittest.public.v1",
@@ -932,38 +932,15 @@ START_TEST(cyclic_both)
 	else if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v2",
 			  "drop.view.skittest.public.v1", NULL))
 	{
-	    // V1 <-- VIEWBASE 2
-	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
-			 "drop.view.skittest.public.v3", NULL);
-	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v3",
-			 "drop.view.skittest.public.v2", NULL);
-
-	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
-			 "drop.view.skittest.public.v1",
-			 "drop.view.skittest.public.v2",
-			 "drop.view.skittest.public.v3",
-			 "drop.viewbase.skittest.public.v2", 
-			 "drop.grant.skittest.public.usage:public:regress", 
-			 NULL);
+	    fail("FAIL 2A");// Fix the following test if this fail happens
 	}
 	else if (hasDeps(nodes_by_fqn, "drop.viewbase.skittest.public.v3",
 			  "drop.view.skittest.public.v2", NULL))
 	{
-	    // V2 <-- VIEWBASE 3
-	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v2",
-			 "drop.view.skittest.public.v1", NULL);
-	    requireDeps(nodes_by_fqn, "drop.view.skittest.public.v1",
-			 "drop.view.skittest.public.v3", NULL);
-
-	    requireDeps(nodes_by_fqn, "drop.schema.skittest.public", 
-			 "drop.view.skittest.public.v1",
-			 "drop.view.skittest.public.v2",
-			 "drop.view.skittest.public.v3",
-			 "drop.viewbase.skittest.public.v3", 
-			 "drop.grant.skittest.public.usage:public:regress", 
-			 NULL);
+	    fail("FAIL 3A");// Fix the following test if this fail happens
 	}
 	else {
+	    // Fix the else if clauses above if this fail is reached.
 	    fail("No cycle breaker found in drop side");
 	}
 
