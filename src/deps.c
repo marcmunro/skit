@@ -819,6 +819,8 @@ static void
 activateFallback(DagNode *fallback, Vector *nodes)
 {
     DagNode *endfallback;
+    int i;
+    DagNode *dep;
 
     if (fallback->build_type != FALLBACK_NODE) {
 	/* Promote this node from an exists node into a build node, and
@@ -830,6 +832,14 @@ activateFallback(DagNode *fallback, Vector *nodes)
 
 	/* Add dependencies from endfallback to fallback. */
 	addDep(endfallback, fallback, FORWARDS);
+
+	/* Copy dependencies from fallback node to endfallback (they
+	 * both depend on the same objects (eg the role to be given
+	 * superuser in the postgres fallback to superuser instance). */
+	EACH(fallback->forward_deps, i) {
+	    dep = (DagNode *) ELEM(fallback->forward_deps, i);
+	    addDep(endfallback, dep, FORWARDS);
+	}
     }
 }
 
@@ -1173,8 +1183,8 @@ static redirectActionType redirect_action
      {IGNORE, COPY}, {IGNORE, COPY},      /* REBUILD, DIFF */
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
-    {{IGNORE, COPY}, {IGNORE, COPY},      /* BUILD, DROP */
-     {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
+    {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
+     {IGNORE, COPY}, {IGNORE, COPY},      /* REBUILD, DIFF */
      {IGNORE, COPY}, {ERROR, ERROR}}      /* FALLBACK, ENDFALLBACK */
 };
 

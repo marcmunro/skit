@@ -1,24 +1,10 @@
-1) endfallbacks must depend on the role - figure out how to add these
-   deps
-   fallbacks are added in deps/cluster.xsl
-
-   Probably need to explicitly create endfallback nodes at the same
-   time, and copy the deps for the role.  Then iin deps.c where
-   fallbacks are activated, activate the endfallback rather than
-   creating it as a mirror node.
-
-   Check this by showing the vectorDeps after redirection (uncomment
-   lines in vicinity of deps.c:1409) on a generate from the xmlfile
-   created by: 
-     ./skit --diff regress/scratch/regressdb_dump3a.xml \
-     	    regress/scratch/regressdb_dump3b.xml
-
-
-2) regression_test3 is currently failing
+1) regression_test3 is currently failing
    
-
-3) Check for automatic grants to public in my sql scripts.  schemata.sql
+2) Check for automatic grants to public in my sql scripts.  schemata.sql
    was wrong, others may be as well.
+
+3) Ensure that all regress/*_allowed_diffs* files contain only the
+   minimum set of entries required.
 
 todo item in regression3b_8_4.sql:  
 

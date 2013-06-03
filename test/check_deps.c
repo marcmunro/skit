@@ -215,7 +215,7 @@ requireDeps(Hash *hash, char *from, ...)
 	
 	if (dep_elems != count) {
 	    fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
-		 fromnode->fqn->value, count, fromnode->forward_deps->elems);
+		 from, count, fromnode->forward_deps->elems);
 	}
     }
 }
@@ -1008,7 +1008,8 @@ START_TEST(fallback)
 		    "grant.x.public.x.select:x:x", 
 		    "grant.x.public.x.insert:x:x",
 		    "grant.x.public.x.update:x:x",
-		    "grant.x.public.x.delete:x:x", NULL);
+		    "grant.x.public.x.delete:x:x", 
+		    "role.cluster.x", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
