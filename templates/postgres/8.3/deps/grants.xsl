@@ -117,7 +117,7 @@
 
 	<xsl:if test="../@schema">
 	  <dependency-set
-	      fallback="{concat('fallback.grant.', @from, '.superuser')}">
+	      fallback="{concat('fallback.cluster.', @from, '.superuser')}">
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
 			     ../@schema, '.usage:', @from)}"/>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',

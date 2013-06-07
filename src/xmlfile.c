@@ -1072,14 +1072,6 @@ docFromVector(xmlNode *root_node, Vector *sorted_nodes)
 
     EACH(sorted_nodes, i) {
 	nav_to = (DagNode *) ELEM(sorted_nodes, i);
-	if ((nav_to->build_type == EXISTS_NODE) ||
-	    (nav_to->build_type == FALLBACK_NODE) ||
-	    (nav_to->build_type == ENDFALLBACK_NODE))
-	{
-	    /* No navigation for these types of node */
-	    continue;
-	}
-
 	addNavigationNodes(root_node, nav_from, nav_to);
 	addActionNodes(root_node, sorted_nodes, from_idx, i);
 	nav_from = nav_to;

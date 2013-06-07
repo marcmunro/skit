@@ -11,7 +11,7 @@
     <xsl:param name="owner" select="@owner"/>
     <!-- Dependency on schema usage grant to owner, public or self -->
     <dependency-set 
-	fallback="{concat('fallback.grant.', $owner, '.superuser')}"
+	fallback="{concat('fallback.cluster.', $owner, '.superuser')}"
 	condition="build">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
@@ -24,7 +24,7 @@
       </xsl:if>
     </dependency-set>
     <dependency-set 
-	fallback="{concat('fallback.grant.', $owner, '.superuser')}"
+	fallback="{concat('fallback.cluster.', $owner, '.superuser')}"
 	condition="not build">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
@@ -46,7 +46,7 @@
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
     <dependency-set
-	fallback="{concat('fallback.grant.', $owner, '.superuser')}">>
+	fallback="{concat('fallback.cluster.', $owner, '.superuser')}">>
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       $schema, '.', $table, '.', $priv, ':public')}"/>

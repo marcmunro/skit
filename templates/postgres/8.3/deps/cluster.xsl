@@ -73,7 +73,7 @@
 	     superuser privilege to the role -->
 	<xsl:for-each select="//cluster/role">
 	  <dbobject type="fallback" subtype="grant" fallback="yes" 
-		    fqn="{concat('fallback.grant.', @name, '.superuser')}"
+		    fqn="{concat('fallback.cluster.', @name, '.superuser')}"
 		    to="{@name}" priv="superuser">
 	    <dependencies>
 <!--

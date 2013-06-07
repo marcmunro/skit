@@ -827,6 +827,7 @@ activateFallback(DagNode *fallback, Vector *nodes)
 	 * create the matching drop node for it. */
 	fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	endfallback->parent = fallback->parent;
 	fallback->mirror_node = endfallback;
 	setPush(nodes, (Object *) endfallback);
 
