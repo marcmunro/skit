@@ -194,9 +194,8 @@ START_TEST(check_gensort)
 	
 	doc = getDoc("test/data/gensource1.xml");
 	simple_sort = symbolNew("simple-sort");    
-	//results = gensort(doc);
 	results = gensort(doc);
-	//printSexp(stderr, "RESULTS: ", (Object *) results);
+	printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
 		      "'drop.dbincluster.cluster.skittest' "

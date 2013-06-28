@@ -1137,16 +1137,22 @@ expandDagNodes(Vector *nodes)
     }
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	if ((node->build_type == DIFFPREP_NODE) ||
-	    (node->build_type == DROP_NODE)) 
-	{
-	    /* Add the appropriate forward_deps to this mirror node */
-	    if (mirror = node->mirror_node) {
-		if (mirror->backward_deps) {
-		    EACH(mirror->backward_deps, j) {
-			dep = (DagNode *) ELEM(mirror->backward_deps, j);
-			dep = dep->mirror_node? dep->mirror_node: dep;
-			addDepToVector(&(node->forward_deps), dep);
+	/* Add the appropriate forward_deps to this mirror node */
+	if (mirror = node->mirror_node) {
+	    if (mirror->backward_deps) {
+		EACH(mirror->backward_deps, j) {
+		    dep = (DagNode *) ELEM(mirror->backward_deps, j);
+		    dep = dep->mirror_node? dep->mirror_node: dep;
+		    addDepToVector(&(node->forward_deps), dep);
+		}
+	    }
+	}
+	if (node->build_type == DROP_NODE) {
+	    if (node->backward_deps) {
+		EACH(node->backward_deps, j) {
+		    dep = (DagNode *) ELEM(node->backward_deps, j);
+		    if (mirror = dep->mirror_node) {
+			addDepToVector(&(mirror->forward_deps), node);
 		    }
 		}
 	    }
@@ -1154,6 +1160,7 @@ expandDagNodes(Vector *nodes)
     }
 }
 
+/* UNSURE IS FOR USE DURING DEVELOPMENT ONLY */
 typedef enum {
     COPY, IGNORE, INVERT, MIRROR, BCOPY, ERROR, UNSURE
 } redirectActionType;
@@ -1169,7 +1176,7 @@ static redirectActionType redirect_action
      {IGNORE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
     {{ERROR, ERROR}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {ERROR, ERROR}, {BCOPY, COPY},       /* REBUILD, DIFF */
+     {ERROR, ERROR}, {BCOPY, IGNORE},     /* REBUILD, DIFF */
      {COPY, IGNORE}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
@@ -1181,19 +1188,19 @@ static redirectActionType redirect_action
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
     {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {IGNORE, COPY}, {IGNORE, COPY},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {IGNORE, IGNORE},    /* REBUILD, DIFF */
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
     {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {IGNORE, COPY}, {IGNORE, COPY},      /* REBUILD, DIFF */
+     {IGNORE, COPY}, {IGNORE, IGNORE},    /* REBUILD, DIFF */
      {IGNORE, COPY}, {ERROR, ERROR}}      /* FALLBACK, ENDFALLBACK */
 };
 
 
 /* This will populate the tmp[bf]_deps vectors from forward_deps and
  * backward_deps.  We use the tmp versions in order keep this function
- * from stomping on its own results.  Once this function has run, the
- * tmp versions must replace the current versions.
+ * from stomping on its own partial results.  Once this function has
+ * completed, the tmp versions replace the current versions.
  */
 static void
 doRedirection(
