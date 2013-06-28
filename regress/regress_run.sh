@@ -334,26 +334,19 @@ pguver()
 
 pgbin()
 {
-    if [ which_pg_config >/dev/null -a -x `which pg_config` ]; then
+    # Find pg_config
+    PGCONFIG=`which pgconfig`
+    if [ "x${PGCONFIG}" = "x" ]; then
+        # pg_config is not in $PATH.  It may still be elsewhere.  Let's
+        # see if we can find it. 
+        ver=`pgver`
+	if [ -f /usr/lib/postgresql/${ver}/bin/pg_config ]; then
+	    PGCONFIG=/usr/lib/postgresql/${ver}/bin/pg_config
+	fi
+    fi
+    if [ "x${PGCONFIG}" != "x" ]; then
 	# pg_config is runnable
-	config_bin=`pg_config --bindir`
-	config_ver=`echo $config_bin | verfrompath`
-
-	# pg_config lies to us on debian systems - at least it doesn't
-	# tell us the whole story as there may be multiple versions
-	# of bin directories and it may not give us the one we want
-	# to be using.
-	if [ "x${config_ver}" != "x" ]; then
-	    psqlver=`pgver`
-	    if [ "x${psqlver}" != "x" ]; then
-		if [ "${psqlver}" != "${config_ver}" ]; then
-		    # Looks like pg_config is lying.  We should
-		    # be able to just substitute the psqlver value in
-		    echo ${config_bin} | sed -e "s/${config_ver}/${psqlver}/"
-		    exit
-		fi	
-	    fi
-	fi	
+	config_bin=`${PGCONFIG} --bindir`
 	echo ${config_bin}
     else
 	which psql

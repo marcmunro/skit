@@ -1,4 +1,4 @@
-1) regression_test3 is currently failing
+1) regression_test3 is currently failing - FIXED
    
 2) Check for automatic grants to public in my sql scripts.  schemata.sql
    was wrong, others may be as well.
