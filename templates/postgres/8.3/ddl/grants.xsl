@@ -11,10 +11,9 @@
       <print>
 	<xsl:call-template name="set_owner_from"/>
 
-        <xsl:text>grant </xsl:text>
-        <xsl:value-of select="skit:dbquote(@priv)"/>
-        <xsl:text> to </xsl:text>
-        <xsl:value-of select="skit:dbquote(@to)"/>
+        <xsl:value-of 
+	    select="concat('grant ', skit:dbquote(@priv),
+		           ' to ', skit:dbquote(@to))"/>
 	<xsl:if test="@with_admin = 'yes'">
           <xsl:text> with admin option</xsl:text>
 	</xsl:if>
@@ -26,16 +25,11 @@
   
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="set_owner"/>
 
-        <xsl:text>revoke </xsl:text>
-        <xsl:value-of select="skit:dbquote(@priv)"/>
-        <xsl:text> from </xsl:text>
-        <xsl:value-of select="skit:dbquote(@to)"/>
-        <xsl:text>;&#x0A;</xsl:text>
+        <xsl:value-of 
+	    select="concat('revoke ', skit:dbquote(@priv),
+		           ' from ', skit:dbquote(@to), ';&#x0A;')"/>
 
 	<xsl:call-template name="reset_owner"/>
       </print>
@@ -52,9 +46,8 @@
 	<print>
 	  <xsl:call-template name="set_owner_from"/>
 	
-	  <xsl:text>grant </xsl:text>
-	  <xsl:value-of select="@priv"/>
-	  <xsl:text> on </xsl:text>
+	  <xsl:value-of 
+	      select="concat('grant ', @priv, ' on ')"/>
 	  <xsl:choose>
 	    <xsl:when test="../@subtype = 'view'">
 	      <xsl:text>table</xsl:text>
@@ -63,10 +56,9 @@
 	      <xsl:value-of select="../@subtype"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="../@on"/>
-	  <xsl:text> to </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@to)"/>
+	  <xsl:value-of 
+	      select="concat(' ', ../@on, ' to ',
+		             skit:dbquote(@to))"/>
 	  <xsl:if test="@with_grant = 'yes'">
 	    <xsl:text> with grant option</xsl:text>
 	  </xsl:if>
@@ -82,17 +74,10 @@
       <!-- If this is an automatic grant we can avoid doing the revoke.  -->
       <xsl:if test="../@diff or not (@automatic='yes')">
 	<print>
-	  <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	  <xsl:value-of select="../@fqn"/>
-          <xsl:text>&#x0A;</xsl:text>
-          <xsl:text>\echo </xsl:text> <!-- QQQ -->
-	  <xsl:value-of select="../@fqn"/>
-          <xsl:text>&#x0A;</xsl:text>
 	  <xsl:call-template name="set_owner_from"/>
 
-	  <xsl:text>revoke </xsl:text>
-	  <xsl:value-of select="@priv"/>
-	  <xsl:text> on </xsl:text>
+	  <xsl:value-of 
+	      select="concat('revoke ', @priv, ' on ')"/>
 	  <xsl:choose>
 	    <xsl:when test="../@subtype = 'view'">
 	      <xsl:text>table</xsl:text>
@@ -101,11 +86,9 @@
 	      <xsl:value-of select="../@subtype"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="../@on"/>
-	  <xsl:text> from </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@to)"/>
-	  <xsl:text>;&#x0A;</xsl:text>
+	  <xsl:value-of 
+	      select="concat(' ', ../@on, ' from ',
+		             skit:dbquote(@to), ';&#x0A;')"/>
 
 	  <xsl:call-template name="reset_owner_from"/>
         </print>

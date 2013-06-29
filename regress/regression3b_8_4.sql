@@ -94,9 +94,6 @@ alter conversion schema2.myconv2 owner to keep;
 comment on conversion schema2.myconv2 is
 'New conversion';
 
--- TODO: TEST THE FOLLOWING:
--- CREATE THE CONVERSSION AS AN UNPRIVILEGED USED WITH NO RIGHTS ON THE SCHEMA
-
 
 EOF
  

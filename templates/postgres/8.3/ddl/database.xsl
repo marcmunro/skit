@@ -9,33 +9,28 @@
   <xsl:template match="dbobject[@type='dbincluster']/database">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:text>&#x0A;create database </xsl:text>
-	<xsl:value-of select="../@qname"/>
-	<xsl:text> with&#x0A;</xsl:text>
-	<xsl:text> owner </xsl:text>
-	<xsl:value-of select="skit:dbquote(@owner)"/>
-	<xsl:text>&#x0A; encoding &apos;</xsl:text>
-	<xsl:value-of select="@encoding"/>
-	<xsl:text>&apos;&#x0A;</xsl:text>
-	<xsl:text> tablespace </xsl:text>
-	<xsl:value-of select="skit:dbquote(@tablespace)"/>
-	<xsl:text>&#x0A; connection limit = </xsl:text>
-	<xsl:value-of select="@connections"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	<xsl:value-of 
+	    select="concat('&#x0A;create database ', ../@qname,
+		           ' with&#x0A; owner ',
+			   skit:dbquote(@owner), '&#x0A; encoding ',
+			   $apos, @encoding, $apos, 
+			   '&#x0A; tablespace ',
+			   skit:dbquote(@tablespace), 
+			   '&#x0A; connection limit = ',
+			   @connections, ';&#x0A;')"/>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:text>&#x0A;-- drop database </xsl:text>
-	<xsl:value-of select="../@qname"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	<xsl:value-of 
+	    select="concat('&#x0A;-- drop database ', ../@qname, ';&#x0A;')"/>
       </print>
     </xsl:if>
 
@@ -46,71 +41,62 @@
 
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;psql -d </xsl:text>
-        <xsl:value-of select="../@name"/>
-        <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
-	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
-        <xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+        <xsl:text></xsl:text>
+        <xsl:value-of 
+	    select="concat('&#x0A;psql -d ', ../@name,
+		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
+			   'set standard_conforming_strings = off;&#x0A;',
+			   'set escape_string_warning = off;&#x0A;')"/>
 	<xsl:apply-templates/>
       </print>
     </xsl:if>	
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
 
-        <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute[@name='connections']">
-	  <xsl:text>alter database </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> connection limit </xsl:text>
-	  <xsl:value-of select="@new"/>
-	  <xsl:text>;&#x0A;</xsl:text>
+	  <xsl:value-of 
+	      select="concat('alter database ', ../@qname,
+		             ' connection limit ', @new, ';&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="../attribute[@name='owner']">
-	  <xsl:text>alter database </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> owner to </xsl:text>
-	  <xsl:value-of select="@new"/>
-	  <xsl:text>;&#x0A;</xsl:text>
+	  <xsl:value-of 
+	      select="concat('alter database ', ../@qname,
+		             ' owner to ', @new, ';&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="../attribute[@name='tablespace']">
-	  <xsl:text>\echo WARNING: database default tablespace</xsl:text>
-	  <xsl:text> changes from &quot;</xsl:text>
-	  <xsl:value-of select="@old"/>
-	  <xsl:text>&quot; to &quot;</xsl:text>
-	  <xsl:value-of select="@new"/>
-	  <xsl:text>&quot;&#x0A;</xsl:text>
+	  <xsl:value-of 
+	      select="concat('\echo WARNING: database default tablespace', 
+		             ' changes from &quot;', @old,
+			     '&quot; to &quot;', @new, '&quot;&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="../attribute[@name='encoding']">
-            <xsl:text>\echo WARNING: database character encoding</xsl:text>
-	    <xsl:text> changes from &quot;</xsl:text>
-	    <xsl:value-of select="@old"/>
-	    <xsl:text>&quot; to &quot;</xsl:text>
-	    <xsl:value-of select="@new"/>
-	    <xsl:text>&quot;&#x0A;</xsl:text>
+	    <xsl:value-of 
+		select="concat('\echo WARNING: database character encoding', 
+			       ' changes from &quot;', @old,
+			       '&quot; to &quot;', @new, '&quot;&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="../element[@type='comment']">
-	  <xsl:text>&#x0A;comment on database </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-	  <xsl:text> is </xsl:text>
+	  <xsl:value-of 
+	      select="concat('&#x0A;comment on database ', ../@qname,
+		             ' is ')"/>
 	  <xsl:choose>
 	    <xsl:when test="@status='gone'">
 	      <xsl:text>null;&#x0A;</xsl:text>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <xsl:text>&#x0A;</xsl:text>
-	      <xsl:value-of select="comment"/>
-	      <xsl:text>;&#x0A;</xsl:text>
+	      <xsl:value-of 
+		  select="concat('&#x0A;', comment, ';&#x0A;')"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:for-each>
@@ -120,20 +106,20 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
         <xsl:text>DBEOF&#x0A;&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 
     <xsl:if test="../@action='arrive'">
       <print>
-        <xsl:text>psql -d </xsl:text>
-        <xsl:value-of select="../@name"/>
-        <xsl:text> &lt;&lt;&apos;DBEOF&apos;&#x0A;</xsl:text>
-	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
-        <xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
+        <xsl:value-of 
+	    select="concat('psql -d ', ../@name,
+		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
+			   'set standard_conforming_strings = off;&#x0A;',
+			   'set escape_string_warning = off;&#x0A;')"/>
       </print>
     </xsl:if>	
 

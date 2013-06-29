@@ -1,30 +1,23 @@
-1) regression_test3 is currently failing - FIXED
-   
-2) Check for automatic grants to public in my sql scripts.  schemata.sql
-   was wrong, others may be as well.
-
-3) Ensure that all regress/*_allowed_diffs* files contain only the
-   minimum set of entries required.
-
-todo item in regression3b_8_4.sql:  
 
 diffs:
-    conversions  (after which we should do the concat thing below in generate)
-    functions
-    types
-    domains
-    casts
-    operators
-    operator_classes
-    operator_families
-    sequences
-    aggregates
-    tables
-    constraints
-    indices
-    rules
-    views
-    triggers
+    do the concat thing below in generate for languages, roles,
+    tablespaces, schemata
+
+    functions (including the concat thing)
+    types (including the concat thing)
+    domains (including the concat thing)
+    casts (including the concat thing)
+    operators (including the concat thing)
+    operator_classes (including the concat thing)
+    operator_families (including the concat thing)
+    sequences (including the concat thing)
+    aggregates (including the concat thing)
+    tables (including the concat thing)
+    constraints (including the concat thing)
+    indices (including the concat thing)
+    rules (including the concat thing)
+    views (including the concat thing)
+    triggers (including the concat thing)
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

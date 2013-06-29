@@ -6,6 +6,8 @@
   extension-element-prefixes="skit"
   version="1.0">
 
+  <xsl:variable name="apos">&apos;</xsl:variable>
+
   <!-- Anything not matched explicitly will match this and be copied 
        This handles dbobject, dependencies, etc -->
   <xsl:template match="*">
@@ -29,32 +31,29 @@
     <xsl:text>&#x0A;comment on </xsl:text>
     <xsl:choose>
       <xsl:when test="contains(name($objnode), '_')">
-	<xsl:value-of select="substring-before(name($objnode), '_')" />
-	<xsl:text> </xsl:text>
-	<xsl:value-of select="substring-after(name($objnode), '_')" />
+	<xsl:value-of 
+	    select="concat(substring-before(name($objnode), '_'),
+		    ' ', substring-after(name($objnode), '_'), ' ')" />
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="name($objnode)"/>
+	<xsl:value-of select="concat(name($objnode), ' ')"/>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:text> </xsl:text>
+
     <xsl:choose>
       <xsl:when test="(name($objnode) = 'constraint') or (name($objnode) = 'trigger')">
-	<xsl:value-of select="skit:dbquote($objnode/@name)"/>
-	<xsl:text> on </xsl:text>
-	<xsl:value-of select="$objnode/../@table_qname"/>
+	<xsl:value-of 
+	    select="concat(skit:dbquote($objnode/@name), ' on ',
+		           $objnode/../@table_qname)"/>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:value-of select="$objnode/../@qname"/>
 	<xsl:if test="$objnode/@method">
-	  <xsl:text> using </xsl:text>
-	  <xsl:value-of select="$objnode/@method"/>
+	  <xsl:value-of select="concat(' using ', $objnode/@method)"/>
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:text> is&#x0A;</xsl:text>
-    <xsl:value-of select="$text"/>
-    <xsl:text>;&#x0A;</xsl:text>
+    <xsl:value-of select="concat(' is&#x0A;', $text, ';&#x0A;')"/>
   </xsl:template>
 
   <xsl:template match="comment">
@@ -88,9 +87,9 @@
         the ignore-contexts flag.  -->
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@owner != //cluster/@username">
-	<xsl:text>set session authorization &apos;</xsl:text>
-	<xsl:value-of select="@owner"/>
-	<xsl:text>&apos;;&#x0A;&#x0A;</xsl:text>
+	<xsl:value-of 
+	    select="concat('set session authorization ', $apos, 
+		           @owner, $apos, ';&#x0A;&#x0A;')"/>
       </xsl:if>
     </xsl:if>
   </xsl:template>
@@ -106,9 +105,9 @@
   <xsl:template name="set_owner_from">
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@from != //cluster/@username">
-	<xsl:text>set session authorization &apos;</xsl:text>
-	<xsl:value-of select="@from"/>
-	<xsl:text>&apos;;&#x0A;</xsl:text>
+	<xsl:value-of 
+	    select="concat('set session authorization ', $apos, 
+		           @from, $apos, ';&#x0A;&#x0A;')"/>
       </xsl:if>
     </xsl:if>
   </xsl:template>
