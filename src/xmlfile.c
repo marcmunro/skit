@@ -1060,6 +1060,29 @@ addActionNodes(xmlNode *root_node, Vector *sorted_nodes, int from, int to)
     }
 }
 
+static Vector *
+extractExistsNodes(Vector *nodes)
+{
+    Vector *exists_nodes = vectorNew(nodes->elems);
+    int from;
+    int to  = 0;
+    DagNode *node;
+
+    EACH(nodes, from) {
+	node = (DagNode *) ELEM(nodes, from);
+	if (node->build_type == EXISTS_NODE) {
+	    vectorPush(exists_nodes, (Object *) node);
+	}
+	else {
+	    ELEM(nodes, to) = (Object *) node;
+	    to++;
+	}
+    }
+    nodes->elems = to;
+    return exists_nodes;
+}
+
+
 void
 docFromVector(xmlNode *root_node, Vector *sorted_nodes)
 {
@@ -1069,7 +1092,8 @@ docFromVector(xmlNode *root_node, Vector *sorted_nodes)
     xmlNode *curnode;
     int from_idx = 0;
     int i;
-
+    Vector *exists_nodes = extractExistsNodes(sorted_nodes);
+    
     EACH(sorted_nodes, i) {
 	nav_to = (DagNode *) ELEM(sorted_nodes, i);
 	addNavigationNodes(root_node, nav_from, nav_to);
@@ -1079,6 +1103,10 @@ docFromVector(xmlNode *root_node, Vector *sorted_nodes)
     }
     addActionNodes(root_node, sorted_nodes, from_idx, sorted_nodes->elems - 1);
     addNavigationNodes(root_node, nav_from, NULL);
+
+    /* We could not free the exists_nodes until now as they are used for
+     * figuring out the navigation. */
+    objectFree((Object *) exists_nodes, TRUE);
 }
 
 

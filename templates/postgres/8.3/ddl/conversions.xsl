@@ -11,10 +11,10 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create </xsl:text>
+	<xsl:text>&#x0A;create </xsl:text>
 	<xsl:if test="@is_default='t'">
 	  <xsl:text>default </xsl:text>
 	</xsl:if>
@@ -37,7 +37,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:call-template name="set_owner"/>
         <xsl:value-of 
 	    select="concat('&#x0A;drop conversion ', ../@qname, ';&#x0A;')"/>
@@ -49,7 +49,8 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">
             <xsl:value-of 

@@ -9,11 +9,11 @@
   <xsl:template match="dbobject[@type='role']/role">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;create role </xsl:text>
-        <xsl:value-of select="../@qname"/>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+        <xsl:value-of 
+	    select="concat('&#x0A;create role ', ../@qname)"/>
 	<xsl:choose>
 	  <xsl:when test="@login = 'y'">
             <xsl:text> with login;&#x0A;</xsl:text>
@@ -23,63 +23,55 @@
 	  </xsl:otherwise>
 	</xsl:choose>
 	<xsl:if test="@password != ''">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../@qname"/>
-          <xsl:text> password &apos;</xsl:text>
-          <xsl:value-of select="@password"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
+          <xsl:text></xsl:text>
+          <xsl:value-of 
+	      select="concat('alter role ', ../@qname,
+		             ' password ', $apos,
+			     @password, $apos, ';&#x0A;')"/>
 	</xsl:if>
 	<xsl:if test="@max_connections != '-1'">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../@qname"/>
-          <xsl:text> connection limit </xsl:text>
-          <xsl:value-of select="@max_connections"/>
-          <xsl:text>;&#x0A;</xsl:text>
+          <xsl:value-of 
+	      select="concat('alter role ', ../@qname,
+		             ' connection limit ', @max_connections,
+			     ';&#x0A;')"/>
 	</xsl:if>
 	<xsl:if test="@expires != ''">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../@qname"/>
-          <xsl:text> valid until &apos;</xsl:text>
-          <xsl:value-of select="@expires"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
+          <xsl:text></xsl:text>
+          <xsl:value-of 
+	      select="concat('alter role ', ../@qname,
+		             ' valid until ', $apos,
+			     @expires, $apos, ';&#x0A;')"/>
 	</xsl:if>
 
 	<xsl:if test="not(../@diff)">
 	  <!-- If we are doing diffs, allow the privilege handling
 	       template below to deal with privs. -->
 	  <xsl:if test="not(privilege/@priv='inherit')">
-	    <xsl:text>alter role </xsl:text>
-	    <xsl:value-of select="../@qname"/>
-	    <xsl:text> with noinherit;&#x0A;</xsl:text>
+	    <xsl:value-of 
+		select="concat('alter role ', ../@qname,
+			       ' with noinherit;&#x0A;')"/>
 	  </xsl:if>
 
 	  <xsl:for-each select="privilege">
-	    <xsl:text>alter role </xsl:text>
-	    <xsl:value-of select="../../@qname"/>
-	    <xsl:text> with </xsl:text>
-	    <xsl:value-of select="@priv"/>
-	    <xsl:text>;&#x0A;</xsl:text>
+	    <xsl:text></xsl:text>
+	    <xsl:value-of 
+		select="concat('alter role ', ../../@qname,
+			       ' with ', @priv, ';&#x0A;')"/>
 	  </xsl:for-each>
 	</xsl:if>
 
 	<xsl:for-each select="config">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../../@qname"/>
-          <xsl:text> set </xsl:text>
-          <xsl:value-of select="@type"/>
-          <xsl:text> = </xsl:text>
-          <xsl:value-of select="@value"/>
-          <xsl:text>;&#x0A;</xsl:text>
+          <xsl:text></xsl:text>
+          <xsl:value-of 
+	      select="concat('alter role ', ../../@qname,
+		             ' set ', @type, ' = ', @value, ';&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="profile">
-          <xsl:text>alter role </xsl:text>
-          <xsl:value-of select="../../@qname"/>
-          <xsl:text> set </xsl:text>
-          <xsl:value-of select="@param"/>
-          <xsl:text> = &apos;</xsl:text>
-          <xsl:value-of select="@value"/>
-          <xsl:text>&apos;;&#x0A;</xsl:text>
+          <xsl:value-of 
+	      select="concat('alter role ', ../../@qname,
+		             ' set ', @param, ' = ', $apos,
+			     @value, $apos, ';&#x0A;')"/>
 	</xsl:for-each>
 	<xsl:apply-templates/>
       </print>
@@ -87,46 +79,40 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;\echo Not dropping or revoking </xsl:text>
-        <xsl:text>privs from role </xsl:text>
-        <xsl:value-of select="../@name"/>
-        <xsl:text> as it&#x0A;</xsl:text>
-        <xsl:text>\echo may own objects in other databases&#x0A;</xsl:text>
-        <xsl:text>\echo To perform the drop, uncomment </xsl:text>
-        <xsl:text>the following lines:&#x0A;</xsl:text>
-        <xsl:text>-- drop role </xsl:text>
-        <xsl:value-of select="../@qname"/>
-        <xsl:text>;&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+        <xsl:value-of 
+	    select="concat('\echo Not dropping or revoking ', 
+		           'privs from role ', ../@name,
+			   ' as it&#x0A;',
+			   '\echo may own objects in other databases&#x0A;',
+			   '\echo To perform the drop, uncomment ',
+			   'the following line:&#x0A;',
+			   '-- drop role ', ../@qname, ';&#x0A;')"/>
       </print> 
     </xsl:if>
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../element/config">
-	  <xsl:text>alter role </xsl:text>
-	  <xsl:value-of select="../../@qname"/>
-	  <xsl:text> set </xsl:text>
-	  <xsl:value-of select="@type"/>
-	  <xsl:text> = </xsl:text>
-	  <xsl:value-of select="@value"/>
-	  <xsl:text>;&#x0A;</xsl:text>
+	  <xsl:value-of 
+	      select="concat('alter role ', ../../@qname,
+		             ' set ', @type, ' = ', @value, ';&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="../attribute">
-	  <xsl:text>alter role </xsl:text>
-	  <xsl:value-of select="../@qname"/>
+	  <xsl:value-of 
+	      select="concat('alter role ', ../@qname)"/>
 	  <xsl:choose>
 	    <xsl:when test="@name = 'expires'">
-	      <xsl:text> valid until &apos;</xsl:text>
-	      <xsl:value-of select="@new"/>
-	      <xsl:text>&apos;;&#x0A;</xsl:text>
+	      <xsl:value-of 
+		  select="concat(' valid until ', $apos, @new, 
+			         $apos, ';&#x0A;')"/>
 	    </xsl:when>
 	  </xsl:choose>
 	</xsl:for-each>
@@ -137,9 +123,9 @@
 
     <xsl:if test="../@action='arrive'">
       <print>
-        <xsl:text>---- DBOBJECT ARRIVE</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ARRIVE ', ../@fqn, '&#x0A;')"/> 
       </print>
     </xsl:if>	
   </xsl:template>
@@ -150,20 +136,16 @@
 	 privileges are handled as part of the role.  -->
     <xsl:if test="@action='build'">
       <print>
-	<xsl:text>alter role </xsl:text>
-	<xsl:value-of select="@role_qname"/>
-	<xsl:text> with </xsl:text>
-	<xsl:value-of select="privilege/@priv"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	<xsl:value-of 
+	    select="concat('&#x0A;alter role ', @role_qname,
+		           ' with ', privilege/@priv, ';&#x0A;')"/>
       </print>
     </xsl:if>
     <xsl:if test="@action='drop'">
       <print>
-	<xsl:text>alter role </xsl:text>
-	<xsl:value-of select="@role_qname"/>
-	<xsl:text> with no</xsl:text>
-	<xsl:value-of select="privilege/@priv"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	<xsl:value-of 
+	    select="concat('&#x0A;alter role ', @role_qname,
+		           ' with no', privilege/@priv, ';&#x0A;')"/>
       </print>
     </xsl:if>
   </xsl:template>

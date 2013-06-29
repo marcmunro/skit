@@ -6,18 +6,12 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Coding standard for postgres DDL generated from skit:
-       Each object action is preceded by a blank line and
-       followed by a blank line.  This means that there will be 2 lines
-       between the creation of each different object.
-    -->
-
   <xsl:template match="dbobject[@type='context']">
      <xsl:if test="@action='arrive'">
       <print>
-	<xsl:text>&#x0A;set session authorization &apos;</xsl:text>
-	<xsl:value-of select="@name"/>
-	<xsl:text>&apos;;&#x0A;</xsl:text>
+	<xsl:value-of 
+	    select="concat('&#x0A;set session authorization ', $apos, 
+		            @name, $apos, ';&#x0A;')"/>
       </print>
     </xsl:if>	
 

@@ -11,7 +11,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:value-of 
 	    select="concat('&#x0A;create database ', ../@qname,
 		           ' with&#x0A; owner ',
@@ -28,7 +28,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:value-of 
 	    select="concat('&#x0A;-- drop database ', ../@qname, ';&#x0A;')"/>
       </print>
@@ -43,8 +43,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
-        <xsl:text></xsl:text>
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
         <xsl:value-of 
 	    select="concat('&#x0A;psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
@@ -58,8 +57,9 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute[@name='connections']">
 	  <xsl:value-of 
 	      select="concat('alter database ', ../@qname,
@@ -108,15 +108,18 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
-        <xsl:text>DBEOF&#x0A;&#x0A;&#x0A;</xsl:text>
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+        <xsl:text>DBEOF&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
 
     <xsl:if test="../@action='arrive'">
       <print>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ARRIVE ', ../@fqn, '&#x0A;')"/> 
         <xsl:value-of 
-	    select="concat('psql -d ', ../@name,
+	    select="concat('&#x0A;psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
 			   'set standard_conforming_strings = off;&#x0A;',
 			   'set escape_string_warning = off;&#x0A;')"/>

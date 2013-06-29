@@ -1,6 +1,6 @@
 
 diffs:
-    do the concat thing below in generate for languages, roles,
+    do the concat thing below in generate for 
     tablespaces, schemata
 
     functions (including the concat thing)
@@ -21,6 +21,7 @@ diffs:
 
 generate:
   - ensure vertical spacing is good in code generated for diffs
+    (actually, for all code)
   - eliminate QQQ commented lines in ddl/*.xsl
   - use the concat function rather than sequences of text value-of text, etc
     see the revoke template for an example.  This is more readable and

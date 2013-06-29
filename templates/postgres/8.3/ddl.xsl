@@ -53,7 +53,7 @@
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="concat(' is&#x0A;', $text, ';&#x0A;')"/>
+    <xsl:value-of select="concat(' is', $text, ';&#x0A;')"/>
   </xsl:template>
 
   <xsl:template match="comment">
@@ -70,10 +70,10 @@
 	<xsl:with-param name="text">
 	  <xsl:choose>
 	    <xsl:when test="@status = 'gone'">
-	      <xsl:value-of select="'null'"/>
+	      <xsl:value-of select="' null'"/>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <xsl:value-of select="comment/text()"/>
+	      <xsl:value-of select="concat('&#x0A;', comment/text())"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:with-param>
@@ -89,7 +89,7 @@
       <xsl:if test="@owner != //cluster/@username">
 	<xsl:value-of 
 	    select="concat('set session authorization ', $apos, 
-		           @owner, $apos, ';&#x0A;&#x0A;')"/>
+		           @owner, $apos, ';&#x0A;')"/>
       </xsl:if>
     </xsl:if>
   </xsl:template>

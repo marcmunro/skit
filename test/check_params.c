@@ -957,7 +957,7 @@ START_TEST(diffgen)
 		    //"test/data/diffs_1_b.xml", 
 		    "regress/scratch/regressdb_dump3a.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--generate"};
+		    "--generate", "--debug"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -968,7 +968,7 @@ START_TEST(diffgen)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(7, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
