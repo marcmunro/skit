@@ -14,6 +14,7 @@
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 
+	<xsl:call-template name="feedback"/>
 	<!-- This direct generation of set session auth is required because
 	     there is no other way of defining the owner using the create
 	     language statement. -->
@@ -34,6 +35,7 @@
 	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('&#x0A;drop language ', ../@qname, ';&#x0A;')"/>
 	<xsl:if test="../@name = 'plpgsql'">
@@ -51,6 +53,7 @@
 	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">

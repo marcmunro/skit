@@ -14,6 +14,7 @@
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:call-template name="set_owner"/>
 
+	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;create </xsl:text>
 	<xsl:if test="@is_default='t'">
 	  <xsl:text>default </xsl:text>
@@ -39,6 +40,7 @@
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:call-template name="set_owner"/>
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('&#x0A;drop conversion ', ../@qname, ';&#x0A;')"/>
 	<xsl:call-template name="reset_owner"/>
@@ -51,6 +53,7 @@
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">
             <xsl:value-of 

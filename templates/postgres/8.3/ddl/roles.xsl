@@ -12,6 +12,7 @@
 	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('&#x0A;create role ', ../@qname)"/>
 	<xsl:choose>
@@ -82,6 +83,7 @@
 	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('\echo Not dropping or revoking ', 
 		           'privs from role ', ../@name,
@@ -98,6 +100,7 @@
 	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../element/config">
 	  <xsl:value-of 

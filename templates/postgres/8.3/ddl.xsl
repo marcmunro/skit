@@ -120,6 +120,14 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:template name="feedback">
+    <xsl:if test="skit:eval('echoes') = 't'">
+      <xsl:value-of 
+	  select="concat('&#x0A;\echo ', ../@type, ' ', 
+		          ../@qname, '...')"/>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:include href="skitfile:ddl/owner.xsl"/>
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
   <xsl:include href="skitfile:ddl/database.xsl"/>
