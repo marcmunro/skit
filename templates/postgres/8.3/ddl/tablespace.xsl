@@ -84,36 +84,6 @@
       </print>
     </xsl:if>
 
-    <xsl:if test="../@action='diffprep'">
-      <print>
-	<xsl:for-each select="../attribute">
-	  <xsl:if test="@name='owner'">
-	    <xsl:variable name="old_fqn" 
-			  select="concat('role.cluster.', @old)"/>
-	    <xsl:if test="//dbobject[@fqn=$old_fqn and @action='drop']">
-	      <!-- If the old dependency is on a role that is being
-		   dropped, we must first reassign the ownership to a
-		   role that we know will exist throughout this
-		   transction.  We could make this even smarter and 
-	           determine whether the drop will happen before our
-	           corresponding diffcomplete but that seems like 
-	           overkill.  -->
-	      
-	      <!-- QQQ -->
-	      <xsl:value-of 
-		  select="concat('---- DBOBJECT PREP ', ../@fqn, '&#x0A;')"/> 
-
-	      <xsl:call-template name="feedback"/>
-	      <xsl:value-of 
-		  select="concat('&#x0A;---- Changing ownership from role ',
-			         'to be dropped...&#x0A;alter tablespace ', 
-			         ../@qname, ' owner to :USER;&#x0A;')"/>
-	    </xsl:if>
-	  </xsl:if>
-	</xsl:for-each>
-      </print>
-    </xsl:if>
-
   </xsl:template>
 </xsl:stylesheet>
 

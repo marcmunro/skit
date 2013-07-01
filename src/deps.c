@@ -1183,7 +1183,7 @@ static redirectActionType redirect_action
      {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
      {UNSURE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
+    {{ERROR, ERROR}, {INVERT, ERROR},     /* BUILD, DROP */
      {ERROR, ERROR}, {MIRROR, COPY},      /* REBUILD, DIFF */
      {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 

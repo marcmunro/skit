@@ -35,7 +35,7 @@ comment on database "regressdb" is
 \connect postgres
 
 \set tbs2dir '''':home'/regress/REGRESSDB/tbs/tbs2'''
-create tablespace "tbs2" owner "regress"
+create tablespace "tbs2" owner "lose"
   location :tbs2dir;
 
 comment on tablespace tbs2 is 'This is the 2nd tablespace';
