@@ -36,6 +36,10 @@ dagnodeHash(Vector *vector)
 
 	if (hashGet(hash, (Object *) key)) {
 	    objectFree((Object *) key, TRUE);
+	    key = stringNewByRef(newstr("%s.%s", 
+					nameForBuildType(node->build_type),
+					node->fqn->value));
+	    hashAdd(hash, (Object *) key, (Object *) node);
 	}
 	else {
 	    hashAdd(hash, (Object *) key, (Object *) node);
@@ -124,34 +128,27 @@ buildPrefixLen(DagNodeBuildType type)
     }
 }
 
+/* This function is all over the map for historical reasons.  It would
+ * be good to clean it up but for now at least it works.
+ */
 static DagNode *
 findDagNode(Hash *hash, char *name)
 {
     DagNodeBuildType type = buildTypeFromName(name);
     String *fqn = stringNew(name);
     DagNode *node = (DagNode *) hashGet(hash, (Object *) fqn);
-
     if (!node) {
 	/* Try removing any build type prefix from the name and see if
 	 * there is a match that way. */
 	objectFree((Object *) fqn, TRUE);
 	fqn = stringNew(name + buildPrefixLen(type));
 	node = (DagNode *) hashGet(hash, (Object *) fqn);
-    }
-
-    if (node) {
-	if (type != UNSPECIFIED_NODE) {
-	    if (node->build_type != type) {
-		node = node->mirror_node;
-	    }
-	    if (node) {
-		objectFree((Object *) fqn, TRUE);
-		fqn = NULL;
-		assert(node->build_type == type,
-		       "Cannot find node for %s", name); 
-	    }
+	if (!node) {
+	    dbgSexp(node);
+	    dbgSexp(hash);
 	}
     }
+
     objectFree((Object *) fqn, TRUE);
     return node;
 }
@@ -563,6 +560,194 @@ START_TEST(depset_dag1_both)
 }
 END_TEST
 
+START_TEST(depset_dia_build)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    char *xnode_name;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(901);
+	//showFree(415);
+
+	eval("(setq build t)");
+
+	doc = getDoc("test/data/gensource_fromdia.xml");
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+	requireDeps(nodes_by_fqn, "role.cluster.x", NULL);
+	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
+		    "role.cluster.x", 
+		    "fallback.grant.x.superuser", NULL);  // 5, 7
+
+	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+		    "role.cluster.x", NULL); // 3
+
+	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+		    "fallback.grant.x.superuser",  
+                    "table.cluster.ownedbyx", 
+		    "role.cluster.x", 
+		    NULL); // 11, 9, 1
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+START_TEST(depset_dia_drop)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    char *xnode_name;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(901);
+	//showFree(415);
+
+	eval("(setq drop t)");
+
+	doc = getDoc("test/data/gensource_fromdia.xml");
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+	requireDeps(nodes_by_fqn, "role.cluster.x", 
+		    "table.cluster.ownedbyx", 
+		    "fallback.grant.x.superuser",
+		    "endfallback.fallback.grant.x.superuser", NULL);  // 6, 4, 2
+
+	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
+		    "fallback.grant.x.superuser", NULL);  // 8
+
+	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+		    NULL); // 
+
+	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+		    "fallback.grant.x.superuser",  
+                    "table.cluster.ownedbyx", 
+		    NULL); // 10, 12
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+START_TEST(depset_dia_both)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    char *xnode_name;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(901);
+	//showFree(415);
+
+	eval("(setq drop t)");
+	eval("(setq build t)");
+
+	doc = getDoc("test/data/gensource_fromdia.xml");
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+	requireDeps(nodes_by_fqn, "role.cluster.x", 
+		    "drop.role.cluster.x", NULL);  // 16
+
+	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
+		    "role.cluster.x", "drop.table.cluster.ownedbyx", 
+		    "fallback.grant.x.superuser", NULL);  // 5, 13, 7
+
+	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+		    "role.cluster.x", 
+		    "dsfallback.grant.x.superuser", 
+		    NULL); // 3, 14
+
+	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+		    "fallback.grant.x.superuser",  
+                    "table.cluster.ownedbyx", 
+		    "role.cluster.x", 
+		    "dsendfallback.grant.x.superuser", 
+		    NULL); // 11, 9, 1, 15
+
+	requireDeps(nodes_by_fqn, "drop.role.cluster.x", 
+		    "drop.table.cluster.ownedbyx", 
+		    "dsendfallback.grant.x.superuser", 
+		    "dsfallback.grant.x.superuser", 
+		    NULL); // 6, 2, 4
+
+	requireDeps(nodes_by_fqn, "drop.table.cluster.ownedbyx", 
+		    "dsfallback.grant.x.superuser", 
+		    NULL); // 8
+
+	requireDeps(nodes_by_fqn, "dsendfallback.grant.x.superuser", 
+		    "drop.table.cluster.ownedbyx", 
+		    "dsfallback.grant.x.superuser", 
+		    NULL); // 10, 12
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
 START_TEST(depset_diff)
 {
     Document *volatile doc = NULL;
@@ -642,7 +827,7 @@ START_TEST(cyclic_build)
 	//showVectorDeps(nodes);
 	
 	if (hasDeps(nodes_by_fqn, "view.skittest.public.v3", 
-		     "build.viewbase.skittest.public.v1",
+		     "viewbase.skittest.public.v1",
 		     "schema.skittest.public", "role.cluster.marc",
 		     "privilege.cluster.marc.superuser", NULL)) 
 	{
@@ -990,6 +1175,7 @@ START_TEST(fallback)
 	//showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+		    "dsfallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);
 	requireDeps(nodes_by_fqn, "table.x.public.x", 
 		    "role.cluster.x","schema.x.public", 
@@ -1001,6 +1187,7 @@ START_TEST(fallback)
 		    "fallback.grant.x.superuser", 
 		     "drop.grant.x.public.x.trigger:x:x", NULL);
 	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+		    "dsendfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",
 		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
 		    "grant.x.public.x.references:x:x", 
@@ -1090,6 +1277,9 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);
+    ADD_TEST(tc_core, depset_dia_build);
+    ADD_TEST(tc_core, depset_dia_drop);
+    ADD_TEST(tc_core, depset_dia_both);
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, cyclic_build);
     ADD_TEST(tc_core, cyclic_drop);

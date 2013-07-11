@@ -259,9 +259,9 @@ typedef enum {
 /* Used to identify to which side of the DAG, a given dependency
  * applies. */
 typedef enum {
-    FORWARDS = 17,
-    BACKWARDS,
-    BOTH
+    BACKWARDS = 0,
+    FORWARDS,
+    BOTH_DIRECTIONS
 } DependencyApplication;
 
 
@@ -275,7 +275,6 @@ typedef struct DagNode {
     Vector          *forward_deps;   	// use objectFree(obj, FALSE);
     Vector          *backward_deps;  	// use objectFree(obj, FALSE);
     Vector          *tmp_fdeps;  	// use objectFree(obj, FALSE);
-    Vector          *tmp_bdeps;  	// use objectFree(obj, FALSE);
     struct DagNode  *mirror_node;    	// Reference only
     struct DagNode  *parent;   	     	// Reference only
     struct DagNode  *breaker;           // The breaker for this node

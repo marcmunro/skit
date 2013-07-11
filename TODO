@@ -1,3 +1,11 @@
+Current problem: dependency handling for fallback nodes in a rebuild
+scenario.  The graph resolution is diagrammed in
+dependency_resolution.dia.  
+
+Create test cases for dia_build and dia_drop
+Modify cycllic dependency breaker so that backward deps are created
+properly in the first place and then eliminate the swapBackwardBreakers call
+
 
 diffs:
     do the concat thing below in generate for schemata
@@ -43,6 +51,6 @@ docs:
 9.0 changes
 9.1 changes
 9.2 changes
-
+9.3 changes
 
 

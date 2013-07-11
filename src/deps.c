@@ -492,7 +492,7 @@ applicationForDep(xmlNode *node)
 	    return applicationForDep(node->parent);
 	}
     }
-    return BOTH;
+    return BOTH_DIRECTIONS;
 }
 
 /* 
@@ -600,10 +600,10 @@ addDepToVector(Vector **p_vector, DagNode *dep)
 static void
 addDep(DagNode *node, DagNode *dep, DependencyApplication applies)
 {
-    if ((applies == FORWARDS) || (applies == BOTH)) {
+    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
 	addDepToVector(&(node->forward_deps), dep);
     }
-    if ((applies == BACKWARDS) || (applies == BOTH)) {
+    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
 	addDepToVector(&(node->backward_deps), dep);
     }
 }
@@ -614,11 +614,11 @@ newSubNode(DagNode *node, DependencyApplication applies)
 {
     DagNode *new = dagNodeNew(node->dbobject, OPTIONAL_NODE);
     new->supernode = node;
-    if ((applies == FORWARDS) || (applies == BOTH)) {
+    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
 	new->forward_subnodes = node->forward_subnodes;
 	node->forward_subnodes = new;
     }
-    if ((applies == BACKWARDS) || (applies == BOTH)) {
+    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
 	new->backward_subnodes = node->backward_subnodes;
 	node->backward_subnodes = new;
     }
@@ -774,7 +774,7 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 		    setPush((Vector *) deps, tmp);
 		}
 	    }
-	    if ((applies == FORWARDS) || (applies == BOTH)) {
+	    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
 
 		// No failure before here
 		sub = newSubNode(node, FORWARDS);
@@ -782,9 +782,9 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 		sub->fallback_node = fallback_node;
 	    }
 
-	    if ((applies == BACKWARDS) || (applies == BOTH)) {
+	    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
 		sub = newSubNode(node, BACKWARDS);
-		if (deps && (applies == BOTH)) {
+		if (deps && (applies == BOTH_DIRECTIONS)) {
 		    sub->backward_deps = vectorCopy((Vector *) deps);
 		}
 		else {
@@ -828,11 +828,8 @@ activateFallback(DagNode *fallback, Vector *nodes)
 	fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
 	endfallback->parent = fallback->parent;
-	fallback->mirror_node = endfallback;
+	fallback->fallback_node = endfallback;
 	setPush(nodes, (Object *) endfallback);
-
-	/* Add dependencies from endfallback to fallback. */
-	addDep(endfallback, fallback, FORWARDS);
 
 	/* Copy dependencies from fallback node to endfallback (they
 	 * both depend on the same objects (eg the role to be given
@@ -841,6 +838,14 @@ activateFallback(DagNode *fallback, Vector *nodes)
 	    dep = (DagNode *) ELEM(fallback->forward_deps, i);
 	    addDep(endfallback, dep, FORWARDS);
 	}
+	EACH(fallback->backward_deps, i) {
+	    dep = (DagNode *) ELEM(fallback->backward_deps, i);
+	    addDep(endfallback, dep, BACKWARDS);
+	}
+
+	/* Add dependencies from endfallback to fallback. */
+	addDep(endfallback, fallback, FORWARDS);
+	addDep(fallback, endfallback, BACKWARDS);
     }
 }
 
@@ -859,10 +864,12 @@ addFallbackDeps(DagNode *node, Vector *nodes)
 		  node->fqn->value));
     }
     activateFallback(fallback, nodes);
-    endfallback = fallback->mirror_node;
+    endfallback = fallback->fallback_node;
 
-    addDep(super, fallback, BOTH);
+    addDep(super, fallback, FORWARDS);
+    addDep(fallback, super, BACKWARDS);
     addDep(endfallback, super, FORWARDS);
+    addDep(super, endfallback, BACKWARDS);
 }
 
 static void
@@ -948,6 +955,7 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 
 		skfree(errmsg);
 		node->dep_idx = -1;
+
 		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
 	    }
 	    //else {
@@ -1070,99 +1078,105 @@ resolveGraphs(Vector *nodes)
     }
 }
 
-/* Create a drop side (of the DAG) mirror node for an existing node,
- * which will be left on the build side of the dag.  Note that the build
- * node will depend on the drop node (as the drop must be performed
- * before it can be (re)built.
- */
-static DagNode *
-makeMirror(DagNode *node, DagNodeBuildType type, char *prefix)
-{
-    DagNode *mirror = dagNodeNew(node->dbobject, type);
-    String *new_fqn = stringNewByRef(newstr("%s.%s", prefix,
-					    mirror->fqn->value));
-    objectFree((Object *) mirror->fqn, TRUE);
-    mirror->fqn = new_fqn;
-    node->mirror_node = mirror;
-    mirror->mirror_node = node;
-    mirror->parent = node->parent;
-    addDepToVector(&(node->forward_deps), mirror);
-    return mirror;
-}
-
-/* Based on the build operation being performed, and any node-specific
- * build actions, some nodes may need to appear on both sides of the DAH
- * (the build and the drop side).  An example of this would be a rebuild
- * node.  This function determines which nodes need to be duplicated in
- * this way, and creates mirror nodes for them.
- */
 static void
-expandDagNodes(Vector *nodes)
+promoteRebuildDeps(DagNode *node)
 {
-    int i;
-    int j;
-    DagNode *node;
-    DagNode *mirror;
     DagNode *dep;
-    
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-
-	switch (node->build_type) {
-	case BUILD_NODE:
-	case EXISTS_NODE:
-	case DIFFPREP_NODE:
-	case DIFFCOMPLETE_NODE:
-	case FALLBACK_NODE:
-	case ENDFALLBACK_NODE:
-	case DROP_NODE:
-	    /* Nothing to do - all is well */
-	    mirror = NULL;
-	    break;
-	case DIFF_NODE:
-	    node->build_type = DIFFCOMPLETE_NODE;
-	    mirror = makeMirror(node, DIFFPREP_NODE, "prep");
-	    break;
-	case REBUILD_NODE:
-	    node->build_type = BUILD_NODE;
-	    mirror = makeMirror(node, DROP_NODE, "drop");
-	    break;
-	default:
-	    RAISE(TSORT_ERROR, 
-		  newstr("Unexpected build_type: %d", node->build_type));
-	}
-	if (mirror) {
-	    setPush(nodes, (Object *) mirror); 
+    int i;
+    EACH(node->backward_deps, i) {
+	dep = (DagNode *) ELEM(node->backward_deps, i);
+	if ((dep->build_type != REBUILD_NODE) &&
+	    (dep->build_type != FALLBACK_NODE) &&
+	    (dep->build_type != ENDFALLBACK_NODE)) 
+	{
+	    /* This node needs to be promoted. */
+	    dep->build_type = REBUILD_NODE;
+	    promoteRebuildDeps(dep);
 	}
     }
+}
+
+/* Any node that depends on a node with a buld_type of REBUILD, must
+ * itself be promoted to a rebuild. */
+static void
+promoteRebuilds(Vector *nodes)
+{
+    int i;
+    DagNode *node;
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	/* Add the appropriate forward_deps to this mirror node */
-	if (mirror = node->mirror_node) {
-	    if (mirror->backward_deps) {
-		EACH(mirror->backward_deps, j) {
-		    dep = (DagNode *) ELEM(mirror->backward_deps, j);
-		    dep = dep->mirror_node? dep->mirror_node: dep;
-		    addDepToVector(&(node->forward_deps), dep);
-		}
-	    }
+	if (node->build_type == REBUILD_NODE) {
+	    promoteRebuildDeps(node);
 	}
-	if (node->build_type == DROP_NODE) {
-	    if (node->backward_deps) {
-		EACH(node->backward_deps, j) {
-		    dep = (DagNode *) ELEM(node->backward_deps, j);
-		    if (mirror = dep->mirror_node) {
-			addDepToVector(&(mirror->forward_deps), node);
-		    }
-		}
-	    }
+    }
+}
+
+static void
+makeMirrorNode(DagNode *node, DagNodeBuildType build_type, char *prefix)
+{
+    DagNode *mirror = dagNodeNew(node->dbobject, build_type);
+    char *newfqn;
+    if (prefix) {
+	newfqn = newstr("%s%s", prefix, mirror->fqn->value);
+	skfree(mirror->fqn->value);
+	mirror->fqn->value = newfqn;
+    }
+    node->mirror_node = mirror;
+}
+
+/* For nodes which must be expanded into a pair of nodes, create the
+ * mirror node.  Note that we do not yet create any dependencies for
+ * these new nodes. */
+static void
+createMirrorNodes(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    DagNode *mirror;
+    DagNodeBuildType new_build_type;
+    char *prefix = NULL;
+    boolean single_dag = TRUE;
+
+    EACH(nodes, i) {
+	new_build_type = UNSPECIFIED_NODE;
+	node = (DagNode *) ELEM(nodes, i);
+	if (node->build_type == REBUILD_NODE) {
+	    new_build_type = DROP_NODE;
+	} else if (node->build_type == DIFF_NODE) {
+	    new_build_type = DIFFPREP_NODE;
+	}
+
+	if (new_build_type != UNSPECIFIED_NODE) {
+	    makeMirrorNode(node, new_build_type, prefix);
+	    single_dag = FALSE;
+	}
+    }
+
+    if (single_dag) {
+	return;
+    }
+
+    EACH(nodes, i) {
+	new_build_type = UNSPECIFIED_NODE;
+	node = (DagNode *) ELEM(nodes, i);
+	if (node->build_type == FALLBACK_NODE) {
+	    new_build_type = FALLBACK_NODE;
+	    prefix = "ds";
+	}
+	else if (node->build_type == ENDFALLBACK_NODE) {
+	    new_build_type = ENDFALLBACK_NODE;
+	    prefix = "dsend";
+	}
+	if (new_build_type != UNSPECIFIED_NODE) {
+	    makeMirrorNode(node, new_build_type, prefix);
+	    prefix = NULL;
 	}
     }
 }
 
 /* UNSURE IS FOR USE DURING DEVELOPMENT ONLY */
 typedef enum {
-    COPY, IGNORE, INVERT, MIRROR, BCOPY, ERROR, UNSURE
+    FCOPY, FMCOPY, REVCOPY, IGNORE, INVERT, ERROR, UNSURE
 } redirectActionType;
 
 static redirectActionType redirect_action
@@ -1171,135 +1185,131 @@ static redirectActionType redirect_action
     /* Array is indexed by [node->build_type][depnode->build_type]
      *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
-    {{IGNORE, COPY}, {IGNORE, INVERT},    /* BUILD, DROP */
-     {ERROR, ERROR}, {IGNORE, COPY},      /* REBUILD, DIFF */
-     {IGNORE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, FCOPY}, {ERROR, ERROR},      /* BUILD, DROP */
+     {ERROR, ERROR}, {IGNORE, FCOPY},      /* REBUILD, DIFF */
+     {IGNORE, FCOPY}, {IGNORE, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {{ERROR, ERROR}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {ERROR, ERROR}, {BCOPY, IGNORE},     /* REBUILD, DIFF */
-     {COPY, IGNORE}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    {{ERROR, ERROR}, {INVERT, IGNORE},     /* BUILD, DROP */
+     {ERROR, ERROR}, {INVERT, FMCOPY},     /* REBUILD, DIFF */
+     {ERROR, IGNORE}, {INVERT, IGNORE}},   /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
-    {{ERROR, ERROR}, {ERROR, ERROR},      /* BUILD, DROP */
-     {MIRROR, COPY}, {ERROR, ERROR},      /* REBUILD, DIFF */
-     {UNSURE, COPY}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    {{ERROR, ERROR}, {ERROR, ERROR},       /* BUILD, DROP */
+     {REVCOPY, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {REVCOPY, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {{ERROR, ERROR}, {INVERT, ERROR},     /* BUILD, DROP */
-     {ERROR, ERROR}, {MIRROR, COPY},      /* REBUILD, DIFF */
-     {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    {{ERROR, ERROR}, {ERROR, ERROR},       /* BUILD, DROP */
+     {ERROR, ERROR}, {REVCOPY, FCOPY},     /* REBUILD, DIFF */
+     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
-    {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {IGNORE, COPY}, {IGNORE, IGNORE},    /* REBUILD, DIFF */
-     {ERROR, ERROR}, {ERROR, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, FCOPY}, {INVERT, IGNORE},    /* BUILD, DROP */
+     {REVCOPY, FCOPY}, {ERROR, ERROR} ,    /* REBUILD, DIFF */
+     {ERROR, ERROR}, {REVCOPY, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
-    {{IGNORE, COPY}, {INVERT, IGNORE},    /* BUILD, DROP */
-     {IGNORE, COPY}, {IGNORE, IGNORE},    /* REBUILD, DIFF */
-     {IGNORE, COPY}, {ERROR, ERROR}}      /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, FCOPY}, {INVERT, IGNORE},    /* BUILD, DROP */
+     {REVCOPY, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {ERROR, ERROR}}       /* FALLBACK, ENDFALLBACK */
 };
 
-
-/* This will populate the tmp[bf]_deps vectors from forward_deps and
- * backward_deps.  We use the tmp versions in order keep this function
- * from stomping on its own partial results.  Once this function has
- * completed, the tmp versions replace the current versions.
- */
 static void
-doRedirection(
-    DagNode *node,
-    Vector *deps,
-    int idx,
-    boolean forwards)
+redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
 {
-    DagNode *depnode = (DagNode *) ELEM(deps, idx);
     redirectActionType action;
+    DagNode *mirror;
+    DagNode *dmirror;
 
-    if ((node->build_type == EXISTS_NODE) || 
-	     (depnode->build_type == EXISTS_NODE)) 
-    {
-	action = IGNORE;
-    }
-    else if ((node->build_type < EXISTS_NODE) &&
-	     (depnode->build_type < EXISTS_NODE))
-    {
-	action = redirect_action[node->build_type]
-	             [depnode->build_type][forwards];
-    }
-
-    switch (action) {
-    case COPY:
-	addDepToVector(&node->tmp_fdeps, depnode);
+    action = redirect_action[node->build_type][dep->build_type][direction];
+    switch(action) {
+    case REVCOPY:
+	/* This is a backward dependency that should be reversed and
+	 * applied to the drop side of the DAG. */
+	mirror = node->mirror_node;
+	dmirror = dep->mirror_node;
+	if (mirror && dmirror) {
+	    addDepToVector(&(dmirror->forward_deps), mirror);
+	}
 	return;
-    case BCOPY:
-	addDepToVector(&node->tmp_bdeps, depnode);
+    case FMCOPY:
+	/* This is a forward dependency on the dep's mirror, that should
+	 * be copied. */
+	addDepToVector(&node->tmp_fdeps, dep->mirror_node);
+	return;
+    case FCOPY:
+	/* This is a forward dependency that should be copied.  We use
+	 * tmp_fdeps so that we don't stomp over partial results.  The
+	 * tmp_fdeps vector will be copied over the forward_deps vector
+	 * later. 
+	 */
+	addDepToVector(&node->tmp_fdeps, dep);
 	return;
     case INVERT:
-	addDepToVector(&depnode->tmp_fdeps, node);
-	return;
-    case MIRROR:
-	addDepToVector(&depnode->tmp_bdeps, node);
+	/* This is a backawrd dependency that should be converted into a
+	 * dependency in the opposite direction.
+	 */
+	addDepToVector(&dep->tmp_fdeps, node);
 	return;
     case UNSURE:
-	/* I think this is to be ignored but I could be wrong.  This
-	 * label is a placeholder to encourage further thought and
-	 * testing. */
+	/* This is for debugging only. */
+	fprintf(stderr, "UNSURE: %d\n", direction);
+	dbgSexp(node);
+	dbgSexp(dep);
     case IGNORE:
 	return;
     }
-
     showDeps(node);
-    showDeps(depnode);
+    showDeps(dep);
     RAISE(DEPS_ERROR, 
 	  newstr("%s dep from (%s) %s to (%s) %s not handled.", 
-		 forwards? "Forward": "Backward",
+		 direction? "Forward": "Backward",
 		 nameForBuildType(node->build_type),
 		 node->fqn->value, 
-		 nameForBuildType(depnode->build_type),
-		 depnode->fqn->value));
+		 nameForBuildType(dep->build_type),
+		 dep->fqn->value));
 }
 
-/* For nodes in the backwards build direction, create inverted
- * dependencies based on the original nodes backward_deps.  Note that
- * those backward_deps may be different from the node's forward_deps due
- * to conditional dependencies.
- */
+
 static void
 redirectDeps(Vector *nodes)
 {
     int i;
-    int j;
     DagNode *node;
-    Vector *deps;
-    BEGIN {
-	EACH(nodes, i) {
-	    node = (DagNode *) ELEM(nodes, i);
-	    EACH(node->forward_deps, j) {
-		doRedirection(node, node->forward_deps, j, TRUE);
-	    }
+    int j;
+    DagNode *dep;
+    Vector *mirrors = vectorNew(nodes->elems);
 
-	    EACH(node->backward_deps, j) {
-		doRedirection(node, node->backward_deps, j, FALSE);
-	    }
-	    if (node->forward_deps) {
-		vectorClose(node->forward_deps);
-	    }
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	EACH(node->backward_deps, j) {
+	    dep = (DagNode *) ELEM(node->backward_deps, j);
+	    redirectNodeDeps(node, dep, 0);
 	}
-	EACH(nodes, i) {
-	    node = (DagNode *) ELEM(nodes, i);
-	    objectFree((Object *) node->forward_deps, FALSE);
-	    objectFree((Object *) node->backward_deps, FALSE);
-	    node->forward_deps = node->tmp_fdeps;
-	    node->backward_deps = node->tmp_bdeps;
-	    node->tmp_fdeps = NULL;
-	    node->tmp_bdeps = NULL;
+	EACH(node->forward_deps, j) {
+	    dep = (DagNode *) ELEM(node->forward_deps, j);
+	    redirectNodeDeps(node, dep, 1);
 	}
     }
-    EXCEPTION(ex) {
-	EACH(nodes, i) {
-	    node = (DagNode *) ELEM(nodes, i);
-	    objectFree((Object *) node->tmp_fdeps, FALSE);
-	    objectFree((Object *) node->tmp_bdeps, FALSE);
+
+    /* Replace the original forward deps with newly minted ones. */
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	objectFree((Object *) node->forward_deps, FALSE);
+	objectFree((Object *) node->backward_deps, FALSE);
+	node->backward_deps = NULL;
+	node->forward_deps = node->tmp_fdeps;
+	node->tmp_fdeps = NULL;
+	if (node->mirror_node) {
+	    addDepToVector(&node->forward_deps, node->mirror_node);
+	    vectorPush(mirrors, (Object *) node->mirror_node);
+
+	    if (node->build_type == REBUILD_NODE) {
+		node->build_type = BUILD_NODE;
+	    }
+	    else if (node->build_type == DIFF_NODE) {
+		node->build_type = DIFFCOMPLETE_NODE;
+	    }
 	}
     }
-    END;
+    vectorAppend(nodes, mirrors);
+    objectFree((Object *) mirrors, FALSE);
 }
 
 static void
@@ -1422,13 +1432,15 @@ dagFromDoc(Document *doc)
 //fprintf(stderr, "============RESOLVED==============\n");
 //showVectorDeps(nodes);
 
+       promoteRebuilds(nodes);
+       createMirrorNodes(nodes);
        redirectDeps(nodes);
+
 //fprintf(stderr, "============REDIRECTED==============\n");
 //showVectorDeps(nodes);
 
-       expandDagNodes(nodes);
        swapBackwardBreakers(nodes);
-//fprintf(stderr, "============EXPANDED==============\n");
+//fprintf(stderr, "============SWAPPED==============\n");
 //showVectorDeps(nodes);
    }
    EXCEPTION(ex) {

@@ -968,7 +968,7 @@ START_TEST(diffgen)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(8, args);
+	process_args2(7, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1180,7 +1180,7 @@ params_suite(void)
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diffgen);
 
     //ADD_TEST(tc_core, gather);
 
