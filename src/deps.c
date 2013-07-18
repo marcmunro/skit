@@ -1201,7 +1201,7 @@ static redirectActionType redirect_action
     /* DROP */ 
     {{ERROR, ERROR}, {INVERT, IGNORE},     /* BUILD, DROP */
      {ERROR, ERROR}, {INVERT, IGNORE},     /* REBUILD, DIFF */
-     {ERROR, IGNORE}, {MINVERTC, IGNORE}},   /* FALLBACK, ENDFALLBACK */
+     {ERROR, IGNORE}, {INVERT, IGNORE}},   /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {{ERROR, ERROR}, {ERROR, ERROR},       /* BUILD, DROP */
      {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
