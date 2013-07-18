@@ -987,6 +987,43 @@ START_TEST(diffgen)
 }
 END_TEST
 
+START_TEST(diffgen2)
+{
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    //"test/data/diffs_1_a.xml", 
+		    //"test/data/diffs_1_b.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "--generate", "--echoes", "--debug"};
+    //"--list", "-g", "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initTemplatePath(".");
+    //registerTestSQL();
+    //showFree(1205);
+    //showMalloc(15382);
+
+    BEGIN {
+	process_args2(7, args);
+	//doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	//objectFree((Object *) doc, TRUE);
+	//fail("extract done!");
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 START_TEST(difflist)
 {
     char *args[] = {"./skit", "-t", "diff.xml", 
@@ -1180,7 +1217,8 @@ params_suite(void)
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diffgen2);
 
     //ADD_TEST(tc_core, gather);
 

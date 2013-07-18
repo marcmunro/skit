@@ -1,3 +1,13 @@
+params diffgen2 is failing with a cyclic dependency.  Looks like the 
+original deps from drop to fallback are incorrect.  All deps on
+fallbacks should be in the same direction (ie not the usual forwards one
+way and backwards the opposite way).  The resolution of the deps in
+redirectDeps is also wrong.  Dep 3 is currently being copied to fallback
+where dep4 (after the direction is corrected) should be copied to
+dsfallback. 
+
+
+
 Current problem: dependency handling for fallback nodes in a rebuild
 scenario.  The graph resolution is diagrammed in
 dependency_resolution.dia.  

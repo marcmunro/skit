@@ -46,7 +46,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
     switch (node->status) {
     case VISITING:
 	RAISE(TSORT_CYCLIC_DEPENDENCY, 
-	      newstr("%s", node->fqn->value), node);
+	      newstr("(%s) %s", nameForBuildType(node->build_type),
+		     node->fqn->value), node);
     case UNVISITED: 
     case RESOLVED: 
 	BEGIN {
@@ -66,14 +67,17 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 		/* We are at the start of the cyclic dependency.
 		 * Set errmsg to describe this, and reset cycle_node
 		 * for the RAISE below. */ 
-		tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+		tmpmsg = newstr("Cyclic dependency detected: (%s) %s->%s", 
+				nameForBuildType(node->build_type),
 				node->fqn->value, errmsg);
 		cycle_node = NULL;
 	    }
 	    else  {
 		/* We are somewhere in the cycle of deps.  Add the
 		 * current node to the error message. */ 
-		tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+		tmpmsg = newstr("(%s) %s->%s", 
+				nameForBuildType(node->build_type),
+				node->fqn->value, errmsg);
 	    }
 	    
 	    skfree(errmsg);
