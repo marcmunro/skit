@@ -17,7 +17,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	    select="concat('#### DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 	<xsl:text>&#x0A;psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
 	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
 	<xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>

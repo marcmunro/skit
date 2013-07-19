@@ -1,7 +1,6 @@
 Current issue is a failure in regression_test3
 
 deps handling:
-    optimise away unreferenced fallback nodes
     build cylic dependency deps so that the swap phase for backward
       breakers is handled solely by redirectDeps and the swap phase can
       be eliminated.

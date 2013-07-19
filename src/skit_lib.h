@@ -410,6 +410,7 @@ extern boolean vectorSearch(Vector *vec, Object *obj, int *p_index);
 extern Object *setPush(Vector *vector, Object *obj);
 extern boolean checkVector(Vector *vec, void *chunk);
 extern void vectorClose(Vector *vec);
+extern Object *vectorFind(Vector *vec, Object *obj);
 #define setPop vectorPop
 #define setStr vectorStr
 #define setGet vectorSet

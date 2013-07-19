@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="skittest" time="20090611091918">
+  <dbobject type="role" name="x" qname="x" fqn="role.cluster.x">
+    <dependencies>
+      <dependency fqn="cluster"/>
+    </dependencies>
+    <role name="x">
+    </role>
+  </dbobject>
+  <dbobject type="table" name="ownedbyx" qname="ownedbyx" fqn="table.cluster.ownedbyx">
+    <dependencies>
+      <dependency fqn="cluster"/>
+      <dependency fqn="role.cluster.x"/>
+      <dependency-set fallback="fallback.grant.x.superuser" condition="build">
+	<dependency pqn="privilege.cluster.x.superuser"/>
+      </dependency-set>
+      <dependency-set fallback="fallback.grant.x.superuser" condition="not build">
+	<dependency pqn="privilege.cluster.x.superuser"/>
+      </dependency-set>
+    </dependencies>
+    <table name="ownedbyx" owner="x"/>
+  </dbobject>
+  <dbobject type="fallback" subtype="grant" fallback="yes" fqn="fallback.grant.x.superuser">
+    <dependencies>
+      <dependency fqn="role.cluster.x"/>
+    </dependencies>
+  </dbobject>
+</dump>

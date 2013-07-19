@@ -43,7 +43,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	    select="concat('#### DBOBJECT ', ../@fqn, '&#x0A;')"/> 
         <xsl:value-of 
 	    select="concat('&#x0A;psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
@@ -117,7 +117,7 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ARRIVE ', ../@fqn, '&#x0A;')"/> 
+	    select="concat('#### DBOBJECT ARRIVE ', ../@fqn, '&#x0A;')"/> 
         <xsl:value-of 
 	    select="concat('&#x0A;psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',

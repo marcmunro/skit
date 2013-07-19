@@ -135,6 +135,8 @@ gensort(Document *doc)
     }
     END;
     objectFree((Object *) nodes, FALSE);
+    //fprintf(stderr, "\n\n");
+    //dbgSexp(results);
     return results;
 }
 

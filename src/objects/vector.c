@@ -268,6 +268,23 @@ vectorSort(Vector *vec, ComparatorFn *fn)
 }
 
 Object *
+vectorFind(Vector *vec, Object *obj)
+{
+    Object *deref = dereference(obj);
+    Object *this;
+    int i;
+    if (vec) {
+	for (i = 0; i < vec->elems; i++) {
+	    this = dereference(vec->contents->vector[i]);
+	    if (this == obj) {
+		return this;
+	    }
+	}
+    }
+    return NULL;
+}
+
+Object *
 vectorDel(Vector *vec, Object *obj)
 {
     Object *deref = dereference(obj);
