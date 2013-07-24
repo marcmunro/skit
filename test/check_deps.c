@@ -818,7 +818,7 @@ START_TEST(cyclic_build)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(1395);
+	//showMalloc(1584);
 	//showFree(1504);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");

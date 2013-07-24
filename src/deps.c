@@ -153,28 +153,49 @@ isDepNode(xmlNode *node)
 }
 
 static xmlNode *
-nextDependency(xmlNode *cur) 
+nextDepElement(xmlNode *start)
 {
-    xmlNode *node = firstElement(cur);
-    xmlNode *nextset;
-    if ((!node) && cur && cur->parent) {
-	if (cur->parent->next) {
-	    nextset = firstElement(cur->parent->next);
-	}
-	if (nextset && isDependencies(nextset)) {
-	    if (nextset->children) {
-		return nextDependency(nextset->children);
-	    }
-	}
-    }
+    xmlNode *node = firstElement(start);
     while (node && !isDepNode(node)) {
 	node = firstElement(node->next);
     }
+    return node;
+}
+
+static xmlNode *
+nextDependency(xmlNode *depnode, xmlNode *cur)
+{
+    xmlNode *node = NULL;
+    if (!depnode) {
+	return NULL;
+    }
+    if (cur) {
+	node = nextDepElement(cur->next);
+	if (!node) {
+	    if (cur->parent) {
+		/* We must have been stepping through dependencies in a 
+		 * dependencies element. */
+		node = nextDependency(depnode, cur->parent);
+	    }
+	}
+    }
+    else {
+	if (isDependencySet(depnode)) {
+	    node = nextDependency(depnode->children, NULL);
+	}
+	else {
+	    node = nextDepElement(depnode);
+	}
+    }
+
     if (node && isDependencies(node)) {
-	return nextDependency(node->children);
+	/* This is a dependencies node.  Return the dependency nodes
+	 * which are its children. */
+	node = nextDependency(node->children, NULL);
     }
     return node;
 }
+
 
 static Vector *
 cons2Vector(Cons *cons)
@@ -495,6 +516,54 @@ applicationForDep(xmlNode *node)
     return BOTH_DIRECTIONS;
 }
 
+static DependencyApplication 
+applicationForDep2(xmlNode *node)
+{
+    String *condition_str = nodeAttribute(node, "condition");
+    String separators = {OBJ_STRING, " ()"};
+    Cons *contents;
+    Cons *elem;
+    char *head;
+    DependencyApplication result;
+    boolean inverted = FALSE;
+    xmlNode *parent;
+
+    dbgSexp(condition_str);
+    if (condition_str) {
+	stringLowerOld(condition_str);
+	elem = contents = stringSplit(condition_str, &separators);
+	dbgSexp(contents);
+	while (elem) {
+	    dbgSexp(elem);
+	    head = ((String *) elem->car)->value;
+	    if (streq(head, "build")) {
+		result = inverted? BACKWARDS: FORWARDS;
+	    }
+	    else if (streq(head, "drop")) {
+		result = inverted? FORWARDS: BACKWARDS;
+	    }
+	    else if (streq(head, "not")) {
+		inverted = TRUE;
+	    }
+	    else {
+		RAISE(NOT_IMPLEMENTED_ERROR, 
+		      newstr("no conditional dep handling for token %s", head));
+	    }
+	    elem = (Cons *) elem->cdr;
+	}
+
+	objectFree((Object *) condition_str, TRUE);
+	objectFree((Object *) contents, TRUE);
+	return result;
+    }
+    else {
+	if (isDependencies(node->parent)) {
+	    return applicationForDep2(node->parent);
+	}
+    }
+    return BOTH_DIRECTIONS;
+}
+
 /* 
  * Append dependencies, returning a vector if there are multiple
  * dependencies, otherwise returning a single DagNode.
@@ -513,6 +582,7 @@ appendDep(Object *cur, Object *new)
 
 	    if (new->type == OBJ_VECTOR) {
 		vectorAppend((Vector *) cur, (Vector *) new);
+		objectFree((Object *) new, FALSE);
 	    }
 	    else {
 		vectorPush((Vector *) cur, new);
@@ -523,24 +593,17 @@ appendDep(Object *cur, Object *new)
     return new;
 }
     
-/* 
- *
- * TODO: rename to getDepSet after refactoring away the old version
- */
 static Object *
 getDepSet(xmlNode *node, Hash *byfqn, Hash *bypqn)
 {
-    xmlNode *depnode;
+    xmlNode *depnode = NULL;
     Object *dep;
     Cons *cons;
     Object *result = NULL;
     String *qn = NULL;
 
     if (isDependencySet(node)) {
-	for (depnode = node->children;
-	     depnode = nextDependency(depnode);
-	     depnode = depnode->next) 
-	{
+	while (depnode = nextDependency(node, depnode)) {
 	    dep = getDepSet(depnode, byfqn, bypqn);
 	    if (dep) {
 		if ((dep->type == OBJ_DAGNODE) &&
@@ -735,7 +798,7 @@ processBreaker(
 static void
 addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 {
-    xmlNode *depnode;
+    xmlNode *depnode = NULL;
     Object *deps;
     DagNode *fallback_node;
     DagNode *sub;
@@ -745,10 +808,7 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
     assert(node, "addDepsForNode: no node provided");
     assert(node->dbobject, "addDepsForNode: node has no dbobject");
 
-    for (depnode = node->dbobject->children;
-	 depnode = nextDependency(depnode);
-	 depnode = depnode->next) 
-    {
+    while (depnode = nextDependency(node->dbobject->children, depnode)) {
 	/* depnode is either a dependency or a dependency-set node and
 	 * so there may be a single dependency or a set of dependencies
 	 * for this depnode.  If there is a set, only one of the
@@ -800,7 +860,6 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 	    addDep(node, (DagNode *) deps, applies);
 	}
     }
-    //showDeps(node);
 }
 
 /* Determine the declared set of dependencies for the nodes, creating
@@ -1214,7 +1273,7 @@ static redirectActionType redirect_action
      {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
      {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {{ERROR, ERROR}, {INVERT2MC, ERROR},       /* BUILD, DROP */
+    {{ERROR, FCOPY}, {INVERT2MC, ERROR},       /* BUILD, DROP */
      {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
      {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
