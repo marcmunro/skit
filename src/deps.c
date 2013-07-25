@@ -883,12 +883,16 @@ activateFallback(DagNode *fallback, Vector *nodes)
     DagNode *endfallback;
     int i;
     DagNode *dep;
+    char *endfqn;
 
     if (fallback->build_type != FALLBACK_NODE) {
 	/* Promote this node from an exists node into a build node, and
 	 * create the matching drop node for it. */
 	fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	endfqn = newstr("end%s", endfallback->fqn->value);
+	skfree(endfallback->fqn->value);
+	endfallback->fqn->value = endfqn;
 	endfallback->parent = fallback->parent;
 	fallback->fallback_node = endfallback;
 	setPush(nodes, (Object *) endfallback);
@@ -1236,7 +1240,7 @@ createMirrorNodes(Vector *nodes)
 	}
 	else if (node->build_type == ENDFALLBACK_NODE) {
 	    new_build_type = ENDFALLBACK_NODE;
-	    prefix = "dsend";
+	    prefix = "endds";
 	}
 	if (new_build_type != UNSPECIFIED_NODE) {
 	    makeMirrorNode(node, new_build_type, prefix);
@@ -1374,6 +1378,18 @@ renderHarmless(Vector *redundants)
     }
 }
 
+static boolean
+endForFallback(DagNode *end, DagNode *fallback)
+{
+    char *fb;
+    char *endfb;
+    boolean result;
+    fb = fallback->fqn->value;
+    endfb = end->fqn->value;
+    result = streq(fb, endfb + 3);
+    return result;
+}
+
 /* To remove redundant fallback nodes, we modify them to be exists
  * nodes.  A redundant fallback node is identified as follows:
  * 1) it is a forward direction (ie the build side of the DAG) fallback
@@ -1385,95 +1401,50 @@ renderHarmless(Vector *redundants)
 static void
 disableRedundantFallbacks(Vector *nodes, Vector *fallback_nodes)
 {
-    Vector *redundants = vectorNew(fallback_nodes->elems);
+    Vector *removed = vectorNew(fallback_nodes->elems);
+    DagNode *node;
+    DagNode *dep;
+    DagNode *rnode;
+    DagNode *fnode;
     int i;
     int j;
-    int k;
-    DagNode *fnode;
-    DagNode *mirror;
-    DagNode *dep;
-    DagNode *node;
 
-    /* Eliminate drop side fallback nodes that have no dependencies. */
-    EACH(fallback_nodes, i) {
-	fnode = (DagNode *) ELEM(fallback_nodes, i);
-	if (fnode->build_type == FALLBACK_NODE) {
-	    if (mirror = fnode->mirror_node) {
-		if (!mirror->forward_deps) {
-		    vectorPush(redundants, (Object *) mirror);
-		}
-	    }
-	}
-    }
-
-    /* Eliminate drop side endfallback nodes for redundant fallbacks. */
-    EACH(fallback_nodes, i) {
-	fnode = (DagNode *) ELEM(fallback_nodes, i);
-	if (fnode->build_type == ENDFALLBACK_NODE) {
-	    if (mirror = fnode->mirror_node) {
-		EACH(mirror->forward_deps, j) {
-		    dep = (DagNode *) ELEM(mirror->forward_deps, j);
-		    if (dep->build_type == FALLBACK_NODE) {
-			if (vectorFind(redundants, (Object *) dep)) {
-			    vectorPush(redundants, (Object *) mirror);
-			    break;
-			}
-		    }
-		}
-	    }
-	}
-    }
-
-    /* Remove the redundants entries from fallback_nodes. */
-    EACH(redundants, i) {
-	fnode = (DagNode *) ELEM(redundants, i);
-	(void) vectorDel(fallback_nodes, (Object *) fnode);
-    }
-
-    /* Now go through all dependencies, looking for references to the
-     * nodes in fallback_nodes.  If references are found, the fallbacks
-     * are not redundant.  We remove such references from
-     * fallback_nodes until fallback_nodes is empty, or we have checked
-     * all dependencies.  Any items left in fallback_nodes at that point
-     * are redundant.
-     */
+    /* Remove fallback nodes that have dependencies */
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	if ((node->build_type != FALLBACK_NODE) &&
-	    (node->build_type != ENDFALLBACK_NODE))
-	{
+	if (node->build_type != ENDFALLBACK_NODE) {
 	    EACH(node->forward_deps, j) {
 		dep = (DagNode *) ELEM(node->forward_deps, j);
 		if (dep->build_type == FALLBACK_NODE) {
-		    if (vectorDel(fallback_nodes, (Object *) dep)) {
-			/* We have deleted a fallback node.  Let's find
-			 * the matching endfallback node and remove that
-			 * too! */
-			EACH(fallback_nodes, k) {
-			    fnode = (DagNode *) ELEM(fallback_nodes, k);
-			    if (streq(fnode->fqn->value, dep->fqn->value)) {
-				/* This is our match */
-				vectorRemove(fallback_nodes, k);
-				break;
-			    }
-			}
+		    if (dep = (DagNode *) vectorDel(fallback_nodes, 
+						    (Object *) dep)) 
+		    {
+			vectorPush(removed, (Object *) dep);
 		    }
 		}
 	    }
 	}
-	if (fallback_nodes->elems == 0) {
-	    /* Short-cut out of the loop. */
-	    break;
+    }
+
+    /* Remove any endfallback nodes that match the removed fallback
+     * nodes.  This leaves only the unreferenced fallback nodes in the
+     * fallback nodes vector.  */
+    EACH(removed, i) {
+	fnode = (DagNode *) ELEM(removed, i);
+	EACH(fallback_nodes, j) {
+	    node = (DagNode *) ELEM(fallback_nodes, j);
+	    if (node->build_type == ENDFALLBACK_NODE) {
+		if (endForFallback(node, fnode)) {
+		    (void) vectorRemove(fallback_nodes, j);
+		    break;
+		}
+	    }
 	}
     }
 
-    /* Finally, we set the build_type of all redundant fallbacks to
-     * something harmless. */
-    renderHarmless(redundants);
     renderHarmless(fallback_nodes);
-
     objectFree((Object *) fallback_nodes, FALSE);
-    objectFree((Object *) redundants, FALSE);
+    objectFree((Object *) removed, FALSE);
 }
 
 
@@ -1521,10 +1492,12 @@ redirectDeps(Vector *nodes)
 		     (node->build_type == ENDFALLBACK_NODE))
 	    {
 		vectorPush(fallback_nodes, (Object *) node);
+		vectorPush(fallback_nodes, (Object *) node->mirror_node);
 	    }
 	}
     }
     
+//    showVectorDeps(nodes);
     disableRedundantFallbacks(nodes, fallback_nodes);
 }
 

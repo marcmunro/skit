@@ -1,6 +1,8 @@
 Current issue is a failure in regression_test3
 
-
+  This is when we attempt to change the ownership of myconv.  The
+  problem is that the new owner must be a member of the old owner (or
+  the old owner should be a superuser).
 
 
 deps handling:

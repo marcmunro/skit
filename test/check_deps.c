@@ -587,7 +587,7 @@ START_TEST(depset_dia_build)
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", NULL); // 3
 
-	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    "role.cluster.x", 
@@ -637,7 +637,7 @@ START_TEST(depset_dia_drop)
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
 		    "table.cluster.ownedbyx", 
 		    "fallback.grant.x.superuser",
-		    "endfallback.fallback.grant.x.superuser", NULL);  // 6, 4, 2
+		    "endfallback.grant.x.superuser", NULL);  // 6, 4, 2
 
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "fallback.grant.x.superuser", NULL);  // 8
@@ -645,7 +645,7 @@ START_TEST(depset_dia_drop)
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    NULL); // 
 
-	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
@@ -704,16 +704,16 @@ START_TEST(depset_dia_both)
 		    "dsfallback.grant.x.superuser", 
 		    NULL); // 3, 14
 
-	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    "role.cluster.x", 
-		    "dsendfallback.grant.x.superuser", 
+		    "enddsfallback.grant.x.superuser", 
 		    NULL); // 11, 9, 1, 15
 
 	requireDeps(nodes_by_fqn, "drop.role.cluster.x", 
 		    "drop.table.cluster.ownedbyx", 
-		    "dsendfallback.grant.x.superuser", 
+		    "enddsfallback.grant.x.superuser", 
 		    "dsfallback.grant.x.superuser", 
 		    NULL); // 6, 2, 4
 
@@ -721,7 +721,7 @@ START_TEST(depset_dia_both)
 		    "dsfallback.grant.x.superuser", 
 		    NULL); // 8
 
-	requireDeps(nodes_by_fqn, "dsendfallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "enddsfallback.grant.x.superuser", 
 		    "drop.table.cluster.ownedbyx", 
 		    "dsfallback.grant.x.superuser", 
 		    NULL); // 10, 12
@@ -1186,8 +1186,8 @@ START_TEST(fallback)
 		    "table.x.public.x", "role.cluster.x",
 		    "fallback.grant.x.superuser", 
 		     "drop.grant.x.public.x.trigger:x:x", NULL);
-	requireDeps(nodes_by_fqn, "endfallback.fallback.grant.x.superuser", 
-		    "dsendfallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
+		    "enddsfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",
 		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
 		    "grant.x.public.x.references:x:x", 
