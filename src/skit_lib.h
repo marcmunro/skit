@@ -261,7 +261,8 @@ typedef enum {
 typedef enum {
     BACKWARDS = 0,
     FORWARDS,
-    BOTH_DIRECTIONS
+    BOTH_DIRECTIONS,
+    CUSTOM
 } DependencyApplication;
 
 
@@ -433,6 +434,7 @@ extern Object *vectorFind(Vector *vec, Object *obj);
 // hash.c
 extern Hash *hashNew(boolean use_skalloc);
 extern Object *hashAdd(Hash *hash, Object *key, Object *contents);
+extern Vector *hashVectorAppend(Hash *hash, Object *key, Object *contents);
 extern Object *hashDel(Hash *hash, Object *key);
 extern Hash *toHash(Cons *cons);
 extern char *hashStr(Hash *hash);
@@ -615,6 +617,7 @@ extern Object *xmlTraverse(xmlNode *start, TraverserFn *traverser,
 extern Object *xpathEach(Document *doc, String *xpath,
 			 TraverserFn *traverser, Object *param);
 extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);
+extern boolean nodeHasAttribute(xmlNodePtr node, const xmlChar *name);
 extern void readDocDbver(Document *doc);
 extern xmlNode *getElement(xmlNode *node);
 extern xmlNode *getText(xmlNode *node);
@@ -655,6 +658,12 @@ extern void registerPGSQL();
 extern void pgsqlFreeMem();
 
 // deps.c
+extern boolean isDependencySet(xmlNode *node);
+extern boolean isDependency(xmlNode *node);
+extern boolean isDependencies(xmlNode *node);
+extern boolean isDepNode(xmlNode *node);
+extern String *conditionForDep(xmlNode *node);
+
 extern void showDeps(DagNode *node);
 extern void showHashDeps(Hash *nodes);
 extern void showVectorDeps(Vector *nodes);

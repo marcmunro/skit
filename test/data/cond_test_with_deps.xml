@@ -126,13 +126,13 @@
             <dependencies>
               <dependency fqn="role.cluster.wibble"/>
               <dependency fqn="tablespace.cluster.pg_default"/>
-              <dependency-set fallback="fallback.grant.wibble.superuser" condition="build">
+              <dependency-set fallback="fallback.grant.wibble.superuser" condition="forwards">
                 <dependency pqn="grant.regressdb.public.create:public"/>
                 <dependency pqn="grant.regressdb.public.create:marc"/>
                 <dependency pqn="grant.regressdb.public.create:wibble"/>
                 <dependency fqn="privilege.cluster.wibble.superuser"/>
               </dependency-set>
-              <dependency-set fallback="fallback.grant.wibble.superuser" condition="not build">
+              <dependency-set fallback="fallback.grant.wibble.superuser" condition="backwards">
                 <dependency pqn="grant.regressdb.public.usage:public"/>
                 <dependency pqn="grant.regressdb.public.usage:marc"/>
                 <dependency pqn="grant.regressdb.public.usage:wibble"/>

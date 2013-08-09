@@ -303,6 +303,7 @@ navigationToNode(DagNode *start, DagNode *target)
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     boolean handling_context = (ignore_contexts == NULL);
     int i;
+
     BEGIN {
 	if (handling_context) {
 	    context_nav = getContextNavigation(start, target);

@@ -71,18 +71,19 @@
 
 	<!-- Add fallback object for roles.  This will temprarily grant
 	     superuser privilege to the role -->
+
+<!-- THIS SHOULD BE PRIVILEGE.CLUSTER.<ROLE>.SUPERUSER RATHER THAN FALLBACK...
 	<xsl:for-each select="//cluster/role">
 	  <dbobject type="fallback" subtype="grant" fallback="yes" 
-		    fqn="{concat('fallback.cluster.', @name, '.superuser')}"
+		    fqn="{concat('fallback.privilege.cluster.', @name, 
+		                 '.superuser')}"
 		    to="{@name}" priv="superuser">
 	    <dependencies>
-<!--
-	      <dependency fqn="cluster"/>
--->
 	      <dependency fqn="{concat('role.cluster.', @name)}"/>
 	    </dependencies>
 	  </dbobject>
 	</xsl:for-each>
+-->
       </database>
     </dbobject>
   </xsl:template>

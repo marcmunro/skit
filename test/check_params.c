@@ -827,12 +827,11 @@ END_TEST
 START_TEST(generate)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "x"};
+    char *args[] = {"./skit", "--generate", "x", "--debug"};
 
     initTemplatePath(".");
-    registerTestSQL();
-    showFree(4626);
-    showMalloc(4283);
+    //showFree(4626);
+    //showMalloc(4283);
 
     BEGIN {
 	process_args2(3, args);
@@ -1005,7 +1004,7 @@ START_TEST(diffgen2)
     //showMalloc(15382);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(5, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1219,6 +1218,7 @@ params_suite(void)
     //ADD_TEST(tc_core, difflist);
     ADD_TEST(tc_core, diffgen);
     ADD_TEST(tc_core, diffgen2);
+    //ADD_TEST(tc_core, generate); // for testing deps for diffs
 
     //ADD_TEST(tc_core, gather);
 

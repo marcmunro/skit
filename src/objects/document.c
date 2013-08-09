@@ -1105,6 +1105,19 @@ nodeAttribute(xmlNodePtr node,
     return NULL;
 }
 
+boolean
+nodeHasAttribute(xmlNodePtr node, 
+	         const xmlChar *name)
+{
+    xmlChar *value = xmlGetProp(node, name);
+
+    if (value) {
+	xmlFree(value);
+	return TRUE;
+    }
+    return FALSE;
+}
+
 
 static String *
 templateFilePath(String *filename, String *path, String *default_filename)

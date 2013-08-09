@@ -11,10 +11,10 @@
     <dependencies>
       <dependency fqn="cluster"/>
       <dependency fqn="role.cluster.x"/>
-      <dependency-set fallback="fallback.grant.x.superuser" condition="build">
+      <dependency-set fallback="fallback.grant.x.superuser" condition="forwards">
 	<dependency pqn="privilege.cluster.x.superuser"/>
       </dependency-set>
-      <dependency-set fallback="fallback.grant.x.superuser" condition="not build">
+      <dependency-set fallback="fallback.grant.x.superuser" condition="backwards">
 	<dependency pqn="privilege.cluster.x.superuser"/>
       </dependency-set>
     </dependencies>

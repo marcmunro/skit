@@ -159,6 +159,25 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
     return previous_contents;
 }
 
+
+/* Consumes key, returns a vector which will contain obj.
+ */
+Vector *
+hashVectorAppend(Hash *hash, Object *key, Object *obj)
+{
+    Vector *vec = hashGet(hash, key);
+    if (vec) {
+	objectFree(key, TRUE);
+    }
+    else {
+	vec = vectorNew(10);
+	hashAdd(hash, key, (Object *) vec);
+    }
+    vectorPush(vec, obj);
+
+    return vec;
+}
+
 void
 freeAlist(Cons *cons)
 {

@@ -1,14 +1,25 @@
 Current issue is a failure in regression_test3
 
-  This is when we attempt to change the ownership of myconv.  The
-  problem is that the new owner must be a member of the old owner (or
-  the old owner should be a superuser).
+    Work is in progress to make fallbacks automatically generated at
+    need rather than created by default (by the deps handling stuff).
+    Currently deps.c contains hackish code to created the dagnode for 
+    a new fallback.  This must be replaced by an xsl-based mechanism.
+    All unit tests current pass as do regression tests 1 and 2.
 
+    Once fallbacks are automatically creatable, the conditional handling
+    of diffdeps in diff.c:dbObjectDiffOld can be enabled.  This should
+    finally solve the regression_test3 issue.
+
+Rename dbobjectDiffOld in diff.c
 
 deps handling:
     build cylic dependency deps so that the swap phase for backward
       breakers is handled solely by redirectDeps and the swap phase can
       be eliminated.
+
+Look for uses of nodeAttribute() that can be replaced by
+nodeHasAttribute(), ditto for direct use of xmlGetProp()
+
 
 diffs:
     do the concat thing below in generate for schemata

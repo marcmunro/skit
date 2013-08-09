@@ -128,25 +128,25 @@ findAncestor(xmlNode *start, char *name)
 
 #define makeVector(x) (x) ? (x): (x = vectorNew(10))
 
-static boolean
+boolean
 isDependencySet(xmlNode *node)
 {
     return streq(node->name, DEPENDENCY_SET_STR);
 }
 
-static boolean
+boolean
 isDependency(xmlNode *node)
 {
     return streq(node->name, DEPENDENCY_STR);
 }
 
-static boolean
+boolean
 isDependencies(xmlNode *node)
 {
     return streq(node->name, DEPENDENCIES_STR);
 }
 
-static boolean
+boolean
 isDepNode(xmlNode *node)
 {
     return isDependency(node) || isDependencySet(node) || isDependencies(node);
@@ -444,27 +444,22 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
     }
 }
 
-static DagNode *
-getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn)
+/* Temporary code for use while I am refactoring the handling of
+ * fallback nodes.  getFallbackNode is similarly afflicted. */ 
+String *
+conditionForDep(xmlNode *node)
 {
-    String *fallback;
-    DagNode *fallback_node = NULL;
-    char *errmsg;
-    if (isDependencySet(dep_node)) {
-	fallback = nodeAttribute(dep_node, "fallback");
-	if (fallback) {
-	    fallback_node = (DagNode *) hashGet(nodes_by_fqn, 
-						(Object *) fallback);
-	    if (!fallback_node) {
-		errmsg = newstr("Fallback node %s not found", 
-				fallback->value);
-		objectFree((Object *) fallback, TRUE);
-		RAISE(TSORT_ERROR, errmsg);
-	    }
-	    objectFree((Object *) fallback, TRUE);
-	}
+    String *condition_str = nodeAttribute(node, "condition");
+    if (condition_str) {
+	stringLowerOld(condition_str);
     }
-    return fallback_node;
+    else {
+	if (isDependencies(node->parent)) {
+	    return conditionForDep(node->parent);
+	}
+	condition_str = stringNew("");
+    }
+    return condition_str;
 }
 
 /* 
@@ -488,18 +483,14 @@ applicationForDep(xmlNode *node)
 	elem = contents = stringSplit(condition_str, &separators);
 	while (elem) {
 	    head = ((String *) elem->car)->value;
-	    if (streq(head, "build")) {
-		result = inverted? BACKWARDS: FORWARDS;
+	    if (streq(head, "forwards")) {
+		result = FORWARDS;
 	    }
-	    else if (streq(head, "drop")) {
-		result = inverted? FORWARDS: BACKWARDS;
-	    }
-	    else if (streq(head, "not")) {
-		inverted = TRUE;
+	    else if (streq(head, "backwards")) {
+		result = BACKWARDS;
 	    }
 	    else {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("no conditional dep handling for token %s", head));
+		result = CUSTOM;
 	    }
 	    elem = (Cons *) elem->cdr;
 	}
@@ -511,54 +502,6 @@ applicationForDep(xmlNode *node)
     else {
 	if (isDependencies(node->parent)) {
 	    return applicationForDep(node->parent);
-	}
-    }
-    return BOTH_DIRECTIONS;
-}
-
-static DependencyApplication 
-applicationForDep2(xmlNode *node)
-{
-    String *condition_str = nodeAttribute(node, "condition");
-    String separators = {OBJ_STRING, " ()"};
-    Cons *contents;
-    Cons *elem;
-    char *head;
-    DependencyApplication result;
-    boolean inverted = FALSE;
-    xmlNode *parent;
-
-    dbgSexp(condition_str);
-    if (condition_str) {
-	stringLowerOld(condition_str);
-	elem = contents = stringSplit(condition_str, &separators);
-	dbgSexp(contents);
-	while (elem) {
-	    dbgSexp(elem);
-	    head = ((String *) elem->car)->value;
-	    if (streq(head, "build")) {
-		result = inverted? BACKWARDS: FORWARDS;
-	    }
-	    else if (streq(head, "drop")) {
-		result = inverted? FORWARDS: BACKWARDS;
-	    }
-	    else if (streq(head, "not")) {
-		inverted = TRUE;
-	    }
-	    else {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("no conditional dep handling for token %s", head));
-	    }
-	    elem = (Cons *) elem->cdr;
-	}
-
-	objectFree((Object *) condition_str, TRUE);
-	objectFree((Object *) contents, TRUE);
-	return result;
-    }
-    else {
-	if (isDependencies(node->parent)) {
-	    return applicationForDep2(node->parent);
 	}
     }
     return BOTH_DIRECTIONS;
@@ -790,6 +733,79 @@ processBreaker(
     }
 }
 
+static DagNode *
+makeFallbackNode(String *fqn, Hash *by_fqn)
+{
+    char *role = fqn->value + 27;
+    char *dot = strchr(role, '.');
+    char *tmp;
+    String *tmpstr;
+    xmlNode *dbobj;
+    xmlNode *deps;
+    xmlNode *dep;
+    DagNode *result;
+    DagNode *depnode;
+    DagNode *cluster;
+    static String cluster_str = {OBJ_STRING, "cluster"};
+
+    dbobj = xmlNewNode(NULL, BAD_CAST "dbobject");
+    xmlNewProp(dbobj, BAD_CAST "type", BAD_CAST "fallback");
+    xmlNewProp(dbobj, BAD_CAST "subtype", BAD_CAST "grant");
+    xmlNewProp(dbobj, BAD_CAST "fallback.privilege", BAD_CAST "yes");
+    xmlNewProp(dbobj, BAD_CAST "fqn", BAD_CAST fqn->value);
+    *dot = '\0';
+    xmlNewProp(dbobj, BAD_CAST "to", BAD_CAST role);
+    xmlNewProp(dbobj, BAD_CAST "priv", BAD_CAST "superuser");
+
+    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
+    dep = xmlNewNode(NULL, BAD_CAST "dependency");
+    tmp = newstr("role.cluster.%s", role);
+    tmpstr = stringNewByRef(tmp);
+    xmlNewProp(dep, BAD_CAST "fqn", BAD_CAST tmp);
+    xmlAddChild(dbobj, deps);
+    xmlAddChild(deps, dep);
+    *dot = '.';
+    result = dagNodeNew(dbobj, EXISTS_NODE);
+    depnode = (DagNode *) hashGet(by_fqn, (Object *) tmpstr);
+    addDep(result, depnode, BOTH_DIRECTIONS);
+    objectFree((Object *) tmpstr, TRUE);
+    cluster = (DagNode *) hashGet(by_fqn, (Object *) &cluster_str);
+    result->parent = cluster; /* This should be the database, but the
+				 cluster is easier to find and it works,
+				 though with added unwanted 
+				 navigation steps */
+    return result;
+}
+
+static DagNode *
+getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn, Vector *allnodes)
+{
+    String *fallback;
+    DagNode *fallback_node = NULL;
+    char *errmsg;
+    if (isDependencySet(dep_node)) {
+	fallback = nodeAttribute(dep_node, "fallback");
+	if (fallback) {
+	    fallback_node = (DagNode *) hashGet(nodes_by_fqn, 
+						(Object *) fallback);
+	    if (!fallback_node) {
+		fallback_node = makeFallbackNode(fallback, nodes_by_fqn);
+		hashAdd(nodes_by_fqn, (Object *) fallback, (Object *) fallback_node);
+		setPush(allnodes, (Object *) fallback_node);
+		/*
+		errmsg = newstr("Fallback node %s not found", 
+				fallback->value);
+		objectFree((Object *) fallback, TRUE);
+		RAISE(TSORT_ERROR, errmsg);*/
+	    }
+	    else {
+		objectFree((Object *) fallback, TRUE);
+	    }
+	}
+    }
+    return fallback_node;
+}
+
 
 
 /* Add both forward and back dependencies to a DagNode from the source
@@ -816,7 +832,7 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 	 * that by creating a subnode for dependency sets.
 	 */
 	applies = applicationForDep(depnode);
-	fallback_node = getFallbackNode(depnode, byfqn);
+	fallback_node = getFallbackNode(depnode, byfqn, allnodes);
 	deps = getDepSet(depnode, byfqn, bypqn);
 
 	if (deps && (deps->type == OBJ_DAGNODE) && 
@@ -1297,6 +1313,14 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
     DagNode *mirror;
     DagNode *dmirror;
 
+    if ((node->build_type == EXISTS_NODE) ||
+	(dep->build_type == EXISTS_NODE)) {
+	/* Although most exists nodes should have been removed, we may
+	 * be facing the situtation where a fallback node has been
+	 * rendered harmless, so this quick exit is still needed. */
+
+	return;
+    }
     action = redirect_action[node->build_type][dep->build_type][direction];
     switch(action) {
     case REVCOPYC:
