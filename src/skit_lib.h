@@ -568,6 +568,8 @@ extern Hash *parseAction(String *action);
 extern void executeAction(String *action, Hash *params);
 extern void finalAction();
 extern void addDeps();
+extern void applyXSL(Document *xslsheet);
+extern Document *getFallbackProcessor();
 
 // builtin_symbols.c
 extern void initBuiltinSymbols();

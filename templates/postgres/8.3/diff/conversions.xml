@@ -6,10 +6,10 @@
 
   <dbobject type="conversion" key="fqn">
     <attribute name="owner">
-      <dependency condition="forwards"
-		  fqn="fallback.cluster.{old}.superuser"/>
-      <dependency condition="backwards"
-		  fqn="fallback.cluster.{old}.superuser"/>
+      <dependency-set 
+	  fallback="fallback.privilege.cluster.{old.owner}.superuser">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+      </dependency-set>
     </attribute>
     <element type="comment">
       <text/>

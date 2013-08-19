@@ -444,8 +444,6 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
     }
 }
 
-/* Temporary code for use while I am refactoring the handling of
- * fallback nodes.  getFallbackNode is similarly afflicted. */ 
 String *
 conditionForDep(xmlNode *node)
 {
@@ -733,70 +731,95 @@ processBreaker(
     }
 }
 
-static DagNode *
-makeFallbackNode(String *fqn, Hash *by_fqn)
+static xmlNode *
+getContentNode(xmlNode *dbobject)
 {
-    char *role = fqn->value + 27;
-    char *dot = strchr(role, '.');
-    char *tmp;
-    String *tmpstr;
+    String *type = nodeAttribute(dbobject, "type");
+    xmlNode *node;
+    if (type) {
+	if (node = firstElement(dbobject->children)) {
+	    do {
+		if (streq(node->name, type->value)) {
+		    objectFree((Object *) type, TRUE);
+		    return node;
+		}
+	    } while (node = firstElement(node->next));
+	}
+	objectFree((Object *) type, TRUE);
+    }
+    return NULL;
+}
+
+/* 
+ * Create a simple fallback node, which we wil place into its own
+ * document.  This will then be processed by the fallbacks.xsl script to
+ * create a fully formed dbobject which will then be added to our 
+ * document and to various hashes and vectors.
+ */
+static xmlNode *
+domakeFallbackNode(String *fqn, Hash *byfqn)
+{
+    xmlNode *fallback;
+    xmlNode *root;
+    xmlNode *dbobject;
+    xmlDoc *xmldoc;
+    Document *doc;
+    Document *fallback_processor;
+
+    fallback = xmlNewNode(NULL, BAD_CAST "fallback");
+    xmlNewProp(fallback, BAD_CAST "fqn", BAD_CAST fqn->value);
+    xmldoc = xmlNewDoc(BAD_CAST "1.0");
+    xmlDocSetRootElement(xmldoc, fallback);
+    doc = documentNew(xmldoc, NULL);
+
+    docStackPush(doc);
+    fallback_processor = getFallbackProcessor();
+    applyXSL(fallback_processor);
+    doc = docStackPop();
+    root = xmlDocGetRootElement(doc->doc);
+    dbobject = xmlCopyNode(getElement(root->children), 1);
+    objectFree((Object *) doc, TRUE);
+    return dbobject;
+}
+
+static DagNode *
+makeFallbackNode(String *fqn, Hash *byfqn, Hash *bypqn)
+{
     xmlNode *dbobj;
-    xmlNode *deps;
-    xmlNode *dep;
     DagNode *result;
-    DagNode *depnode;
+
     DagNode *cluster;
+    xmlNode *cluster_node;
     static String cluster_str = {OBJ_STRING, "cluster"};
 
-    dbobj = xmlNewNode(NULL, BAD_CAST "dbobject");
-    xmlNewProp(dbobj, BAD_CAST "type", BAD_CAST "fallback");
-    xmlNewProp(dbobj, BAD_CAST "subtype", BAD_CAST "grant");
-    xmlNewProp(dbobj, BAD_CAST "fallback.privilege", BAD_CAST "yes");
-    xmlNewProp(dbobj, BAD_CAST "fqn", BAD_CAST fqn->value);
-    *dot = '\0';
-    xmlNewProp(dbobj, BAD_CAST "to", BAD_CAST role);
-    xmlNewProp(dbobj, BAD_CAST "priv", BAD_CAST "superuser");
-
-    deps = xmlNewNode(NULL, BAD_CAST "dependencies");
-    dep = xmlNewNode(NULL, BAD_CAST "dependency");
-    tmp = newstr("role.cluster.%s", role);
-    tmpstr = stringNewByRef(tmp);
-    xmlNewProp(dep, BAD_CAST "fqn", BAD_CAST tmp);
-    xmlAddChild(dbobj, deps);
-    xmlAddChild(deps, dep);
-    *dot = '.';
+    dbobj = domakeFallbackNode(fqn, byfqn);
+    cluster = (DagNode *) hashGet(byfqn, (Object *) &cluster_str);
     result = dagNodeNew(dbobj, EXISTS_NODE);
-    depnode = (DagNode *) hashGet(by_fqn, (Object *) tmpstr);
-    addDep(result, depnode, BOTH_DIRECTIONS);
-    objectFree((Object *) tmpstr, TRUE);
-    cluster = (DagNode *) hashGet(by_fqn, (Object *) &cluster_str);
     result->parent = cluster; /* This should be the database, but the
 				 cluster is easier to find and it works,
 				 though with added unwanted 
 				 navigation steps */
+    cluster_node = getContentNode(cluster->dbobject);
+    /* Add fallback nodes into cluster xmlnode. */
+    xmlAddChild(cluster_node, dbobj);
     return result;
-}
-
+}    
+    
 static DagNode *
-getFallbackNode(xmlNode *dep_node, Hash *nodes_by_fqn, Vector *allnodes)
+getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 {
-    String *fallback;
+    String *fallback = NULL;
     DagNode *fallback_node = NULL;
     char *errmsg;
+
     if (isDependencySet(dep_node)) {
 	fallback = nodeAttribute(dep_node, "fallback");
 	if (fallback) {
-	    fallback_node = (DagNode *) hashGet(nodes_by_fqn, 
-						(Object *) fallback);
+	    fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
 	    if (!fallback_node) {
-		fallback_node = makeFallbackNode(fallback, nodes_by_fqn);
-		hashAdd(nodes_by_fqn, (Object *) fallback, (Object *) fallback_node);
+		fallback_node = makeFallbackNode(fallback, byfqn, bypqn);
+		hashAdd(byfqn, (Object *) fallback, (Object *) fallback_node);
 		setPush(allnodes, (Object *) fallback_node);
-		/*
-		errmsg = newstr("Fallback node %s not found", 
-				fallback->value);
-		objectFree((Object *) fallback, TRUE);
-		RAISE(TSORT_ERROR, errmsg);*/
 	    }
 	    else {
 		objectFree((Object *) fallback, TRUE);
@@ -832,7 +855,7 @@ addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 	 * that by creating a subnode for dependency sets.
 	 */
 	applies = applicationForDep(depnode);
-	fallback_node = getFallbackNode(depnode, byfqn, allnodes);
+	fallback_node = getFallbackNode(depnode, byfqn, bypqn, allnodes);
 	deps = getDepSet(depnode, byfqn, bypqn);
 
 	if (deps && (deps->type == OBJ_DAGNODE) && 
@@ -1281,29 +1304,29 @@ static redirectActionType redirect_action
     /* Array is indexed by [node->build_type][depnode->build_type]
      *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
-    {{IGNORE, FCOPY}, {ERROR, ERROR},      /* BUILD, DROP */
-     {ERROR, ERROR}, {IGNORE, FCOPY},      /* REBUILD, DIFF */
-     {IGNORE, FCOPY}, {IGNORE, ERROR}},    /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
+     {ERROR, ERROR}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
+     {IGNORE, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {{ERROR, ERROR}, {INVERT, IGNORE},     /* BUILD, DROP */
-     {ERROR, ERROR}, {INVERT, IGNORE},     /* REBUILD, DIFF */
-     {ERROR, IGNORE}, {INVERT, IGNORE}},   /* FALLBACK, ENDFALLBACK */
+    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
+     {ERROR, ERROR}, {INVERT, IGNORE},      /* REBUILD, DIFF */
+     {ERROR, IGNORE}, {INVERT, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
-    {{ERROR, ERROR}, {ERROR, ERROR},       /* BUILD, DROP */
+    {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
      {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
      {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {{ERROR, FCOPY}, {INVERT2MC, ERROR},       /* BUILD, DROP */
+    {{ERROR, FCOPY}, {INVERT2MC, ERROR},    /* BUILD, DROP */
      {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
-     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+     {ERROR, FCOPY}, {IGNORE, ERROR}},      /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
-    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},    /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY} ,    /* REBUILD, DIFF */
+    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY} , /* REBUILD, DIFF */
      {ERROR, ERROR}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
-    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},    /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
-     {ERROR, FCOPY}, {ERROR, ERROR}}       /* FALLBACK, ENDFALLBACK */
+    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},  /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
 };
 
 static void

@@ -1,16 +1,5 @@
-Current issue is a failure in regression_test3
-
-    Work is in progress to make fallbacks automatically generated at
-    need rather than created by default (by the deps handling stuff).
-    Currently deps.c contains hackish code to created the dagnode for 
-    a new fallback.  This must be replaced by an xsl-based mechanism.
-    All unit tests current pass as do regression tests 1 and 2.
-
-    Once fallbacks are automatically creatable, the conditional handling
-    of diffdeps in diff.c:dbObjectDiffOld can be enabled.  This should
-    finally solve the regression_test3 issue.
-
-Rename dbobjectDiffOld in diff.c
+Modify dependency definitions for owner in conversions to use a grant
+from one role to another rather than superuser.  Also depend on this.
 
 deps handling:
     build cylic dependency deps so that the swap phase for backward
@@ -22,7 +11,8 @@ nodeHasAttribute(), ditto for direct use of xmlGetProp()
 
 
 diffs:
-    do the concat thing below in generate for schemata
+    do the concat thing for objects below as in done in generate for
+    schemata
 
     functions (including the concat thing)
     types (including the concat thing)

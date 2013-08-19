@@ -11,7 +11,7 @@
       <print>
         <xsl:text>---- DBOBJECT FALLBACK</xsl:text> <!-- QQQ -->
 	<xsl:value-of
-	    select="concat('&#x0A;&#x0A;alter user ', @to,
+	    select="concat('&#x0A;&#x0A;alter user ', fallback/@role,
 		           ' with superuser;&#x0A;')"/>
       </print>
     </xsl:if>
@@ -20,7 +20,7 @@
       <print>
         <xsl:text>---- DBOBJECT END FALLBACK</xsl:text> <!-- QQQ -->
 	<xsl:value-of
-	    select="concat('&#x0A;&#x0A;alter user ', @to,
+	    select="concat('&#x0A;&#x0A;alter user ', fallback/@role,
 		           ' with nosuperuser;&#x0A;')"/>
       </print>
     </xsl:if>

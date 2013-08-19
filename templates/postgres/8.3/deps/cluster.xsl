@@ -72,6 +72,11 @@
 	<!-- Add fallback object for roles.  This will temprarily grant
 	     superuser privilege to the role -->
 
+	<dbobject type="fallbacks" fqn="fallbacks">
+	  <!-- This is a placeholder, where fallback nodes will be placed. -->
+	  <fallbacks/>
+	</dbobject>
+
 <!-- THIS SHOULD BE PRIVILEGE.CLUSTER.<ROLE>.SUPERUSER RATHER THAN FALLBACK...
 	<xsl:for-each select="//cluster/role">
 	  <dbobject type="fallback" subtype="grant" fallback="yes" 

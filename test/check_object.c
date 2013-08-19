@@ -313,6 +313,21 @@ SIMPLE_TEST(hash2,
 			    "<(1 . 2) (2 . 3)>"),
 	    "Incorrect string representation of hash(2)\n")
 
+SIMPLE_TEST(hash_hash,
+	    objectReadCheck(
+		"<('dbincluster' . <('dbincluster' . 'contents')>)"
+		 "('role' . <('role.cluster.keep' . 99)"
+                            "('role.cluster.keep2' . 98)"
+                            "('role.cluster.marc' . 97)"
+                            "('role.cluster.regress' . 96)"
+                            "('role.cluster.wibble' . 95)>)"
+                 "('tablespace' . <('pg_default' . 'x')"
+                                  "('tbs2' . 'y')"
+                                  "('tbs3' . 'z')"
+		                  "('tbs4' . 'q')>)>",
+		"<('dbincluster' . <('dbincluster' . 'contents')>) ('role' . <('role.cluster.keep' . 99) ('role.cluster.keep2' . 98) ('role.cluster.marc' . 97) ('role.cluster.regress' . 96) ('role.cluster.wibble' . 95)>) ('tablespace' . <('pg_default' . 'x') ('tbs2' . 'y') ('tbs3' . 'z') ('tbs4' . 'q')>)>"),
+	    "Incorrect string representation of hash(2)\n")
+
 SIMPLE_TEST(nil, 
 	    objectReadCheck("(nil () nil)", "(nil nil nil)"),
 	    "Incorrect string representation of list of nils\n")
@@ -1048,6 +1063,47 @@ START_TEST(setqerr)
 }
 END_TEST
 
+static void
+addToHash(Hash *hash, String *key1, String *key2, Object *contents)
+{
+    Hash *subhash;
+    if (subhash = (Hash *) hashGet(hash, ((Object *) key1))) {
+        objectFree((Object *) key1, TRUE);
+    }
+    else {
+        subhash = hashNew(TRUE);
+        hashAdd(hash, (Object *) key1, (Object *) subhash);
+    }
+    hashAdd(subhash, (Object *) key2, contents);
+}
+
+/* Build a hash of hashes the slow way - this is primarily a test that should 
+ * be run in valgrind to ensure memory is not being leaked.
+ */
+START_TEST(hash_hash2)
+{
+    Hash *hash = hashNew(TRUE);
+    String *key1;
+    String *key2;
+    Object *contents;
+    key1 = stringNew("X");
+    key2 = stringNew("a");
+    contents = (Object *) int4New(4);
+    addToHash(hash, key1, key2, contents);
+
+    key1 = stringNew("Y");
+    key2 = stringNew("b");
+    contents = (Object *) int4New(5);
+    addToHash(hash, key1, key2, contents);
+
+    key1 = stringNew("Y");
+    key2 = stringNew("c");
+    contents = (Object *) int4New(6);
+    addToHash(hash, key1, key2, contents);
+    objectFree((Object *) hash, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
 
 Suite *
 objects_suite(void)
@@ -1077,6 +1133,8 @@ objects_suite(void)
     ADD_TEST(tc_core, vector2);
     ADD_TEST(tc_core, hash1);
     ADD_TEST(tc_core, hash2);
+    ADD_TEST(tc_core, hash_hash);
+    ADD_TEST(tc_core, hash_hash2);
     ADD_TEST(tc_core, hasherr);
     ADD_TEST(tc_core, nil);
     ADD_TEST(tc_core, emptyhash);

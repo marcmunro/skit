@@ -274,9 +274,6 @@ regression_test3()
     gendiff scratch/regressdb_dump3b.xml scratch/regressdb_dump3a.xml \
 	scratch/regressdb_diff3b2a.sql
 
-    # Build from file x, just to test the deps
-    genbuild ../x scratch/regressdb_diff3b2a.sql
-
     execdiff scratch/regressdb_diff3b2a.sql
 
     echo "...checking db equivalence to source ..." 1>&2

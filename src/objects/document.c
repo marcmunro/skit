@@ -22,7 +22,7 @@ static String boolean_str = {OBJ_STRING, "boolean"};
 extern char *
 nodestr(xmlNode *node)
 {
-    char tmp[400];
+    char tmp[800];
     char *end = &(tmp[0]);
     char *result;
     xmlAttrPtr attr;
@@ -65,7 +65,7 @@ dumpNode(FILE *output, xmlNode *node)
 {
     xmlDoc *doc = xmlNewDoc((const xmlChar *) "1.0");
     xmlNode *root = xmlNewNode(NULL, BAD_CAST "root");
-    xmlNode *copy = xmlCopyNode(node, 1);
+    xmlNode *copy = xmlCopyNodeList(node);
     xmlDocSetRootElement(doc, root);
     xmlAddChildList(root, copy);
 

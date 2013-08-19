@@ -13,6 +13,7 @@
       <text/>
     </element>
 
+    <dbobject type="fallbacks" key="type"/>
     <xi:include href="skitfile:diff/schemata.xml"/>
   </dbobject>
 

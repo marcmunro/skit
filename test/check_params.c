@@ -1004,7 +1004,7 @@ START_TEST(diffgen2)
     //showMalloc(15382);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(6, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1216,8 +1216,8 @@ params_suite(void)
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
-    ADD_TEST(tc_core, diffgen2);
+    //ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diffgen2);
     //ADD_TEST(tc_core, generate); // for testing deps for diffs
 
     //ADD_TEST(tc_core, gather);

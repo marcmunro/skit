@@ -30,11 +30,14 @@ static String default_str = {OBJ_STRING, "default"};
 static String add_deps_str= {OBJ_STRING, "add_deps"}; 
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
+static String fallback_processor_filename = {OBJ_STRING, 
+					     "deps/process_fallbacks.xsl"};
 static String dbtype_str = {OBJ_STRING, "dbtype"};
 static String global_str = {OBJ_STRING, "global"};
 static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
 static Document *rmdeps_document = NULL;
+static Document *fallback_processor = NULL;
 
 static Cons *docstack = NULL;
 
@@ -96,6 +99,15 @@ docStackNth(int n)
     return nth;
 }
 
+Document *
+getFallbackProcessor()
+{
+    if (!fallback_processor) {
+	fallback_processor = findDoc(&fallback_processor_filename);
+    }
+    return fallback_processor;
+}
+
 static Document *
 getAddDepsDoc()
 {
@@ -114,7 +126,7 @@ getRmDepsDoc()
     return rmdeps_document;
 }
 
-static void
+void
 applyXSL(Document *xslsheet)
 {
     Document *src_doc;
@@ -143,13 +155,18 @@ freeStdTemplates()
 {
     if (adddeps_document) {
 	objectFree((Object *) adddeps_document, TRUE);
+	adddeps_document = NULL;
     }
-    adddeps_document = NULL;
 
     if (rmdeps_document) {
 	objectFree((Object *) rmdeps_document, TRUE);
+	rmdeps_document = NULL;
     }
-    rmdeps_document = NULL;
+
+    if (fallback_processor) {
+	objectFree((Object *) fallback_processor, TRUE);
+	fallback_processor = NULL;
+    }
 }
 
 /* Load an input file into memory and place it on the stack for

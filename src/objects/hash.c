@@ -165,7 +165,7 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 Vector *
 hashVectorAppend(Hash *hash, Object *key, Object *obj)
 {
-    Vector *vec = hashGet(hash, key);
+    Vector *vec = (Vector *) hashGet(hash, key);
     if (vec) {
 	objectFree(key, TRUE);
     }

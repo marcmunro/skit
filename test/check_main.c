@@ -33,6 +33,29 @@ START_TEST(hash_suppressions)
 }
 END_TEST
 
+/* When a lot of hash memory is used, glib does some wacky stuff that
+ * upsets valgrind.  This test uses enough memory to trigger the problem
+ * and allow us to generate suppressions for it.
+ */
+START_TEST(morehash_suppressions)
+{
+    printf("SUPPRESSION: glib_hash_many_suppression g_slice_alloc\n");
+    Hash *hash;
+    Vector *vec = vectorNew(1001);
+    int i;
+    for (i = 0; i < 1000; i++) {
+	hash = hashNew(TRUE);
+	hashAdd(hash, (Object *) stringNewByRef(newstr("AAX%dQZX", i)), 
+		(Object *) stringNewByRef(newstr("*d", 7*i)));
+	hashAdd(hash, (Object *) stringNewByRef(newstr("qAX%dQZX", i)), 
+		(Object *) stringNewByRef(newstr("*d", 12347*i)));
+	vectorPush(vec, (Object *) hash);
+    }
+    objectFree((Object *) vec, TRUE);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 /* This identifies suppressions required when using xmlreader.
  */
 START_TEST(xmlreader_suppressions)
@@ -172,6 +195,7 @@ suppressions_suite(void)
     TCase *tc_s = tcase_create("Suppressions");
     
     ADD_TEST(tc_s, hash_suppressions);
+    ADD_TEST(tc_s, morehash_suppressions);
     ADD_TEST(tc_s, xmlreader_suppressions);
     ADD_TEST(tc_s, relaxng_suppressions);
     //ADD_TEST(tc_s, xml_suppressions);
