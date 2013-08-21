@@ -47,7 +47,7 @@
       </print>
     </xsl:if>
 
-    <xsl:if test="../@action='diffcomplete'">
+    <xsl:if test="../@action='diffprep'">
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
@@ -60,7 +60,17 @@
 		select="concat('&#x0A;alter conversion ', ../@qname,
 			       ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
 	  </xsl:if>
-	  </xsl:for-each>
+	</xsl:for-each>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>

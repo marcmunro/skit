@@ -315,7 +315,7 @@ addNodeDeps(xmlNode *result_parent, xmlNode *node)
 
 /* Copy an object's context record */
 static xmlNode *
-copyContext(xmlNode *node)
+copyContext(xmlNode *node, char *condition)
 {
     xmlNode *this = getElement(node->children);
     xmlNode *result = NULL;
@@ -325,6 +325,10 @@ copyContext(xmlNode *node)
     }
     if (this) {
 	result = xmlCopyNode(this, 1);
+	if (condition) {
+	    (void) xmlNewProp(result, "condition", condition);
+	}
+        
     }
     return result;
 }
@@ -996,17 +1000,17 @@ diffPair(xmlNode *dbobject1, xmlNode *dbobject2,
 
     BEGIN {
 	result = xmlCopyNode(dbobject2, 2);
-	addDepsForDiff(result, dbobject2, TRUE);
 	addDepsForDiff(result, dbobject1, FALSE);
+	addDepsForDiff(result, dbobject2, TRUE);
 
 	if (diffdeps) {
-	    //dNode(diffdeps);
-	    //XXXXXXXXXXXXXXXX UNCOMMENT THE FOLLOWING
 	    xmlAddChildList(result, diffdeps);
-	    //xmlFreeNodeList(diffdeps);
 	}
 
-	context = copyContext(dbobject1);
+	context = copyContext(dbobject1, "backwards");
+	(void) xmlAddChildList(result, context);
+
+	context = copyContext(dbobject2, "forwards");
 	(void) xmlAddChildList(result, context);
 
 	(void) xmlAddChildList(result, difflist);
@@ -1063,7 +1067,7 @@ diffSingle(xmlNode *dbobject, DiffType difftype,
     BEGIN {
 	result = xmlCopyNode(dbobject, 2);
 	addNodeDeps(result, dbobject); 
-	context = copyContext(dbobject);
+	context = copyContext(dbobject, NULL);
 	(void) xmlAddChildList(result, context);
 
 	if (contents = skipToContents(dbobject)) {

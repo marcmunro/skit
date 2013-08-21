@@ -7,8 +7,9 @@
   <dbobject type="conversion" key="fqn">
     <attribute name="owner">
       <dependency-set 
-	  fallback="fallback.privilege.cluster.{old.owner}.superuser">
+	  fallback="fallback.grant.cluster.{old.owner}.{new.owner}">
 	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
       </dependency-set>
     </attribute>
     <element type="comment">

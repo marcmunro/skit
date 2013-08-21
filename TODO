@@ -1,6 +1,11 @@
 Modify dependency definitions for owner in conversions to use a grant
 from one role to another rather than superuser.  Also depend on this.
 
+MAKE FALLBACKS PART OF THE DB INSTEAD OF PART OF THE CLUSTER
+
+CHECK THAT MULTIPLE INSTANCES OF FALLBACKS DO NOT RESULT IN MULTIPLE
+ATTEMPTS TO CREATE THEM.
+
 deps handling:
     build cylic dependency deps so that the swap phase for backward
       breakers is handled solely by redirectDeps and the swap phase can
@@ -8,6 +13,8 @@ deps handling:
 
 Look for uses of nodeAttribute() that can be replaced by
 nodeHasAttribute(), ditto for direct use of xmlGetProp()
+
+Change key for roles in diffs to be name rather than fqn.
 
 
 diffs:

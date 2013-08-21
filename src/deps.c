@@ -779,6 +779,7 @@ domakeFallbackNode(String *fqn, Hash *byfqn)
     root = xmlDocGetRootElement(doc->doc);
     dbobject = xmlCopyNode(getElement(root->children), 1);
     objectFree((Object *) doc, TRUE);
+    //dNode(dbobject);
     return dbobject;
 }
 
@@ -1215,6 +1216,79 @@ promoteRebuilds(Vector *nodes)
     }
 }
 
+static xmlNode *
+findContext(xmlNode *node)
+{
+    xmlNode *this;
+    if (node) {
+	for (this = getElement(node->children); 
+	     this; 
+	     this = getElement(this->next)) 
+	{
+	    if (streq("context", (char *) this->name)) {
+		return this;
+	    }
+	}
+    }
+    return NULL;
+}
+
+static void
+processConditionalContexts(DagNode *node, DagNode *mirror_node)
+{
+    xmlNode *context = findContext(node->dbobject);
+    xmlNode *next;
+    xmlNode *copy;
+    String *condition = nodeAttribute(context, "condition");
+    if (condition) {
+	next = getElement(context->next);
+	if (!streq("context", (char *) next->name)) {
+	    objectFree((Object *) condition, TRUE);
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("Conditional contexts are not paired in %s",
+			 node->fqn->value));
+	}
+
+	copy = xmlCopyNode(node->dbobject, 1);
+	if (streq(condition->value, "backwards")) {
+	    /*  We remove the backwards context from node, and the
+	     *  forwards context from mirror_node. */
+	    xmlUnlinkNode(context);
+	    xmlFreeNode(context);
+	    context = findContext(copy);
+	    next = getElement(context->next);
+	    objectFree((Object *) condition, TRUE);
+	    condition = nodeAttribute(next, "condition");
+	    if (streq(condition->value, "forwards")) {
+		objectFree((Object *) condition, TRUE);
+		/* Remove the forwards node from our copy. */
+		xmlUnlinkNode(next);
+		xmlFreeNode(next);
+
+		/* Add the copy into our source document (so that it can
+		 * be properly freed).  This is safe as we are no longer
+		 * parsing the document at this stage - we are just
+		 * processing a vector of DagNodes. */
+		xmlAddChild(node->dbobject->parent, copy);
+		mirror_node->dbobject = copy;
+	    }
+	    else {
+		objectFree((Object *) condition, TRUE);
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("Failed to find forwards conditional context "
+			     "in %s.", node->fqn->value));
+	    }
+		
+	}
+	else {
+	    objectFree((Object *) condition, TRUE);
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("Not implemented: handling of conditional contexts"
+			 " in unexpected order"));
+	}
+    }
+}
+
 static void
 makeMirrorNode(DagNode *node, DagNodeBuildType build_type, char *prefix)
 {
@@ -1233,6 +1307,7 @@ makeMirrorNode(DagNode *node, DagNodeBuildType build_type, char *prefix)
     }
     mirror->parent = parent;
     node->mirror_node = mirror;
+    processConditionalContexts(node, mirror);
 }
 
 /* For nodes which must be expanded into a pair of nodes, create the
