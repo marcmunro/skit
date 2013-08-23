@@ -219,13 +219,11 @@ buildTypeForDagNode(Node *node)
     String *diff;
     String *action;
     String *tmp;
-    String *fallback;
     String *fqn;
     char *errmsg = NULL;
     DagNodeBuildType build_type = UNSPECIFIED_NODE;
 
-    if (fallback = nodeAttribute(node->node , "fallback")) {
-	objectFree((Object *) fallback, TRUE);
+    if (nodeHasAttribute(node->node , "fallback")) {
 	/* By default, we don't want to do anything for a fallback
  	 * node.  Marking it as an exists node achieves that.  The
  	 * build_type will be modified if anything needs to actually

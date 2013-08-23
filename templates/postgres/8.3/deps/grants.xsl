@@ -118,7 +118,8 @@
 	<xsl:if test="../@schema">
 	  <dependency-set
 	      fallback="{concat('fallback.privilege.cluster.', @from, 
-			        '.superuser')}">
+			        '.superuser')}"
+	      parent="ancestor::dbobject[database]">
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',
 			     ../@schema, '.usage:', @from)}"/>
 	    <dependency pqn="{concat('grant.', ancestor::database/@name, '.',

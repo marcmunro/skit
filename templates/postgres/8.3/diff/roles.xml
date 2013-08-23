@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="role" key="fqn">
+  <dbobject type="role" key="name">
     <!-- The attributes which we wish to compare -->
     <attribute name="max_connections"/>
     <attribute name="password"/>

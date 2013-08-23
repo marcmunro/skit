@@ -357,7 +357,6 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     String *volatile attr2 = nodeAttribute(content2, attr_name->value);
     String *volatile old = NULL;
     String *volatile new = NULL;
-    String *volatile fail = NULL;
     xmlChar *status = NULL;
     xmlNode *diff = NULL;
     
@@ -386,7 +385,7 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     BEGIN {
 	if (status) {
 	    /* There is a difference.  Check if that must cause a failure */
-	    if (fail = nodeAttribute(rule, "fail")) {
+	    if (nodeHasAttribute(rule, "fail")) {
 		String *tmp1 = nodeAttribute(content1, attr_name->value);
 		String *tmp2 = nodeAttribute(content2, attr_name->value);
 		String *msg = nodeAttribute(rule, "msg");
@@ -421,7 +420,6 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 	objectFree((Object *) new, TRUE);
 	objectFree((Object *) attr1, TRUE);
 	objectFree((Object *) attr2, TRUE);
-	objectFree((Object *) fail, TRUE);
     }
     END;
 

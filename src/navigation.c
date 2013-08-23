@@ -81,12 +81,7 @@ nodeEq(DagNode *node1, DagNode *node2)
 static boolean
 requiresNavigation(xmlNode *node)
 {
-    String *visit = nodeAttribute(node, "visit");
-    if (visit) {
-	objectFree((Object *) visit, TRUE);
-	return TRUE;
-    }
-    return FALSE;
+    return nodeHasAttribute(node, "visit");
 }
 
 static DagNode *

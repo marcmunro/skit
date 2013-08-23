@@ -1,16 +1,14 @@
 
-CHECK THAT MULTIPLE INSTANCES OF FALLBACKS DO NOT RESULT IN MULTIPLE
-ATTEMPTS TO CREATE THEM.
+Check handling of all existing ownership diffs
+
 
 deps handling:
     build cylic dependency deps so that the swap phase for backward
       breakers is handled solely by redirectDeps and the swap phase can
       be eliminated.
 
-Look for uses of nodeAttribute() that can be replaced by
-nodeHasAttribute(), ditto for direct use of xmlGetProp()
-
-Change key for roles in diffs to be name rather than fqn.
+CHECK THAT MULTIPLE INSTANCES OF FALLBACKS DO NOT RESULT IN MULTIPLE
+ATTEMPTS TO CREATE THEM.
 
 
 diffs:

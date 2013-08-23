@@ -12,6 +12,7 @@
     <!-- Dependency on schema usage grant to owner, public or self -->
     <dependency-set 
 	fallback="{concat('fallback.privilege.cluster.', $owner, '.superuser')}"
+	parent="ancestor::dbobject[database]"
 	condition="forwards">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
@@ -25,6 +26,7 @@
     </dependency-set>
     <dependency-set 
 	fallback="{concat('fallback.privilege.cluster.', $owner, '.superuser')}"
+	parent="ancestor::dbobject[database]"
 	condition="backwards">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
@@ -47,7 +49,8 @@
     <!-- Dependency on table usage grant to owner, public or self -->
     <dependency-set
 	fallback="{concat('fallback.privilege.cluster.', $owner, 
-		          '.superuser')}">>
+		          '.superuser')}"
+	parent="ancestor::dbobject[database]">
       <dependency pqn="{concat('grant.', 
 		       ancestor::database/@name, '.', 
 		       $schema, '.', $table, '.', $priv, ':public')}"/>
