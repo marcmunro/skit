@@ -783,35 +783,114 @@ domakeFallbackNode(String *fqn, Hash *byfqn)
     return dbobject;
 }
 
+static xmlNode *
+getParentByXPath(xmlNode *node, char *expr)
+{
+    xmlDoc *xmldoc = node->doc;
+    Document *doc = xmldoc->_private;
+    xmlXPathObject *obj;
+    xmlNodeSet *nodeset;
+    xmlNode *result = NULL;
+
+    if (doc) {
+	if (obj = xpathEval(doc, node, expr)) {
+	    nodeset = obj->nodesetval;
+	    if (nodeset && nodeset->nodeNr) {
+		result = nodeset->nodeTab[0];
+	    }
+	}
+	xmlXPathFreeObject(obj);
+    }
+    return result;
+}
+
+
+static xmlNode *
+firstDbobject(xmlNode *node)
+{
+    xmlNode *this = getElement(node->children);
+    xmlNode *result;
+
+    /* Search this level first. */
+    while (this) {
+	if (streq("dbobject", (char *) this->name)) {
+	    return this;
+	}
+	this = getElement(this->next);
+    }
+
+    /* Nothing found, try recursing */
+    this = getElement(node->children);
+    while (this) {
+	if (result = firstDbobject(this)) {
+	    return result;
+	}
+	this = getElement(this->next);
+    }
+    return NULL;
+}
+
+static xmlNode *
+getRootNode(xmlNode *dep_node)
+{
+    xmlNode *root;
+    assert(dep_node->doc, "No document for dep_node");
+    assert(dep_node->doc->children, "No root node dep_node->doc");
+    root = dep_node->doc->children;
+    return firstDbobject(root);
+}
+
+static DagNode *
+parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
+{
+    String *parent = nodeAttribute(dep_node, "parent");
+    xmlNode *node = NULL;
+    DagNode *result;
+    String *fqn;
+
+    if (parent) {
+	node = getParentByXPath(dep_node, parent->value);
+	objectFree((Object *) parent, TRUE);
+    }
+    else {
+	node = getRootNode(dep_node);
+    }
+    if (!node) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("No root node found for fallback"));
+    }
+    fqn = nodeAttribute(node, "fqn");
+    result = (DagNode *) hashGet(byfqn, (Object *) fqn);
+    objectFree((Object *) fqn, TRUE);
+    return result;
+}
+    
 static DagNode *
 makeFallbackNode(String *fqn, Hash *byfqn, Hash *bypqn)
 {
     xmlNode *dbobj;
     DagNode *result;
 
-    DagNode *cluster;
-    xmlNode *cluster_node;
-    static String cluster_str = {OBJ_STRING, "cluster"};
-
     dbobj = domakeFallbackNode(fqn, byfqn);
-    cluster = (DagNode *) hashGet(byfqn, (Object *) &cluster_str);
     result = dagNodeNew(dbobj, EXISTS_NODE);
-    result->parent = cluster; /* This should be the database, but the
-				 cluster is easier to find and it works,
-				 though with added unwanted 
-				 navigation steps */
-    cluster_node = getContentNode(cluster->dbobject);
-    /* Add fallback nodes into cluster xmlnode. */
-    xmlAddChild(cluster_node, dbobj);
     return result;
 }    
-    
+static void
+setParent(DagNode *node, DagNode *parent)
+{
+    xmlNode *xmlnode = node->dbobject;
+    xmlNode *xmlparent = parent->dbobject;
+    node->parent = parent;
+    xmlAddChild(xmlparent, xmlnode);
+}
+
 static DagNode *
 getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 {
     String *fallback = NULL;
     DagNode *fallback_node = NULL;
     char *errmsg;
+    DagNode *parent;
 
     if (isDependencySet(dep_node)) {
 	fallback = nodeAttribute(dep_node, "fallback");
@@ -819,6 +898,8 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 	    fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
 	    if (!fallback_node) {
 		fallback_node = makeFallbackNode(fallback, byfqn, bypqn);
+		parent = parentNodeForFallback(dep_node, byfqn);
+		setParent(fallback_node, parent);
 		hashAdd(byfqn, (Object *) fallback, (Object *) fallback_node);
 		setPush(allnodes, (Object *) fallback_node);
 	    }

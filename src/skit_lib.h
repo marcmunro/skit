@@ -18,6 +18,7 @@
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
 #include <libxslt/xsltInternals.h>
+#include <libxml/xpath.h>
 
 /* Bump this whenever we make any structural changes to the skit xml
  * namespace.
@@ -168,12 +169,13 @@ typedef struct Symbol {
 } Symbol;
 
 typedef struct Document {
-    ObjType           type;
-    xmlDocPtr         doc;
-    xmlTextReaderPtr  reader;
-    xsltStylesheetPtr stylesheet;
-    Hash             *inclusions;
-    Cons             *options;
+    ObjType             type;
+    xmlDocPtr           doc;
+    xmlTextReaderPtr    reader;
+    xsltStylesheetPtr   stylesheet;
+    xmlXPathContextPtr  xpath_context;
+    Hash               *inclusions;
+    Cons               *options;
 } Document;
 
 typedef struct Node {
@@ -602,6 +604,7 @@ extern xmlNode *copyObjectNode(xmlNode *source);
 // document.c
 extern char *nodestr(xmlNode *node);
 extern Node *nodeNew(xmlNode *node);
+extern xmlXPathObject *xpathEval(Document *doc, xmlNode *node, char *expr);
 extern Document *documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader);
 extern void documentFree(Document *doc, boolean free_contents);
 extern char *documentStr(Document *doc);

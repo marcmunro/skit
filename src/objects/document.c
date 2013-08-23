@@ -108,6 +108,24 @@ nodeNew(xmlNode *node)
     return result;
 }
 
+void
+setXPathContext(Document *doc)
+{
+    xmlDocPtr xmldoc = doc->doc;
+    doc->xpath_context = xmlXPathNewContext(xmldoc);
+}
+
+xmlXPathObject *
+xpathEval(Document *doc, xmlNode *node, char *expr)
+{
+    xmlDoc *xmldoc = doc->doc;
+    if (!doc->xpath_context) {
+	setXPathContext(doc);
+    }
+    doc->xpath_context->node = node;
+    return xmlXPathEvalExpression(expr, doc->xpath_context);
+}
+
 Document *
 documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader)
 {
@@ -120,6 +138,7 @@ documentNew(xmlDocPtr xmldoc, xmlTextReaderPtr reader)
     doc->stylesheet = NULL;
     doc->options = NULL;
     doc->inclusions = NULL;
+    doc->xpath_context = NULL;
     if (xmldoc) {
 	//fprintf(stderr, "OLD PRIVATE (1): %p\n", xmldoc->_private);
 	xmldoc->_private = doc;
@@ -664,6 +683,9 @@ documentFree(Document *doc, boolean free_contents)
 	 * have  inferred from behaviour rather than read in the
 	 * documentation, so I could be mistaken. */
 	 
+	if (doc->xpath_context) {
+	    xmlXPathFreeContext(doc->xpath_context);
+	}
 	if (doc->reader) {
 	    xmlFreeTextReader(doc->reader);
 	}
