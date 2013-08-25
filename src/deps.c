@@ -1449,9 +1449,10 @@ createMirrorNodes(Vector *nodes)
 /* UNSURE IS FOR USE DURING DEVELOPMENT ONLY */
 typedef enum {
     FCOPY, FMCOPY, REVCOPYC, IGNORE, INVERT, INVERT2MC, 
-    ERROR, UNSURE, MINVERTC
+    ERROR, UNSURE, MINVERTC, IGNORE2, DEMOTE
 } redirectActionType;
 
+#ifdef original
 static redirectActionType redirect_action
     [EXISTS_NODE][EXISTS_NODE][2] = 
 {
@@ -1481,6 +1482,38 @@ static redirectActionType redirect_action
     {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
      {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},  /* REBUILD, DIFF */
      {ERROR, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
+};
+#endif
+
+static redirectActionType redirect_action
+    [EXISTS_NODE][EXISTS_NODE][2] = 
+{
+    /* Array is indexed by [node->build_type][depnode->build_type]
+     *      [build_direction (backwards before forwards)] */
+    /* BUILD */ 
+    {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
+     {ERROR, ERROR}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    /* DROP */ 
+    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
+     {ERROR, ERROR}, {MINVERTC, IGNORE},      /* REBUILD, DIFF */
+     {ERROR, IGNORE}, {MINVERTC, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    /* REBUILD */ 
+    {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
+    /* DIFF */ 
+    {{ERROR, FCOPY}, {INVERT2MC, ERROR},    /* BUILD, DROP */
+     {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {REVCOPYC, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* FALLBACK */ 
+    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY} , /* REBUILD, DIFF */
+     {ERROR, ERROR}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
+    /* ENDFALLBACK */ 
+    {{IGNORE, FCOPY}, {INVERT2MC, DEMOTE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},  /* REBUILD, DIFF */
+     {IGNORE, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
 };
 
 static void
@@ -1539,6 +1572,9 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
 	}
 	addDepToVector(&dmirror->tmp_fdeps, node);
 	return;
+	/* This is a backawrd dependency that should be inverted for the
+	 * mirrors of both node and dep.
+	 */
     case INVERT2MC:
 	/* This is a backawrd dependency that should be converted into a
 	 * dependency on the mirror.
@@ -1554,6 +1590,14 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
 	fprintf(stderr, "UNSURE: %d\n", direction);
 	dbgSexp(node);
 	dbgSexp(dep);
+    case DEMOTE:
+	/* This should demote node to an exists node, effectively
+	 * de-activating it.   This is because the object it depends on
+	 * is being dropped, so there is no way to perform the required
+	 * action.  Note that this should probably only be done to
+	 * endfallback nodes and not fallback nodes.  */
+	// TODO: code in line with the comment above.
+    case IGNORE2:
     case IGNORE:
 	return;
     }
@@ -1648,6 +1692,20 @@ disableRedundantFallbacks(Vector *nodes, Vector *fallback_nodes)
     objectFree((Object *) removed, FALSE);
 }
 
+static DagNode *
+fallbackFor(DagNode *node)
+{
+    DagNode *fallback;
+    int i;
+    EACH(node->forward_deps, i) {
+	fallback = (DagNode *) ELEM(node->forward_deps, i);
+	if (fallback->dbobject == node->dbobject) {
+	    /* This is the fallback_node for the given endfallback_node */
+	    return fallback;
+	}
+    }
+    return NULL;
+}
 
 static void
 redirectDeps(Vector *nodes)
@@ -1656,6 +1714,7 @@ redirectDeps(Vector *nodes)
     DagNode *node;
     int j;
     DagNode *dep;
+    DagNode *fallback;
     Vector *fallback_nodes = vectorNew(10);
 
     EACH(nodes, i) {
@@ -1681,7 +1740,35 @@ redirectDeps(Vector *nodes)
 	node->forward_deps = node->tmp_fdeps;
 	node->tmp_fdeps = NULL;
 	if (node->mirror_node) {
-	    addDepToVector(&node->forward_deps, node->mirror_node);
+	    if (node->build_type == ENDFALLBACK_NODE) {
+		/* We want fallback nodes to depend on the endfallback
+		 * nodes of their mirrors.  This gives us a DAG like
+		 * this:
+		 *    endfback->fback->dsendfback->dsfallback
+		 * Which means that the fallback cannot be done until
+		 * the drop-side endfallback is done.  If we didn't take
+		 * this special action the DAG would look like this:
+		 *   endfback->fback------+
+		 *           ->dsendfback-+--> dsfback
+		 * which would allow fback and dsendfback to be
+		 * performed in either order, which would be wrong.
+		 */
+		if (node->mirror_node) {
+		    /* node->mirror_node is enddsfallback */
+		    if (fallback = fallbackFor(node)) {
+			addDepToVector(&fallback->forward_deps, 
+				       node->mirror_node);
+		    }
+		    else {
+			RAISE(DEPS_ERROR,
+			      newstr("Failed to find fallback matching %s", 
+				     node->fqn->value));
+		    }
+		}
+	    }
+	    else if (node->build_type != FALLBACK_NODE) {
+		addDepToVector(&node->forward_deps, node->mirror_node);
+	    }
 
 	    if (node->build_type == REBUILD_NODE) {
 		node->build_type = BUILD_NODE;
@@ -1724,6 +1811,7 @@ swapBackwardBreakers(Vector *nodes)
 		dropnode = node->mirror_node;
 	    }
 	    if (dropnode) {
+	    dbgSexp(breaker);
 		assert(dropnode,
 		       "swapBackwardBreakers: no dropnode");
 		assert(dropnode->type == OBJ_DAGNODE,

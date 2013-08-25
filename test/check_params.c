@@ -1004,7 +1004,7 @@ START_TEST(diffgen2)
     //showMalloc(15382);
 
     BEGIN {
-	process_args2(8, args);
+	process_args2(6, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);

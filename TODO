@@ -1,14 +1,52 @@
+Status:
+  tests 1&2 pass, 3 fails with role "lose" does not exist (an
+  endfallback issue).
 
-Check handling of all existing ownership diffs
+First refactoring
+  Eliminate the need for swapBackwardBreakers() by building the deps
+  properly in the first place, and then having redirectBackwardDeps() do
+  the right thing.
 
+Next refactoring
+  Modify processing so that ddl processing is done before dependency
+  resolution.  This will allow dbobject nodes which have no code
+  associated with them (ie most diffprep nodes) to be dropped from the
+  nodelist before dep resolution is done.
 
-deps handling:
-    build cylic dependency deps so that the swap phase for backward
-      breakers is handled solely by redirectDeps and the swap phase can
-      be eliminated.
+  The process would be:
+  - perform ddl processing
+  - remove unused nodes
+  - resolve deps
+    This may add fallback nodes
+  - redirect deps
+  - tsort
+  - add navigation
+  - perform secondary ddl pass
+    This will add code for the fallbacks, contexts, and any
+    standard code (for echoes, comments, vertical spacing, etc
 
-CHECK THAT MULTIPLE INSTANCES OF FALLBACKS DO NOT RESULT IN MULTIPLE
-ATTEMPTS TO CREATE THEM.
+Final planned refactoring is to reolve the following isse with test3 by
+eliminating the drop-side duplication of fallbacks.  Drop-side
+duplication will only be necessary if the parent node of the fallback
+node is a rebuild node.
+
+Issue with test3
+  Issue is that fallbacks depend on granting lose to keep, but lose is
+  deing dropped.  Once lose is dropped, the endfallback (revoking it
+  again) cannot be performed.
+
+  Possible solution - do not mirror the fallback operations: 
+  instead of:
+     fallback<-buildside<-endfallback<-dsfallback<-dropside<-endds
+  have this:
+     fallback<-buildside<-dropside<-endfallback
+  and have endfallback demoted to an exists node if any of its
+  dependencies are dropped.
+
+Implement code for DEMOTE case in deps.c:redirectNodeDeps
+
+Check handling of all existing ownership diffs - are they being handled
+in a manner consistent with conversions?
 
 
 diffs:

@@ -48,7 +48,7 @@
     </xsl:if>
     <xsl:apply-templates/>
 
-    <xsl:if test="../@action='diffcomplete'">
+    <xsl:if test="../@action='diffprep'">
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
@@ -61,8 +61,18 @@
 		select="concat('alter language ', ../@qname,
 			       ' owner to ', skit:dbquote(@new),
 			       ';&#x0A;')"/>
-	  </xsl:if>
+	    </xsl:if>
 	  </xsl:for-each>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<!-- QQQ -->
+	<xsl:value-of 
+	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
+	<xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>

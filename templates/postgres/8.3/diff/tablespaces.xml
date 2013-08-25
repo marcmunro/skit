@@ -5,7 +5,13 @@
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
   <dbobject type="tablespace" key="name">
-    <attribute name="owner"/>
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="fallback.grant.cluster.{old.owner}.{new.owner}">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
     <attribute name="location"/>
     <element type="comment">
       <text/>

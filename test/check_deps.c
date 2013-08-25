@@ -693,7 +693,7 @@ START_TEST(depset_dia_both)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
-		    "drop.role.cluster.x", NULL);  // 16
+		    "drop.role.cluster.x", NULL);  // 15
 
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "role.cluster.x", "drop.table.cluster.ownedbyx", 
@@ -701,15 +701,14 @@ START_TEST(depset_dia_both)
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "role.cluster.x", 
-		    "dsfallback.grant.x.superuser", 
+		    "enddsfallback.grant.x.superuser", 
 		    NULL); // 3, 14
 
 	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    "role.cluster.x", 
-		    "enddsfallback.grant.x.superuser", 
-		    NULL); // 11, 9, 1, 15
+		    NULL); // 11, 9, 1
 
 	requireDeps(nodes_by_fqn, "drop.role.cluster.x", 
 		    "drop.table.cluster.ownedbyx", 
@@ -1175,7 +1174,7 @@ START_TEST(fallback)
 	//showVectorDeps(nodes);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
-		    "dsfallback.grant.x.superuser", 
+		    "enddsfallback.grant.x.superuser", 
 		    "role.cluster.x", NULL);
 	requireDeps(nodes_by_fqn, "table.x.public.x", 
 		    "role.cluster.x","schema.x.public", 
@@ -1187,7 +1186,6 @@ START_TEST(fallback)
 		    "fallback.grant.x.superuser", 
 		     "drop.grant.x.public.x.trigger:x:x", NULL);
 	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
-		    "enddsfallback.grant.x.superuser", 
 		    "fallback.grant.x.superuser",
 		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
 		    "grant.x.public.x.references:x:x", 

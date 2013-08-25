@@ -45,7 +45,7 @@
       </print>
     </xsl:if>
 
-    <xsl:if test="../@action='diffcomplete'">
+    <xsl:if test="../@action='diffprep'">
       <print>
         <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
 	<xsl:value-of select="../@fqn"/>
@@ -59,6 +59,14 @@
             <xsl:text>;&#x0A;</xsl:text>
 	  </xsl:if>
 	  </xsl:for-each>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
+	<xsl:value-of select="../@fqn"/>
+        <xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>
