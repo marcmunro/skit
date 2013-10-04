@@ -1,36 +1,18 @@
 Status:
-  tests 1&2 pass, 3 fails with role "lose" does not exist (an
-  endfallback issue).
+
+Dependency handling in diffs needs to be re-implemented.
+regression_tests 1 and 2 pass, as do all unit tests
 
 First refactoring
-  Eliminate the need for swapBackwardBreakers() by building the deps
-  properly in the first place, and then having redirectBackwardDeps() do
-  the right thing.
+  Aim is to eliminate nodes that have no code prior to performing
+  navigation.  Adding navigation is therefore a secondary xsl transform.
 
-Next refactoring
-  Modify processing so that ddl processing is done before dependency
-  resolution.  This will allow dbobject nodes which have no code
-  associated with them (ie most diffprep nodes) to be dropped from the
-  nodelist before dep resolution is done.
-
-  The process would be:
-  - perform ddl processing
-  - remove unused nodes
-  - resolve deps
-    This may add fallback nodes
-  - redirect deps
-  - tsort
-  - add navigation
-  - perform secondary ddl pass
-    This will add code for the fallbacks, contexts, and any
-    standard code (for echoes, comments, vertical spacing, etc
-
-Final planned refactoring is to reolve the following isse with test3 by
+Final planned refactoring is to resolve the isse with test3 by
 eliminating the drop-side duplication of fallbacks.  Drop-side
 duplication will only be necessary if the parent node of the fallback
 node is a rebuild node.
 
-Issue with test3
+Issue with test3 (use params diffgen2 as test case)
   Issue is that fallbacks depend on granting lose to keep, but lose is
   deing dropped.  Once lose is dropped, the endfallback (revoking it
   again) cannot be performed.

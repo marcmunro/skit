@@ -162,7 +162,7 @@
         x->signal = exception_signal_jgjlksljksch; {
 
 /* Catch a specific numbered exception.  This block may re-raise the
- * exception using RAISE() with no arguments, may raise a different
+ * exception using RAISE() with no arguments or may raise a different
  * exception using RAISE() with arguments.  If RAISE is not called, the
  * exception is considered to have been successfully handled.
  */

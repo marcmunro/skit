@@ -68,7 +68,7 @@
 #define DIFF_STR "diff"
 
 void
-showDeps(DagNode *node)
+showDeps(DagNode *node, boolean show_optional)
 {
     DagNode *sub;
     if (node) {
@@ -76,7 +76,8 @@ showDeps(DagNode *node)
 	printSexp(stderr, "-->", (Object *) node->forward_deps);
 	sub = node->forward_subnodes;
 	while (sub) {
-	    if (sub->forward_deps || sub->fallback_node) {
+	    if (show_optional &&
+		(sub->forward_deps || sub->fallback_node)) {
 		printSexp(stderr, "optional->", (Object *) sub->forward_deps);
 	    }
 	    sub = sub->forward_subnodes;
@@ -84,7 +85,8 @@ showDeps(DagNode *node)
 	printSexp(stderr, "<==", (Object *) node->backward_deps);
 	sub = node->backward_subnodes;
 	while (sub) {
-	    if (sub->backward_deps || sub->fallback_node) {
+	    if (show_optional &&
+		(sub->backward_deps || sub->fallback_node)) {
 		printSexp(stderr, "optional<=", (Object *) sub->backward_deps);
 	    }
 	    sub = sub->backward_subnodes;
@@ -93,13 +95,13 @@ showDeps(DagNode *node)
 }
 
 void
-showVectorDeps(Vector *nodes)
+showVectorDeps(Vector *nodes, boolean show_optional)
 {
     int i;
     DagNode *node;
     EACH (nodes, i) {
         node = (DagNode *) ELEM(nodes, i);
-        showDeps(node);
+        showDeps(node, show_optional);
     }
 }
 
@@ -605,6 +607,10 @@ addDepToVector(Vector **p_vector, DagNode *dep)
 static void
 addDep(DagNode *node, DagNode *dep, DependencyApplication applies)
 {
+    if (!node) {
+	RAISE(GENERAL_ERROR, newstr("addDep: node is NULL"));
+    }
+
     if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
 	addDepToVector(&(node->forward_deps), dep);
     }
@@ -709,7 +715,7 @@ processBreaker(
     Vector *newdeps;
     int i;
 
-    /* Eliminiate from breaker any dependency on thru */
+    /* Eliminate from breaker any dependency on thru */
     deps = forwards? breaker->forward_deps: breaker->backward_deps;
     this = (DagNode *) vectorDel(deps, (Object *) thru);
     if (this != thru) {
@@ -778,6 +784,10 @@ domakeFallbackNode(String *fqn, Hash *byfqn)
     dbobject = xmlCopyNode(getElement(root->children), 1);
     objectFree((Object *) doc, TRUE);
     //dNode(dbobject);
+    if (!dbobject) {
+	RAISE(TSORT_ERROR, newstr("Failed to create fallback for %s.",
+				  fqn->value));
+    }
     return dbobject;
 }
 
@@ -870,7 +880,7 @@ makeFallbackNode(String *fqn, Hash *byfqn, Hash *bypqn)
     DagNode *result;
 
     dbobj = domakeFallbackNode(fqn, byfqn);
-    result = dagNodeNew(dbobj, EXISTS_NODE);
+    result = dagNodeNew(dbobj, INACTIVE_NODE);
     return result;
 }    
 static void
@@ -1005,8 +1015,8 @@ activateFallback(DagNode *fallback, Vector *nodes)
     char *endfqn;
 
     if (fallback->build_type != FALLBACK_NODE) {
-	/* Promote this node from an exists node into a build node, and
-	 * create the matching drop node for it. */
+	/* Promote this node an active fallback node and create the
+	 * matching endfallback node for it. */ 
 	fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
 	endfqn = newstr("end%s", endfallback->fqn->value);
@@ -1034,28 +1044,30 @@ activateFallback(DagNode *fallback, Vector *nodes)
     }
 }
 
-
+static void
+addDepsForFallback(DagNode *node, DagNode *fallback)
+{
+    DagNode *endfallback = fallback->fallback_node;
+    addDep(node, fallback, FORWARDS);
+    addDep(fallback, node, BACKWARDS);
+    addDep(endfallback, node, FORWARDS);
+    addDep(node, endfallback, BACKWARDS);
+}
 
 static void
-addFallbackDeps(DagNode *node, Vector *nodes)
+addFallbackDeps(DagNode *subnode, Vector *nodes, DagNode *fallback)
 {
-    DagNode *fallback;
-    DagNode *endfallback;
-    DagNode *super = node->supernode;
+    DagNode *super = subnode->supernode;
 
-    if (!(fallback = node->fallback_node)) {
+    if (!fallback) {
 	RAISE(TSORT_ERROR, 
 	      newstr("No fallback found for dependency-set in %s",
-		  node->fqn->value));
+		  subnode->fqn->value));
     }
     activateFallback(fallback, nodes);
-    endfallback = fallback->fallback_node;
-
-    addDep(super, fallback, FORWARDS);
-    addDep(fallback, super, BACKWARDS);
-    addDep(endfallback, super, FORWARDS);
-    addDep(super, endfallback, BACKWARDS);
+    addDepsForFallback(super, fallback);
 }
+
 
 static void
 resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes);
@@ -1067,6 +1079,7 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
     int volatile i;
     boolean volatile cyclic_exception;
     DagNode *volatile dep;
+    DagNode *volatile fallback_dep = NULL;
     DagNode *breaker;
     DagNode *cycle_node;
     char *tmpmsg;
@@ -1076,6 +1089,29 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 	EACH(deps, i) {
 	    dep = (DagNode *) ELEM(deps, i);
 	    node->dep_idx = i;
+	    if (dep->build_type == INACTIVE_NODE) {
+		/* Dependencies on inactive fallback nodes are not
+ 		 * considered to be satisfied, so try the next one. */
+		continue;
+	    }
+	    if ((dep->build_type == FALLBACK_NODE) &&
+		(node->build_type != ENDFALLBACK_NODE)) 
+	    {
+		if (node->supernode) {
+		    /* This is an optional dependency on a node that has
+		     * already been promoted to a fallback.  Use this
+		     * in place of the provided fallback. */
+		    fallback_dep = dep;
+		    break;
+		}
+		else {
+		    dbgSexp(node);
+		    RAISE(DEPS_ERROR, 
+			  newstr("Non-optional dependency found "
+				 "on fallback node %s in %s", 
+				 dep->fqn->value, node->fqn->value));
+		}
+	    }
 	    BEGIN {
 		cyclic_exception = FALSE;
 		resolveNode(dep, node, forwards, nodes);
@@ -1162,7 +1198,14 @@ resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 	 * found any that satisfy or we would have already returned to
 	 * the caller.  Now we must invoke our fallback.
 	 */
-	addFallbackDeps(node, nodes);
+	if (fallback_dep) {
+	    /* We found a suitable, already promoted fallback node */
+	    addFallbackDeps(node, nodes, fallback_dep);
+	}
+	else {
+	    /* Use the sepcified fallback node for this dependency set. */
+	    addFallbackDeps(node, nodes, node->fallback_node);
+	}
     }
 }
 
@@ -1248,6 +1291,9 @@ resolveGraphs(Vector *nodes)
 	while (sub = sub->forward_subnodes) {
 	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->forward_deps, sub->dep_idx);
+		if (dep->build_type == INACTIVE_NODE) {
+		    dep->build_type = FALLBACK_NODE;
+		}
 		addDepToVector(&(node->forward_deps), dep);
 	    }
 	}
@@ -1256,6 +1302,9 @@ resolveGraphs(Vector *nodes)
 	while (sub = sub->backward_subnodes) {
 	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->backward_deps, sub->dep_idx);
+		if (dep->build_type == INACTIVE_NODE) {
+		    dep->build_type = FALLBACK_NODE;
+		}
 		addDepToVector(&(node->backward_deps), dep);
 	    }
 	}
@@ -1452,40 +1501,7 @@ typedef enum {
     ERROR, UNSURE, MINVERTC, IGNORE2, DEMOTE
 } redirectActionType;
 
-#ifdef original
-static redirectActionType redirect_action
-    [EXISTS_NODE][EXISTS_NODE][2] = 
-{
-    /* Array is indexed by [node->build_type][depnode->build_type]
-     *      [build_direction (backwards before forwards)] */
-    /* BUILD */ 
-    {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
-     {ERROR, ERROR}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
-     {IGNORE, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
-    /* DROP */ 
-    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
-     {ERROR, ERROR}, {INVERT, IGNORE},      /* REBUILD, DIFF */
-     {ERROR, IGNORE}, {INVERT, ERROR}},     /* FALLBACK, ENDFALLBACK */
-    /* REBUILD */ 
-    {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
-     {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
-    /* DIFF */ 
-    {{ERROR, FCOPY}, {INVERT2MC, ERROR},    /* BUILD, DROP */
-     {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
-     {ERROR, FCOPY}, {IGNORE, ERROR}},      /* FALLBACK, ENDFALLBACK */
-    /* FALLBACK */ 
-    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY} , /* REBUILD, DIFF */
-     {ERROR, ERROR}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
-    /* ENDFALLBACK */ 
-    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},  /* REBUILD, DIFF */
-     {ERROR, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
-};
-#endif
-
-static redirectActionType redirect_action
+static redirectActionType prev_redirect_action
     [EXISTS_NODE][EXISTS_NODE][2] = 
 {
     /* Array is indexed by [node->build_type][depnode->build_type]
@@ -1516,6 +1532,38 @@ static redirectActionType redirect_action
      {IGNORE, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
 };
 
+static redirectActionType redirect_action
+    [EXISTS_NODE][EXISTS_NODE][2] = 
+{
+    /* Array is indexed by [node->build_type][depnode->build_type]
+     *      [build_direction (backwards before forwards)] */
+    /* BUILD */ 
+    {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
+     {ERROR, ERROR}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
+     {IGNORE, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    /* DROP */ 
+    {{ERROR, ERROR}, {INVERT, IGNORE},      /* BUILD, DROP */
+     {ERROR, ERROR}, {MINVERTC, IGNORE},      /* REBUILD, DIFF */
+     {REVCOPYC, IGNORE}, {MINVERTC, ERROR}},     /* FALLBACK, ENDFALLBACK */
+    /* REBUILD */ 
+    {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
+    /* DIFF */ 
+    {{ERROR, FCOPY}, {INVERT2MC, ERROR},    /* BUILD, DROP */
+     {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
+     {ERROR, ERROR}, {ERROR, ERROR}},      /* FALLBACK, ENDFALLBACK */
+    /* FALLBACK */ 
+    {{IGNORE, FCOPY}, {MINVERTC, IGNORE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {ERROR, ERROR} , /* REBUILD, DIFF */
+     {ERROR, ERROR}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
+    /* ENDFALLBACK */ 
+    {{IGNORE, FCOPY}, {INVERT2MC, IGNORE},  /* BUILD, DROP */
+     {REVCOPYC, FCOPY}, {ERROR, ERROR},  /* REBUILD, DIFF */
+     {ERROR, FCOPY}, {ERROR, ERROR}}        /* FALLBACK, ENDFALLBACK */
+};
+
+
 static void
 redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
 {
@@ -1524,6 +1572,8 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
     DagNode *dmirror;
 
     if ((node->build_type == EXISTS_NODE) ||
+	(node->build_type == INACTIVE_NODE) ||
+	(dep->build_type == INACTIVE_NODE) ||
 	(dep->build_type == EXISTS_NODE)) {
 	/* Although most exists nodes should have been removed, we may
 	 * be facing the situtation where a fallback node has been
@@ -1601,8 +1651,8 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
     case IGNORE:
 	return;
     }
-    showDeps(node);
-    showDeps(dep);
+    showDeps(node, TRUE);
+    showDeps(dep, TRUE);
     RAISE(DEPS_ERROR, 
 	  newstr("%s dep from (%s) %s to (%s) %s not handled.", 
 		 direction? "Forward": "Backward",
@@ -1811,7 +1861,6 @@ swapBackwardBreakers(Vector *nodes)
 		dropnode = node->mirror_node;
 	    }
 	    if (dropnode) {
-	    dbgSexp(breaker);
 		assert(dropnode,
 		       "swapBackwardBreakers: no dropnode");
 		assert(dropnode->type == OBJ_DAGNODE,
@@ -1904,11 +1953,11 @@ dagFromDoc(Document *doc)
 
        addDependencies(nodes, byfqn, bypqn);
 //fprintf(stderr, "============INITIAL==============\n");
-//showVectorDeps(nodes);
+//showVectorDeps(nodes, TRUE);
 
        resolveGraphs(nodes);
 //fprintf(stderr, "============RESOLVED==============\n");
-//showVectorDeps(nodes);
+//showVectorDeps(nodes, FALSE);
 
        promoteRebuilds(nodes);
        createMirrorNodes(nodes);

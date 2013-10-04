@@ -11,7 +11,7 @@
     <xsl:param name="owner" select="@owner"/>
     <!-- Dependency on schema usage grant to owner, public or self -->
     <dependency-set 
-	fallback="{concat('fallback.privilege.cluster.', $owner, '.superuser')}"
+	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]"
 	condition="forwards">
       <dependency pqn="{concat('grant.', 
@@ -25,7 +25,7 @@
       </xsl:if>
     </dependency-set>
     <dependency-set 
-	fallback="{concat('fallback.privilege.cluster.', $owner, '.superuser')}"
+	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]"
 	condition="backwards">
       <dependency pqn="{concat('grant.', 
@@ -48,7 +48,7 @@
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
     <dependency-set
-	fallback="{concat('fallback.privilege.cluster.', $owner, 
+	fallback="{concat('privilege.cluster.', $owner, 
 		          '.superuser')}"
 	parent="ancestor::dbobject[database]">
       <dependency pqn="{concat('grant.', 

@@ -850,55 +850,18 @@ START_TEST(generate)
 END_TEST
 
 
-START_TEST(dep2)
-{
-    char *args[] = {"./skit", "-t", "add_deps.xml",
-		    "regress/scratch/regressdb_dump1a.xml", 
-		    "--print", "--full"};
-    Document *doc;
-    char *bt;
-
-    initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(299978);
-
-    BEGIN {
-	process_args2(5, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-}
-END_TEST
-
-
-START_TEST(deps2)
+START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit",
-		    "--adddeps",
-		    "regress/scratch/regressdb_dump1a.xml", 
-		    "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    "regress/scratch/dbdump/cluster.xml", "--debug"};
 
     initTemplatePath(".");
-    registerTestSQL();
-    //showFree(1205);
-    //showMalloc(299978);
+    //showFree(4626);
+    //showMalloc(4283);
 
     BEGIN {
 	process_args2(5, args);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -912,6 +875,7 @@ START_TEST(deps2)
     FREEMEMWITHCHECK;
 }
 END_TEST
+
 
 START_TEST(diff)
 {
@@ -1187,6 +1151,34 @@ START_TEST(deps)
 END_TEST
 
 
+START_TEST(deps2)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    "regress/scratch/dbdump/cluster.xml", 
+		    //"test/data/cond_test.xml", 
+		    "--print", "--full"};
+    Document *doc;
+    char *bt;
+
+    initTemplatePath(".");
+    //showFree(4247);
+    //showMalloc(1909);
+
+    BEGIN {
+	process_args2(5, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
 
 
 
@@ -1217,7 +1209,7 @@ params_suite(void)
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
     ADD_TEST(tc_core, diffgen);
-    ADD_TEST(tc_core, diffgen2);
+    //ADD_TEST(tc_core, diffgen2);
     //ADD_TEST(tc_core, generate); // for testing deps for diffs
 
     //ADD_TEST(tc_core, gather);
@@ -1231,8 +1223,9 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate); // during development of new db objects
-    //ADD_TEST(tc_core, deps2); // Testing deps for columns
+    ADD_TEST(tc_core, generate); // during development of new db objects
+    ADD_TEST(tc_core, generate2); 
+    ADD_TEST(tc_core, deps2);
 
     // ??
     //ADD_TEST(tc_core, scatter);

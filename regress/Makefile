@@ -1,6 +1,6 @@
 #      Makefile for skit test files
 #
-#      Copyright (c) 2009 Marc Munro
+#      Copyright (c) 2009 - 2013 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -39,13 +39,13 @@ PG_DUMP = pg_dump -p $(REGRESSDB_PORT)
 cluster_is_up:
 	@$(PSQL) -d postgres -c "select 'o' || 'k'" 2>&1 | grep ok >/dev/null
 
-# Wait 10 seconds for regression test database to be available
+# Wait up to 10 seconds for regression test database to be available
 wait_for_rdb:
 	@count=10; while [ $${count} -gt 0 ]; do \
 		if $(MAKE) cluster_is_up >/dev/null 2>&1; then exit 0; fi; \
 		count=`expr $${count} - 1`; sleep 1; done; exit 1
 
-# Wait for a process $(PROC) to finish
+# Wait for a process, $(PROC), to finish
 wait_while_proc:
 	@count=10; while [ $${count} -gt 0 ]; do \
 		if ps -fp $(PROC) >/dev/null 2>&1; then true; else exit 0; fi; \

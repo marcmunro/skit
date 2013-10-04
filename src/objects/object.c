@@ -460,7 +460,7 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     DagNode *new = basicDagNode();
     String *fqn;
 
-    assert(node, "dognodeNew: node not provided");
+    assert(node, "dagnodeNew: node not provided");
     fqn = nodeAttribute(node, "fqn");
     new->fqn = fqn;
     new->dbobject = node;
@@ -570,6 +570,7 @@ nameForBuildType(DagNodeBuildType build_type)
     case ARRIVE_NODE: return "arrive";
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
+    case INACTIVE_NODE: return "inactive";
     case REBUILD_NODE: return "rebuild";
     case DIFFPREP_NODE: return "diffprep";
     case DIFFCOMPLETE_NODE: return "diffcomplete";

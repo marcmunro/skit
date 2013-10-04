@@ -227,6 +227,7 @@ typedef enum {
     FALLBACK_NODE,
     ENDFALLBACK_NODE,
     EXISTS_NODE,
+    INACTIVE_NODE,	/* Used for fallback nodes that are inactive. */
     BUILD_AND_DROP_NODE,
     DIFFPREP_NODE,
     DIFFCOMPLETE_NODE,
@@ -669,9 +670,8 @@ extern boolean isDependencies(xmlNode *node);
 extern boolean isDepNode(xmlNode *node);
 extern String *conditionForDep(xmlNode *node);
 
-extern void showDeps(DagNode *node);
-extern void showHashDeps(Hash *nodes);
-extern void showVectorDeps(Vector *nodes);
+extern void showDeps(DagNode *node, boolean show_optional);
+extern void showVectorDeps(Vector *nodes, boolean show_optional);
 
 extern Vector *nodesFromDoc(Document *doc);
 extern Hash *hashByFqn(Vector *vector);

@@ -17,13 +17,11 @@
   <xsl:template match="fallback">
     <root>
       <xsl:variable name="subtype" 
-		    select="substring-before(substring-after(@fqn, '.'), 
-			                     '.')"/> 
+		    select="substring-before(@fqn, '.')"/> 
       <xsl:choose>
 	<xsl:when test="$subtype='privilege'">
 	  <xsl:variable name="names" 
-			select="substring-after(@fqn, 
-				'fallback.privilege.cluster.')"/> 
+			select="substring-after(@fqn, 'privilege.cluster.')"/> 
 	  <xsl:variable name="role" 
 			select="substring-before($names, '.')"/> 
 	  <xsl:variable name="priv" 
