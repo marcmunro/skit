@@ -238,6 +238,26 @@ vectorGet(Vector *vec, Object *key)
     }
 }
 
+void
+vectorInsert(Vector *vec, Object *obj, int idx)
+{
+    Object *deref = dereference(obj);
+    Object *this;
+    int i;
+    if (vec) {
+	assert(((idx >= 0) && (idx <= vec->elems)), 
+	       "vectorInsert: idx out of range");
+
+	vectorPush(vec, NULL);    /* Extend the vector. */
+
+	for (i = vec->elems - 1; i > idx; i--) {
+	    ELEM(vec, i) = ELEM(vec, i - 1);
+	}
+	ELEM(vec, idx) = obj;
+    }
+}
+
+
 Object *
 vectorRemove(Vector *vec, int index)
 {

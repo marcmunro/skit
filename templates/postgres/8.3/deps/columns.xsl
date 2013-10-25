@@ -15,7 +15,8 @@
 			  ancestor::schema/@name, '.', 
 			  ancestor::table/@name, '.', @name)"/>
     <dbobject type="column" fqn="{$column_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@name)}">
+	      qname="{skit:dbquote(@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <dependencies>
 	<dependency fqn="{concat('schema.', 
 		          ancestor::database/@name, '.', 

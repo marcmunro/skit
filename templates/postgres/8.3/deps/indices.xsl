@@ -45,7 +45,8 @@
     <xsl:variable name="index_fqn" 
 		  select="concat('index.', $parent_core, '.', @name)"/>
     <dbobject type="index" fqn="{$index_fqn}" name="{@name}"
-	      qname="{skit:dbquote(../@schema, @name)}">
+	      qname="{skit:dbquote(../@schema, @name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

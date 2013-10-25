@@ -33,8 +33,6 @@
 	    select="concat('&#x0A;-- drop database ', ../@qname, ';&#x0A;')"/>
       </print>
     </xsl:if>
-
-    <xsl:apply-templates/>
   </xsl:template>
 
   <xsl:template match="dbobject[@type='database']/database">
@@ -112,27 +110,6 @@
         <xsl:text>DBEOF&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
-
-    <xsl:if test="../@action='arrive'">
-      <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('#### DBOBJECT ARRIVE ', ../@fqn, '&#x0A;')"/> 
-        <xsl:value-of 
-	    select="concat('&#x0A;psql -d ', ../@name,
-		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
-			   'set standard_conforming_strings = off;&#x0A;',
-			   'set escape_string_warning = off;&#x0A;')"/>
-      </print>
-    </xsl:if>	
-
-    <xsl:if test="../@action='depart'">
-      <print>
-        <xsl:text>DBEOF&#x0A;&#x0A;</xsl:text>
-      </print>
-    </xsl:if>	
-
-    <xsl:apply-templates/>
   </xsl:template>
 </xsl:stylesheet>
 

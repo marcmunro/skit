@@ -14,8 +14,8 @@
 			  ancestor::database/@name, '.', 
 			  ancestor::schema/@name, '.', @name)"/>
     <dbobject type="sequence" fqn="{$sequence_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@schema,@name)}">
-
+	      qname="{skit:dbquote(@schema,@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

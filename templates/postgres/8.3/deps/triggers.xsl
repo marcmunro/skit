@@ -13,7 +13,8 @@
 		  select="concat('trigger.', $parent_core, '.', @name)"/>
     <dbobject type="trigger" fqn="{$trigger_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@name)}"
-	      table_qname="{skit:dbquote(../@schema, ../@name)}">
+	      table_qname="{skit:dbquote(../@schema, ../@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@function">
 	<xsl:variable name="schema_name" select="@schema"/>
 	<xsl:variable name="table_name" select="@table"/>

@@ -3,11 +3,7 @@ Status:
 Dependency handling in diffs needs to be re-implemented.
 regression_tests 1 and 2 pass, as do all unit tests
 
-First refactoring
-  Aim is to eliminate nodes that have no code prior to performing
-  navigation.  Adding navigation is therefore a secondary xsl transform.
-
-Final planned refactoring is to resolve the isse with test3 by
+Next planned refactoring is to resolve the isse with test3 by
 eliminating the drop-side duplication of fallbacks.  Drop-side
 duplication will only be necessary if the parent node of the fallback
 node is a rebuild node.
@@ -26,6 +22,10 @@ Issue with test3 (use params diffgen2 as test case)
   dependencies are dropped.
 
 Implement code for DEMOTE case in deps.c:redirectNodeDeps
+
+SIMPLE TODOS:
+   Remove nav code from ddl/cluster.xsl
+
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?

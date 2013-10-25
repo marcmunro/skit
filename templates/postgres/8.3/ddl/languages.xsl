@@ -41,12 +41,11 @@
 	<xsl:if test="../@name = 'plpgsql'">
 	  <xsl:value-of 
 	      select="concat('&#x0A;drop function plpgsql_validator(oid);',
-		      '&#x0A;&#x0A;',
+		      '&#x0A;',
 		      'drop function plpgsql_call_handler();&#x0A;')"/>
 	</xsl:if>
       </print>
     </xsl:if>
-    <xsl:apply-templates/>
 
     <xsl:if test="../@action='diffprep'">
       <print>

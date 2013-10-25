@@ -21,7 +21,8 @@
     <xsl:variable name="grantor" select="@from"/>
     <dbobject type="grant" subtype="role" name="{concat(@priv, ':', @to)}"
 	      pqn="{concat('grant.', $grant_name)}"
-	      fqn="{concat('grant.', $grant_name, ':', @from)}">
+	      fqn="{concat('grant.', $grant_name, ':', @from)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
 
       <context name="owner" value="{@from}" 
 	       default="{//cluster/@username}"/>	

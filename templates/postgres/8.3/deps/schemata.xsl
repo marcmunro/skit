@@ -12,7 +12,7 @@
     <xsl:variable name="tbs_fqn" select="concat('schema.', 
 					  $parent_core, '.', @name)"/>
     <dbobject type="schema" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{$tbs_fqn}">
+	      fqn="{$tbs_fqn}" parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner != 'public'">
 	<dependencies>
 	  <dependency fqn="{concat('database.', $parent_core)}"/>

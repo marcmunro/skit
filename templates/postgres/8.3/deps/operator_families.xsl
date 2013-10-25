@@ -15,7 +15,8 @@
 			  @schema, '.', @name, 
 			  '(', @method, ')')"/>
     <dbobject type="operator_family" fqn="{$operator_family_fqn}"
-	      name="{@name}" qname="{skit:dbquote(@schema,@name)}">
+	      name="{@name}" qname="{skit:dbquote(@schema,@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	
@@ -51,7 +52,8 @@
 				     '(', @method, ')')"/>
 	<dbobject type="comment" fqn="{$comment_fqn}"
 	          name="{@name}" qname="{skit:dbquote(@schema,@name)}"
-		  nolist="true" method="{@method}">
+		  nolist="true" method="{@method}"
+		  parent="{concat(name(..), '.', $parent_core)}">
 	  <dependencies>
 	    <dependency fqn="{concat('schema.', $parent_core)}"/>
 	    <dependency fqn="{concat('operator_class.', $parent_core,

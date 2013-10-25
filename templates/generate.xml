@@ -67,14 +67,18 @@
   <!-- If neither build or drop are specified, then we do a build -->
   <skit:exec expr="(setq build (or build (not (or build drop))))"/>
 
-  <skit:xslproc stylesheet="ddl.xsl">
+  <skit:xslproc stylesheet="navigation.xsl">
     <dump>
       <skit:attr name="dbtype" expr="dbtype"/>
       <skit:attr name="dbname" expr="dbname"/>
       <skit:attr name="user" expr="username"/> 
       <skit:attr name="time" expr="(current-timestamp)"/>
       <printable/>
-      <skit:gensort input="pop"/>
+      <skit:add_navigation>
+	<skit:xslproc stylesheet="ddl.xsl">
+	  <skit:tsort input="pop"/>
+	</skit:xslproc>
+      </skit:add_navigation>
     </dump>	
   </skit:xslproc>
 

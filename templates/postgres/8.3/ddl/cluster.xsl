@@ -13,7 +13,7 @@
     -->
 
   <xsl:template match="dbobject/cluster">
-    <xsl:if test="../@action='build' or ../@action='arrive'">
+    <xsl:if test="../@action='build'">
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
@@ -24,7 +24,7 @@
       </print>
     </xsl:if>	
 
-    <xsl:if test="../@action='depart' or ../@action='drop'">
+    <xsl:if test="../@action='depart'">
       <print>&#x0A;CLUSTEREOF&#x0A;&#x0A;</print>
     </xsl:if>	
   </xsl:template>

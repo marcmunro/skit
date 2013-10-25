@@ -13,7 +13,8 @@
 					  $parent_core, '.', @name)"/>
     <dbobject type="domain" name="{@name}" 
 	      qname="{skit:dbquote(@schema, @name)}"
-	      fqn="{$domain_fqn}">
+	      fqn="{$domain_fqn}" 
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	
@@ -67,7 +68,8 @@
 					    $parent_core, '.', @name)"/>
     <dbobject type="type" name="{@name}"
 	      fqn="{$type_fqn}"
-	      qname="{skit:dbquote(@schema, @name)}">
+	      qname="{skit:dbquote(@schema, @name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

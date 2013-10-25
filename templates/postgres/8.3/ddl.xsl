@@ -17,6 +17,10 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- Prevent column objects, which themselves may contain comments, 
+       from confusing the comment handling code. -->
+  <xsl:template match="column"/>
+
   <!-- Don't do anything with text nodes matched by calls to
        apply-templates -->
   <xsl:template match="text()"/>
@@ -24,7 +28,6 @@
   <!-- Template for dealing with comments.  This is invoked simply by
        using xsl:apply-templates from within the template for the 
        current dbobject -->
-  
   <xsl:template name="comment">
     <xsl:param name="objnode"/>
     <xsl:param name="text"/>
@@ -53,13 +56,13 @@
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="concat(' is', $text, ';&#x0A;')"/>
+    <xsl:value-of select="concat(' is ', $text, ';&#x0A;')"/>
   </xsl:template>
 
   <xsl:template match="comment">
     <xsl:call-template name="comment">
       <xsl:with-param name="objnode" select=".."/>
-      <xsl:with-param name="text" select="text()"/>
+      <xsl:with-param name="text" select="./text()"/>
     </xsl:call-template>
   </xsl:template>
 

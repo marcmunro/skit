@@ -172,7 +172,7 @@ check_build_order_or(Vector *results, ...)
     }
 }
 
-START_TEST(check_gensort)
+START_TEST(check_tsort)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
@@ -194,7 +194,7 @@ START_TEST(check_gensort)
 	
 	doc = getDoc("test/data/gensource1.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.cluster.skittest' "
@@ -246,14 +246,14 @@ START_TEST(check_gensort)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
 
-START_TEST(check_gensort2)
+START_TEST(check_tsort2)
 {
-    /* check_gensort test but using smart version of tsort */
+    /* check_tsort test but using smart version of tsort */
 
     Document *doc;
     Vector *results;
@@ -271,7 +271,7 @@ START_TEST(check_gensort2)
     skfree(tmp);
 
     doc = getDoc("test/data/gensource1.xml");
-    results = gensort(doc);
+    results = tsort(doc);
     //printSexp(stderr, "RESULTS: ", (Object *) results);
 
     check_build_order(results, "('drop.database.cluster.skittest' "
@@ -339,7 +339,7 @@ START_TEST(navigation)
 
     src_doc = getDoc("test/data/gensource1.xml");
     simple_sort = symbolNew("simple-sort");    
-    sorted = gensort(src_doc);
+    sorted = tsort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -380,7 +380,7 @@ START_TEST(navigation2)
     skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
-    sorted = gensort(src_doc);
+    sorted = tsort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
     root = xmlNewNode(NULL, BAD_CAST "root");
@@ -399,7 +399,7 @@ START_TEST(navigation2)
 END_TEST
 
 
-START_TEST(check_cyclic_gensort)
+START_TEST(check_cyclic_tsort)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
@@ -420,7 +420,7 @@ START_TEST(check_cyclic_gensort)
 	
 	doc = getDoc("test/data/gensource2.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	results = tsort(doc);
 	//dbgSexp(doc);
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
@@ -476,13 +476,13 @@ START_TEST(check_cyclic_gensort)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
 
-/* As check_cyclic_gensort but using smart sort */
-START_TEST(check_cyclic_gensort2)
+/* As check_cyclic_tsort but using smart sort */
+START_TEST(check_cyclic_tsort2)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
@@ -502,7 +502,7 @@ START_TEST(check_cyclic_gensort2)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
-	results = gensort(doc);
+	results = tsort(doc);
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
@@ -557,7 +557,7 @@ START_TEST(check_cyclic_gensort2)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -584,7 +584,7 @@ START_TEST(check_cyclic_exception)
 	
 	doc = getDoc("test/data/gensource3.xml");
 	//dbgSexp(doc);
-	results = gensort(doc);
+	results = tsort(doc);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -625,7 +625,7 @@ START_TEST(diff)
 	//showMalloc(981);
 	doc = getDoc("test/data/gensource_diff.xml");
 	simple_sort = symbolNew("simple-sort");    
-	results = gensort(doc);
+	results = tsort(doc);
 	printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -644,7 +644,7 @@ START_TEST(diff)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -663,7 +663,7 @@ START_TEST(diff2)
 	initTemplatePath(".");
 	//showMalloc(1104);
 	doc = getDoc("test/data/gensource_diff.xml");
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
@@ -687,7 +687,7 @@ START_TEST(diff2)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -716,7 +716,7 @@ START_TEST(depset)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -735,7 +735,7 @@ START_TEST(depset)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -761,7 +761,7 @@ START_TEST(depset2)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -780,7 +780,7 @@ START_TEST(depset2)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -809,7 +809,7 @@ START_TEST(depset_rebuild)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -828,7 +828,7 @@ START_TEST(depset_rebuild)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -853,7 +853,7 @@ START_TEST(fallback)
 	objectFree(ignore, TRUE);
 	skfree(tmp);
 
-	results = gensort(doc);
+	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
@@ -872,7 +872,7 @@ START_TEST(fallback)
 
     FREEMEMWITHCHECK;
     if (failed) {
-	fail("gensort fails with exception");
+	fail("tsort fails with exception");
     }
 }
 END_TEST
@@ -886,13 +886,13 @@ tsort_suite(void)
 
     /* The tests with a 2 suffix use smart_tsort rather than standard
      * tsort */
-    ADD_TEST(tc_core, check_gensort);
-    ADD_TEST(tc_core, check_gensort2);
+    ADD_TEST(tc_core, check_tsort);
+    ADD_TEST(tc_core, check_tsort2);
     ADD_TEST(tc_core, navigation);
     ADD_TEST(tc_core, navigation2);
     // Add these tests back when a new deps and tsort algorithm is created
-    ADD_TEST(tc_core, check_cyclic_gensort);
-    ADD_TEST(tc_core, check_cyclic_gensort2);
+    ADD_TEST(tc_core, check_cyclic_tsort);
+    ADD_TEST(tc_core, check_cyclic_tsort2);
     ADD_TEST(tc_core, check_cyclic_exception);
 
     //ADD_TEST(tc_core, diff);

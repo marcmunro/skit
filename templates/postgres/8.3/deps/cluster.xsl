@@ -35,7 +35,7 @@
     <xsl:variable name="fqn" select="concat('dbincluster.cluster.', 
 				     @name)"/>
     <dbobject type="dbincluster" name="{@name}" 
-	      qname="{skit:dbquote(@name)}" fqn="{$fqn}">
+	      qname="{skit:dbquote(@name)}" fqn="{$fqn}" parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>
 	<xsl:if test="@tablespace">

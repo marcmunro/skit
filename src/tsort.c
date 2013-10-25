@@ -119,7 +119,7 @@ simple_tsort(Vector *nodes)
 /* Do the sort. 
 */
 Vector *
-gensort(Document *doc)
+tsort(Document *doc)
 {
     Vector *volatile nodes = NULL;
     Vector *results = NULL;

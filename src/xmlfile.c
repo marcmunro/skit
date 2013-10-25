@@ -882,16 +882,20 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
+/* Note that the debug attribute to skit:xslproc may have the values
+ * "before" or "after" and will print the source document and result
+ * documents respectively.
+ */
 static xmlNode *
 execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile stylesheet_name = 
 	nodeAttribute(template_node, "stylesheet");
     String *volatile input = nodeAttribute(template_node, "input");
+    String *volatile debug = nodeAttribute(template_node, "debug");
     Document *volatile stylesheet = NULL;
     Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
-    Object *debug = symbolGetValue("debug");
     xmlNode *scratch;
     xmlNode *result;
     xmlNode *root_node;
@@ -916,11 +920,13 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docForNode(root_node);
 	}
 
-	if (debug) {
-	    printSexp(stderr, "", (Object *) source_doc);
+	if (debug && streq(debug->value, "before")) {
+	    dbgSexp(source_doc);
 	}
-
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
+	if (debug && streq(debug->value, "after")) {
+	    dbgSexp(result_doc);
+	}
 	if (!result_doc) {
 	       RAISE(XML_PROCESSING_ERROR,
 	      newstr("Failed to process stylesheet: %s", 
@@ -929,6 +935,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     EXCEPTION(ex);
     FINALLY {
+	objectFree((Object *) debug, TRUE);
 	objectFree((Object *) source_doc, TRUE);
 	objectFree((Object *) stylesheet, TRUE);
 	objectFree((Object *) stylesheet_name, TRUE);
@@ -937,6 +944,9 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     END;
 
     scratch = xmlDocGetRootElement(result_doc->doc);
+    /* The following causes a small memory leak.  I am assuming for now
+     * that the problem arises from libxml issues with namespaces but
+     * there is not much evidence for this. */
     result = xmlCopyNode(scratch, 1);  // Adding this seems to make it
 				       // safe.  WTF?
     //xmlUnlinkNode(result);           // This should be enough but is not!
@@ -1083,8 +1093,9 @@ extractExistsNodes(Vector *nodes)
 }
 
 
+// TODO: Deprecate the old docFromVector code
 void
-docFromVector(xmlNode *root_node, Vector *sorted_nodes)
+docFromVectorOld(xmlNode *root_node, Vector *sorted_nodes)
 {
     DagNode *nav_from = NULL;
     DagNode *nav_to;
@@ -1109,7 +1120,7 @@ docFromVector(xmlNode *root_node, Vector *sorted_nodes)
     objectFree((Object *) exists_nodes, TRUE);
 }
 
-
+// TODO: Deprecate the old gensort code
 static xmlNode *
 execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1125,7 +1136,53 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	if (input && (streq(input->value, "pop"))) {
 	    source_doc = docStackPop();
 	}
-	sorted = gensort(source_doc);
+	sorted = tsort(source_doc);
+	xmldoc = xmlNewDoc(BAD_CAST "1.0");
+	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
+	xmlDocSetRootElement(xmldoc, root);
+	docFromVectorOld(root, sorted);
+	result_doc = documentNew(xmldoc, NULL);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) sorted, TRUE);
+	objectFree((Object *) input, TRUE);
+	objectFree((Object *) source_doc, TRUE);
+    }
+    END;
+    return root;
+}
+
+void
+docFromVector(xmlNode *root_node, Vector *sorted_nodes)
+{
+    DagNode *node;
+    xmlNode *copy;
+    int i;
+    
+    EACH(sorted_nodes, i) {
+	node = (DagNode *) ELEM(sorted_nodes, i);
+	copy = copyObjectNode(node->dbobject);
+	addActionNode(root_node, copy, actionName(node));
+    }
+}
+
+static xmlNode *
+execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *volatile input = nodeAttribute(template_node, "input");
+    Document *volatile source_doc = NULL;
+    Vector *volatile sorted = NULL;
+    Document *result_doc = NULL;
+    Hash *dagnodes = NULL;
+    xmlNode *root;
+    xmlDocPtr xmldoc;
+
+    BEGIN {
+	if (input && (streq(input->value, "pop"))) {
+	    source_doc = docStackPop();
+	}
+	sorted = tsort(source_doc);
 	xmldoc = xmlNewDoc(BAD_CAST "1.0");
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
@@ -1140,6 +1197,84 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     END;
     return root;
+}
+
+/* Find a dbobject node by doing a depth first traversal of nodes. */
+static xmlNode *
+findDbobject(xmlNode *node)
+{
+    xmlNode *this = getElement(node);
+    xmlNode *kid;
+
+    while (this) {
+	if (streq(this->name, "dbobject")) {
+	    return this;
+	}
+	if (kid = findDbobject(this->children)) {
+	    return kid;
+	}
+	this = getElement(this->next);
+    }
+    return NULL;
+}
+
+/* Create a vector of dbobject nodes from a sorted document, removing
+ * the sorted nodes from the source document.
+ */
+Vector *
+vectorFromDoc(xmlNode *parent)
+{
+    xmlNode *dbobject;
+    Vector *volatile vec = vectorNew(100);
+    Node *object_node;
+    int i;
+
+    dbobject = findDbobject(parent);
+
+    BEGIN {
+	/* First pass, add each dbobject into the results vector */
+	while (dbobject) {
+	    object_node = nodeNew(dbobject);
+	    vectorPush(vec, (Object *) object_node);
+	    dbobject = findDbobject(dbobject->next);
+	}
+	
+	/* Second pass, remove each dbobject from the doc. */
+	EACH(vec, i) {
+	    object_node = (Node *) ELEM(vec, i);
+	    xmlUnlinkNode(object_node->node);
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) vec, TRUE);
+    }
+    END;
+
+    return vec;
+}
+
+/* Add navigation nodes to a document containing sorted, unnested
+ * dbobject nodes. */
+static xmlNode *
+execAddNavigation(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    Symbol *ignore_contexts = symbolGet("ignore-contexts");
+    Vector *volatile nodes;
+    Node *this;
+    int i;
+    (void) processRemaining(template_node->children, parent_node, depth);
+
+    nodes = vectorFromDoc(parent_node);
+    BEGIN {
+	addNavigationToDoc(parent_node, nodes, ignore_contexts == NULL);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) nodes, TRUE);
+    }
+    END;
+
+    return NULL;
 }
 
 static void
@@ -1995,30 +2130,33 @@ initSkitProcessors()
 {
     if (!skit_processors) {
 	skit_processors = hashNew(TRUE);
-	addProcessor("stylesheet", &stylesheetFn);
-	addProcessor("options", &ignoreFn);  /* Options are processed in
-						a previous partial pass */
+	addProcessor("add_nav", execAddNavigation);
+	addProcessor("add_navigation", execAddNavigation);
 	addProcessor("attribute", &attributeFn);
 	addProcessor("attr", &attributeFn);
-	addProcessor("exec", &execFn);
-	addProcessor("runsql", &execRunsql);
-	addProcessor("inclusion", &execKids);
-	addProcessor("if", &execIf);
-	addProcessor("let", &execLet);
-	addProcessor("var", &execVar);
-	addProcessor("foreach", &execForeach);
-	addProcessor("result", &execResult);
-	addProcessor("exception", &execException);
-	addProcessor("function", &execDeclareFunction);
-	addProcessor("exec_function", &execExecuteFunction);
-	addProcessor("exec_func", &execExecuteFunction);
-	addProcessor("xslproc", &execXSLproc);
-	addProcessor("gensort", &execGensort);
-	addProcessor("text", &textFn);
-	addProcessor("process", &execProcess);
-	addProcessor("scatter", &scatterFn);
-	addProcessor("gather", &gatherFn);
 	addProcessor("diff", &diffFn);
+	addProcessor("exception", &execException);
+	addProcessor("exec", &execFn);
+	addProcessor("exec_func", &execExecuteFunction);
+	addProcessor("exec_function", &execExecuteFunction);
+	addProcessor("foreach", &execForeach);
+	addProcessor("function", &execDeclareFunction);
+	addProcessor("gather", &gatherFn);
+	addProcessor("if", &execIf);
+	addProcessor("inclusion", &execKids);
+	addProcessor("let", &execLet);
+	addProcessor("options", &ignoreFn);  /* Options are processed in
+						a previous partial pass */
+	addProcessor("process", &execProcess);
+	addProcessor("result", &execResult);
+	addProcessor("runsql", &execRunsql);
+	addProcessor("text", &textFn);
+	addProcessor("tsort", &execTsort);
+	addProcessor("scatter", &scatterFn);
+	addProcessor("stylesheet", &stylesheetFn);
+	addProcessor("var", &execVar);
+	addProcessor("xslproc", &execXSLproc);
+	addProcessor("gensort", &execGensort); // DEPRECATE
     }
 }
 

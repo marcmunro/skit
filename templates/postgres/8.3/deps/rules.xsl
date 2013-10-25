@@ -13,8 +13,8 @@
 		  select="concat('rule.', $parent_core, '.', @name)"/>
     <dbobject type="rule" fqn="{$rule_fqn}" name="{@name}"
 	      qname="{skit:dbquote(@name)}"
-	      table_qname="{skit:dbquote(../@schema, ../@name)}">
-
+	      table_qname="{skit:dbquote(../@schema, ../@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

@@ -13,7 +13,7 @@
     <xsl:variable name="tbs_fqn" select="concat('tablespace.', 
 					  $parent_core, '.', @name)"/>
     <dbobject type="tablespace" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{$tbs_fqn}">
+	      fqn="{$tbs_fqn}" parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>
 	<xsl:if test="@owner != 'public'">

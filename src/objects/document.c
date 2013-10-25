@@ -782,7 +782,6 @@ getFirstNode(Document *doc)
 xmlNode *
 getNextNode(xmlNode *node)
 {
-    node = node->next;
     while (node) {
 	if (node->type == XML_ELEMENT_NODE) {
 	    return node; 
@@ -792,42 +791,49 @@ getNextNode(xmlNode *node)
     return NULL;
 }
 
-xmlNode *
-nextPrintableNode(xmlNode *node)
+static void 
+printThis(FILE *fp, xmlNode *node)
 {
-    while (node = getNextNode(node)) {
-	if (streq(node->name, "print")) {
-	    return node;
+    xmlChar *value;
+    xmlNode *kid;
+	
+    if (value = xmlGetProp(node, (xmlChar *) "text")) {
+	fprintf(fp, "%s", value);
+	xmlFree(value);
+    }
+    else {
+	/* No text attribute, so print any text elements instead */
+	kid = node->children;
+	while (kid) {
+	    if (xmlNodeIsText(kid)) {
+		value = xmlNodeGetContent(kid);
+		fprintf(fp, "%s", value);
+		xmlFree(value);
+	    }
+	    kid = kid->next;
 	}
     }
-    return NULL;
+}
+
+static void
+printPrintable(FILE *fp, xmlNode *node)
+{
+    if (node) {
+	do {
+	    if (streq(node->name, "print")) {
+		printThis(fp, node);
+	    }
+	    printPrintable(fp, getNextNode(node->children));
+	} while (node = getNextNode(node->next));
+    }    
 }
 
 void
 documentPrint(FILE *fp, Document *doc)
 {
     xmlNode *node = getFirstNode(doc);
-    xmlNode *kid;
-    xmlChar *value;
 
-    while (node = nextPrintableNode(node)) {
-	if (value = xmlGetProp(node, (xmlChar *) "text")) {
-	    fprintf(fp, "%s", value);
-	    xmlFree(value);
-	}
-	else {
-	    /* No text attribute, so print any text elements instead */
-	    kid = node->children;
-	    while (kid) {
-		if (xmlNodeIsText(kid)) {
-		    value = xmlNodeGetContent(kid);
-		    fprintf(fp, "%s", value);
-		    xmlFree(value);
-		}
-		kid = kid->next;
-	    }
-	}
-    }
+    printPrintable(fp, node);
 }
 
 void
@@ -933,6 +939,10 @@ findDoc(String *filename)
     }
     doc = docFromFile(doc_path);
     objectFree((Object *) doc_path, TRUE);
+    if (!doc) {
+	RAISE(FILEPATH_ERROR, 
+	      newstr("findDoc: failed to open \"%s\"", filename->value));
+    }
     finishDocument(doc);
     return doc;
 }
@@ -956,11 +966,11 @@ docHasDeps(Document *doc)
     }
 
     if (streq(node->name, "printable")) {
-	node = getNextNode(node);
+	node = getNextNode(node->next);
     }
 
     if (node && streq(node->name, "params")) {
-	node = getNextNode(node);
+	node = getNextNode(node->next);
     }
     if (node && streq(node->name, "dbobject")) {
 	return TRUE;

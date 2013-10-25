@@ -106,6 +106,7 @@
 	</xsl:choose>
 
 	<xsl:apply-templates/>
+
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>

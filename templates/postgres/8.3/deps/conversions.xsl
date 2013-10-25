@@ -12,8 +12,8 @@
     <xsl:variable name="conversion_fqn" 
 		  select="concat('conversion.', $parent_core, '.', @name)"/>
     <dbobject type="conversion" fqn="{$conversion_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@schema,@name)}">
-
+	      qname="{skit:dbquote(@schema,@name)}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

@@ -14,7 +14,8 @@
 	      qname="{concat('(', 
 		             skit:dbquote(source/@schema,source/@type),
 			     ' as ', 
-		             skit:dbquote(target/@schema,target/@type), ')')}">
+		             skit:dbquote(target/@schema,target/@type), ')')}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <dependencies>
 	<dependency fqn="{concat('database.', $parent_core)}"/>
 	<!-- source type -->

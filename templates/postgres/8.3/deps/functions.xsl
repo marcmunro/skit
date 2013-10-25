@@ -34,7 +34,8 @@
       <xsl:call-template name="function-qname"/>
     </xsl:variable>
     <dbobject type="function" fqn="{$function_fqn}"
-	      name="{@name}" qname="{$function_qname}">
+	      name="{@name}" qname="{$function_qname}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

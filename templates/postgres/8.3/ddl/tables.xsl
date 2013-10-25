@@ -118,7 +118,7 @@
 	  <xsl:text>;&#x0A;</xsl:text>
 	</xsl:if>
 
-	<xsl:apply-templates/>  <!-- Deal with comments -->
+	<xsl:apply-templates/>
 
 	<xsl:for-each select="column[@is_local='t']/comment">
 	  <xsl:text>&#x0A;comment on column </xsl:text>

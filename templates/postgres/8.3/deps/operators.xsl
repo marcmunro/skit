@@ -24,7 +24,8 @@
 				          arg[@position='left']/@name), ',',
 			     skit:dbquote(arg[@position='right']/@schema,
 				          arg[@position='right']/@name),
-			     ')')}">
+			     ')')}"
+	      parent="{concat(name(..), '.', $parent_core)}">
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 
 		 default="{//cluster/@username}"/>	

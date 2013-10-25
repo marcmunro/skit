@@ -853,12 +853,14 @@ END_TEST
 START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "--drop", 
-		    "regress/scratch/dbdump/cluster.xml", "--debug"};
+    char *args[] = {"./skit", "--generate", "--build", 
+		    "regress/scratch/regressdb_dump1a.xml", // regression_test1
+		    //"regress/scratch/dbdump/cluster.xml", // regression_test2
+		    "--print", "--full"};
 
     initTemplatePath(".");
     //showFree(4626);
-    //showMalloc(4283);
+    //showMalloc(141005);
 
     BEGIN {
 	process_args2(5, args);
@@ -1105,6 +1107,19 @@ START_TEST(list)
 }
 END_TEST
 
+START_TEST(list2)
+{
+    char *stderr;
+    char *stdout;
+    int   signal;
+    boolean contains_expected;
+
+    do_list(NULL);
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
 static int
 do_deps(void *ignore)
 {
@@ -1208,7 +1223,7 @@ params_suite(void)
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diff2);
     //ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, diffgen2);
     //ADD_TEST(tc_core, generate); // for testing deps for diffs
 
@@ -1216,6 +1231,8 @@ params_suite(void)
 
     // Various parameters that must work
     ADD_TEST(tc_core, list);
+    //ADD_TEST(tc_core, list2);  // For debugging list without having 
+                                 // output captured
     ADD_TEST(tc_core, deps);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);

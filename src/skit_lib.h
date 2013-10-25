@@ -327,6 +327,7 @@ typedef struct TokenStr {
 
 
 #define streq(a,b) (strcmp(a,b)==0)
+#define stringeq(a,b) (strcmp((a)->value,(b)->value)==0)
 
 typedef Object *(TraverserFn)(Object *, Object *);
 typedef Object *(HashEachFn)(Cons *, Object *);
@@ -407,6 +408,7 @@ extern String *vectorConcat(Vector *vector);
 extern void vectorAppend(Vector *vector1, Vector *vector2);
 extern Vector *vectorCopy(Vector *vector);
 extern Object *vectorGet(Vector *vec, Object *key);
+extern void vectorInsert(Vector *vec, Object *obj, int idx);
 extern Object *vectorRemove(Vector *vec, int index);
 extern Object *vectorDel(Vector *vec, Object *obj);
 extern void vectorSort(Vector *vec, ComparatorFn *fn);
@@ -631,6 +633,8 @@ extern void printNode(FILE *output, char *label, xmlNode *node);
 extern void pNode(xmlNode *node);
 extern void dumpNode(FILE *output, xmlNode *node);
 extern void dNode(xmlNode *node);
+extern xmlNode *getNextNode(xmlNode *node);
+
 
 // exceptions.c functions are defined in exceptions.h
 
@@ -684,10 +688,12 @@ extern Vector *dagFromDoc(Document *doc);
 
 // tsort.c
 extern Vector *simple_tsort(Vector *nodes);
-extern Vector *gensort(Document *doc);
+extern Vector *tsort(Document *doc);
 
 // navigation.c
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
+extern void addNavigationToDoc(xmlNode *parent, Vector *nodes,
+			       boolean handle_contexts);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

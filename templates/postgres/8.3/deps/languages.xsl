@@ -12,7 +12,7 @@
     <xsl:variable name="tbs_fqn" select="concat('language.', 
 					  $parent_core, '.', @name)"/>
     <dbobject type="language" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{$tbs_fqn}">
+	      fqn="{$tbs_fqn}" parent="{concat(name(..), '.', $parent_core)}">
 <!--
       <xsl:if test="@owner">
 	<context name="owner" value="{@owner}" 

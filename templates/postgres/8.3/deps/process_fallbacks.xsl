@@ -12,7 +12,7 @@
 	dynamically created dependencies (eg, when the owner of an
 	object is changed), this is not part of the normal add_deps
 	styleseheet procesing.   Instead, fallbacks are processed very
-	explicitly from deps.c, as and when they are encountered.
+	explicitly, from deps.c, as and when they are encountered.
   -->
   <xsl:template match="fallback">
     <root>
@@ -27,7 +27,7 @@
 	  <xsl:variable name="priv" 
 			select="substring-after($names, '.')"/>
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
-		    role="{$role}">
+		    role="{$role}" parent="cluster">
 	    <dependencies>
 	      <dependency fqn="{concat('role.cluster.', $role)}"/>
 	    </dependencies>
@@ -44,7 +44,7 @@
 	  <xsl:variable name="from" 
 			select="substring-after($names, '.')"/>
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
-		    from="{$from}" to="{$to}">
+		    from="{$from}" to="{$to}" parent="cluster">
 	    <dependencies>
 	      <dependency fqn="{concat('role.cluster.', $from)}"/>
 	      <dependency fqn="{concat('role.cluster.', $to)}"/>

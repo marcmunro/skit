@@ -11,7 +11,8 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{concat('role.', $role_name)}">
+	      fqn="{concat('role.', $role_name)}"
+	      parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>
       </dependencies>
@@ -39,9 +40,10 @@
 	 which is why they are considered to be dbobjects.  -->
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>
-    <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@name)}"
+    <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@priv)}"
 	      fqn="{concat('privilege.', $priv_name)}"
-	      role_qname="{skit:dbquote(../@name)}">
+	      role_qname="{skit:dbquote(../@name)}"
+	      parent="{concat('role.', $parent_core)}">
       <dependencies>
 	<dependency fqn="{concat('role.', $parent_core)}"/>
       </dependencies>
