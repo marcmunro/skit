@@ -2,7 +2,7 @@
 psql -d postgres -v home=`pwd` <<'CLUSTEREOF'
 create role "regress" with login;
 alter role "regress" password 'md5c2a101703f1e515ef9769f835d6fe78a';
-alter role "regress" valid until 'infinity';
+alter role "regress" valid until '2100-03-04 00:00:00';
 alter role "regress" set client_min_messages = 'notice';
 alter role "regress" with superuser;
 

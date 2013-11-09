@@ -1,35 +1,27 @@
 Status:
 
-Dependency handling in diffs needs to be re-implemented.
-regression_tests 1 and 2 pass, as do all unit tests
+All tests are passing.
 
-Next planned refactoring is to resolve the isse with test3 by
-eliminating the drop-side duplication of fallbacks.  Drop-side
-duplication will only be necessary if the parent node of the fallback
-node is a rebuild node.
+The FBDROP and FBBUILD redirectActionTypes are nasty hacks.  Although
+they *may* be safe they should be replaced with something more elegant.
+What may be needed is a separation of the fallback nodes into
+fallback and drop-side fallback variants.  Each of these would be
+created when resolving the appropriate DAG (forwards or backwards).
 
-Issue with test3 (use params diffgen2 as test case)
-  Issue is that fallbacks depend on granting lose to keep, but lose is
-  deing dropped.  Once lose is dropped, the endfallback (revoking it
-  again) cannot be performed.
+Check that nodes with no code are bing eliminated
 
-  Possible solution - do not mirror the fallback operations: 
-  instead of:
-     fallback<-buildside<-endfallback<-dsfallback<-dropside<-endds
-  have this:
-     fallback<-buildside<-dropside<-endfallback
-  and have endfallback demoted to an exists node if any of its
-  dependencies are dropped.
-
-Implement code for DEMOTE case in deps.c:redirectNodeDeps
-
-SIMPLE TODOS:
-   Remove nav code from ddl/cluster.xsl
-
+Remove any superluous fallbacks
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
 
+Do refactorings identified by TODO in resolveGraphs
+Remove unused redirectActionType values
+
+In generate replace use of feedback template with feedback2.  When done,
+rename feedback2 to feedback.
+
+Check the allowed diffs - are they needed?
 
 diffs:
     do the concat thing for objects below as in done in generate for

@@ -1231,10 +1231,11 @@ doDiff(String *diffrules, boolean swap)
 	else {
 	    readDocs((Document **) &doc2, (Document **) &doc1);
 	}
-	//dbgSexp(doc1);
+	//dbgSexp(doc2);
 	rules = loadDiffRules(diffrules);
 	result = processDiffRoot(xmlDocGetRootElement(doc1->doc), 
 				 xmlDocGetRootElement(doc2->doc), rules);
+	//dNode(result);
     }
     EXCEPTION(ex);
     FINALLY {

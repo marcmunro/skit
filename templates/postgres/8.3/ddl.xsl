@@ -21,6 +21,10 @@
        from confusing the comment handling code. -->
   <xsl:template match="column"/>
 
+  <!-- Ditto for elements (the comment handling could probably use 
+       some refactoring). -->
+  <xsl:template match="element"/>
+
   <!-- Don't do anything with text nodes matched by calls to
        apply-templates -->
   <xsl:template match="text()"/>
@@ -59,13 +63,6 @@
     <xsl:value-of select="concat(' is ', $text, ';&#x0A;')"/>
   </xsl:template>
 
-  <xsl:template match="comment">
-    <xsl:call-template name="comment">
-      <xsl:with-param name="objnode" select=".."/>
-      <xsl:with-param name="text" select="./text()"/>
-    </xsl:call-template>
-  </xsl:template>
-
   <xsl:template name="commentdiff">
     <xsl:for-each select="../element[@type='comment']">
       <xsl:call-template name="comment">
@@ -83,6 +80,14 @@
       </xsl:call-template>
     </xsl:for-each>
   </xsl:template>
+
+  <xsl:template match="comment">
+    <xsl:call-template name="comment">
+      <xsl:with-param name="objnode" select=".."/>
+      <xsl:with-param name="text" select="./text()"/>
+    </xsl:call-template>
+  </xsl:template>
+
 
   <xsl:template name="set_owner">
     <!-- Explicit set session authorization created when ignore-contexts
@@ -130,6 +135,17 @@
 		          ../@qname, '...')"/>
     </xsl:if>
   </xsl:template>
+
+  <xsl:template name="feedback2">
+    <xsl:value-of 
+	select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+    <xsl:if test="skit:eval('echoes') = 't'">
+      <xsl:value-of 
+	  select="concat('&#x0A;\echo ', ../@type, ' ', 
+		          ../@qname, '...')"/>
+    </xsl:if>
+  </xsl:template>
+
 
   <xsl:include href="skitfile:ddl/owner.xsl"/>
   <xsl:include href="skitfile:ddl/cluster.xsl"/>

@@ -37,7 +37,7 @@
 	<xsl:when test="$subtype='grant'">
 	  <xsl:variable name="names" 
 			select="substring-after(@fqn, 
-				'fallback.grant.cluster.')"/> 
+				'grant.cluster.')"/> 
 
 	  <xsl:variable name="to" 
 			select="substring-before($names, '.')"/> 

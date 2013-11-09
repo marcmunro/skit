@@ -699,7 +699,6 @@ doAddNavigation(
 		nav = (Node *) ELEM(departures, i);
 		new = nav->node;
 		xmlSetProp(new, "action", "depart");
-		//xmlFreeNode(new);
 		xmlAddChild(parent, new);
 		nav->node = NULL;
 		nav_from = new;
@@ -711,7 +710,6 @@ doAddNavigation(
 		nav = (Node *) ELEM(arrivals, i);
 		new = nav->node;
 		xmlSetProp(new, "action", "arrive");
-		//xmlFreeNode(new);
 		xmlAddChild(parent, new);
 		nav->node = NULL;
 	    }

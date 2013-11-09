@@ -391,7 +391,7 @@ START_TEST(depset_dag1_build)
 	//dbgSexp(nodes);
 
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
+	//showVectorDeps(nodes, FALSE);
 
 	requireDeps(nodes_by_fqn, "role.cluster.r1", "role.cluster.r3", NULL);
 	requireDeps(nodes_by_fqn, "role.cluster.r2", "role.cluster.r3", NULL);
@@ -576,12 +576,13 @@ START_TEST(depset_dia_build)
 	eval("(setq build t)");
 
 	doc = getDoc("test/data/gensource_fromdia.xml");
+	//dbgSexp(doc);
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
-	requireDeps(nodes_by_fqn, "role.cluster.x", NULL);
+	//showVectorDeps(nodes, FALSE);
+	requireDeps(nodes_by_fqn, "role.cluster.x", "cluster", NULL);
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "role.cluster.x", 
+		    "cluster", "role.cluster.x", 
 		    "fallback.grant.x.superuser", NULL);  // 5, 7
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
@@ -633,7 +634,7 @@ START_TEST(depset_dia_drop)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
+	//showVectorDeps(nodes, FALSE);
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
 		    "table.cluster.ownedbyx", 
 		    "fallback.grant.x.superuser",
@@ -693,10 +694,10 @@ START_TEST(depset_dia_both)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
-		    "drop.role.cluster.x", NULL);  // 15
+		    "cluster", "drop.role.cluster.x", NULL);  // 15
 
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "role.cluster.x", "drop.table.cluster.ownedbyx", 
+		    "cluster", "role.cluster.x", "drop.table.cluster.ownedbyx", 
 		    "fallback.grant.x.superuser", NULL);  // 5, 13, 7
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 

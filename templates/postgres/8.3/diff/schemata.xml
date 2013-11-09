@@ -7,7 +7,7 @@
   <dbobject type="schema" key="name">
     <attribute name="owner">
       <dependency-set 
-	  fallback="fallback.grant.cluster.{old.owner}.{new.owner}"
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
 	  parent="ancestor::dbobject[database]">
 	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
 	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>

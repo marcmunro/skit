@@ -7,7 +7,7 @@
   <dbobject type="tablespace" key="name">
     <attribute name="owner">
       <dependency-set 
-	  fallback="fallback.grant.cluster.{old.owner}.{new.owner}">
+	  fallback="grant.cluster.{old.owner}.{new.owner}">
 	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
 	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
       </dependency-set>

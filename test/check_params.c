@@ -830,7 +830,7 @@ START_TEST(generate)
     char *args[] = {"./skit", "--generate", "x", "--debug"};
 
     initTemplatePath(".");
-    //showFree(4626);
+    //showFree(3549);
     //showMalloc(4283);
 
     BEGIN {
@@ -853,14 +853,15 @@ END_TEST
 START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "--build", 
-		    "regress/scratch/regressdb_dump1a.xml", // regression_test1
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    //"regress/scratch/regressdb_dump1a.xml", // regression_test1
 		    //"regress/scratch/dbdump/cluster.xml", // regression_test2
+		    "x",
 		    "--print", "--full"};
 
     initTemplatePath(".");
     //showFree(4626);
-    //showMalloc(141005);
+    //showMalloc(5884);
 
     BEGIN {
 	process_args2(5, args);
@@ -959,7 +960,7 @@ START_TEST(diffgen2)
 		    //"test/data/diffs_1_b.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
 		    "regress/scratch/regressdb_dump3a.xml", 
-		    "--generate", "--echoes", "--debug"};
+		    "--generate", "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
     Document *doc;
     char *bt;
@@ -967,10 +968,10 @@ START_TEST(diffgen2)
     initTemplatePath(".");
     //registerTestSQL();
     //showFree(1205);
-    //showMalloc(15382);
+    //showMalloc(17900);
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(7, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -1225,7 +1226,6 @@ params_suite(void)
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, diffgen2);
-    //ADD_TEST(tc_core, generate); // for testing deps for diffs
 
     //ADD_TEST(tc_core, gather);
 
@@ -1240,9 +1240,9 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate); // during development of new db objects
-    ADD_TEST(tc_core, generate2); 
-    ADD_TEST(tc_core, deps2);
+    //ADD_TEST(tc_core, generate); // during development of new db objects
+    //ADD_TEST(tc_core, generate2); 
+    //ADD_TEST(tc_core, deps2);
 
     // ??
     //ADD_TEST(tc_core, scatter);

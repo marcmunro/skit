@@ -55,9 +55,14 @@
       <print>
 	<!-- QQQ -->
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	    select="concat('#### DBOBJECT ', ../@fqn, '&#x0A;')"/> 
 
-        <xsl:text>&#x0A;</xsl:text>
+        <xsl:value-of 
+	    select="concat('&#x0A;psql -d ', ../@name,
+		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
+			   'set standard_conforming_strings = off;&#x0A;',
+			   'set escape_string_warning = off;&#x0A;')"/>
+
 	<xsl:for-each select="../attribute[@name='connections']">
 	  <xsl:value-of 
 	      select="concat('alter database ', ../@qname,

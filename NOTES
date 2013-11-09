@@ -1,101 +1,97 @@
-Next tasks:
+Dependency handling of file x (generated from regression_test3)
 
-0) Set up new public git repo
+INITIAL:
 
-1) Refactoring
-Remove use of xnodes. 
-Remove any redundant fields in DagNodes
-Rename DagNode.duplicate to mirror or inverse or something
-Remove old versions of nodesFromDoc, etc
-Rename nodesFromDoc2, etc to eliminate the 2 suffix
-Remove any code/field redundancy
+NODE: <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>
+-->[ 1 <OBJ_DAGNODE (diff) role.cluster.regress>]
+fallback < 2,16 OBJ_DAGNODE (inactive) grant.cluster.keep.regress> for
+  optional->[<OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>]
+<==[ 3 <OBJ_DAGNODE (diff) role.cluster.keep>]
+fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.regress> for
+  optional<=[ 4,8 <OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>]
 
-2) Extension handling
-Add handling for dealing with extensions.  This is a preqrequisite for
-getting skit working with PG 9.1
+NODE: <OBJ_DAGNODE (diff) role.cluster.keep>
+-->nil
+<==nil
 
+NODE: <OBJ_DAGNODE (diff) role.cluster.regress>
+-->nil
+<==nil
 
-3) Add node traversal optimisation to gensort
-We want tsort output to be better cost-optimised.  When we are visiting
-a particular point in the tree, we should do as much as possible at that
-point before departing to other points in the tree.
+NODE: <OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>
+-->[ 5,13 <OBJ_DAGNODE (diff) role.cluster.keep>]
+<==[ 6,10 <OBJ_DAGNODE (diff) role.cluster.keep>]
 
-The algorithm needs to be refined.  There should be a switch to use the
-current non-optimised algorithm.
+NODE: <OBJ_DAGNODE (inactive) grant.cluster.keep.regress>
+-->nil
+<==nil
 
-algorithm:
-
-tsort(remaining_list):
-  buildlist = new empty list
-  cost_node = NULL
-  while (there are elements in remaining_list or candidate_list)
-    append all leaf nodes from remaining_list to candidate_list
-    if candidate_list was lengthened by above operation
-      costsort(cost_node, candidate_list)
-    cost_node = candidate_list.pop()
-    remove cost_node from remaining_list, eliminating deps as we do it
-    append cost_node to buildlist
-
-costsort(node, list):
-  sort list so that similarly located elements are placed next to each
-  other, pretending that node is the zeroth element of list and is not
-  movable.
-
-  If we have this node:
-    a.b
-
-  And this list:
-    a.c  a.b.d  a.b.d.e  a.b.d.f  a.b.d.g   a.c.f  g
-
-  The order should be
-    a.b.d     (this is at a.b so has zero cost)
-    a.b.d.e   (this is at a.b.d so has zero cost)
-    a.b.d.g   (this is at a.b.d so has cost a.b.d.e --> a.b.d)
-    a.c       (this is at a so has cost a.b.d.e --> a.b.d --> a.b  --> a)
-    a.c.f     (this is at a.c so has zero cost)
-    g         (this is at root so has cost a.c.f --> a.c --> a  --> root)
-
-  Only traversal back up the tree has a cost.  Within similar cost items,
-  we should check for similar contexts, and then sort alphabetically.
-
-  The sort algorithm will be as follows:
-  - find set of lowest code nodes from start node
-  - group the set into subsets by contexts (owner name)
-  - sort each subset alphabetically
-
-  NOTE: rather than building a true sort algorithm, it might be better to
-  simply place each new node at the most optimal place in the list as it
-  is removed from remaining_list.
-
-    
-Plan:
-
-a) add option to select old tsort algorithm
-b) create new tsort without costsort
-c) test
-d) add costsort
+NODE: <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>
+-->[<OBJ_DAGNODE (build) role.cluster.lose>]
+fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.lose> for
+  optional->[]
+<==[<OBJ_DAGNODE (diff) role.cluster.keep>]
+fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.lose> for
+  optional<=[]
 
 
-4) get all valgrind tests to pass
+RESOLVED:
 
+NODE: <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>
+-->[ 1 <OBJ_DAGNODE (diff) role.cluster.regress> 
+     2 <OBJ_DAGNODE (fallback) grant.cluster.keep.regress>]
+<==[ 3 <OBJ_DAGNODE (diff) role.cluster.keep> 
+     4 <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser>]
 
-5) Add diff handling
-This is a biggy.
+NODE: <OBJ_DAGNODE (diff) role.cluster.keep>
+-->nil
+<==nil
 
+NODE: <OBJ_DAGNODE (diff) role.cluster.regress>
+-->nil
+<==nil
 
-6) documentation
+NODE: <OBJ_DAGNODE (fallback) privilege.cluster.keep.superuser>
+-->[ 5 <OBJ_DAGNODE (diff) role.cluster.keep>]
+<==[ 6 <OBJ_DAGNODE (diff) role.cluster.keep>	
+     7 <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser> 
+     8 <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv> 
+     9 <OBJ_DAGNODE (drop) conversion.regressdb.schema2.myconv2>]
 
+NODE: <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser>
+-->[10 <OBJ_DAGNODE (diff) role.cluster.keep> 
+    11 <OBJ_DAGNODE (fallback) privilege.cluster.keep.superuser> 
+    12 <OBJ_DAGNODE (drop) conversion.regressdb.schema2.myconv2>]
+<==[13 <OBJ_DAGNODE (diff) role.cluster.keep>]
 
-7) update for the latest versions of postgres
+NODE: <OBJ_DAGNODE (fallback) grant.cluster.keep.regress>
+-->nil
+<==[14 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.regress>]
 
+NODE: <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.regress>
+-->[15 <OBJ_DAGNODE (fallback) grant.cluster.keep.regress> 
+    16 <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>]
+<==nil
 
-8) initial release
+NODE: <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>
+-->[17 <OBJ_DAGNODE (build) role.cluster.lose> 
+    18 <OBJ_DAGNODE (fallback) grant.cluster.keep.lose>]
+<==[19 <OBJ_DAGNODE (diff) role.cluster.keep> 
+    20 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose>]
 
+NODE: <OBJ_DAGNODE (fallback) grant.cluster.keep.lose>
+-->[21 <OBJ_DAGNODE (build) role.cluster.lose> 
+    22 <OBJ_DAGNODE (diff) role.cluster.keep>]
+<==[23 <OBJ_DAGNODE (build) role.cluster.lose> 
+    24 <OBJ_DAGNODE (diff) role.cluster.keep> 
+    25 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose> 
+    26 <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>]
 
-9) implement merge
-
-
-10) implement grep
-
-
+NODE: <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose>
+-->[27 <OBJ_DAGNODE (build) role.cluster.lose> 
+    28 <OBJ_DAGNODE (diff) role.cluster.keep> 
+    29 <OBJ_DAGNODE (fallback) grant.cluster.keep.lose> 
+    30 <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>]
+<==[31 <OBJ_DAGNODE (build) role.cluster.lose> 
+    32 <OBJ_DAGNODE (diff) role.cluster.keep>]
 
