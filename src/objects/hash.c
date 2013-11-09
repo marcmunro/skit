@@ -200,11 +200,11 @@ freeAlist(Cons *cons)
 Hash *
 toHash(Cons *cons)
 {
-    Hash *hash = NULL;
-    Cons *entry;
-    Object *car;
-    Object *cdr;
-    Cons *this = cons;
+    Hash *volatile hash = NULL;
+    Cons *volatile entry;
+    Object *volatile car;
+    Object *volatile cdr;
+    Cons *volatile this = cons;
 
     if (!consIsAlist(cons)) {
 	RAISE(TYPE_MISMATCH, 

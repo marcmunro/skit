@@ -35,7 +35,7 @@ static GHashTable *hash_frees = NULL;
  * For debugging purposes.  Add a call to this from wherever you need 
  * breakpoint and then you can break on it.
  */
-static void
+void
 memdebug(char *label)
 {
     fprintf(stderr, "MEMDEBUG: %s\n", label);

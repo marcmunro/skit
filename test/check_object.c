@@ -979,7 +979,8 @@ END_TEST
 
 START_TEST(hasherr)
 {
-    Object *list = NULL;
+    Object *volatile list = NULL;
+    //showMalloc(384);
 
     BEGIN {
 	list = objectFromStr("<(1 . 2) (2 . (3))>");
@@ -1007,7 +1008,7 @@ END_TEST
 
 START_TEST(listerr)
 {
-    Object *list;
+    Object *volatile list;
     Object *result;
 
     BEGIN {
@@ -1036,7 +1037,7 @@ END_TEST
 
 START_TEST(setqerr)
 {
-    Object *list;
+    Object *volatile list;
     Object *result;
 
     BEGIN {
