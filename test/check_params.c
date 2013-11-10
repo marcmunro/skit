@@ -853,10 +853,9 @@ END_TEST
 START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "--drop", 
+    char *args[] = {"./skit", "--generate", "--build", 
 		    //"regress/scratch/regressdb_dump1a.xml", // regression_test1
-		    //"regress/scratch/dbdump/cluster.xml", // regression_test2
-		    "x",
+		    "regress/scratch/dbdump/cluster.xml", // regression_test2
 		    "--print", "--full"};
 
     initTemplatePath(".");

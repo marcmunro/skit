@@ -9,10 +9,6 @@
   <xsl:template match="dbobject/tablespace">
     <xsl:if test="../@action='build'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-
 	<xsl:call-template name="feedback"/>
         <xsl:text>&#x0A;</xsl:text>
 
@@ -36,10 +32,6 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-
 	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('&#x0A;\echo Not dropping tablespace ', ../@name,
@@ -58,10 +50,6 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('---- DBOBJECT DIFF ', ../@fqn, '&#x0A;')"/> 
-
 	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">

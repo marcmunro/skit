@@ -9,7 +9,7 @@
   <xsl:template match="dbobject[@type='role']/role">
     <xsl:if test="../@action='build'">
       <print>
-	<xsl:call-template name="feedback2"/>
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('&#x0A;create role ', ../@qname)"/>
 	<xsl:choose>
@@ -73,7 +73,7 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-	<xsl:call-template name="feedback2"/>
+	<xsl:call-template name="feedback"/>
         <xsl:value-of 
 	    select="concat('\echo Not dropping role ', ../@name,
 			   ' as it&#x0A;',
@@ -86,7 +86,7 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-	<xsl:call-template name="feedback2"/>
+	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;</xsl:text>
 
 	<xsl:for-each select="../element/config">

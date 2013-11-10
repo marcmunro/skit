@@ -129,20 +129,12 @@
   </xsl:template>
 
   <xsl:template name="feedback">
-    <xsl:if test="skit:eval('echoes') = 't'">
-      <xsl:value-of 
-	  select="concat('&#x0A;\echo ', ../@type, ' ', 
-		          ../@qname, '...')"/>
-    </xsl:if>
-  </xsl:template>
-
-  <xsl:template name="feedback2">
     <xsl:value-of 
 	select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
     <xsl:if test="skit:eval('echoes') = 't'">
       <xsl:value-of 
 	  select="concat('&#x0A;\echo ', ../@type, ' ', 
-		          ../@qname, '...')"/>
+		          ../@qname, '...&#x0A;')"/>
     </xsl:if>
   </xsl:template>
 
