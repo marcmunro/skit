@@ -23,7 +23,6 @@
 static DagNodeBuildType
 buildTypeFromName(char *name)
 {
-    char *prefix;
     char *dotpos;
     int prefix_len;
 
@@ -65,7 +64,6 @@ static boolean
 build_name_eq(DagNode *node, char *looking_for)
 {
     DagNodeBuildType type;
-    char *substr;
 
     if (streq(node->fqn->value, looking_for)) {
 	return TRUE;
@@ -178,8 +176,6 @@ START_TEST(check_tsort)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -193,7 +189,6 @@ START_TEST(check_tsort)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource1.xml");
-	simple_sort = symbolNew("simple-sort");    
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
@@ -259,7 +254,6 @@ START_TEST(check_tsort2)
     Vector *results;
     Object *ignore;
     char *tmp;
-    int result;
 
     initTemplatePath(".");
     ignore = evalSexp(tmp = newstr("(setq build t)"));
@@ -322,10 +316,8 @@ START_TEST(navigation)
     Vector *sorted;
     Object *ignore;
     char *tmp;
-    int result;
     xmlNode *root;
     xmlDocPtr xmldoc;
-    Symbol *simple_sort;
     //showMalloc(7040);
     //trackMalloc(7040);
 
@@ -338,7 +330,6 @@ START_TEST(navigation)
     //skfree(tmp);
 
     src_doc = getDoc("test/data/gensource1.xml");
-    simple_sort = symbolNew("simple-sort");    
     sorted = tsort(src_doc);
 
     xmldoc = xmlNewDoc(BAD_CAST "1.0");
@@ -367,7 +358,6 @@ START_TEST(navigation2)
     Vector *sorted;
     Object *ignore;
     char *tmp;
-    int result;
     xmlNode *root;
     xmlDocPtr xmldoc;
 
@@ -405,8 +395,6 @@ START_TEST(check_cyclic_tsort)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -419,7 +407,7 @@ START_TEST(check_cyclic_tsort)
 	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
-	simple_sort = symbolNew("simple-sort");    
+	//simple_sort = symbolNew("simple-sort");    
 	results = tsort(doc);
 	//dbgSexp(doc);
 	//showVectorDeps(results);
@@ -488,8 +476,6 @@ START_TEST(check_cyclic_tsort2)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -569,8 +555,6 @@ START_TEST(check_cyclic_exception)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -611,20 +595,16 @@ START_TEST(check_cyclic_exception)
 }
 END_TEST
 
+#ifdef unused
 START_TEST(diff)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
 	//showMalloc(981);
 	doc = getDoc("test/data/gensource_diff.xml");
-	simple_sort = symbolNew("simple-sort");    
 	results = tsort(doc);
 	printSexp(stderr, "RESULTS: ", (Object *) results);
 
@@ -648,6 +628,7 @@ START_TEST(diff)
     }
 }
 END_TEST
+#endif
 
 #ifdef wibble
 START_TEST(diff2)
@@ -699,8 +680,6 @@ START_TEST(depset)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -708,7 +687,6 @@ START_TEST(depset)
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
@@ -746,7 +724,6 @@ START_TEST(depset2)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -792,8 +769,6 @@ START_TEST(depset_rebuild)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -801,7 +776,6 @@ START_TEST(depset_rebuild)
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);
@@ -839,8 +813,6 @@ START_TEST(fallback)
     Vector *volatile results = NULL;
     Object *ignore;
     char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -848,7 +820,6 @@ START_TEST(fallback)
 	//showFree(724);
 
 	doc = getDoc("test/data/fallback.xml");
-	simple_sort = symbolNew("simple-sort");    
 	ignore = evalSexp(tmp = newstr("(setq build t)"));
 	objectFree(ignore, TRUE);
 	skfree(tmp);

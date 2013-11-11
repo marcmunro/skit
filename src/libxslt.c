@@ -22,7 +22,7 @@
 
 static char URI[] ="http://www.bloodnok.com/xml/skit";
 
-void
+static void
 xsltDBQuoteFunction(xmlXPathParserContextPtr ctxt, int nargs)
 {
     xmlXPathObjectPtr instr;

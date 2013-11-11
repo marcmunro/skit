@@ -78,8 +78,6 @@ validate(char *doc_str, char *rng_str)
 
 START_TEST(check_list)
 {
-    Document *list_template;
-    Document *rng_doc;
     int result;
 
     initTemplatePath(".");
@@ -94,8 +92,6 @@ END_TEST
 
 START_TEST(check_deps)
 {
-    Document *list_template;
-    Document *rng_doc;
     int result;
 
     initTemplatePath(".");
@@ -110,8 +106,6 @@ END_TEST
 
 START_TEST(check_connect)
 {
-    Document *list_template;
-    Document *rng_doc;
     int result;
 
     initTemplatePath(".");
@@ -119,50 +113,6 @@ START_TEST(check_connect)
     result = validate("connect.xml", "template.rng");
     fail_if(result != 0,
 	    "check_connect: connect.xml fails to validate");
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
-static void
-evalStr(char *str)
-{
-    char *tmp = newstr(str);
-    Object *obj = evalSexp(tmp);
-    objectFree(obj, TRUE);
-    skfree(tmp);
-}
-
-
-START_TEST(check_extract)
-{
-    Document *list_template;
-    Document *rng_doc;
-    int result;
-
-    initTemplatePath(".");
-    evalStr("(setq dbver (version '8.3'))");
-
-    result = validate("zzz.xml", "template.rng");
-    fail_if(result != 0,
-	    "check_extract: extract.xml fails to validate");
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
-START_TEST(check_test2)
-{
-    Document *list_template;
-    Document *rng_doc;
-    int result;
-
-    initTemplatePath(".");
-    evalStr("(setq dbver (version '8.3'))");
-
-    result = validate("test.xml", "test.rng");
-    fail_if(result != 0,
-	    "check_test: test.xml fails to validate");
 
     FREEMEMWITHCHECK;
 }
@@ -178,8 +128,6 @@ relaxng_suite(void)
     ADD_TEST(tc_core, check_list);
     ADD_TEST(tc_core, check_deps);
     ADD_TEST(tc_core, check_connect);
-    //ADD_TEST(tc_core, check_extract);
-    //ADD_TEST(tc_core, check_test2);
 				
     suite_add_tcase(s, tc_core);
 

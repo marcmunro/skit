@@ -26,7 +26,6 @@ dagnodeHash(Vector *vector)
     int i;
     DagNode *node;
     String *key;
-    Object *old;
     Hash *hash = hashNew(TRUE);
 
     EACH(vector, i) {
@@ -82,7 +81,6 @@ hasDependency(DagNode *node, DagNode *dep)
 static DagNodeBuildType
 buildTypeFromName(char *name)
 {
-    char *prefix;
     char *dotpos;
     int prefix_len;
 
@@ -277,7 +275,6 @@ requireOptionalDependencies(Hash *hash, char *from, ...)
     DagNode *fromnode;
     DagNode *tonode;
     String *key;
-    int dep_elems = 0;
     Vector *deplist = vectorNew(10);
     int i;
 
@@ -292,7 +289,6 @@ requireOptionalDependencies(Hash *hash, char *from, ...)
 	fail("Cannot find %s ", from);
     }
 
-    dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
     EACH(deplist, i) {
 	key = (String *) ELEM(deplist, i);
 	tonode = (DagNode *) findDagNode(hash, key->value);
@@ -316,7 +312,6 @@ requireOptionalDependents(Hash *hash, char *from, ...)
     DagNode *tonode;
     DagNode *fromnode;
     String *key;
-    int dep_elems = 0;
     Vector *deplist = vectorNew(10);
     int i;
 
@@ -331,7 +326,6 @@ requireOptionalDependents(Hash *hash, char *from, ...)
 	fail("Cannot find %s ", key->value);
     }
 
-    dep_elems = (tonode->forward_deps)? tonode->forward_deps->elems: 0;
     EACH(deplist, i) {
 	key = (String *) ELEM(deplist, i);
 	fromnode = (DagNode *) findDagNode(hash, key->value);
@@ -377,7 +371,6 @@ START_TEST(depset_dag1_build)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -436,7 +429,6 @@ START_TEST(depset_dag1_drop)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -486,7 +478,6 @@ START_TEST(depset_dag1_both)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -565,7 +556,6 @@ START_TEST(depset_dia_build)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -621,7 +611,6 @@ START_TEST(depset_dia_drop)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -678,7 +667,6 @@ START_TEST(depset_dia_both)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -753,7 +741,6 @@ START_TEST(depset_diff)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -813,7 +800,6 @@ START_TEST(cyclic_build)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -910,7 +896,6 @@ START_TEST(cyclic_drop)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -1017,7 +1002,6 @@ START_TEST(cyclic_both)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {
@@ -1159,7 +1143,6 @@ START_TEST(fallback)
     Document *volatile doc = NULL;
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
-    char *xnode_name;
     Hash *volatile nodes_by_fqn = NULL;
 
     BEGIN {

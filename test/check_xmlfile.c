@@ -26,7 +26,6 @@ START_TEST(optiontest)
     String *field;
     Cons *options;
     Object *obj;
-    Cons *x;
     char *tmp;
     Document *doc;
 

@@ -75,7 +75,6 @@ isOptionlist(Cons *optionlist)
 {
     Cons *cons2;
     Cons *cons3;
-    Symbol *complete;
 
     if (isCons(optionlist)) {
 	cons2 = (Cons *) optionlist->cdr;
@@ -138,7 +137,6 @@ void
 optionlistAdd(Cons *list, String *option_name, 
 	      String *field, Object *value)
 {
-    char *x;
     assert(isOptionlist(list), 
 	   "optionlistAdd: list is not an optionlist");
 

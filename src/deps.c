@@ -209,18 +209,6 @@ nextDependency(xmlNode *depnode, xmlNode *cur)
 }
 
 
-static Vector *
-cons2Vector(Cons *cons)
-{
-    Vector *vector = vectorNew(10);
-    Cons *cur;
-    for (cur = cons; cur; cur = (Cons *) cur->cdr) {
-	vectorPush(vector, cur->car);
-    }
-    return vector;
-}
-
-
 /*
  * Identify the type of build action expected for the supplied dbobject
  * node.
@@ -329,7 +317,6 @@ static Object *
 addDagNodeToVector(Object *this, Object *vector)
 {
     Node *node = (Node *) this;
-    DagNodeBuildType build_type;
     DagNode *dagnode = NULL;
 
     BEGIN {
@@ -459,7 +446,7 @@ conditionForDep(xmlNode *node)
 {
     String *condition_str = nodeAttribute(node, "condition");
     if (condition_str) {
-	stringLowerOld(condition_str);
+	stringLowerInPlace(condition_str);
     }
     else {
 	if (isDependencies(node->parent)) {
@@ -483,11 +470,9 @@ applicationForDep(xmlNode *node)
     Cons *elem;
     char *head;
     DependencyApplication result;
-    boolean inverted = FALSE;
-    xmlNode *parent;
 
     if (condition_str) {
-	stringLowerOld(condition_str);
+	stringLowerInPlace(condition_str);
 	elem = contents = stringSplit(condition_str, &separators);
 	while (elem) {
 	    head = ((String *) elem->car)->value;
@@ -735,7 +720,6 @@ processBreaker(
     Vector *deps;
     DagNode *thru = (DagNode *) ELEM(depnode->forward_deps, depnode->dep_idx);
     DagNode *this;
-    Vector *newdeps;
     int i;
 
     /* Eliminate from breaker any dependency on thru */
@@ -758,25 +742,6 @@ processBreaker(
     }
 }
 
-static xmlNode *
-getContentNode(xmlNode *dbobject)
-{
-    String *type = nodeAttribute(dbobject, "type");
-    xmlNode *node;
-    if (type) {
-	if (node = firstElement(dbobject->children)) {
-	    do {
-		if (streq(node->name, type->value)) {
-		    objectFree((Object *) type, TRUE);
-		    return node;
-		}
-	    } while (node = firstElement(node->next));
-	}
-	objectFree((Object *) type, TRUE);
-    }
-    return NULL;
-}
-
 /* 
  * Create a simple fallback node, which we wil place into its own
  * document.  This will then be processed by the fallbacks.xsl script to
@@ -784,7 +749,7 @@ getContentNode(xmlNode *dbobject)
  * document and to various hashes and vectors.
  */
 static xmlNode *
-domakeFallbackNode(String *fqn, Hash *byfqn)
+domakeFallbackNode(String *fqn)
 {
     xmlNode *fallback;
     xmlNode *root;
@@ -896,12 +861,12 @@ parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
 }
     
 static DagNode *
-makeFallbackNode(String *fqn, Hash *byfqn, Hash *bypqn)
+makeFallbackNode(String *fqn)
 {
     xmlNode *dbobj;
     DagNode *result;
 
-    dbobj = domakeFallbackNode(fqn, byfqn);
+    dbobj = domakeFallbackNode(fqn);
     result = dagNodeNew(dbobj, INACTIVE_NODE);
     return result;
 }    
@@ -922,7 +887,6 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 {
     String *volatile fallback = NULL;
     DagNode *fallback_node = NULL;
-    char *errmsg;
     DagNode *parent;
 
     if (isDependencySet(dep_node)) {
@@ -931,7 +895,7 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 	    if (fallback) {
 		fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
 		if (!fallback_node) {
-		    fallback_node = makeFallbackNode(fallback, byfqn, bypqn);
+		    fallback_node = makeFallbackNode(fallback);
 		    parent = parentNodeForFallback(dep_node, byfqn);
 		    setParent(fallback_node, parent);
 		    hashAdd(byfqn, (Object *) fallback, 
@@ -1116,7 +1080,7 @@ static void
 resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes);
 
 static void
-resolveDeps(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
+resolveDeps(DagNode *node, boolean forwards, Vector *nodes)
 {
     Vector *volatile deps = forwards? node->forward_deps: node->backward_deps;
     int volatile i;
@@ -1243,8 +1207,6 @@ resolveSubNodes(
     Vector *nodes)
 {
     DagNode *sub = node;
-    Vector *deps;
-    DagNode *dep;
     while (sub = forwards? sub->forward_subnodes: sub->backward_subnodes) {
 	resolveNode(sub, from, forwards, nodes);
     }
@@ -1266,7 +1228,7 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
     case UNVISITED: 
 	node->status = VISITING;
 	BEGIN {
-	    resolveDeps(node, from, forwards, nodes);
+	    resolveDeps(node, forwards, nodes);
 	    resolveSubNodes(node, from, forwards, nodes);
 	}
 	EXCEPTION(ex) {
@@ -1490,7 +1452,6 @@ createMirrorNodes(Vector *nodes)
 {
     int i;
     DagNode *node;
-    DagNode *mirror;
     DagNodeBuildType new_build_type;
     char *prefix = NULL;
     boolean single_dag = TRUE;
@@ -1709,7 +1670,6 @@ disableRedundantFallbacks(Vector *nodes, Vector *fallback_nodes)
     Vector *removed = vectorNew(fallback_nodes->elems);
     DagNode *node;
     DagNode *dep;
-    DagNode *rnode;
     DagNode *fnode;
     int i;
     int j;
@@ -1925,15 +1885,6 @@ swapBackwardBreakers(Vector *nodes)
     }
 }
 
-DagNode *
-getNode(Hash *byfqn, char *fqn)
-{
-    String *key = stringNew(fqn);
-    DagNode *node = (DagNode *) hashGet(byfqn, (Object *) key);;
-    objectFree((Object *) key, TRUE);
-    return node;
-}
-
 /* Create a Dag from the supplied doc, returning it as a vector of DocNodes.
  * See the file header comment for a more detailed description of what
  * this does.
@@ -1943,8 +1894,6 @@ dagFromDoc(Document *doc)
 {
     Hash *volatile byfqn = NULL;
     Hash *volatile bypqn = NULL;
-    DagNode *volatile this = NULL;
-    int volatile i;
     Vector *volatile nodes = dagNodesFromDoc(doc);
     byfqn = hashByFqn(nodes);
 

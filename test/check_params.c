@@ -89,7 +89,7 @@ START_TEST(usage)
 }
 END_TEST
 
-Cons *
+static Cons *
 process_args(int argc,
 	     char *argv[])
 {
@@ -114,7 +114,7 @@ process_args(int argc,
     return cons;
 }
 
-void
+static void
 process_args2(int argc,
 	     char *argv[])
 {
@@ -254,12 +254,11 @@ START_TEST(too_many_sources)
 {
     char *args[] = {"./skit", "-a", "test/testfiles/x.xml", "y.xml"};
     Document *doc;
-    Cons *param_list;
 
     initTemplatePath("./test");
 
     BEGIN {
-	param_list = process_args(4, args);
+	(void) process_args(4, args);
 	fail("Too many source files not detected(1)");
     }
     EXCEPTION(ex);
@@ -280,12 +279,11 @@ START_TEST(missing_file)
 {
     char *args[] = {"./skit", "-a", "missing.xml"};
     Document *doc;
-    Cons *param_list;
 
     initTemplatePath("./test");
 
     BEGIN {
-	param_list = process_args(3, args);
+	(void) process_args(3, args);
 	fail("Missing file not detected(1)");
     }
     EXCEPTION(ex);
@@ -305,7 +303,6 @@ END_TEST
 START_TEST(too_few_sources)
 {
     char *args[] = {"./skit", "-a"};
-    Document *doc;
     Cons *param_list;
     Hash *param_hash;
     String *action_key = stringNew("action");
@@ -337,7 +334,6 @@ END_TEST
 START_TEST(incomplete_extract)
 {
     char *args[] = {"./skit", "--extract"};
-    Document *doc;
     Cons *param_list;
     Hash *param_hash;
     String *action_key = stringNew("action");
@@ -369,13 +365,11 @@ END_TEST
 START_TEST(missing_template)
 {
     char *args[] = {"./skit", "-t", "missing.xml"};
-    Document *doc;
-    Cons *param_list;
 
     initTemplatePath("./tests");
 
     BEGIN {
-	param_list = process_args(3, args);
+	(void) process_args(3, args);
 
 	fail("Missing template not detected(1)");
     }
@@ -453,7 +447,6 @@ END_TEST
 START_TEST(unknown_type)
 {
     char *args[] = {"./skit", "-t", "unknowntype.xml", "x.xml"};
-    Document *doc;
     Cons *param_list = NULL;
 
     initTemplatePath("./test");
@@ -479,7 +472,6 @@ END_TEST
 START_TEST(no_option_name)
 {
     char *args[] = {"./skit", "-t", "noname.xml", "x.xml"};
-    Document *doc;
     Cons *param_list = NULL;
 
     initTemplatePath("./test");
@@ -505,7 +497,6 @@ END_TEST
 START_TEST(no_alias_name)
 {
     char *args[] = {"./skit", "-t", "noname2.xml", "x.xml"};
-    Document *doc;
     Cons *param_list = NULL;
 
     initTemplatePath("./test");
@@ -531,7 +522,6 @@ END_TEST
 START_TEST(value_and_default)
 {
     char *args[] = {"./skit", "-t", "valandd.xml", "x.xml"};
-    Document *doc;
     Cons *param_list = NULL;
 
     initTemplatePath("./test");
@@ -575,19 +565,9 @@ START_TEST(option_usage)
 }
 END_TEST
 
-static void
-evalStr(char *str)
-{
-    char *tmp = newstr(str);
-    Object *obj = evalSexp(tmp);
-    objectFree(obj, TRUE);
-    skfree(tmp);
-}
-
 START_TEST(dbtype)
 {
     char *args[] = {"./skit", "--dbtype", "postgres"};
-    Document *doc;
 
     initTemplatePath(".");
 
@@ -607,7 +587,6 @@ END_TEST
 START_TEST(dbtype_unknown)
 {
     char *args[] = {"./skit", "--dbtype", "wibble"};
-    Document *doc;
 
     initTemplatePath(".");
 
@@ -655,70 +634,18 @@ START_TEST(connect)
 }
 END_TEST
 
-START_TEST(connect2)
-{
-    char *args[] = {"./skit", "--connect", "--dbtype=postgres", 
-		    "dbname='skittest' port = '5432'"};
-    Symbol *sym;
-    char *tmp;
-    initTemplatePath(".");
-    registerTestSQL();
-
-    BEGIN {
-	process_args2(4, args);
-	sym = symbolGet("connect");
-	dbgSexp(sym->svalue);
-	fail_unless(sym && sym->svalue,
-		    tmp = newstr("connect: connect variable is not defined"));
-	skfree(tmp);
-    }
-    EXCEPTION(ex); 
-    WHEN_OTHERS {
-	fail(newstr("connect: exception - %s", ex->text));
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 typedef struct fileinfo_t {
     fpos_t pos;
     int fd;
 } fileinfo_t;    
 
 
-static fileinfo_t *
-redirect(char *destination)
-{
-    fileinfo_t *fileinfo = skalloc(sizeof(fileinfo_t));
-    memset(fileinfo, 0, sizeof(fileinfo_t));
-    fgetpos(stdout, &(fileinfo->pos));
-    fileinfo->fd = dup(fileno(stdout));
-    freopen(destination, "w", stdout);
-    return fileinfo;
-}
-
-static void
-resetdirect(fileinfo_t *fileinfo)
-{
-    fflush(stdout);
-    dup2(fileinfo->fd, fileno(stdout));
-    close(fileinfo->fd);
-    clearerr(stdout);
-    fsetpos(stdout, &(fileinfo->pos));
-    skfree(fileinfo);
-}
-
-
+#ifdef unused
 START_TEST(gather)
 {
     char *args[] = {"./skit", "--list", 
 		    "./dbdump/cluster.xml"};
     //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
 
     initTemplatePath(".");
     registerTestSQL();
@@ -727,37 +654,26 @@ START_TEST(gather)
     //trackMalloc(4635);
 
     BEGIN {
-	//fi = redirect("/dev/null");
 	process_args2(3, args);
-	//resetdirect(fi);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("gather done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	//resetdirect(fi);
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
-	//RAISE();
-	//fail("gather fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef unused
 START_TEST(scatter)
 {
     char *args[] = {"./skit", "-t", "scatter.xml",
 		    "test/data/cond_test.xml", "--path", 
 		    "regress/scratch/dbdump", "--verbose", "--checkonly"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
 
     initTemplatePath(".");
     registerTestSQL();
@@ -766,29 +682,21 @@ START_TEST(scatter)
     //trackMalloc(4635);
 
     BEGIN {
-	//fi = redirect("/dev/null");
 	process_args2(7, args);
-	//resetdirect(fi);
-	//process_args2(10, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("scatter done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	//resetdirect(fi);
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
-	//RAISE();
-	//fail("scatter fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef unused
 START_TEST(extract)
 {
     /* Run the database build for a regression test before running this
@@ -799,9 +707,6 @@ START_TEST(extract)
 		    "--connect", 
 		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
                     "--print", "--full"};
-    Document *doc;
-    char *bt;
-    fileinfo_t *fi;
 
     initTemplatePath(".");
     registerTestSQL();
@@ -815,15 +720,15 @@ START_TEST(extract)
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "BACKTRACE:%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef unused
 START_TEST(generate)
 {
     /* Same preconditions as for extract above. */
@@ -848,8 +753,9 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
-
+#ifdef unused
 START_TEST(generate2)
 {
     /* Same preconditions as for extract above. */
@@ -877,8 +783,9 @@ START_TEST(generate2)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
-
+#ifdef unused
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -886,7 +793,6 @@ START_TEST(diff)
 		    "regress/scratch/regressdb_dump3a.xml", 
 		    "--generate", "--debug", "--full", "--xxxx"};
     Document *doc;
-    char *bt;
 
     initTemplatePath(".");
     //showFree(3563);
@@ -895,26 +801,23 @@ START_TEST(diff)
 
     BEGIN {
 	process_args2(7, args);
-	//process_args2(10, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
+	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
-
+#ifdef unused
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -924,8 +827,6 @@ START_TEST(diffgen)
 		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--generate", "--echoes", "--debug"};
     //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
 
     initTemplatePath(".");
     //registerTestSQL();
@@ -937,21 +838,21 @@ START_TEST(diffgen)
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+
+#ifdef unused
 START_TEST(diffgen2)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -961,8 +862,7 @@ START_TEST(diffgen2)
 		    "regress/scratch/regressdb_dump3a.xml", 
 		    "--generate", "--print", "--full"};
     //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
+    //Document *doc;
 
     initTemplatePath(".");
     //registerTestSQL();
@@ -974,21 +874,20 @@ START_TEST(diffgen2)
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef unused
 START_TEST(difflist)
 {
     char *args[] = {"./skit", "-t", "diff.xml", 
@@ -996,8 +895,7 @@ START_TEST(difflist)
 		    "test/data/diffs_1_b.xml", 
 		    "--list", "-g"};
     //"--list", "-g", "--print", "--full"};
-    Document *doc;
-    char *bt;
+    //Document *doc;
 
     initTemplatePath(".");
     //registerTestSQL();
@@ -1009,21 +907,20 @@ START_TEST(difflist)
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef unused
 START_TEST(diff2)
 {
     char *args[] = {"./skit", "--diff", 
@@ -1031,7 +928,6 @@ START_TEST(diff2)
 		    "test/data/diffs_1_b.xml", 
 		    "--print", "--full"};
     Document *doc;
-    char *bt;
 
     initTemplatePath(".");
     //showFree(3563);
@@ -1043,21 +939,19 @@ START_TEST(diff2)
 	//process_args2(10, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-	//fail("extract done!");
+	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
     }
     END;
 
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
 
 static int
@@ -1066,9 +960,8 @@ do_list(void *ignore)
     char *args[] = {"./skit", "--list", 
 		    "test/data/cond_test.xml", 
 		    "--print", "--full"};
-    Document *doc;
-    char *bt;
 
+    UNUSED(ignore);
     initTemplatePath(".");
     //showFree(2826);
     //showMalloc(4611);
@@ -1107,19 +1000,6 @@ START_TEST(list)
 }
 END_TEST
 
-START_TEST(list2)
-{
-    char *stderr;
-    char *stdout;
-    int   signal;
-    boolean contains_expected;
-
-    do_list(NULL);
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 static int
 do_deps(void *ignore)
 {
@@ -1127,9 +1007,7 @@ do_deps(void *ignore)
 		    "test/data/diffs_1_a.xml", 
 		    //"test/data/cond_test.xml", 
 		    "--print", "--full"};
-    Document *doc;
-    char *bt;
-
+    UNUSED(ignore);
     initTemplatePath(".");
     //showFree(4247);
     //showMalloc(1909);
@@ -1164,36 +1042,6 @@ START_TEST(deps)
     free(stderr);
 }
 END_TEST
-
-
-START_TEST(deps2)
-{
-    char *args[] = {"./skit", "--adddeps",
-		    "regress/scratch/dbdump/cluster.xml", 
-		    //"test/data/cond_test.xml", 
-		    "--print", "--full"};
-    Document *doc;
-    char *bt;
-
-    initTemplatePath(".");
-    //showFree(4247);
-    //showMalloc(1909);
-
-    BEGIN {
-	process_args2(5, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
-
 
 
 

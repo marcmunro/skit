@@ -26,14 +26,14 @@
 static int handled_by = 0;
 static int last_exception = 0;
 
-int 
+static int 
 raiser1(int i)
 {
     RAISE(i, newstr("raised by raiser1"));
     return 0;
 }
 
-int 
+static int 
 raiser2(int i)
 {
     BEGIN {
@@ -56,7 +56,7 @@ raiser2(int i)
 }
 
 // Return directly from within an exception begin block.
-int 
+static int 
 called3(int i)
 {
     BEGIN {
@@ -70,14 +70,14 @@ called3(int i)
     return 42;
 }
 
-int 
+static int 
 raiser3(int i)
 {
     RAISE(called3(i), newstr("raised by raiser3"));
     return 47;
 }
 
-int 
+static int 
 catcher(
     int i,
     int (*fn)(int))
@@ -108,7 +108,7 @@ catcher(
 }
 
 
-int 
+static int 
 catcher2(volatile int i)
 {
     int zero = 0;
@@ -147,7 +147,7 @@ catcher2(volatile int i)
     return 0;
 }
 
-int 
+static int 
 catcher3(int i)
 {
     int result = 0;
@@ -171,7 +171,7 @@ catcher3(int i)
     return result;
 }
 
-int 
+static int 
 catcher4(int i)
 {
     int result = 0;
@@ -189,7 +189,7 @@ catcher4(int i)
     return result;
 }
 
-int 
+static int 
 ignore3(int i)
 {
     int result = 0;
@@ -203,10 +203,10 @@ ignore3(int i)
     END;
     return result;
 }
-int 
+static int 
 ignore4(int i)
 {
-    int result = 0;
+    int result;
     BEGIN {
 	result = ignore3(i);
     }
@@ -218,12 +218,11 @@ ignore4(int i)
     return result;
 }
 
-char *
+static char *
 catcher5(int i)
 {
-    int result = 0;
     BEGIN {
-	result = ignore4(i);
+	(void) ignore4(i);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -349,6 +348,7 @@ END_TEST
 static int
 do_exceptions_new12(void *ignore)
 {
+    UNUSED(ignore);
     RAISE();
 }
 
@@ -374,6 +374,7 @@ END_TEST
 static int
 do_exceptions_new13(void *ignore)
 {
+    UNUSED(ignore);
     RAISE(71, newstr("LOOKY HERE"));
 }
 
@@ -399,6 +400,7 @@ static int
 do_exceptions_new14(void *ignore)
 {
     int a;
+    UNUSED(ignore);
     a = catcher2(14);
     fail_unless(a == 22, "Function result 22 expected, got %d\n", a);
 }
@@ -412,8 +414,8 @@ START_TEST(exceptions_new14)
     int   signal;
     captureOutput(do_exceptions_new14, NULL, &stdout, &stderr, &signal);
 
-    fail_unless(contains(stderr, "TEST CASE 14", 
-			 "exceptions_new14"));
+    fail_unless(contains(stderr, "TEST CASE 14"), 
+			 "exceptions_new14");
     free(stdout);
     free(stderr);
     FREEMEMWITHCHECK;
@@ -499,8 +501,8 @@ END_TEST
 static int
 do_exceptions_3(void *ignore)
 {
-    int signal;
-    signal = catcher(99, raiser1);
+    UNUSED(ignore);
+    (void) catcher(99, raiser1);
 }
 
 START_TEST(exceptions_3)
@@ -618,12 +620,11 @@ END_TEST
 // Test use of FINALLY with a WHEN clause handling an exception
 START_TEST(exceptions_when_finally2)
 {
-    int a = 0;
     String *str = stringNew("TEST_STR");
 
     BEGIN {
 	BEGIN {
-	    a = raiser1(LIST_ERROR);
+	    (void) raiser1(LIST_ERROR);
 	}
 	EXCEPTION(ex) {
 	    WHEN(LIST_ERROR) {
@@ -637,7 +638,7 @@ START_TEST(exceptions_when_finally2)
     }
     EXCEPTION(ex) {
 	WHEN_OTHERS {
-	    a = 98;
+	    ;
 	}
     }
     END;

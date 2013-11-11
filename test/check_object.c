@@ -39,16 +39,6 @@ objectReadCheck(char *instr, char *chkstr)
 }
 
 static boolean
-objectReadCheckNoFree(char *instr, char *chkstr)
-{
-    Object *obj = objectFromStr(instr);
-    char *obstr = objectSexp(obj);
-    boolean result = streq(obstr, chkstr);
-    skfree(obstr);
-    return result;
-}
-
-static boolean
 objectTypeCheck(Object *obj, ObjType otype)
 {
     return obj? obj->type == otype: FALSE;
@@ -127,11 +117,11 @@ START_TEST(simple_list)
 }
 END_TEST
 
-int
-exec_broken_list1(void *param)
+static int
+exec_broken_list1(void *ignore)
 {
-    Object *obj;
-    obj = objectFromStr("(42 43 44 (. 567))");
+    UNUSED(ignore);
+    (void) objectFromStr("(42 43 44 (. 567))");
 }
 
 START_TEST(broken_list1)
@@ -151,11 +141,11 @@ START_TEST(broken_list1)
 }
 END_TEST
 
-int
-exec_broken_list2(void *param)
+static int
+exec_broken_list2(void *ignore)
 {
-    Object *obj;
-    obj = objectFromStr("(1 . 567 789)");
+    UNUSED(ignore);
+    (void) objectFromStr("(1 . 567 789)");
 }
 
 START_TEST(broken_list2)
@@ -175,11 +165,11 @@ START_TEST(broken_list2)
 }
 END_TEST
 
-int
-exec_broken_list3(void *param)
+static int
+exec_broken_list3(void *ignore)
 {
-    Object *obj;
-    obj = objectFromStr("( 567 789]");
+    UNUSED(ignore);
+    (void) objectFromStr("( 567 789]");
 }
 
 START_TEST(broken_list3)
@@ -199,11 +189,11 @@ START_TEST(broken_list3)
 }
 END_TEST
 
-int
-exec_broken_list4(void *param)
+static int
+exec_broken_list4(void *ignore)
 {
-    Object *obj;
-    obj = objectFromStr("(string= 'y' (get tuple 'superuser')");
+    UNUSED(ignore);
+    (void) objectFromStr("(string= 'y' (get tuple 'superuser')");
 }
 
 START_TEST(broken_list4)
@@ -348,7 +338,7 @@ START_TEST(is_alist1)
 {
     Object *obj;
     obj = objectFromStr("((1 . 2) (2 . 3) (3 . 4))");
-    fail_unless(consIsAlist(obj),
+    fail_unless(consIsAlist((Cons *) obj),
 	"Incorrect non-identification of alist(1)");
     objectFree(obj, TRUE);
     FREEMEMWITHCHECK;
@@ -359,7 +349,7 @@ START_TEST(is_alist2)
 {
     Object *obj;
     obj = objectFromStr("((1))");
-    fail_unless(consIsAlist(obj),
+    fail_unless(consIsAlist((Cons *) obj),
 	"Incorrect non-identification of alist(2)");
     objectFree(obj, TRUE);
     FREEMEMWITHCHECK;
@@ -370,7 +360,7 @@ START_TEST(not_alist1)
 {
     Object *obj;
     obj = objectFromStr("((1 . 2) (2 . 3) nil (4 . 5))");
-    fail_if(consIsAlist(obj),
+    fail_if(consIsAlist((Cons *) obj),
 	"Incorrect identification of non-alist(1)");
     objectFree(obj, TRUE);
     FREEMEMWITHCHECK;
@@ -381,7 +371,7 @@ START_TEST(not_alist2)
 {
     Object *obj;
     obj = objectFromStr("(1 2 3)");
-    fail_if(consIsAlist(obj),
+    fail_if(consIsAlist((Cons *) obj),
 	"Incorrect identification of non-alist(2)");
     objectFree(obj, TRUE);
     FREEMEMWITHCHECK;
@@ -462,19 +452,18 @@ START_TEST(objcmp5)
 {
     Object *obj1;
     Object *obj2;
-    int result;
 
     obj1 = objectFromStr("1");
     obj2 = objectFromStr("(1 2 3)");
     BEGIN {
-	result = objectCmp(obj1, obj2);
+	(void) objectCmp(obj1, obj2);
 	fail("An exception should have been raised");
     }
     EXCEPTION(e);
     WHEN_OTHERS {
 	fail_unless(contains(e->text, 
-			     "Cannot compare 1 with .1 2 3.",
-			     "Comparison exception not raised"));
+			     "Cannot compare 1 with .1 2 3."),
+			     "Comparison exception not raised");
     }
     END;
     objectFree(obj1, TRUE);
@@ -599,16 +588,6 @@ START_TEST(promote)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
-void
-printSym(char *name)
-{
-    Object *obj = symbolGetValue(name);
-    char *sexp = objectSexp(obj);
-
-    fprintf(stderr, "Symbol %s = %s\n", name, sexp);
-    skfree(sexp);
-}
 
 START_TEST(map)
 {
@@ -757,7 +736,6 @@ END_TEST
 
 START_TEST(symbol_scope3)
 {
-    Symbol *wibble;
     Symbol *wibble2;
 
     wibble2 = symbolNew("wibble2");
@@ -868,7 +846,6 @@ START_TEST(vectorsort)
     char *sexpstr;
     char *tmp;
     Vector *vec;
-    Int4 *result;
 
     sexpstr = newstr("[4 3 2 1 6 5 0]");
     vec = (Vector *) objectFromStr(sexpstr);
@@ -970,7 +947,7 @@ END_TEST
 START_TEST(string_eq1)
 {
     Object *list = objectFromStr("(string= 'abc' (concat 'a' 'bc'))");
-    Object *result = objectEval(list);
+    (void) objectEval(list);
 
     objectFree((Object *) list, TRUE);
     FREEMEMWITHCHECK;
@@ -1009,11 +986,10 @@ END_TEST
 START_TEST(listerr)
 {
     Object *volatile list;
-    Object *result;
 
     BEGIN {
 	list = objectFromStr("(list 1 2 3 (4 5 6))");
-	result = trappedObjectEval(list);
+	(void) trappedObjectEval(list);
 	fail("listerr: failed to raise exception");
     }
     EXCEPTION(ex) ;
@@ -1024,7 +1000,7 @@ START_TEST(listerr)
 	{
 	    fail("listerr: Incorrect error message: \"%s\"", ex->text);
 	}
-	/* We reach his point only if all is as expected.  */
+	/* We reach this point only if all is as expected.  */
     }
     WHEN_OTHERS{
 	fail("listerr: incorrect exception type %d", ex->signal);
@@ -1038,11 +1014,10 @@ END_TEST
 START_TEST(setqerr)
 {
     Object *volatile list;
-    Object *result;
 
     BEGIN {
 	list = objectFromStr("(setq a (4 5 6))");
-	result = trappedObjectEval(list);
+	(void) trappedObjectEval(list);
 	fail("setq: failed to raise exception");
     }
     EXCEPTION(ex) ;
@@ -1139,6 +1114,8 @@ objects_suite(void)
     ADD_TEST(tc_core, hasherr);
     ADD_TEST(tc_core, nil);
     ADD_TEST(tc_core, emptyhash);
+    ADD_TEST(tc_core, emptyhash2);
+    ADD_TEST(tc_core, optionlist);
     ADD_TEST(tc_core, is_alist1);
     ADD_TEST(tc_core, is_alist2);
     ADD_TEST(tc_core, not_alist1);

@@ -28,7 +28,6 @@ static void
 dropScopeForSymbol(Symbol *sym)
 {
     Cons *prev = (Cons *) consPop(&(sym->scope));
-    Cons *scope;
     //printSexp(stderr, "connect: ", symbolGetValue("connect"));
     //printSexp(stderr, "DROPPING SCOPE FOR SYM: ", sym);
     if (!prev) {
@@ -119,12 +118,6 @@ freeSymbolTable()
     if (hash) {
 	hashFree(hash, TRUE);
     }
-}
-
-void
-checkSymbols(void *chunk)
-{
-    (void) checkObj((Object *) symbols, chunk);
 }
 
 /* Create new symbol and add it to the symbol table if it does not

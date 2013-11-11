@@ -178,7 +178,7 @@ hashVectorAppend(Hash *hash, Object *key, Object *obj)
     return vec;
 }
 
-void
+static void
 freeAlist(Cons *cons)
 {
     Cons *next;
@@ -314,11 +314,12 @@ recordKeyFromHash(
     gpointer contents,
     gpointer param)
 {
-    // The keys passed to this function are real C-strings.  Before
-    // placing them in the array, we should convert them to String
-    // objects.  Note that we will be just copying the pointers and
-    // not doing any real copies.  Remember this when it becomes time to
-    // free the strings!
+    /* The keys passed to this function are real C-strings.  Before
+     * placing them in the array, we should convert them to String
+     * objects.  Note that we will be just copying the pointers and
+     * not doing any real copies.  Remember this when it becomes time to
+     * free the strings! */
+    UNUSED(contents);
 
     String *str = stringNewByRef((char *) key);
     Vector *vector = (Vector *) param;
@@ -394,6 +395,7 @@ alistFromHash(
     Object *real_contents = contents_cons->cdr;
     Cons *new_entry = consNew(real_key, real_contents);
     Cons *new_head = consNew((Object *) new_entry, (Object *) cur_alist);
+    UNUSED(key);
     *p_alist = new_head;
 }
 
@@ -422,6 +424,7 @@ eachHashEntry(
     Cons *hash_entry = (Cons *) contents;
     Object *actual_contents = ((Cons *) hash_entry)->cdr;
     Object *result = fn(hash_entry, param);
+    UNUSED(key);
 
     /* If the result of fn is different from the parameter passed to it, 
      * we set the hash to the new value. */
@@ -454,6 +457,7 @@ nextlistFromHash(
     ObjReference *contentsref = objRefNew(contents_cons->cdr);
     Cons *new_entry = consNew((Object *) keyref, (Object *) contentsref);
     Cons *new_head = consNew((Object *) new_entry, (Object *) cur_alist);
+    UNUSED(key);
     *p_alist = new_head;
 }
 
@@ -504,33 +508,11 @@ hashNext(Hash *hash, Object **p_placeholder)
     return result;
 }
 
-Object *
-hashNextOld(Hash *hash, Object **p_placeholder)
-{
-    Cons *alist;
-    Object *result;
-
-    if (!*p_placeholder) {
-	*p_placeholder = (Object *) listForHashNext(hash);
-	return ((Cons *) *p_placeholder)->car;
-    }
-    alist = (Cons *) *p_placeholder;
-    if (alist->cdr) {
-	alist = (Cons *) alist->cdr;
-	result = alist->car;
-    }
-    else {
-	alist = (Cons *) alist->cdr;
-	result = NULL;
-    }
-    objectFree(*p_placeholder, FALSE);
-    *p_placeholder = (Object *) alist;
-    return result;
-}
-
 static Object *
 hashDropEntry(Cons *node_entry, Object *ignore)
 {
+    UNUSED(node_entry);
+    UNUSED(ignore);
     return NULL;
 }
 

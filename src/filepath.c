@@ -145,7 +145,7 @@ locateFile(char *path, char *templatedir, char *dbdir, char *filename)
 // simplify the identification of the version part of the filepath.
 // Return a version object (a list consisting of the version components,
 // eg 8.1.4 becomes (8 1 4))
-Object *
+static Object *
 versionFromMatch(char *filepath, char *filename)
 {
     char *version_str;

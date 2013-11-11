@@ -27,6 +27,8 @@
 #include "constraint.sql"
 #include "schema.sql"
 #include "language.sql"
+#include <check.h>
+#include "suites.h"
 
 static String *last_key = NULL;
 
@@ -215,6 +217,7 @@ testExecQry(Connection *connection,
     Vector *fields;
     Vector *rows;
     String *key = despacedString(qry);
+    UNUSED(params);
 
     if (!query_hash) {
 	query_hash = initQueries();

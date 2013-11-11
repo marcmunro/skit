@@ -50,15 +50,6 @@ isStrToken(char ch)
 }
 
 static char *
-skipToSpace(char *str)
-{
-    while ((*str != '\0') && !isspace(*str)) {
-	str++;
-    }
-    return str;
-}
-
-static char *
 skipToSeparator(char *str)
 {
     while ((*str != '\0') && !isSpecialToken(*str) && !isspace(*str)) {

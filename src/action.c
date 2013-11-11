@@ -20,19 +20,15 @@
 #include "exceptions.h"
 
 static String action_str = {OBJ_STRING, "action"};
-static String print_str = {OBJ_STRING, "print"};
-static String template_str = {OBJ_STRING, "template"};
 static String sources_str = {OBJ_STRING, "sources"};
 static String value_str = {OBJ_STRING, "value"};
 static String type_str = {OBJ_STRING, "type"};
 static String required_str = {OBJ_STRING, "required"};
 static String default_str = {OBJ_STRING, "default"};
-static String add_deps_str= {OBJ_STRING, "add_deps"}; 
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
 static String fallback_processor_filename = {OBJ_STRING, 
 					     "deps/process_fallbacks.xsl"};
-static String dbtype_str = {OBJ_STRING, "dbtype"};
 static String global_str = {OBJ_STRING, "global"};
 static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
@@ -42,12 +38,12 @@ static Document *fallback_processor = NULL;
 static Cons *docstack = NULL;
 
 void
-docStackPush(Object *obj)
+docStackPush(Document *doc)
 {
-    if (obj->type == OBJ_DOCUMENT) {
-	readDocDbver((Document *) obj);
+    if (doc->type == OBJ_DOCUMENT) {
+	readDocDbver(doc);
     }
-    docstack = consNew(obj, (Object *) docstack);
+    docstack = consNew((Object *) doc, (Object *) docstack);
 }
 
 Document *
@@ -68,7 +64,7 @@ docStackPop()
     return (Document *) result;
 }
 
-void
+static void
 docStackFree()
 {
     Object *obj;
@@ -77,7 +73,7 @@ docStackFree()
     }
 }
 
-Object *
+static Object *
 docStackHead()
 {
     if (docstack) {
@@ -135,7 +131,7 @@ applyXSL(Document *xslsheet)
     src_doc = (Document *) docStackPop();
     result_doc = applyXSLStylesheet(src_doc, xslsheet);
     objectFree((Object *) src_doc, TRUE);
-    docStackPush((Object *) result_doc);
+    docStackPush(result_doc);
 }
 
 void
@@ -189,7 +185,7 @@ loadInFile(String *filename)
 	RAISE();
     }
     END;
-    docStackPush((Object *) doc);
+    docStackPush(doc);
 }
 
 /* Determine whether the current action has a non-source file argument */
@@ -421,8 +417,6 @@ doParseTemplate(String *filename)
     String *volatile path;
     Hash *volatile params = NULL;
     Document *volatile template_doc = NULL;
-    char *tmp;
-    Object *obj;
     Object *old;
 
     BEGIN {
@@ -461,6 +455,7 @@ parseTemplate(Object *obj)
 {
     String *volatile filename;
     Object *action_info;
+    UNUSED(obj);
 
     BEGIN {
 	filename = read_arg();
@@ -499,36 +494,42 @@ execParseTemplate(char *name)
 static Object *
 parseExtract(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("extract.xml");
 }
 
 static Object *
 parseScatter(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("scatter.xml");
 }
 
 static Object *
 parseDiff(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("diff.xml");
 }
 
 static Object *
 parseGenerate(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("generate.xml");
 }
 
 static Object *
 parseConnect(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("connect.xml");
 }
 
 static Object *
 parseAdddeps(Object *obj)
 {
+    UNUSED(obj);
     return execParseTemplate("add_deps.xml");
 }
 
@@ -536,6 +537,7 @@ static Object *
 parsePrint(Object *obj)
 {
     Hash *args = getOptionlistArgs(printOptionList());
+    UNUSED(obj);
     return (Object *) args;
 }
 
@@ -544,6 +546,7 @@ parseList(Object *obj)
 {
     String *volatile filename = stringNew("list.xml");
     Object *params;
+    UNUSED(obj);
     BEGIN {
 	params = doParseTemplate(filename);
     }
@@ -587,6 +590,7 @@ parseDbtype(Object *obj)
     char *str;
     Hash *result;
 
+    UNUSED(obj);
     if (!dbtype) {
 	RAISE(PARAMETER_ERROR,
 	      newstr("dbtype requires an argument"));    
@@ -653,7 +657,6 @@ parseAction(String *action)
     String *volatile parser_name;
     Symbol *action_parser;
     Hash *params;
-    char *tmp = NULL;
     Object *old;
 
     defineActionParsers();
@@ -718,7 +721,7 @@ executePrint(Object *params)
     boolean print_xml;
     boolean has_deps;
     Document *doc;
-    char *docstr;
+    UNUSED(params);
 
     if (!sources) {
 	RAISE(GENERAL_ERROR, 
@@ -793,7 +796,7 @@ executeTemplate(Object *params)
 	    (void) xmlNewProp(root, (const xmlChar *) "retain_deps", 
 			      (xmlChar *) "true");
 	}
-	docStackPush((Object *) result);
+	docStackPush(result);
     }
 
     return NULL;
@@ -802,6 +805,7 @@ executeTemplate(Object *params)
 static Object *
 executeDoNothing(Object *params)
 {
+    UNUSED(params);
     return NULL;
 }
 
@@ -810,7 +814,8 @@ executeConnect(Object *params)
 {
     String *arg = (String *) symbolGetValue("arg");
     Symbol *connect = symbolNew("connect");
-    Connection *ignore;
+    UNUSED(params);
+
     if (arg) {
 	symSet(connect, (Object *) stringNew(arg->value));
     }
@@ -818,7 +823,7 @@ executeConnect(Object *params)
 	symSet(connect, (Object *) stringNew(""));
     }
 
-    ignore = sqlConnect();
+    (void) sqlConnect();
     return NULL;
 }
 
@@ -851,6 +856,7 @@ setVarFromParam(Cons *entry, Object *params)
     Object *value = entry->cdr;
     Symbol *sym;
 
+    UNUSED(params);
     //printSexp(stderr, "KEY: ", key);
     //printSexp(stderr, "VALUE: ", value);
 
@@ -892,8 +898,6 @@ executeAction(String *action, Hash *params)
 {
     String *volatile executor_name;
     Symbol *action_executor;
-    Object *result = NULL;
-    char *tmp = NULL;
     boolean global = FALSE;
 
     defineActionExecutors();
@@ -906,7 +910,7 @@ executeAction(String *action, Hash *params)
 
     BEGIN {
 	if (action_executor = symbolGet(executor_name->value)) {
-	    result = symbolExec(action_executor, (Object *) params);
+	    (void) symbolExec(action_executor, (Object *) params);
 	}
 	else{
 	    RAISE(NOT_IMPLEMENTED_ERROR,

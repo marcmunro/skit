@@ -92,7 +92,7 @@ record_param(String *value, char *name, boolean make_global)
 	symSet(sym, (Object *) value);
 }
 
-char *
+static char *
 append(char *source, char *token, String *str)
 {
 	char *result = newstr("%s%s='%s' ", source, token, str->value);
@@ -122,7 +122,6 @@ pgsqlConnect(Object *sqlfuncs)
     String *pass;
 	Symbol *sym;
 	char *tmp;
-	char *tmp2;
 
 	connect = (String *) symbolGetValueWithStatus("connect", &new_connection);
 
@@ -227,8 +226,6 @@ pgResultCheck(PGresult *result)
 				  PQresultErrorMessage(result)));
 	}
 }
-
-static int counter = 0;
 
 static Cursor *
 pgsqlExecQry(Connection *connection, 
@@ -635,7 +632,7 @@ nameNeedsQuote(String *name)
 	return isReservedWord(name);
 }
 
-Regexp *
+static Regexp *
 quoteExpr()
 {
 	if (!quotexpr) {

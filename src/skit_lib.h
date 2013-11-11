@@ -322,6 +322,10 @@ typedef struct TokenStr {
 #endif
 
 
+/* To suppress warnings aout unused parameters */
+#define UNUSED(x) (void)(x)
+
+/* Useful debugging macros. */
 #define dbgSexp(x) printSexp(stderr, #x ": ", (Object *) x)
 #define dbgNode(x) printNode(stderr, #x ": ", x)
 
@@ -347,7 +351,7 @@ extern Object *setCdr(Cons *cons, Object *obj);
 extern Object *getCar(Cons *cons);
 extern Object *getCdr(Cons *cons);
 extern int consLen(Cons *cons);
-extern boolean consIaAlist(Cons *cons);
+extern boolean consIsAlist(Cons *cons);
 extern int consCmp(Cons *cons1, Cons *cons2);
 extern boolean isCons(Cons *obj);
 extern Object *alistGet(Cons *alist, Object *key);
@@ -464,12 +468,13 @@ extern boolean stringMatch(String *str, char *expr);
 extern Int4 *stringToInt4(String *str);
 extern Cons *stringSplit(String *instr, String *split);
 extern String *stringLower(String *str);
+extern void stringLowerInPlace(String *str);
 extern String *stringNext(String *str, Object **placeholder);
 extern boolean checkString(String *str, void *chunk);
 
 // symbol.c
-extern Hash *symbolTable();
-extern void freeSymbolTable();
+extern Hash *symbolTable(void);
+extern void freeSymbolTable(void);
 extern Symbol *symbolNew(char *name);
 extern Symbol *symbolGet(char *name);
 extern void symSet(Symbol *sym, Object *obj);
@@ -480,15 +485,14 @@ extern char *symbolStr(Symbol *sym);
 extern Symbol *symbolCopy(Symbol *old);
 extern Object *symbolEval(Symbol *sym);
 extern Object *symbolExec(Symbol *sym, Object *obj);
-extern void newSymbolScope();
-extern void dropSymbolScope();
+extern void newSymbolScope(void);
+extern void dropSymbolScope(void);
 extern void setScopeForSymbol(Symbol *sym);
 extern Object *symGet(Symbol *sym);
 extern Object *symbolGetValue(char *name);
 extern Object *symbolGetValueWithStatus(char *name, boolean *in_local_scope);
 extern void symbolSetRoot(char *name, Object *value);
 extern void symbolCreate(char *name, ObjectFn *fn, Object *value);
-extern void checkSymbols();
 extern boolean checkSymbol(Symbol *sym, void *chunk);
 
 // parse.c
@@ -503,14 +507,14 @@ extern char *strEval(char *instr);
 
 #define MEMPRINTF printf
 extern void *memchunks_incr(void *chunk);
-extern int memchunks_in_use();
-extern void showChunks();
+extern int memchunks_in_use(void);
+extern void showChunks(void);
 extern boolean checkChunk(void *chunk, void *check_for);
-extern void memShutdown();
-extern void curFree();
+extern void memShutdown(void);
+extern void curFree(void);
 extern void showFree(int number_to_show);
 extern void showMalloc(int number_to_show);
-extern void TrackMalloc(int number_to_show);
+extern void trackMalloc(int number_to_show);
 extern void chunkInfo(void *chunk);
 
 #define newstr(...)  memchunks_incr(g_strdup_printf(__VA_ARGS__))
@@ -525,7 +529,7 @@ extern void chunkInfo(void *chunk);
 #define memShutdown()
 #define showFree(x)
 #define showMalloc(x)
-#define TrackMalloc(x)
+#define trackMalloc(x)
 #define checkChunk(x)
 #define chunkInfo(x)
 
@@ -536,10 +540,10 @@ extern void chunkInfo(void *chunk);
 extern void *skalloc(size_t size);
 extern void skfree(void *ptr);
 extern void *skrealloc(void *p, size_t size);
-extern void skitFreeMem();
+extern void skitFreeMem(void);
 
 // optionlist.c
-extern Cons *optionlistNew();
+extern Cons *optionlistNew(void);
 extern void optionlistAdd(Cons *list, String *option_name, 
 			  String *field, Object *value);
 extern void optionlistAddAlias(Cons *list, String *alias, String *key);
@@ -548,38 +552,41 @@ extern Object *optionlistGetOptionValue(Cons *list, String *key, String *field);
 extern String *optionlistGetOptionName(Cons *list, String *key);
 
 // options.c
-extern Hash *coreOptionHash();
-extern Cons *printOptionList();
-extern void freeOptions();
+extern Hash *coreOptionHash(void);
+extern Cons *printOptionList(void);
+extern void freeOptions(void);
 extern Hash *hashFromOptions(Cons *options);
 extern Cons *optionKeyList(String *name);
 
 // params.c
 extern void record_args(int argc, char *argv[]);
-extern char *usage_msg();
+extern char *usage_msg(void);
 extern void show_usage(FILE *dest);
-extern String *read_arg();
+extern String *read_arg(void);
 extern void unread_arg(String *arg, boolean is_option);
 extern String *nextArg(String **p_arg, boolean *p_option);
-extern String *nextAction();
+extern String *nextAction(void);
 extern Object *validateParamValue(String *type, String *value);
+extern void initTemplatePath(char *arg);
 
 
 // action.c
-extern void freeStdTemplates();
+extern void freeStdTemplates(void);
 extern void loadInFile(String *filename);
-extern Document *docStackPop();
+extern void docStackPush(Document *doc);
+extern Document *docStackPop(void);
 extern Hash *parseAction(String *action);
 extern void executeAction(String *action, Hash *params);
-extern void finalAction();
-extern void addDeps();
+extern void finalAction(void);
+extern void addDeps(void);
 extern void applyXSL(Document *xslsheet);
-extern Document *getFallbackProcessor();
+extern Document *getFallbackProcessor(void);
 
 // builtin_symbols.c
-extern void initBuiltinSymbols();
+extern void initBuiltInSymbols(void);
 
 // filepath.c
+extern void searchdir(Hash *hash, char *path, char *pattern);
 extern char *pathToFile(Vector *roots, String *templatedir, String *dbdir, 
 			Object *version, String *filename);
 extern String *findFile(String *filename);
@@ -590,7 +597,7 @@ extern Document *docFromFile(String *path);
 extern Document *simpleDocFromFile(String *path);
 extern void makePath(char *path);
 extern Document *scatterTemplate(String *path);
-extern void documentFreeMem();
+extern void documentFreeMem(void);
 extern void delFile(char *filename);
 
 // xmlfile.c
@@ -603,6 +610,7 @@ extern void docFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
 extern xmlNode *firstElement(xmlNode *start);
 extern xmlNode *copyObjectNode(xmlNode *source);
+extern void freeSkitProcessors(void);
 
 // document.c
 extern char *nodestr(xmlNode *node);
@@ -642,11 +650,12 @@ extern xmlNode *getNextNode(xmlNode *node);
 extern String *regexpReplace(String *src, Regexp *regexp, String *replacement);
 extern String *regexpReplaceOnly(String *src, Regexp *regexp, 
 				 String *replacement);
+extern boolean regexpMatch(Regexp *regexp, String *str);
 
 // sql.c
 extern String *trimSqlText(String *text);
-extern void finishWithConnection();
-extern Connection *sqlConnect();
+extern void finishWithConnection(void);
+extern Connection *sqlConnect(void);
 extern Cursor *sqlExec(Connection *connection, 
 		       String *qry, Object *params);
 extern void connectionFree(Connection *connection);
@@ -664,8 +673,8 @@ extern char *applyParams(char *qrystr, Object *params);
 
 
 // pgsql.c
-extern void registerPGSQL();
-extern void pgsqlFreeMem();
+extern void registerPGSQL(void);
+extern void pgsqlFreeMem(void);
 
 // deps.c
 extern boolean isDependencySet(xmlNode *node);
@@ -697,6 +706,7 @@ extern void addNavigationToDoc(xmlNode *parent, Vector *nodes,
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);
+extern void xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs);
 
 //diff.c
 extern xmlNode *doDiff(String *diffrules, boolean swap);

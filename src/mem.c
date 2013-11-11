@@ -35,7 +35,7 @@ static GHashTable *hash_frees = NULL;
  * For debugging purposes.  Add a call to this from wherever you need 
  * breakpoint and then you can break on it.
  */
-void
+static void
 memdebug(char *label)
 {
     fprintf(stderr, "MEMDEBUG: %s\n", label);
@@ -321,12 +321,12 @@ showChunk(
     gpointer param)
 {
     void *ptr;
-    Object *obj;
     /* The keys passed to this function are real C-strings.  Before
      * placing them in the array, we should convert them to String
      * objects.  Note that we will be just copying the pointers and
      * not doing any real copies.  Remember this when it becomes time to
      * free the strings! */
+    UNUSED(param);
 
     fprintf(stderr, "Chunk %d not freed: %s.", 
 	    (intptr_t) contents, (char *) key);
@@ -422,12 +422,6 @@ trackMalloc(int number_to_show)
     track_malloc_number = number_to_show;
 }
 
-int
-getMalloc()
-{
-    return chunk_number;
-}
-
 static void
 skforget(void *ptr)
 {
@@ -507,7 +501,6 @@ void
 skitFreeMem()
 {
     String *arg;
-    Symbol *sym = symbolGet("current-timestamp");
 
     while (arg = read_arg()) {
 	objectFree((Object *) arg, TRUE);

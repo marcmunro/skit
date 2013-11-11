@@ -49,5 +49,4 @@ XSLTPROC = @XSLTPROC@
 
 ifeq ($(GCC), yes)
 	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations
-endif
 

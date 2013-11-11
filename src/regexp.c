@@ -18,7 +18,7 @@
  
 #define MAX_MATCHES 10
 
-String *
+static String *
 newSubstr(char *in, int len)
 {
     char *str = skalloc(len + 1);
@@ -70,42 +70,7 @@ splitReplacementStr(String *replacement)
     return result;
 }
 
-static int 
-rreplace(char *buf, int size, regex_t *re, char *rp)
-{
-    char *pos;
-    int sub, so, n;
-    regmatch_t pmatch [10]; /* regoff_t is int so size is int */
- 
-    if (regexec (re, buf, 10, pmatch, 0)) return 0;
-
-    for (pos = rp; *pos; pos++)
-	if (*pos == '\\' && *(pos + 1) > '0' && *(pos + 1) <= '9') {
-	    so = pmatch [*(pos + 1) - 48].rm_so;
-	    n = pmatch [*(pos + 1) - 48].rm_eo - so;
-	    if (so < 0 || strlen (rp) + n - 1 > size) return 1;
-	    memmove (pos + n, pos + 2, strlen (pos) - 1);
-	    memmove (pos, buf + so, n);
-	    pos = pos + n - 2;
-	}
-
-    sub = pmatch [1].rm_so; /* no repeated replace when sub >= 0 */
-
-    for (pos = buf; !regexec (re, pos, 1, pmatch, 0); ) {
-	n = pmatch [0].rm_eo - pmatch [0].rm_so;
-	pos += pmatch [0].rm_so;
-	if (strlen (buf) - n + strlen (rp) + 1 > size) return 1;
-	memmove (pos + strlen (rp), pos + n, strlen (pos) - n + 1);
-	memmove (pos, rp, strlen (rp));
-	pos += strlen (rp);
-	if (sub >= 0) break;
-    }
-    
-    return 0;
-}
-
-
-String *
+static String *
 replacementStr(char *buf, regmatch_t *match, Vector *replacements)
 {
     long len = 0;

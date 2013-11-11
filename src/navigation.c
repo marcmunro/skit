@@ -387,12 +387,10 @@ navigationToNode(DagNode *start, DagNode *target)
     Vector *context_arrivals = NULL;
     Object *elem;
     DagNode *current = NULL;
-    DagNode *next = NULL;
     DagNode *common_root = NULL;
     DagNode *navigation = NULL;
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     boolean handling_context = (ignore_contexts == NULL);
-    int i;
 
     BEGIN {
 	if (handling_context) {
@@ -459,7 +457,7 @@ navigationToNode(DagNode *start, DagNode *target)
 
 /* Find the parent dboject node for a given dbobject.
  */
-Node *
+static Node *
 getParent(xmlNode *dbobject, Hash *byfqn)
 {
     Object *volatile key = NULL;
@@ -483,7 +481,7 @@ getParent(xmlNode *dbobject, Hash *byfqn)
 /* Return a vector of fqns (Strings) describing the ancestry of
  * dbobject, starting from the node and working up.
  */
-Vector *
+static Vector *
 getAncestry(xmlNode *dbobject, Hash *byfqn)
 {
     Vector *result = vectorNew(10);
@@ -513,11 +511,10 @@ getAncestry(xmlNode *dbobject, Hash *byfqn)
 }
 
 /* Identify the nearest common ancestor from 2 vectors of fqn Strings. */
-String *
+static String *
 commonAncestor(Vector *vec1, Vector *vec2)
 {
     String *result = NULL;
-    int limit = (vec1->elems > vec2->elems)? vec2->elems: vec1->elems;
     int i1 = vec1->elems;
     int i2 = vec2->elems;
 
@@ -531,7 +528,7 @@ commonAncestor(Vector *vec1, Vector *vec2)
     return result;
 }
 
-boolean
+static boolean
 fqnEq(xmlNode *node1, xmlNode *node2)
 {
     xmlChar *fqn1 = xmlGetProp(node1, "fqn");
@@ -544,7 +541,7 @@ fqnEq(xmlNode *node1, xmlNode *node2)
 
 
 /* Add departure navigation nodes to the departures vector. */
-void
+static void
 departFrom(
     xmlNode *nav_from,
     Vector *ancestry, 
@@ -578,7 +575,7 @@ departFrom(
 }
 
 /* Add arrival navigation nodes to the arrivals vector. */
-void
+static void
 arriveAt(
     xmlNode *nav_to,
     Vector *ancestry, 
@@ -614,7 +611,7 @@ arriveAt(
 /* Given from = a.b.c and to = a.d.e.f, our navigation would be
  * departures = [b], arrivals = [d, e]
  */
-void
+static void
 getNodeNavigation(
     xmlNode *nav_from, 
     xmlNode *nav_to, 
@@ -648,7 +645,7 @@ getNodeNavigation(
 }
 
 
-Hash *
+static Hash *
 makeNodesHash(Vector *nodes)
 {
     Hash *byfqn = hashNew(TRUE);
@@ -663,7 +660,7 @@ makeNodesHash(Vector *nodes)
    return byfqn;
 }
 
-void
+static void
 doAddNavigation(
     xmlNode *parent, 
     xmlNode *nav_from, 
@@ -724,7 +721,7 @@ doAddNavigation(
     END;
 }
 
-boolean
+static boolean
 nodeHasPrintElement(xmlNode *node)
 {
     while (node = getNextNode(node)) {

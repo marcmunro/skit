@@ -95,83 +95,12 @@ nextParam(char * fn_name, Cons **p_list, ObjType type,
 }
 
 
-static Object *
-nextParamNew(char * fn_name, Cons **p_list, ObjType type, 
-	  boolean required, boolean evaluate, int param_no)
-{
-    Object *elem;
-    Object *deref;
-    char *sexp;
-    char *msg;
-
-    if (!*p_list) {
-	RAISE(LIST_ERROR, 
-	      newstr("%s: missing arg no %d", fn_name, param_no));
-    }
-    if ((*p_list)->type != OBJ_CONS) {
-	RAISE(LIST_ERROR, 
-	      newstr("%s: invalid args.  Expecting a list, got %s",
-		     fn_name, objTypeName((Object *) *p_list)));
-    }
-    
-    if (elem = (*p_list)->car) {
-	if (evaluate) {
-	    elem = objectEval(elem);
-	}
-	else {
-	    elem = objectCopy(elem);
-	}
-	
-	if (type != OBJ_UNDEFINED) {
-	    if (elem) {
-		deref = dereference(elem);
-		
-		if (deref->type != type) {
-		    sexp = objectSexp(elem);
-		    msg = newstr("%s: invalid arg (no %d).  "
-				 "Expecting %s got %s:%s", 
-				 fn_name, param_no, typeName(type), 
-				 objTypeName(deref), sexp);
-		    skfree(sexp);
-		    objectFree(elem, TRUE);
-		}
-	    }
-	    else {
-		msg = newstr("%s: invalid arg (no %d).  Expecting %s got null", 
-			     fn_name, param_no, typeName(type));
-	    }
-
-	    if (msg) {
-		RAISE(LIST_ERROR, msg);
-	    }
-	}
-    }
-    else {
-	if (required) {
-	    RAISE(LIST_ERROR, 
-		  newstr("%s: missing required paramer %d", fn_name, param_no));
-	}
-    }
-
-    *p_list = (Cons *) (*p_list)->cdr;
-    return elem;
-}
-
-
 static void
 raiseIfNotList(char *fn_name, Object *obj)
 {
     obj = dereference(obj);
     if (!(obj && (obj->type == OBJ_CONS))) {
 	raiseMsg("%s: invalid arg (expecting list): %s", fn_name, obj);
-    }
-}
-
-static void
-raiseIfNoArg(char *fn_name, Object *obj, int argno)
-{
-    if (!obj) {
-	RAISE(LIST_ERROR, newstr("%s: missing arg %d ", fn_name, argno));
     }
 }
 
@@ -212,15 +141,6 @@ raiseIfNotRegexp(char *fn_name, Regexp *regex)
 }
 
 static void
-raiseIfNotInt(char *fn_name, Int4 *arg)
-{
-    if (!(arg&& (arg->type == OBJ_INT4))) {
-	raiseMsg("%s: invalid arg (expecting int4): %s", 
-		 fn_name, (Object *) arg);
-    }
-}
-
-static void
 raiseIfMoreArgs(char *fn_name, Object *obj)
 {
     if (obj) {
@@ -257,10 +177,7 @@ fnSetq(Object *obj)
     Cons *cons = (Cons *) obj;
     Cons *next;
     Object *obj_to_eval;
-    Object *oldvalue;
     Object *new;
-    char *curstr;
-    char *newstr;
 
     raiseIfNotList("setq", obj);
     sym = (Symbol *) cons->car;
@@ -381,7 +298,6 @@ fnMap(Object *obj)
     Cons *src;
     Cons *targ;
     Cons *out;
-    Object *item;
     Object *next;
     Symbol *fn;
 
@@ -423,7 +339,6 @@ fnVersion(Object *obj)
     Cons *cons;
     String *str;
     String *dotstr;
-    Object *version;
     Cons *split_list;
     Cons *split_list_list;
     Cons *map_list;
@@ -471,6 +386,8 @@ fnDBQuote(Object *obj)
 static Object *
 fnCurTimestamp(Object *obj)
 {
+    UNUSED(obj);
+
     time_t ts = time(NULL);
     struct tm *local = localtime(&ts);
     char tstr[40];
@@ -914,15 +831,6 @@ fnHashAdd(Object *obj)
 }
 
 static void
-evalStr(char *str)
-{
-    char *tmp = newstr("%s", str);
-    Object *obj = evalSexp(tmp);
-    objectFree(obj, TRUE);
-    skfree(tmp);
-}
-
-static void
 defineVar(char *name, Object *obj)
 {
     Symbol *sym = symbolNew(name);
@@ -988,14 +896,13 @@ initBaseSymbols()
     registerPGSQL();	// TODO: Move this call to somewhere more sensible
 }
 
+
 void
-initBuiltInSymbols() 
+initBuiltInSymbols(void) 
 {
     static boolean done = FALSE;
     if (!done) {
 	initBaseSymbols();
     }
-
-    //done = TRUE;
 }
   

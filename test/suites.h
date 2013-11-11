@@ -55,14 +55,17 @@ extern int captureOutput(TestRunner *test_fn, void *param,
 // redirect.c
 extern void redirect_stdout(char *filename);
 extern void redirect_stderr(char *filename);
-extern char *readfrom_stdout();
-extern char *readfrom_stderr();
-extern void end_redirects();
+extern char *readfrom_stdout(void);
+extern char *readfrom_stderr(void);
+extern void end_redirects(void);
 
 // testdata.c
-void registerTestSQL();
+void registerTestSQL(void);
 
 
+// check_params.c
+extern void myfail(char *str);
+extern boolean contains(char *src, char *expr);
 
 
 #define TEST_TIMEOUT 180
@@ -90,3 +93,4 @@ void registerTestSQL();
         tcase_set_timeout (p1, TEST_TIMEOUT);	\
 	tcase_add_test_raise_signal(p1, p2, p3);	\
     }
+

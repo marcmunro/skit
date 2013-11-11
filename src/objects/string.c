@@ -69,7 +69,7 @@ stringLower(String *str)
 }
 
 void
-stringLowerOld(String *str)
+stringLowerInPlace(String *str)
 {
     int i;
     assert(str->type == OBJ_STRING,
@@ -140,7 +140,7 @@ stringMatch(String *str, char *expr)
     return result;
 }
 
-String *
+static String *
 nextTok(char *instr, char *separators, char **p_placeholder)
 {
     size_t len;

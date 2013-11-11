@@ -255,7 +255,7 @@ readSymbol(char *tok)
 }
 
 /* Copy a string token, handling escapes as we go */
-char *
+static char *
 escapedStrEval(char *tok)
 {
     char *tmp = strEval(tok);
@@ -332,7 +332,7 @@ objectRead(TokenStr *sexp)
     return NULL;
 }
 
-Object *
+static Object *
 trappedObjectRead(TokenStr *sexp)
 {
     BEGIN {
@@ -468,7 +468,7 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     return new;
 }
 
-void
+static void
 doDagNodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
@@ -477,7 +477,7 @@ doDagNodeFree(DagNode *node)
     skfree(node);
 }
 
-void
+static void
 dagNodeFree(DagNode *node)
 {
     DagNode *sub;
@@ -582,24 +582,6 @@ nameForBuildType(DagNodeBuildType build_type)
     return "UNKNOWNBUILDTYPE";
 }
 
-char *
-buildBitsStr(BuildTypeBitSet bitset)
-{
-    char *result = skalloc(4);
-    result[0] = '\0';
-    if (inBuildTypeBitSet(bitset, BUILD_NODE)) {
-	strcat(result, "B");
-    }
-    if (inBuildTypeBitSet(bitset, DROP_NODE)) {
-	strcat(result, "D");
-    }
-    if (inBuildTypeBitSet(bitset, DIFF_NODE)) {
-	strcat(result, "F");
-    }
-    return result;
-}
-
-
 /* Return dynamically-created string representation of object. 
  * The full argument allows more information to be returned about the
  * object, for debugging purposes. */
@@ -607,10 +589,8 @@ char *
 objectSexp(Object *obj)
 {
     char *fails;
-    String *tmps;
     char *tmp;
     char *tmp2;
-    char *tmp3;
 
     if (!obj) {
 	return newstr("nil");
@@ -668,7 +648,7 @@ objectSexp(Object *obj)
 }
 
 /* Create a deep copy of a cons cell. */
-Cons *
+static Cons *
 consDup(Cons *cons)
 {
     Object *volatile carcopy = NULL;
@@ -758,7 +738,6 @@ Object *
 objectEval(Object *obj)
 {
     Object *result = NULL;
-    char *tmp;
     if (obj) {
 	switch (obj->type) {
 	case OBJ_CONS: 
@@ -858,7 +837,6 @@ objSelect(Object *collection, Object *key)
 Object *
 objNext(Object *collection, Object **p_placeholder)
 {
-    Object *result;
     collection = dereference(collection);
     switch (collection->type) {
     case OBJ_HASH: 

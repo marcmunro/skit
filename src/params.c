@@ -19,11 +19,6 @@
 #include "skit_param.h"
 
 
-static int my_argc;
-static int cur_arg = 1;
-static char **my_argv = NULL;
-
-
 static Cons *arglist = NULL;
 
 void
@@ -72,51 +67,6 @@ unread_arg(String *arg, boolean is_option)
     arglist = consNew((Object *) my_arg, (Object *) arglist);
 }
 
-/* On the first call, record the arguments provided on the command line.
- * On subsequent calls return the next argument from the list,
- * returning NULL when we are done
- */
-void
-record_args0(int argc, char *argv[])
-{
-    cur_arg = 1;
-    my_argc = argc;
-    my_argv = argv;
-}
-
-String *
-read_arg0()
-{
-    String *result;
-    if (cur_arg < my_argc) {
-	result = stringNew(my_argv[cur_arg++]);
-	return result;
-    }
-    return NULL;
-}
-
-char *
-read_arg_old()
-{
-    if (cur_arg < my_argc) {
-	return my_argv[cur_arg++];
-    }
-    return NULL;
-}
-
-void
-unread_arg_old()
-{
-    cur_arg--;
-}
-
-void
-unread_arg0(String *arg)
-{
-    objectFree((Object *) arg, TRUE);
-    cur_arg--;
-}
-
 char*
 usage_msg()
 {
@@ -140,8 +90,6 @@ usage_abort(char *errmsg)
     fprintf(stderr, usage_msg());
     exit(1);
 }
-
-static Hash *option_hash;
 
 String *
 nextArg(String **p_arg, boolean *p_option)

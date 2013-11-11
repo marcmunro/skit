@@ -78,7 +78,6 @@ vectorPush(Vector *vector, Object *obj)
 Object *
 vectorPop(Vector *vector)
 {
-    Object *obj;
     if (vector->elems) {
 	return vector->contents->vector[--vector->elems];
     }
@@ -241,8 +240,6 @@ vectorGet(Vector *vec, Object *key)
 void
 vectorInsert(Vector *vec, Object *obj, int idx)
 {
-    Object *deref = dereference(obj);
-    Object *this;
     int i;
     if (vec) {
 	assert(((idx >= 0) && (idx <= vec->elems)), 
@@ -290,7 +287,6 @@ vectorSort(Vector *vec, ComparatorFn *fn)
 Object *
 vectorFind(Vector *vec, Object *obj)
 {
-    Object *deref = dereference(obj);
     Object *this;
     int i;
     if (vec) {
@@ -307,7 +303,6 @@ vectorFind(Vector *vec, Object *obj)
 Object *
 vectorDel(Vector *vec, Object *obj)
 {
-    Object *deref = dereference(obj);
     Object *this;
     int i;
     if (vec) {

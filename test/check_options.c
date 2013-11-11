@@ -77,7 +77,7 @@ START_TEST(create_options)
 {
     // Simply test that creation and destruction appears to go according
     // to plan.
-    Hash *core_options = coreOptionHash();
+    (void) coreOptionHash();
     freeOptions();
     FREEMEMWITHCHECK;
 }

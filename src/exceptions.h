@@ -218,9 +218,10 @@
 // from exception.c
 extern char *exceptionStr(Exception *ex);
 extern Exception *exceptionNew(char *file, int line);
-extern Exception *exceptionCurHandler();
+extern Exception *exceptionCurHandler(void);
 extern void exceptionPush(Exception *ex);
-extern void exceptionPop();
+extern void exceptionPop(void);
 extern void exceptionRaise(char *file, int line, ...);
 extern void exceptionEnd(char *file, int line);
+extern void skit_register_signal_handler(void);
 

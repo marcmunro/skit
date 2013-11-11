@@ -24,7 +24,6 @@ nodestr(xmlNode *node)
 {
     char tmp[800];
     char *end = &(tmp[0]);
-    char *result;
     xmlAttrPtr attr;
     xmlChar *str;
     xmlChar *prop;
@@ -108,7 +107,7 @@ nodeNew(xmlNode *node)
     return result;
 }
 
-void
+static void
 setXPathContext(Document *doc)
 {
     xmlDocPtr xmldoc = doc->doc;
@@ -118,7 +117,6 @@ setXPathContext(Document *doc)
 xmlXPathObject *
 xpathEval(Document *doc, xmlNode *node, char *expr)
 {
-    xmlDoc *xmldoc = doc->doc;
     if (!doc->xpath_context) {
 	setXPathContext(doc);
     }
@@ -365,7 +363,6 @@ static int
 skitfileRead(void *context, char *buffer, int len) 
 {
     file_context *fc = (file_context *) context;
-    FILE *fp = fc->fp;
     int   count = 0;
     char c;
 
@@ -408,7 +405,6 @@ static boolean
 is_options_node(Document *doc)
 {
     xmlChar *name;
-    int type;
     boolean result = FALSE;
     if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
 	name = xmlTextReaderName(doc->reader);
@@ -581,8 +577,6 @@ docFromFile(String *path)
     Document *volatile doc = NULL;
     int ret;
     enum state_t {EXPECTING_OPTIONS, PROCESSING_OPTIONS, DONE} state;
-    boolean reading_options = FALSE;
-    boolean options_complete = FALSE;
     int     option_node_depth;
     xmlTextReaderPtr reader;
 
@@ -710,31 +704,6 @@ documentFree(Document *doc, boolean free_contents)
     skfree(doc);
 }
 
-static char testErrors[32769];
-static int testErrorsSize = 0;
-
-static void
-testErrorHandler(void *ctx  ATTRIBUTE_UNUSED, const char *msg, ...) {
-    va_list args;
-    int res;
-
-    if (testErrorsSize >= 32768)
-        return;
-    va_start(args, msg);
-    res = vsnprintf(&testErrors[testErrorsSize],
-                    32768 - testErrorsSize,
-		    msg, args);
-    va_end(args);
-    if (testErrorsSize + res >= 32768) {
-        /* buffer is full */
-	testErrorsSize = 32768;
-	testErrors[testErrorsSize] = 0;
-    } else {
-        testErrorsSize += res;
-    }
-    testErrors[testErrorsSize] = 0;
-}
-
 char *
 documentStr(Document *doc) 
 {
@@ -758,7 +727,7 @@ documentStr(Document *doc)
     return result;
 }
 
-xmlNode *
+static xmlNode *
 getFirstNode(Document *doc)
 {
     xmlNode *root = xmlDocGetRootElement(doc->doc);
@@ -901,7 +870,7 @@ getDocumentInclusion(Document *doc, String *URI)
     return NULL;
 }
 
-void
+static void
 recordDocumentSkippedLines(Document *doc, String *URI, int lines)
 {
     Int4 *my_lines;
@@ -979,15 +948,10 @@ docHasDeps(Document *doc)
 }
 
 static Object *
-setFoundNode(Object *node, Object *result)
-{
-    ((Node *) result)->node = ((Node *) node)->node;
-    return result;
-}
-
-static Object *
 findClusterNode(Object *this, Object *ignore)
 {
+    UNUSED(ignore);
+
     if (streq(((Node *) this)->node->name, "cluster")) {
 	return (Object *) nodeNew(((Node *) this)->node);
     }

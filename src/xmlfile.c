@@ -26,7 +26,6 @@
 #include <libxslt/xsltutils.h>
 #include <unistd.h>
 
-static String empty_str = {OBJ_STRING, ""};
 static String boolean_str = {OBJ_STRING, "boolean"};
 static Document *cur_template;
 
@@ -81,10 +80,8 @@ addAttribute(xmlNodePtr node,
 	     String *name,
 	     String *value)
 {
-    xmlAttrPtr attr;
-
     if (name && value) {
-	attr = xmlNewProp(node, name->value, value->value);
+	(void) xmlNewProp(node, name->value, value->value);
     }
 }
 
@@ -180,6 +177,7 @@ stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     xmlNode *node = NULL;
     Object *result_reqd;
     Document *doc = NULL;
+    UNUSED(depth);
 
     if (result_attr) {
 	result_reqd  = validateParamValue(&boolean_str, result_attr);
@@ -218,6 +216,10 @@ stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 ignoreFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
+    UNUSED(template_node);
+    UNUSED(parent_node);
+    UNUSED(depth);
+
     return NULL;
 }
 
@@ -253,7 +255,7 @@ static Object *
 getExprAttribute(xmlNode *node, char *attribute_name)
 {
     Object *result = NULL;
-    boolean ignore = hasExprAttribute(node, &result, attribute_name);
+    (void) hasExprAttribute(node, &result, attribute_name);
     return result;
 }
 
@@ -342,6 +344,7 @@ attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile name = nodeAttribute(template_node, "name");
     String *volatile str = NULL;
+    UNUSED(depth);
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR,
@@ -364,6 +367,7 @@ static xmlNode *
 textFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *str = NULL;
+    UNUSED(depth);
 
     if (str = fieldValueForTemplate(template_node)) {
 	addText(parent_node, str);
@@ -376,21 +380,15 @@ static xmlNode *
 execFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     Object *result;
+    UNUSED(parent_node);
+    UNUSED(depth);
+
     if (hasExpr(template_node, &result)) {
 	objectFree((Object *) result, TRUE);
 	return NULL;
     }
     RAISE(XML_PROCESSING_ERROR,
 	  newstr("No expr provided for skit:exec"));
-}
-
-static Object *debug_obj = NULL;
-
-static void
-xmlfiledebug(Object *obj)
-{
-    debug_obj = obj;
-    fprintf(stderr, "XMLFILEDEBUG\n");
 }
 
 static Cons *mapvars = NULL;
@@ -434,6 +432,9 @@ execResult(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile expr = nodeAttribute(template_node, "expr");
     Object *obj;
+    UNUSED(parent_node);
+    UNUSED(depth);
+
     if (!expr) {
 	RAISE(XML_PROCESSING_ERROR, 
 	      newstr("expr must be specified for skit:result"));
@@ -559,7 +560,6 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile sqltext = NULL;
     Object *volatile params = NULL;
     Connection *conn;
-    Tuple *tuple;
     xmlNode *child = NULL;
     Symbol *sym;
 
@@ -622,9 +622,6 @@ execForeach(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile filter = nodeAttribute(template_node, "filter");
     Object *collection;
     xmlNode *child = NULL;
-    boolean doit = TRUE;
-    Tuple *tuple;
-    Object *result;
 
     BEGIN {
 	if (fromname) {
@@ -715,8 +712,9 @@ static xmlNode *
 execVar(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *name = nodeAttribute(template_node, "name");
-    Object *value;
     Symbol *sym;
+    UNUSED(parent_node);
+    UNUSED(depth);
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR, 
@@ -742,6 +740,8 @@ execException(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *text = nodeAttribute(template_node, "text");
     char *contents;
+    UNUSED(parent_node);
+    UNUSED(depth);
 
     if (!text) {
 	RAISE(XML_PROCESSING_ERROR, 
@@ -761,6 +761,8 @@ execDeclareFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *name = nodeAttribute(template_node, "name");
     Node *node = nodeNew(template_node);
     Symbol *name_sym;
+    UNUSED(parent_node);
+    UNUSED(depth);
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR, 
@@ -825,7 +827,6 @@ handleFunctionParams(xmlNode *template_node, xmlNode *function_node)
 {
     xmlNode *current = function_node->children;
     xmlNs *ns;
-    char *nodename;
 
     /* Skip over any leading text, comment, etc nodes */
 
@@ -899,6 +900,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     xmlNode *scratch;
     xmlNode *result;
     xmlNode *root_node;
+    UNUSED(parent_node);
 
     BEGIN {
 	if (!stylesheet_name) {
@@ -1094,13 +1096,11 @@ extractExistsNodes(Vector *nodes)
 
 
 // TODO: Deprecate the old docFromVector code
-void
+static void
 docFromVectorOld(xmlNode *root_node, Vector *sorted_nodes)
 {
     DagNode *nav_from = NULL;
     DagNode *nav_to;
-    DagNode *next;
-    xmlNode *curnode;
     int from_idx = 0;
     int i;
     Vector *exists_nodes = extractExistsNodes(sorted_nodes);
@@ -1127,10 +1127,9 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile input = nodeAttribute(template_node, "input");
     Document *volatile source_doc = NULL;
     Vector *volatile sorted = NULL;
-    Document *result_doc = NULL;
-    Hash *dagnodes = NULL;
     xmlNode *root;
     xmlDocPtr xmldoc;
+    UNUSED(depth);
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
@@ -1141,7 +1140,7 @@ execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
 	docFromVectorOld(root, sorted);
-	result_doc = documentNew(xmldoc, NULL);
+	(void) documentNew(xmldoc, NULL);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1173,10 +1172,9 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile input = nodeAttribute(template_node, "input");
     Document *volatile source_doc = NULL;
     Vector *volatile sorted = NULL;
-    Document *result_doc = NULL;
-    Hash *dagnodes = NULL;
     xmlNode *root;
     xmlDocPtr xmldoc;
+    UNUSED(depth);
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
@@ -1187,7 +1185,7 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
 	xmlDocSetRootElement(xmldoc, root);
 	docFromVector(root, sorted);
-	result_doc = documentNew(xmldoc, NULL);
+	(void) documentNew(xmldoc, NULL);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1221,7 +1219,7 @@ findDbobject(xmlNode *node)
 /* Create a vector of dbobject nodes from a sorted document, removing
  * the sorted nodes from the source document.
  */
-Vector *
+static Vector *
 vectorFromDoc(xmlNode *parent)
 {
     xmlNode *dbobject;
@@ -1260,8 +1258,6 @@ execAddNavigation(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     Symbol *ignore_contexts = symbolGet("ignore-contexts");
     Vector *volatile nodes;
-    Node *this;
-    int i;
     (void) processRemaining(template_node->children, parent_node, depth);
 
     nodes = vectorFromDoc(parent_node);
@@ -1290,6 +1286,7 @@ addProcessor(char *name, xmlFn *processor)
 
 static boolean trees_match(xmlNode *node1, xmlNode *node2);
 
+static int
 list_length(xmlAttr *node)
 {
     int len = 0;
@@ -1528,7 +1525,6 @@ static xmlNode *
 get_header_node (xmlNode *root)
 {
     xmlNode *node = root;
-    xmlChar *text = NULL;
     while (node->prev) {
 	node = node->prev;
     }
@@ -1541,7 +1537,6 @@ get_header_node (xmlNode *root)
 static void
 add_header(xmlNode *root, xmlNode *header_node)
 {
-    xmlNode *node = header_node;
     xmlNode *new;
     while (header_node && (header_node->type != XML_ELEMENT_NODE)) {
 	new = copyWithEval(header_node);
@@ -1559,7 +1554,6 @@ get_footer_node (xmlNode *root)
 static void
 add_footer(xmlNode *prev, xmlNode *footer_node)
 {
-    xmlNode *node = footer_node;
     xmlNode *new;
     while (footer_node && (footer_node->type != XML_ELEMENT_NODE)) {
 	new = copyWithEval(footer_node);
@@ -1654,7 +1648,6 @@ writeScatterFile(String *path, String *name, xmlNode *node,
     xmlNode *scatter_start;
     xmlNode *prev_root;
     xmlNode *prev_start;
-    xmlNode *textnode;
     DiffType diff;
     xmlNode *new_root; 
     xmlNode *header_node = NULL;
@@ -1694,7 +1687,7 @@ writeScatterFile(String *path, String *name, xmlNode *node,
 		header_node = get_header_node(prev_root);
 		footer_node = get_footer_node(prev_root);
 	    }
-	    (void *) hashDel(files, (Object *) fullpath);
+	    (void) hashDel(files, (Object *) fullpath);
 	}
 	else {
 	    diff = IS_NEW;
@@ -1760,9 +1753,10 @@ scatterFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile path = nodeAttribute(template_node, "path");
     String *volatile name;
-    Hash *existing_files;
     Document *template = NULL;
     xmlNode *result = NULL;
+    UNUSED(parent_node);
+    UNUSED(depth);
 
     if (path) {
 	//result = processChildren(template_node, parent_node, 1);
@@ -1787,21 +1781,6 @@ scatterFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     //xmlFree(parent_node);
     
     return result;
-}
-
-static void
-copyNodesOld(xmlNode *target, xmlNode *from)
-{
-    xmlNode *copy;
-    xmlNode *text;
-    xmlUnlinkNode(from);  /* Unlink and copy seems like overkill, but it
-			   * is safe and eliminates undue copying of
-			   * namespace definitions */
-    copy = xmlCopyNode(from, 1);
-    xmlFree(from);
-    (void) xmlAddNextSibling(target, copy);
-    text = xmlNewText((xmlChar *) "\n");
-    (void) xmlAddNextSibling(target, text);
 }
 
 /* This is tricky because of the use of the skit namespace.  Attempts to 
@@ -1837,7 +1816,6 @@ gatherDirIntoNode(xmlNode *node, char *dirname)
     Document *volatile gatherdoc;
     xmlNode *root;
     xmlNode *source;
-    xmlNode *copy;
     int i;
 
     BEGIN {
@@ -1998,10 +1976,9 @@ static xmlNode *
 reIndentNode(xmlNode *node, int target_indent)
 {
     int len;
-    xmlNode *text;
     xmlNode *last_sibling = NULL;
     xmlNode *last_child;
-    char *spaces;
+
     while (node) {
 	last_sibling = node;
 	len = target_indent - getNodeIndent(node, TRUE);;
@@ -2043,6 +2020,8 @@ static xmlNode *
 gatherFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     xmlNode *result = processChildren(template_node, parent_node, 1);
+    UNUSED(depth);
+
     return result;
 }
 
@@ -2054,6 +2033,8 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile swap = nodeAttribute(template_node, "swap");
     Object *do_swap = evalSexp(swap->value);
     xmlNode *result;
+    UNUSED(parent_node);
+    UNUSED(depth);
 
     BEGIN {
 	result = doDiff(diffrules, do_swap != NULL);
@@ -2087,7 +2068,6 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile input = nodeAttribute(template_node, "input");
     Document *volatile source_doc = NULL;
-    Document *result_doc = NULL;
     xmlNode *result;
     xmlNode *root_node;
     xmlNode *oldfiles;
@@ -2113,7 +2093,7 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 	if (oldfiles = reportScatterFiles()) {
 	    addChildren(parent_node, oldfiles);
 	}
-	result_doc = docForNode(root_node);
+	(void) docForNode(root_node);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -2160,57 +2140,6 @@ initSkitProcessors()
     }
 }
 
-static xmlNode *
-exec(xmlNode *template_node, xmlNode *parent_node, int depth)
-{
-    String *volatile stylesheet_name = 
-	nodeAttribute(template_node, "stylesheet");
-    String *volatile input = nodeAttribute(template_node, "input");
-    Document *volatile stylesheet = NULL;
-    Document *volatile source_doc = NULL;
-    Document *result_doc = NULL;
-    xmlNode *result;
-    xmlNode *root_node;
-
-    BEGIN {
-	if (!stylesheet_name) {
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("stylesheet attribute must be provided for xslproc"));
-	}
-
-	stylesheet = findDoc(stylesheet_name);
-
-	if (input && (streq(input->value, "pop"))) {
-	    source_doc = docStackPop();
-	}
-	else {
-	    root_node = processChildren(template_node, NULL, depth + 1);
-	    source_doc = docForNode(root_node);
-	}
-
-	result_doc = applyXSLStylesheet(source_doc, stylesheet);
-	if (!result_doc) {
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("Failed to process stylesheet: %s", 
-			 stylesheet_name->value));
-	}
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) source_doc, TRUE);
-	objectFree((Object *) stylesheet, TRUE);
-	objectFree((Object *) stylesheet_name, TRUE);
-	objectFree((Object *) input, TRUE);
-    }
-    END;
-
-    result = xmlDocGetRootElement(result_doc->doc);
-    //xmlUnlinkNode(result);  /* Remove the result node from result_doc. */
-    objectFree((Object *) result_doc, FALSE);
-    return result;
-}
-
-
 void
 freeSkitProcessors()
 {
@@ -2242,7 +2171,6 @@ static xmlNode *
 processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     xmlNode *volatile this = NULL;
-    xmlNode *kids = NULL;
     xmlNs *ns;
 
     assert(template_node, "template_node is NULL in processNode");
@@ -2334,7 +2262,7 @@ static xmlNode *
 processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     xmlNode *result = NULL;
-    char *c;
+
     /*fprintf(stderr, "processElement: template=%s, parent=%s, base=%s\n", 
             nodeName(template_node), nodeName(parent_node), 
 	    xmlNodeGetBase(template_node->doc, template_node)); */

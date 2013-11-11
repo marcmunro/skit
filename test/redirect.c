@@ -38,7 +38,7 @@ redirect_stderr(char *filename)
     stderr_file = freopen(stderr_path, "w", stderr);
 }
 
-void
+static void
 undirect_stdout()
 {
     if (stdout_file) {
@@ -47,7 +47,7 @@ undirect_stdout()
     }
 }
 
-void
+static void
 undirect_stderr()
 {
     if (stderr_file) {
@@ -57,7 +57,7 @@ undirect_stderr()
 }
 
 
-char *
+static char *
 readfile(FILE *fp)
 {
     int size = 10000;

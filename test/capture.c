@@ -108,6 +108,7 @@ capture_sigterm()
     prev_handler = signal(SIGTERM, &sigterm_handler);
 }
 
+/* Unused - maybe it should be used.  Commenting out for now. 
 static void
 restore_handler()
 {
@@ -116,13 +117,13 @@ restore_handler()
 	prev_handler = NULL;
     }
 }
-
+*/
 
 static char *
 filenameFor(char *name)
 {
     char *result = malloc(100);
-    sprintf(result, "./test_%s_%p", name, getpid());
+    sprintf(result, "./test_%s_%x", name, getpid());
     return result;
 }
 

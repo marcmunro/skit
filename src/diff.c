@@ -91,40 +91,6 @@ loadDiffRules(String *diffrules)
     return rules;
 }
 
-/* NOTE: Consumes type */
-static Cons *
-addNodeForLevel(xmlNode *dbobject, Cons *alist, String *type, String *key)
-{
-    Hash *hash = (Hash *) alistGet(alist, (Object *) type);
-    Cons *alist_entry;
-    Node *existing_entry;
-    Node *node = nodeNew(dbobject);
-    char *errmsg;
-    char *str1;
-    char *str2;
-
-    if (!hash) {
-	hash = hashNew(TRUE);
-	alist_entry = consNew((Object *) type, (Object *) hash);
-	alist = consNew((Object *) alist_entry, (Object *) alist);
-    }
-    else {
-	objectFree((Object *) type, TRUE);
-    }
-    existing_entry = (Node *) hashAdd(hash, (Object *) key, (Object *) node);
-    if (existing_entry) {
-	str1 = nodestr(existing_entry->node);
-	str2 = nodestr(node->node);
-	errmsg = newstr("Unexpected collision of node keys: %s with %s",
-			str1, str2);
-	skfree(str1);
-	skfree(str2);
-	objectFree((Object *) existing_entry, TRUE);
-	RAISE(XML_PROCESSING_ERROR, errmsg);
-    }
-    return alist;
-}
-
 static xmlNode *
 getDbobject(xmlNode *here)
 {
@@ -200,7 +166,6 @@ allDbobjects(xmlNode *node, Hash *rules)
     char *keyattr;
     String *key;
     xmlNode *this = node;
-    static int count = 0;
 
     while (this = getDbobject(this)) {
 	type = dbobjectType(this);
@@ -279,7 +244,6 @@ getNodeDeps(xmlNode *node)
     xmlNode *this = getElement(node->children);
     xmlNode *dep;
     String *condition;
-    Vector *deplist;
 
     while (this) {
 	if (isDependencies(this)) {
@@ -289,8 +253,8 @@ getNodeDeps(xmlNode *node)
 	    if (isDepNode(this)) {
 		condition = conditionForDep(this);
 		dep = xmlCopyNode(this, 1);
-		deplist = hashVectorAppend(deps, (Object *) condition, 
-					   (Object *) nodeNew(dep));
+		(void) hashVectorAppend(deps, (Object *) condition, 
+					(Object *) nodeNew(dep));
 	    }
 	    this = getElement(this->next);
 	}
@@ -457,7 +421,7 @@ text_diff(xmlChar *str1, xmlChar *str2)
 }
 
 static xmlNode *
-check_text(xmlNode *content1, xmlNode *content2, xmlNode *rule)
+check_text(xmlNode *content1, xmlNode *content2)
 {
     xmlNode *text1 = getText(content1->children);
     xmlNode *text2 = getText(content2->children);
@@ -552,7 +516,6 @@ check_element(
     Hash *volatile elems2 = hashNew(TRUE);
     xmlNode *diff = NULL;
     xmlNode *prev = NULL;
-    xmlNode *kid;
     String *key;
     xmlNode *elem1 = content1->children;
     xmlNode *elem2 = content2->children;
@@ -647,17 +610,6 @@ check_element(
     }
 
     return NULL;
-}
-
-
-printList(char *name, xmlNode *node)
-{
-    char *tmp = newstr("%s elem: ", name);
-    while (node) {
-	printNode(stderr, tmp, node);
-	node=node->next;
-    }
-    skfree(tmp);
 }
 
 
@@ -778,7 +730,6 @@ evalDiffDep(xmlNode *depnode, xmlNode *content1, xmlNode *content2)
 static xmlNode *
 diffDependency(
     xmlNode *rule, 
-    xmlNode *diff, 
     xmlNode *content1, 
     xmlNode *content2)
 {
@@ -817,13 +768,13 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 		diff = check_element(content1, content2, rule, p_deps);
 	    }
 	    else if (streq(rule->name, "text")) {
-		diff = check_text(content1, content2, rule);
+		diff = check_text(content1, content2);
 	    }
 	    else {
 		diff = NULL;
 	    }
 	    if (diff) {
-		if (dep = diffDependency(rule, diff, content1, content2)) {
+		if (dep = diffDependency(rule, content1, content2)) {
 		    if (*p_deps) {
 			(void) xmlAddSibling(*p_deps, dep);
 		    }
@@ -846,13 +797,6 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
     return result;
 }
 
-static void
-diffdebug()
-{
-    fprintf(stderr, "DEBUG\n");
-}
-
-
 static xmlNode *
 copyContents(xmlNode *next)
 {
@@ -873,18 +817,6 @@ copyContents(xmlNode *next)
     }
     return copy;
 }
-
-static xmlNode *
-skipToDbobject(xmlNode *from)
-{
-    from = getElement(from->children);
-    while (from && !(streq("dbobject", (char *) from->name))) {
-	from = getElement(from->next);
-    }
-    return from;
-}
-
-
 
 static xmlNode *
 dbobjectDiff(xmlNode *dbobject1, xmlNode *node2, 
@@ -915,6 +847,8 @@ freeVectorDeps(Cons *entry, Object *param)
     Vector *vec = (Vector *) entry->cdr;
     int i;
     Node *node;
+    UNUSED(param);
+
     EACH(vec, i) {
 	node = (Node *) ELEM(vec, i);
 	xmlFreeNode(node->node);
@@ -1196,11 +1130,10 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     xmlNode *volatile result = xmlCopyNode(dump1, 2);
     String *dbname2 = nodeAttribute(dump2, "dbname");
     String *time2 = nodeAttribute(dump2, "time");
-    xmlAttrPtr attr;
     boolean has_diffs;
 
-    attr = xmlNewProp(result, "dbname2", dbname2->value);
-    attr = xmlNewProp(result, "time2", time2->value);
+    (void) xmlNewProp(result, "dbname2", dbname2->value);
+    (void) xmlNewProp(result, "time2", time2->value);
     objectFree((Object *) dbname2, TRUE);
     objectFree((Object *) time2, TRUE);
     BEGIN {

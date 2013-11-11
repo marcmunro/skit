@@ -42,8 +42,6 @@ include $(SRC_DEPS)
 skit:	$(SRC_OBJECTS)
 	$(CC) $(LDFLAGS) $(SRC_OBJECTS) -o $@
 
-wib:
-	@echo xx $(LDFLAGS)
 
 # Remove the shared library and all generated/intermediate files
 src_clean: $(SRC_SUBDIRS:%=%_clean)

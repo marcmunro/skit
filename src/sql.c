@@ -19,7 +19,6 @@
 
 
 static String empty_str = {OBJ_STRING, ""};
-static String dbtype_str = {OBJ_STRING, "dbtype"};
 
 /* Remove SQL comments from text */
 String *
@@ -127,11 +126,8 @@ sqlExec(Connection *connection,
 	String *qry,
 	Object *params)
 {
-    boolean ignore;
-    String *dbtype;
     SqlFuncs *functions = (SqlFuncs *) connection->sqlfuncs;
 
-    dbtype = (String *) symbolGetValue("dbtype");
     if (!functions->query) {
 	RAISE(NOT_IMPLEMENTED_ERROR,
 	      newstr("Db query function is not registered"));
@@ -283,28 +279,7 @@ cursorIndex(Cursor *cursor, String *fieldname)
     functions->cursorindex(cursor, fieldname);
 }
 
-static Object *
-nextParam(Object **params)
-{
-    Object *result = NULL;
-    Object *placeholder = NULL;
-    return NULL;
-    if (params && *params) {
-	//dbgSexp(*params);
-	if (isCollection(*params)) {
-	    fprintf(stderr, "YES\n");
-	    result =  objNext(*params, &placeholder);
-	}
-	else {
-	    fprintf(stderr, "NO\n");
-	    result = *params;
-	    *params = NULL;
-	}
-    }
-    return result;
-}
-
-char *
+static char *
 applyOneParam(char *qrystr, char *pattern, Object *param)
 {
     String *volatile source = NULL;
@@ -338,7 +313,8 @@ applyOneParam(char *qrystr, char *pattern, Object *param)
     return raw_result;
 }
 
-char *applyNthParam(char *qrystr, int n, Object *param)
+static char *
+applyNthParam(char *qrystr, int n, Object *param)
 {
     static char *param_str = NULL;
     if (!param_str) {
@@ -361,7 +337,7 @@ applyParams(char *qrystr, Object *params)
     char *prev;
     Cons *list;
     int i;
-    char *param_str = NULL;
+
     if (params->type == OBJ_CONS) {
 	list = (Cons *) params;
 	i = 1;

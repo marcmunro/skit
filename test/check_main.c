@@ -77,7 +77,7 @@ START_TEST(xmlreader_suppressions)
 }
 END_TEST
 
-Document *
+static Document *
 getSupDoc(char *name)
 {
     String *docname = stringNew(name);
@@ -86,10 +86,9 @@ getSupDoc(char *name)
     return doc;
 }
 
-void
+static void
 validateSupDoc(Document *doc, Document *rng_doc)
 {
-    int result;
     xmlRelaxNGParserCtxtPtr ctx;
     xmlRelaxNGPtr schema;
     xmlRelaxNGValidCtxtPtr validator;
@@ -98,7 +97,7 @@ validateSupDoc(Document *doc, Document *rng_doc)
     schema = xmlRelaxNGParse(ctx);
     validator = xmlRelaxNGNewValidCtxt(schema);
 
-    result = xmlRelaxNGValidateDoc(validator, doc->doc);
+    (void) xmlRelaxNGValidateDoc(validator, doc->doc);
 
     xmlRelaxNGFreeValidCtxt(validator);
     xmlRelaxNGFree(schema);
@@ -188,7 +187,7 @@ static char test_name[100];
  * eg: make unit TESTS="-s"
  * or" skit_test -s
  */
-Suite *
+static Suite *
 suppressions_suite(void)
 {
     Suite *s = suite_create("Suppressions");
@@ -206,20 +205,20 @@ suppressions_suite(void)
     return s;
 }
 
-Suite *
+static Suite *
 base_suite(void)
 {
     Suite *s = suite_create("");
     return s;
 }
 
-boolean
+static boolean
 string_matches(char *str1, char *str2)
 {
     return (streq(str2, "") || streq(str1, str2));
 }
 
-void
+static void
 usage()
 {
     fprintf(stderr, "Usage: skit_test -r\n"
@@ -234,7 +233,7 @@ usage()
  * Read flags (-r, -n, -s or -S, and set suite_name and test_name if
  * they were provided as args.
  */
-void
+static void
 handle_args(int argc, char *argv[])
 {
     String *arg;
@@ -298,9 +297,6 @@ int
 main(int argc, char *argv[])
 {
     int number_failed;
-    pid_t catcher1;
-    pid_t catcher2;
-    char *stdout_buf;
 
     suite_name[0] = '\0';
     test_name[0] = '\0';

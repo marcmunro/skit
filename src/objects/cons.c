@@ -239,8 +239,9 @@ getCdr(Cons *cons)
     return cons->cdr;
 }
 
-// Fire out the length of a list, being kinda forgiving about what
-// cosntitutes a list (ie do not abort if it does not look right).
+/* Figure out the length of a list, being kinda forgiving about what
+ * constitutes a list (ie do not abort if it does not look right).
+ */
 int 
 consLen(Cons *cons)
 {
@@ -257,7 +258,7 @@ consLen(Cons *cons)
 }
 
 /* Predicate to check whther a cons contains an alist.  */
-boolean
+boolean 
 consIsAlist(Cons *cons)
 {
     Object *car;
@@ -279,7 +280,7 @@ consIsAlist(Cons *cons)
     return TRUE;
 }
 
-// Compare 2 lists using strcmp style semantics.
+/* Compare 2 lists using strcmp style semantics. */
 int
 consCmp(Cons *cons1, Cons *cons2)
 {
