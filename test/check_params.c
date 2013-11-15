@@ -731,45 +731,16 @@ END_TEST
 #ifdef unused
 START_TEST(generate)
 {
-    /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "x", "--debug"};
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    "regress/scratch/regressdb_dump3b.xml", // regression_test1
+		    "--print", "--full"};
 
     initTemplatePath(".");
     //showFree(3549);
     //showMalloc(4283);
 
     BEGIN {
-	process_args2(3, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-#endif
-
-#ifdef unused
-START_TEST(generate2)
-{
-    /* Same preconditions as for extract above. */
-    char *args[] = {"./skit", "--generate", "--build", 
-		    //"regress/scratch/regressdb_dump1a.xml", // regression_test1
-		    "regress/scratch/dbdump/cluster.xml", // regression_test2
-		    "--print", "--full"};
-
-    initTemplatePath(".");
-    //showFree(4626);
-    //showMalloc(5884);
-
-    BEGIN {
-	process_args2(5, args);
+	process_args2(4, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -823,8 +794,8 @@ START_TEST(diffgen)
     char *args[] = {"./skit", "-t", "diff.xml",
 		    //"test/data/diffs_1_a.xml", 
 		    //"test/data/diffs_1_b.xml", 
-		    "regress/scratch/regressdb_dump3a.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
+		    "regress/scratch/regressdb_dump3a.xml", 
 		    "--generate", "--echoes", "--debug"};
     //"--list", "-g", "--print", "--full"};
 
@@ -1087,8 +1058,7 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate); // during development of new db objects
-    //ADD_TEST(tc_core, generate2); 
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps2);
 
     // ??

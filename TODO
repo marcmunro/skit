@@ -8,7 +8,7 @@ elegant.  What may be needed is a separation of the fallback nodes into
 fallback and drop-side fallback variants.  Each of these would be
 created when resolving the appropriate DAG (forwards or backwards).
 
-Check that nodes with no code are bing eliminated
+Check that nodes with no code are being eliminated
 
 Remove any superfluous fallbacks
 

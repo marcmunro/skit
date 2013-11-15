@@ -210,7 +210,8 @@ requireDeps(Hash *hash, char *from, ...)
 	
 	if (dep_elems != count) {
 	    fail("Not all dependencies accounted for in %s (expecting %d got %d)", 
-		 from, count, fromnode->forward_deps->elems);
+		 from, count, 
+		 (fromnode->forward_deps)? fromnode->forward_deps->elems: 0);
 	}
     }
 }
@@ -363,7 +364,6 @@ START_TEST(build_type_bitsets)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
 
 /* Test basic build dependencies, using dependency sets */ 
 START_TEST(depset_dag1_build)
@@ -557,10 +557,11 @@ START_TEST(depset_dia_build)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
+    eval("(setq dbver (version '8.3'))");
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(901);
+	//showMalloc(548);
 	//showFree(415);
 
 	eval("(setq build t)");
@@ -573,13 +574,13 @@ START_TEST(depset_dia_build)
 	requireDeps(nodes_by_fqn, "role.cluster.x", "cluster", NULL);
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "cluster", "role.cluster.x", 
-		    "fallback.grant.x.superuser", NULL);  // 5, 7
+		    "privilege.cluster.x.superuser", NULL);  // 5, 7
 
-	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "privilege.cluster.x.superuser", 
 		    "role.cluster.x", NULL); // 3
 
-	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
-		    "fallback.grant.x.superuser",  
+	requireDeps(nodes_by_fqn, "endprivilege.cluster.x.superuser", 
+		    "privilege.cluster.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    "role.cluster.x", 
 		    NULL); // 11, 9, 1
@@ -615,6 +616,7 @@ START_TEST(depset_dia_drop)
 
     BEGIN {
 	initTemplatePath(".");
+	eval("(setq dbver (version '8.3'))");
 	//showMalloc(901);
 	//showFree(415);
 
@@ -626,17 +628,17 @@ START_TEST(depset_dia_drop)
 	//showVectorDeps(nodes, FALSE);
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
 		    "table.cluster.ownedbyx", 
-		    "fallback.grant.x.superuser",
-		    "endfallback.grant.x.superuser", NULL);  // 6, 4, 2
+		    "privilege.cluster.x.superuser",
+		    "endprivilege.cluster.x.superuser", NULL);  // 6, 4, 2
 
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "fallback.grant.x.superuser", NULL);  // 8
+		    "privilege.cluster.x.superuser", NULL);  // 8
 
-	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "privilege.cluster.x.superuser", 
 		    NULL); // 
 
-	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
-		    "fallback.grant.x.superuser",  
+	requireDeps(nodes_by_fqn, "endprivilege.cluster.x.superuser", 
+		    "privilege.cluster.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -671,6 +673,7 @@ START_TEST(depset_dia_both)
 
     BEGIN {
 	initTemplatePath(".");
+	eval("(setq dbver (version '8.3'))");
 	//showMalloc(901);
 	//showFree(415);
 
@@ -680,38 +683,38 @@ START_TEST(depset_dia_both)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
+	//showVectorDeps(nodes, FALSE);
 	requireDeps(nodes_by_fqn, "role.cluster.x", 
 		    "cluster", "drop.role.cluster.x", NULL);  // 15
 
 	requireDeps(nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "cluster", "role.cluster.x", "drop.table.cluster.ownedbyx", 
-		    "fallback.grant.x.superuser", NULL);  // 5, 13, 7
+		    "privilege.cluster.x.superuser", NULL);  // 5, 13, 7
 
-	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "privilege.cluster.x.superuser", 
 		    "role.cluster.x", 
-		    "enddsfallback.grant.x.superuser", 
+		    "enddsprivilege.cluster.x.superuser", 
 		    NULL); // 3, 14
 
-	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
-		    "fallback.grant.x.superuser",  
+	requireDeps(nodes_by_fqn, "endprivilege.cluster.x.superuser", 
+		    "privilege.cluster.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    "role.cluster.x", 
 		    NULL); // 11, 9, 1
 
 	requireDeps(nodes_by_fqn, "drop.role.cluster.x", 
 		    "drop.table.cluster.ownedbyx", 
-		    "enddsfallback.grant.x.superuser", 
-		    "dsfallback.grant.x.superuser", 
+		    "enddsprivilege.cluster.x.superuser", 
+		    "dsprivilege.cluster.x.superuser", 
 		    NULL); // 6, 2, 4
 
 	requireDeps(nodes_by_fqn, "drop.table.cluster.ownedbyx", 
-		    "dsfallback.grant.x.superuser", 
+		    "dsprivilege.cluster.x.superuser", 
 		    NULL); // 8
 
-	requireDeps(nodes_by_fqn, "enddsfallback.grant.x.superuser", 
+	requireDeps(nodes_by_fqn, "enddsprivilege.cluster.x.superuser", 
 		    "drop.table.cluster.ownedbyx", 
-		    "dsfallback.grant.x.superuser", 
+		    "dsprivilege.cluster.x.superuser", 
 		    NULL); // 10, 12
 
 	objectFree((Object *) nodes_by_fqn, FALSE);

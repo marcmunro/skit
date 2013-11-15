@@ -764,9 +764,17 @@ domakeFallbackNode(String *fqn)
     xmlDocSetRootElement(xmldoc, fallback);
     doc = documentNew(xmldoc, NULL);
 
-    docStackPush(doc);
-    fallback_processor = getFallbackProcessor();
-    applyXSL(fallback_processor);
+    BEGIN {
+	docStackPush(doc);
+	fallback_processor = getFallbackProcessor();
+	applyXSL(fallback_processor);
+    }
+    EXCEPTION(ex) {
+	doc = docStackPop();
+	objectFree((Object *) doc, TRUE);
+	RAISE();
+    }
+    END;
     doc = docStackPop();
     root = xmlDocGetRootElement(doc->doc);
     dbobject = xmlCopyNode(getElement(root->children), 1);
@@ -1005,23 +1013,24 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
 }
 
 static void
-activateFallback(DagNode *fallback, Vector *nodes)
+prepareFallback(DagNode *fallback, Vector *nodes)
 {
     DagNode *endfallback;
     int i;
     DagNode *dep;
     char *endfqn;
 
-    if (fallback->build_type != FALLBACK_NODE) {
+    if (!fallback->fallback_node) {
 	/* Promote this node an active fallback node and create the
 	 * matching endfallback node for it. */ 
-	fallback->build_type = FALLBACK_NODE;
+	//fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
 	endfqn = newstr("end%s", endfallback->fqn->value);
 	skfree(endfallback->fqn->value);
 	endfallback->fqn->value = endfqn;
 	endfallback->parent = fallback->parent;
 	fallback->fallback_node = endfallback;
+	endfallback->fallback_node = fallback;
 	setPush(nodes, (Object *) endfallback);
 
 	/* Copy dependencies from fallback node to endfallback (they
@@ -1064,14 +1073,13 @@ addFallbackDeps(
     boolean forwards)
 {
     DagNode *super = subnode->supernode;
-    //DependencyApplication applies = forwards? FORWARDS: BACKWARDS;
 
     if (!fallback) {
 	RAISE(TSORT_ERROR, 
 	      newstr("No fallback found for dependency-set in %s",
 		  subnode->fqn->value));
     }
-    activateFallback(fallback, nodes);
+    prepareFallback(fallback, nodes);
     addDepsForFallback(super, fallback, forwards);
 }
 
@@ -1193,7 +1201,7 @@ resolveDeps(DagNode *node, boolean forwards, Vector *nodes)
 	    addFallbackDeps(node, nodes, fallback_dep, forwards);
 	}
 	else {
-	    /* Use the sepcified fallback node for this dependency set. */
+	    /* Use the specified fallback node for this dependency set. */
 	    addFallbackDeps(node, nodes, node->fallback_node, forwards);
 	}
     }
@@ -1274,19 +1282,22 @@ resolveGraphs(Vector *nodes)
 	resolveNode(node, NULL, FALSE, nodes);
     }
 
+    /* Now do final resolution of the subnodes.  This has to be done
+     * after the resolution passes have completed as during resolution
+     * the subnodes may have to be re-resolved.  Note that the final
+     * resolution of fallback nodes is a little convoluted.
+     */
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 	sub = node;
-	/* TODO: refactor the following - there should be a single
-	 * function that puts fallbacks into the DAGs - use
-	 * addDepsForFallback or refactor that too. */
 	while (sub = sub->forward_subnodes) {
 	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->forward_deps, sub->dep_idx);
-		if (dep->build_type == INACTIVE_NODE) {
+		if ((dep->build_type == INACTIVE_NODE) ||
+		    (dep->build_type == FALLBACK_NODE))
+		{
 		    dep->build_type = FALLBACK_NODE;
-		}
-		if (dep->build_type == FALLBACK_NODE) {
+		    endfallback = dep->fallback_node;
 		    endfallback = dep->fallback_node;
 		    addDepToVector(&(node->forward_deps), dep);
 		    addDepToVector(&(endfallback->forward_deps), node);
@@ -1295,16 +1306,23 @@ resolveGraphs(Vector *nodes)
 		    addDepToVector(&(node->forward_deps), dep);
 		}
 	    }
+	    else {
+		sub->fallback_node->build_type = FALLBACK_NODE;
+	    }
 	}
 
 	sub = node;
 	while (sub = sub->backward_subnodes) {
 	    if (sub->dep_idx >= 0) {
 		dep = (DagNode *) ELEM(sub->backward_deps, sub->dep_idx);
-			if (dep->build_type == INACTIVE_NODE) {
-		    dep->build_type = FALLBACK_NODE;
+		if (dep->build_type == INACTIVE_NODE) {
+		    RAISE(TSORT_ERROR, "HOW?  BACKWARDS node: %s dep: %s",
+			  node->fqn->value, dep->fqn->value);
 		}
-		if (dep->build_type == FALLBACK_NODE) {
+		if ((dep->build_type == INACTIVE_NODE) ||
+		    (dep->build_type == FALLBACK_NODE))
+		{
+		    dep->build_type = FALLBACK_NODE;
 		    endfallback = dep->fallback_node;
 		    addDepToVector(&(node->backward_deps), endfallback);
 		    addDepToVector(&(dep->backward_deps), node);
@@ -1312,6 +1330,9 @@ resolveGraphs(Vector *nodes)
 		else {
 		    addDepToVector(&(node->backward_deps), dep);
 		}
+	    }
+	    else {
+		sub->fallback_node->build_type = FALLBACK_NODE;
 	    }
 	}
     }
@@ -1712,21 +1733,6 @@ disableRedundantFallbacks(Vector *nodes, Vector *fallback_nodes)
     objectFree((Object *) removed, FALSE);
 }
 
-static DagNode *
-fallbackFor(DagNode *node)
-{
-    DagNode *fallback;
-    int i;
-    EACH(node->forward_deps, i) {
-	fallback = (DagNode *) ELEM(node->forward_deps, i);
-	if (fallback->dbobject == node->dbobject) {
-	    /* This is the fallback_node for the given endfallback_node */
-	    return fallback;
-	}
-    }
-    return NULL;
-}
-
 static void
 redirectDeps(Vector *nodes)
 {
@@ -1787,7 +1793,7 @@ redirectDeps(Vector *nodes)
 		 */
 		if (node->mirror_node) {
 		    /* node->mirror_node is enddsfallback */
-		    if (fallback = fallbackFor(node)) {
+		    if (fallback = node->fallback_node) {
 			addDepToVector(&fallback->forward_deps, 
 				       node->mirror_node);
 		    }
