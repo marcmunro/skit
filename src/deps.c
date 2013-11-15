@@ -1094,7 +1094,6 @@ resolveDeps(DagNode *node, boolean forwards, Vector *nodes)
     int volatile i;
     boolean volatile cyclic_exception;
     DagNode *volatile dep;
-    DagNode *volatile fallback_dep = NULL;
     DagNode *breaker;
     DagNode *cycle_node;
     char *tmpmsg;
@@ -1196,14 +1195,8 @@ resolveDeps(DagNode *node, boolean forwards, Vector *nodes)
 	 * the caller.  Now we must invoke our fallback.
 	 */
 	node->dep_idx = -1;
-	if (fallback_dep) {
-	    /* We found a suitable, already promoted fallback node */
-	    addFallbackDeps(node, nodes, fallback_dep, forwards);
-	}
-	else {
-	    /* Use the specified fallback node for this dependency set. */
-	    addFallbackDeps(node, nodes, node->fallback_node, forwards);
-	}
+	/* Use the specified fallback node for this dependency set. */
+	addFallbackDeps(node, nodes, node->fallback_node, forwards);
     }
 }
 
@@ -1256,6 +1249,64 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
     }
 }
 
+static DagNode *
+nextSubnode(DagNode *sub, boolean forwards)
+{
+    if (forwards) {
+	return (DagNode *) sub->forward_subnodes;
+    }
+    return (DagNode *) sub->backward_subnodes;
+}
+
+static void
+promoteSubnodeDeps(DagNode *node, boolean forwards)
+{
+    DagNode *sub = node;
+    Vector *deps;
+    DagNode *dep;
+    DagNode *endfallback;
+
+    while (sub = nextSubnode(sub, forwards)) {
+	if (sub->dep_idx >= 0) {
+	    /* The index gives the chosen dep. */
+	    deps = forwards? sub->forward_deps: sub->backward_deps;
+	    dep = (DagNode *) ELEM(deps, sub->dep_idx);
+
+	    if ((dep->build_type == INACTIVE_NODE) ||
+		(dep->build_type == FALLBACK_NODE))
+	    {
+		/* If this dep is to a fallback node, promote it and
+		 * then add the dep */
+		 
+		dep->build_type = FALLBACK_NODE;
+		endfallback = dep->fallback_node;
+
+		if (forwards) {
+		    addDepToVector(&(node->forward_deps), dep);
+		    addDepToVector(&(endfallback->forward_deps), node);
+		}
+		else {
+		    addDepToVector(&(node->backward_deps), endfallback);
+		    addDepToVector(&(dep->backward_deps), node);
+		}
+	    }
+	    else {
+		if (forwards) {
+		    addDepToVector(&(node->forward_deps), dep);
+		}
+		else {
+		    addDepToVector(&(node->backward_deps), dep);
+		}
+	    }
+	}
+	else {
+	    /* No dep was chosen.  The fallback has already been applied
+	     * but it may need to be promoted. */
+	    sub->fallback_node->build_type = FALLBACK_NODE;
+	}
+    }
+}
+
 /* Takes the dependency graphs (forward_deps and backward_deps), and
  * resolves them into true DAGs, elimminating cycles, and choosing a
  * single appropriate dependency (or fallback) from each dependency set.
@@ -1267,9 +1318,6 @@ static void
 resolveGraphs(Vector *nodes)
 {
     DagNode *node;
-    DagNode *sub;
-    DagNode *dep;
-    DagNode *endfallback;
     int i;
 
     EACH(nodes, i) {
@@ -1289,52 +1337,8 @@ resolveGraphs(Vector *nodes)
      */
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	sub = node;
-	while (sub = sub->forward_subnodes) {
-	    if (sub->dep_idx >= 0) {
-		dep = (DagNode *) ELEM(sub->forward_deps, sub->dep_idx);
-		if ((dep->build_type == INACTIVE_NODE) ||
-		    (dep->build_type == FALLBACK_NODE))
-		{
-		    dep->build_type = FALLBACK_NODE;
-		    endfallback = dep->fallback_node;
-		    endfallback = dep->fallback_node;
-		    addDepToVector(&(node->forward_deps), dep);
-		    addDepToVector(&(endfallback->forward_deps), node);
-		}
-		else {
-		    addDepToVector(&(node->forward_deps), dep);
-		}
-	    }
-	    else {
-		sub->fallback_node->build_type = FALLBACK_NODE;
-	    }
-	}
-
-	sub = node;
-	while (sub = sub->backward_subnodes) {
-	    if (sub->dep_idx >= 0) {
-		dep = (DagNode *) ELEM(sub->backward_deps, sub->dep_idx);
-		if (dep->build_type == INACTIVE_NODE) {
-		    RAISE(TSORT_ERROR, "HOW?  BACKWARDS node: %s dep: %s",
-			  node->fqn->value, dep->fqn->value);
-		}
-		if ((dep->build_type == INACTIVE_NODE) ||
-		    (dep->build_type == FALLBACK_NODE))
-		{
-		    dep->build_type = FALLBACK_NODE;
-		    endfallback = dep->fallback_node;
-		    addDepToVector(&(node->backward_deps), endfallback);
-		    addDepToVector(&(dep->backward_deps), node);
-		}
-		else {
-		    addDepToVector(&(node->backward_deps), dep);
-		}
-	    }
-	    else {
-		sub->fallback_node->build_type = FALLBACK_NODE;
-	    }
-	}
+	promoteSubnodeDeps(node, TRUE);
+	promoteSubnodeDeps(node, FALSE);
     }
 }
 
