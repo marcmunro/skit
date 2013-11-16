@@ -1,21 +1,6 @@
-Status:
-
-All tests are passing.
-
-The FBDROP and FBBUILD redirectActionTypes in deps.c are nasty hacks.
-Although they *may* be safe they should be replaced with something more
-elegant.  What may be needed is a separation of the fallback nodes into
-fallback and drop-side fallback variants.  Each of these would be
-created when resolving the appropriate DAG (forwards or backwards).
-
-Check that nodes with no code are being eliminated
-
-Remove any superfluous fallbacks
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
-
-Do refactorings identified by TODO in resolveGraphs
 
 Check the allowed diffs (in regress_run.,sh) - are they needed?
 
@@ -66,4 +51,10 @@ docs:
 9.2 changes
 9.3 changes
 
+
+The FBDROP and FBBUILD redirectActionTypes in deps.c are nasty hacks.
+Although they *may* be safe they should be replaced with something more
+elegant.  What may be needed is a separation of the fallback nodes into
+fallback and drop-side fallback variants.  Each of these would be
+created when resolving the appropriate DAG (forwards or backwards).
 

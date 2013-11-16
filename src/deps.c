@@ -1021,9 +1021,6 @@ prepareFallback(DagNode *fallback, Vector *nodes)
     char *endfqn;
 
     if (!fallback->fallback_node) {
-	/* Promote this node an active fallback node and create the
-	 * matching endfallback node for it. */ 
-	//fallback->build_type = FALLBACK_NODE;
 	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
 	endfqn = newstr("end%s", endfallback->fqn->value);
 	skfree(endfallback->fqn->value);
