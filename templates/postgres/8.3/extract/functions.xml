@@ -11,7 +11,7 @@
       <skit:let>
       	<!-- To deal with the pathological case of a name containing a
       	     comma, we convert separating commas (those not in quotes) to
-      	     DEL and then split on the DEL.  If a name contains a DEL
+      	     DEL (7F) and then split on the DEL.  If a name contains a DEL
       	     we will be hosed.  -->
 	<skit:var name="argnames"
 		  expr="(split

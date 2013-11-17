@@ -40,6 +40,10 @@ create tablespace "tbs2" owner "lose"
 
 comment on tablespace tbs2 is 'This is the 2nd tablespace';
 
+-- This does nothing but makes the acl for the tablespace into 
+-- a non-default value.
+revoke all on tablespace tbs2 from public;
+
 set session authorization 'regress';
 grant create on tablespace "tbs3" to "keep";
 reset session authorization;
@@ -60,10 +64,12 @@ comment on schema wibble is 'This is owned by regress';
 create schema wibble2;
 
 grant create on schema wibble2 to keep;
-revoke usage on schema wibble2 from public;
 
 create schema schema2;
 comment on schema schema2 is 'This is schema2';
+
+-- This does nothing but makes the acl for the schema into a non default value.
+revoke all on schema schema2 from public;
 
 create 
 function schema2.myconv(integer, integer, cstring, internal, integer)
@@ -73,6 +79,17 @@ create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
 
 comment on conversion myconv is
 'conversion comment';
+
+-- Change parameter type
+create 
+function wibble.fn1(p1 varchar) returns varchar as
+$$
+begin
+  return p1;
+end
+$$
+language plpgsql stable strict;
+
 
 
 EOF

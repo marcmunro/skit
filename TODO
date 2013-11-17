@@ -1,14 +1,59 @@
 
+Check that acls are handled properly (returning null if that's what they
+  contain, in all of the sql files.
+
+  diff handling for functions:
+    WORKING ON THIS.
+
+
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
+    conversions		yes
+    schemata		yes
+    cluster		n/a
+    database		yes
+    types		n/a
+    functions		TODO
+    domains		TODO
+    casts		TODO
+    operators		TODO
+    operator_families	TODO
+    operator_classes	TODO
+    aggregates		TODO
+    sequences		TODO
+    tables		TODO
+    views		TODO
+    constraints		TODO
+    rules		TODO
+    triggers		TODO
+    indices		TODO
 
-Check the allowed diffs (in regress_run.,sh) - are they needed?
 
 diffs:
     do the concat thing for objects below as in done in generate for
-    schemata
+    schemata (in ddl)
 
     functions (including the concat thing)
+
+    function diffs:
+      change parameter type   fn1
+      change parameter name
+      change parameter mode
+      change owner
+      change source
+      change bin
+      change volatility
+      is_strict
+      security_definer
+      returns_set
+      cost
+      grants
+      comments
+
+
+
+
+
     types (including the concat thing)
     domains (including the concat thing)
     casts (including the concat thing)

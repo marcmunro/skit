@@ -40,6 +40,23 @@
 	<skit:parameter name="privileges"/>
 	<skit:parameter name="automatic"/>
 	<skit:parameter name="owner"/>
+
+	<skit:if test="(not privileges)">
+	  <!-- If no privs, then generate the default, automatic grants -->
+	  <skit:foreach from="automatic" var="this">
+	    <skit:var name="privs" expr="(cdr this)"/>
+	    <skit:foreach from="privs" var="priv">
+	      <grant>
+		<skit:attr name="from" expr="owner"/>
+		<skit:attr name="to" expr="(car this)"/>
+		<skit:attr name="with-grant" expr="'no'"/>
+		<skit:attr name="priv" expr="priv"/>
+		<skit:attr name="automatic" expr="'yes'"/>
+	      </grant>
+	    </skit:foreach>
+	  </skit:foreach>
+	</skit:if>
+
 	<skit:if test="privileges">
 	  <!-- The first regexp below adds an explicit public string
 	       wherever there is an implicit (empty one).  The second

@@ -258,18 +258,19 @@ regression_test3()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3a.xml ...
     echo "...diff source->target..." 1>&2
+
     gendiff scratch/regressdb_dump3a.xml scratch/regressdb_dump3b.xml \
-	scratch/regressdb_diff3a2b.sql
+	scratch/regressdb_diff3a2b.sql  
     execdiff scratch/regressdb_diff3a2b.sql
 
     echo "...checking db equivalence to target..." 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...
-    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp \
-	regress/regression3_`pguver`_allowed_diffs
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3b2.xml ...
+    diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp
 
-    diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp \
-	regress/regression3_`pguver`_allowed_diffs
+    diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp
     echo "...diff target->source..." 1>&2
     gendiff scratch/regressdb_dump3b.xml scratch/regressdb_dump3a.xml \
 	scratch/regressdb_diff3b2a.sql
@@ -279,10 +280,10 @@ regression_test3()
     echo "...checking db equivalence to source ..." 1>&2
     dump_db regressdb scratch/regressdb_test3a2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3a2.gdmp ...
-    diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp \
-	regress/regression3_`pguver`_allowed_diffs2
-    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp \
-	regress/regression3_`pguver`_allowed_diffs2
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump3a2.xml ...
+    diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp
+    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2

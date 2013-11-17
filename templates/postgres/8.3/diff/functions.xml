@@ -8,7 +8,25 @@
        dealing with conversions. -->
 
   <dbobject type="function" key="fqn">
-    <attribute name="owner"/>
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <attribute name="language"/>
+    <attribute name="volatility"/>
+    <attribute name="cost"/>
+    <attribute name="security_definer"/>
+    <attribute name="is_strict"/>
+    <attribute name="returns_set"/>
+    <attribute name="bin"/>
+    <attribute name="result"/>
+    <element type="source">
+      <text/>
+    </element>
     <element type="comment">
       <text/>
     </element>

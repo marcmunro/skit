@@ -10,7 +10,7 @@
        only on object type, hence match="type" for these dbobjects.
        Also, we would not want to compare on the basis of database name
        as it is likely we want to compare two different databases and
-       they will probably have different names. -->
+       they may have different names. -->
 
   <dbobject type="cluster" key="type">
     <attribute name="skit_xml_version" fail="true"

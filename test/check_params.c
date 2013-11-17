@@ -756,12 +756,12 @@ START_TEST(generate)
 END_TEST
 #endif
 
-#ifdef unused
+//#ifdef unused
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3b.xml", 
 		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--generate", "--debug", "--full", "--xxxx"};
     Document *doc;
 
@@ -771,7 +771,7 @@ START_TEST(diff)
     //trackMalloc(4097);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(5, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	objectFree((Object *) doc, TRUE);
@@ -786,16 +786,16 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
+//#endif
 
-#ifdef unused
+//#ifdef unused
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
 		    //"test/data/diffs_1_a.xml", 
 		    //"test/data/diffs_1_b.xml", 
-		    "regress/scratch/regressdb_dump3b.xml", 
 		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--generate", "--echoes", "--debug"};
     //"--list", "-g", "--print", "--full"};
 
@@ -805,7 +805,7 @@ START_TEST(diffgen)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(6, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -820,50 +820,17 @@ START_TEST(diffgen)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
+//#endif
 
 
-#ifdef unused
-START_TEST(diffgen2)
-{
-    char *args[] = {"./skit", "-t", "diff.xml",
-		    //"test/data/diffs_1_a.xml", 
-		    //"test/data/diffs_1_b.xml", 
-		    "regress/scratch/regressdb_dump3b.xml", 
-		    "regress/scratch/regressdb_dump3a.xml", 
-		    "--generate", "--print", "--full"};
-    //"--list", "-g", "--print", "--full"};
-    //Document *doc;
-
-    initTemplatePath(".");
-    //registerTestSQL();
-    //showFree(1205);
-    //showMalloc(17900);
-
-    BEGIN {
-	process_args2(7, args);
-	//doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	//objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-#endif
-
-#ifdef unused
+//#ifdef unused
 START_TEST(difflist)
 {
     char *args[] = {"./skit", "-t", "diff.xml", 
-		    "test/data/diffs_1_a.xml", 
-		    "test/data/diffs_1_b.xml", 
+		    //"test/data/diffs_1_a.xml", 
+		    //"test/data/diffs_1_b.xml", 
+		    "regress/scratch/regressdb_dump3a.xml", 
+		    "regress/scratch/regressdb_dump3b.xml", 
 		    "--list", "-g"};
     //"--list", "-g", "--print", "--full"};
     //Document *doc;
@@ -889,41 +856,7 @@ START_TEST(difflist)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
-
-#ifdef unused
-START_TEST(diff2)
-{
-    char *args[] = {"./skit", "--diff", 
-		    "test/data/diffs_1_a.xml", 
-		    "test/data/diffs_1_b.xml", 
-		    "--print", "--full"};
-    Document *doc;
-
-    initTemplatePath(".");
-    //showFree(3563);
-    //showMalloc(5865);
-    //trackMalloc(4097);
-
-    BEGIN {
-	process_args2(6, args);
-	//process_args2(10, args);
-	doc = docStackPop();
-	//printSexp(stderr, "DOC:", (Object *) doc);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-#endif
-
+//#endif
 
 static int
 do_list(void *ignore)
@@ -1039,11 +972,9 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
 
     // When we start back on diff, these need to be re-instated
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, diff2);
-    //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
-    //ADD_TEST(tc_core, diffgen2);
+    ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, difflist);
+    ADD_TEST(tc_core, diffgen);
 
     //ADD_TEST(tc_core, gather);
 

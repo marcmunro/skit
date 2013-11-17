@@ -44,6 +44,10 @@ create tablespace "tbs2" owner "keep"
 
 comment on tablespace tbs2 is 'This is the second tablespace';
 
+-- This does nothing but makes the acl for the tablespace into 
+-- a non-default value.
+revoke all on tablespace tbs2 from public;
+
 set session authorization 'regress';
 grant create on tablespace "tbs3" to "keep";
 reset session authorization;
@@ -67,6 +71,9 @@ create schema wibble;
 
 create schema wibble2;
 comment on schema wibble2 is 'wibble2';
+
+-- This does nothing but makes the acl for the schema into a non-default value.
+revoke all on schema wibble2 from public;
 
 create schema schema2;
 comment on schema schema2 is 'This is wibble3 again';
@@ -93,6 +100,17 @@ alter conversion schema2.myconv2 owner to keep;
 
 comment on conversion schema2.myconv2 is
 'New conversion';
+
+-- Change parameter type
+create 
+function wibble.fn1(p1 text) returns varchar as
+$$
+begin
+  return p1;
+end
+$$
+language plpgsql stable strict;
+
 
 
 EOF

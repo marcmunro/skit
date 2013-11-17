@@ -21,11 +21,7 @@ select p.oid as oid,
        case when p.proretset then 'yes' else null end as returns_set,
        case p.provolatile when 'i' then 'immutable' 
 	    when 's' then 'stable' else 'volatile' end as volatility,
-       -- Explicitly show default privs if they are not given.
-       -- Defaults are execute to owner and public.
-       case when p.proacl is null 
-       then '{=X/' || o.rolname || ',' || o.rolname || '=X/' || o.rolname || '}'
-       else p.proacl::text end as privs,
+       p.proacl::text as privs,
        quote_literal(obj_description(p.oid, 'pg_proc')) as comment,
        p.prosrc as source,
        nullif(p.probin, '-') as bin,

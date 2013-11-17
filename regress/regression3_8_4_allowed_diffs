@@ -1,7 +1,0 @@
-# Postgres 8.4 does some odd things around public rights to objects
-# which can be ignored.
-# To add allowed diffs to this file copy and paste the lines output
-# from the diffcheck.sh command into this (or an equivalent) file.
-> REVOKE ALL ON TABLESPACE tbs2 FROM PUBLIC;
-< REVOKE ALL ON SCHEMA .* FROM PUBLIC;
-> REVOKE ALL ON SCHEMA .* FROM PUBLIC;
