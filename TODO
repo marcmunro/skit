@@ -36,20 +36,26 @@ diffs:
     functions (including the concat thing)
 
     function diffs:
-      change parameter type   fn1
-      change parameter name
+      change parameter type			fn1
+      change parameter name			fn2
       change parameter mode
       change owner
-      change source
+      change source				fn3
       change bin
       change volatility
       is_strict
       security_definer
+      result type
       returns_set
       cost
+      result rows
+      configuration parameter
       grants
       comments
-
+      (owner has) privileges to the function	fn2
+      without privileges to the function
+      with privileges to the schema		fn2
+      without privileges to the schema
 
 
 

@@ -116,7 +116,8 @@
   <!-- dbobjects that have no required navigation -->
   <xsl:template match="dbobject[@type='schema' or @type='table' or
 		                @type='view' or @type='role' or
-				@type='tablespace' or @type='language']" 
+				@type='tablespace' or @type='language' or
+				@type='function']" 
 		mode="add-nav"/>
 
 </xsl:stylesheet>

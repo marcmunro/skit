@@ -4,9 +4,6 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <!-- TODO: Flesh this out.  This is a minimal implementation for 
-       dealing with conversions. -->
-
   <dbobject type="function" key="fqn">
     <attribute name="owner">
       <dependency-set 
@@ -23,7 +20,15 @@
     <attribute name="is_strict"/>
     <attribute name="returns_set"/>
     <attribute name="bin"/>
-    <attribute name="result"/>
+    <element type="result" rebuild="true">
+      <attribute name="type"/>
+      <attribute name="schema"/>
+    </element>
+    <element type="params">
+      <element type="param" key="position">
+	<attribute name="name"/>
+      </element>
+    </element>
     <element type="source">
       <text/>
     </element>

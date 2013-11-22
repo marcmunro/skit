@@ -897,10 +897,34 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *volatile stylesheet = NULL;
     Document *volatile source_doc = NULL;
     Document *result_doc = NULL;
+    boolean debug_before = FALSE;
+    boolean debug_after = FALSE;
+    Object *debug_value;
     xmlNode *scratch;
     xmlNode *result;
     xmlNode *root_node;
     UNUSED(parent_node);
+
+    if (debug) {
+	debug_value = evalSexp(debug->value);
+	if (debug_value) {
+	    if (debug_value->type == OBJ_STRING) {
+		if (streq(((String *) debug_value)->value, "after")) {
+		    debug_after = TRUE;
+		}
+		else if (streq(((String *) debug_value)->value, "both")) {
+		    debug_before = TRUE;
+		    debug_after = TRUE;
+		}
+	    }
+	    else {
+		/* Any other value will be interpreted as true, which,
+		 * in this case, is interpreted as 'before'. */
+		    debug_before = TRUE;
+	    }
+	    objectFree(debug_value, TRUE);
+	}
+    }
 
     BEGIN {
 	if (!stylesheet_name) {
@@ -922,11 +946,11 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docForNode(root_node);
 	}
 
-	if (debug && streq(debug->value, "before")) {
+	if (debug_before) {
 	    dbgSexp(source_doc);
 	}
 	result_doc = applyXSLStylesheet(source_doc, stylesheet);
-	if (debug && streq(debug->value, "after")) {
+	if (debug_after) {
 	    dbgSexp(result_doc);
 	}
 	if (!result_doc) {

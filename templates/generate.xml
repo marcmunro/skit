@@ -75,7 +75,7 @@
       <skit:attr name="time" expr="(current-timestamp)"/>
       <printable/>
       <skit:add_navigation>
-	<skit:xslproc stylesheet="ddl.xsl">
+	<skit:xslproc stylesheet="ddl.xsl" debug="debug">
 	  <skit:tsort input="pop"/>
 	</skit:xslproc>
       </skit:add_navigation>

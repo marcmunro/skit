@@ -499,7 +499,8 @@ handleNewElem(Cons *entry, Object *param)
 
 static xmlNode *
 elementDiffs(xmlNode *content1, xmlNode *content2, 
-	     xmlNode *ruleset, xmlNode **p_deps);
+	     xmlNode *ruleset, xmlNode **p_deps,
+	     boolean *p_do_rebuild);
 
 /* Return a diff node describing any difference between the elements
  * described by rule, or NULL, if there are no differences. */
@@ -508,7 +509,8 @@ check_element(
     xmlNode *content1, 
     xmlNode *content2, 
     xmlNode *rule, 
-    xmlNode **p_deps)
+    xmlNode **p_deps,
+    boolean *p_do_rebuild)
 {
     String *volatile elem_type = nodeAttribute(rule, "type");
     String *volatile key_type = nodeAttribute(rule, "key");
@@ -563,12 +565,16 @@ check_element(
 		//dbgNode(elem1);
 		//dbgNode(elem2);
 		objectFree((Object *) node, TRUE);
-		elem_diffs = elementDiffs(elem1, elem2, rule, p_deps);
+		elem_diffs = elementDiffs(elem1, elem2, rule, 
+					  p_deps, p_do_rebuild);
 		if (elem_diffs) {
 		    //dbgNode(elem_diffs);
 		    diff = diffElement(elem2, elem_type->value, DIFFDIFF, 
 				       key_type? key_type->value: NULL);
 		    xmlAddChild(diff, elem_diffs);
+		    if (nodeHasAttribute(rule, "rebuild")) {
+			*p_do_rebuild = TRUE;
+		    }
 		}
 		else {
 		    diff = NULL;
@@ -749,7 +755,8 @@ diffDependency(
  * nodes) returning a list of diffs if any exist. */
 static xmlNode *
 elementDiffs(xmlNode *content1, xmlNode *content2, 
-	     xmlNode *ruleset, xmlNode **p_deps)
+	     xmlNode *ruleset, xmlNode **p_deps, 
+	     boolean *p_do_rebuild)
 {
     xmlNode *rule;
     xmlNode *result = NULL;
@@ -765,7 +772,8 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 		diff = check_attribute(content1, content2, rule);
 	    }
 	    else if (streq(rule->name, "element")) {
-		diff = check_element(content1, content2, rule, p_deps);
+		diff = check_element(content1, content2, rule, 
+				     p_deps, p_do_rebuild);
 	    }
 	    else if (streq(rule->name, "text")) {
 		diff = check_text(content1, content2);
@@ -774,6 +782,10 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 		diff = NULL;
 	    }
 	    if (diff) {
+		if (nodeHasAttribute(rule, "rebuild")) {
+		    *p_do_rebuild = TRUE;
+		}
+
 		if (dep = diffDependency(rule, content1, content2)) {
 		    if (*p_deps) {
 			(void) xmlAddSibling(*p_deps, dep);
@@ -924,10 +936,11 @@ diffPair(xmlNode *dbobject1, xmlNode *dbobject2,
     xmlNode *content;
     boolean kids_differ = FALSE;
     DiffType difftype;
+    boolean  do_rebuild = FALSE;
 
     if (ruleset = rulesetForNode(dbobject1, rules)) {
 	difflist = elementDiffs(contents1, contents2, 
-				ruleset, &diffdeps);
+				ruleset, &diffdeps, &do_rebuild);
     }
 
     BEGIN {
@@ -962,7 +975,7 @@ diffPair(xmlNode *dbobject1, xmlNode *dbobject2,
     /* Update diff status and type. */
     if (difflist) {
 	*diffs = TRUE;
-	if (nodeHasAttribute(ruleset, "rebuild")) {
+	if (do_rebuild || nodeHasAttribute(ruleset, "rebuild")) {
 	    difftype = IS_REBUILD;
 	}
 	else {

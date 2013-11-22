@@ -111,6 +111,37 @@ end
 $$
 language plpgsql stable strict;
 
+-- Change parameter name
+create or replace
+function wibble.fn2(param varchar) returns varchar as
+$$
+begin
+  return 'x';
+end
+$$
+language plpgsql stable strict;
+
+
+-- Change function source code
+create 
+function wibble.fn3(p1 varchar) returns varchar as
+$$
+begin
+  return 'y';
+end
+$$
+language plpgsql stable strict;
+
+
+-- Change result type
+create or replace
+function wibble.fn4(p1 varchar) returns char(1) as
+$$
+begin
+  return 'x';
+end
+$$
+language plpgsql stable strict;
 
 
 EOF

@@ -1534,19 +1534,19 @@ static redirectActionType redirect_action
      *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
     {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
-     {ERROR, ERROR}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
+     {IGNORE, FCOPY}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
      {IGNORE, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
     {{ERROR, ERROR}, {REVCOPYC, IGNORE},      /* BUILD, DROP */
-     {ERROR, ERROR}, {REVCOPYC, IGNORE},      /* REBUILD, DIFF */
+     {REVCOPYC, IGNORE}, {REVCOPYC, IGNORE},      /* REBUILD, DIFF */
      {REVCOPYC, IGNORE}, {REVCOPYC, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
-     {REVCOPYC, FCOPY}, {ERROR, ERROR},     /* REBUILD, DIFF */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
      {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 
     {{ERROR, FCOPY}, {REVCOPYC, ERROR},    /* BUILD, DROP */
-     {ERROR, ERROR}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
+     {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
      {ERROR, FCOPY}, {REVCOPYC, ERROR}},      /* FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
     {{IGNORE, FBBUILD}, {REVCOPYC, FBDROP},  /* BUILD, DROP */
@@ -1917,7 +1917,7 @@ dagFromDoc(Document *doc)
 //fprintf(stderr, "============RESOLVED==============\n");
 //showVectorDeps(nodes, FALSE);
 
-        promoteRebuilds(nodes);
+        //promoteRebuilds(nodes);
         createMirrorNodes(nodes);
         redirectDeps(nodes);
 
