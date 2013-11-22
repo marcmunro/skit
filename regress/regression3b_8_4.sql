@@ -64,6 +64,8 @@ create language plpgsql;
 alter language plpgsql owner to regress;
 comment on language plpgsql is 'PROCEDural';
 
+grant usage on language plpgsql to wibble;
+
 revoke usage on language plpgsql from public;
 grant usage on language plpgsql to keep;
 
@@ -111,7 +113,7 @@ end
 $$
 language plpgsql stable strict;
 
--- Change parameter name
+-- Change parameter name, remove comment
 create or replace
 function wibble.fn2(param varchar) returns varchar as
 $$
@@ -122,7 +124,10 @@ $$
 language plpgsql stable strict;
 
 
--- Change function source code
+-- Change function source code with no access to schema
+grant create on schema wibble to wibble;
+
+set session authorization wibble;
 create 
 function wibble.fn3(p1 varchar) returns varchar as
 $$
@@ -132,6 +137,9 @@ end
 $$
 language plpgsql stable strict;
 
+reset session authorization;
+
+revoke create on schema wibble from wibble;
 
 -- Change result type
 create or replace

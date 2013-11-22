@@ -2,6 +2,8 @@
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
 
+make ddl/schemata.xsl conformant with new feedback, etc.
+
   diff handling for functions:
     WORKING ON THIS.
 
@@ -45,17 +47,16 @@ diffs:
       change volatility
       is_strict
       security_definer
+      result					fn4
       result type
       returns_set
       cost
       result rows
       configuration parameter
       grants
-      comments
-      (owner has) privileges to the function	fn2
-      without privileges to the function
-      with privileges to the schema		fn2
-      without privileges to the schema
+      comments					fn2(D), fn3(I)
+      owner has privileges to the schema	fn2
+      without privileges to the schema		fn3
 
 
 

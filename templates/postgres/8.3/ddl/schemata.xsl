@@ -9,13 +9,7 @@
   <xsl:template match="dbobject/schema">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="skit:eval('echoes') = 't'">
-          <xsl:text>&#x0A;\echo schema </xsl:text>
-          <xsl:value-of select="../@qname"/>
-	</xsl:if>
+	<xsl:call-template name="feedback"/>
 	<xsl:choose>
 	  <xsl:when test="../@name='public'">
             <xsl:text>&#x0A;alter schema </xsl:text>
@@ -36,9 +30,7 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
         <xsl:text>&#x0A;drop schema </xsl:text>
         <xsl:value-of select="../@qname"/>
         <xsl:text>;&#x0A;</xsl:text>
@@ -47,9 +39,7 @@
 
     <xsl:if test="../@action='diffprep'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:for-each select="../attribute">
 	  <xsl:if test="@name='owner'">
             <xsl:text>&#x0A;alter schema </xsl:text>
@@ -64,9 +54,7 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-        <xsl:text>---- DBOBJECT </xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>

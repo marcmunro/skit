@@ -129,6 +129,7 @@
 	  </xsl:when>
 	</xsl:choose>
 
+	<xsl:call-template name="commentdiff"/>
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>

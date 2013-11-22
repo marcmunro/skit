@@ -58,6 +58,8 @@ psql -d regressdb -U regress << 'EOF'
 
 create language plpgsql;
 
+grant usage on language plpgsql to wibble;
+
 create schema wibble authorization regress;
 comment on schema wibble is 'This is owned by regress';
 
@@ -90,7 +92,7 @@ end
 $$
 language plpgsql stable strict;
 
--- Change parameter name
+-- Change parameter name, remove comment
 create 
 function wibble.fn2(p1 varchar) returns varchar as
 $$
@@ -100,8 +102,12 @@ end
 $$
 language plpgsql stable strict;
 
+comment on function wibble.fn2(varchar) is 'Old comment';
 
--- Change function source code
+-- Change function source code with no access to schema
+grant create on schema wibble to wibble;
+
+set session authorization wibble;
 create 
 function wibble.fn3(p1 varchar) returns varchar as
 $$
@@ -111,6 +117,9 @@ end
 $$
 language plpgsql stable strict;
 
+reset session authorization;
+
+revoke create on schema wibble from wibble;
 
 -- Change result type
 create 
