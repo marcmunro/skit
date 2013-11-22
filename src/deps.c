@@ -1339,24 +1339,6 @@ resolveGraphs(Vector *nodes)
     }
 }
 
-static void
-promoteRebuildDeps(DagNode *node)
-{
-    DagNode *dep;
-    int i;
-    EACH(node->backward_deps, i) {
-	dep = (DagNode *) ELEM(node->backward_deps, i);
-	if ((dep->build_type != REBUILD_NODE) &&
-	    (dep->build_type != FALLBACK_NODE) &&
-	    (dep->build_type != ENDFALLBACK_NODE)) 
-	{
-	    /* This node needs to be promoted. */
-	    dep->build_type = REBUILD_NODE;
-	    promoteRebuildDeps(dep);
-	}
-    }
-}
-
 /* Any node that depends on a node with a buld_type of REBUILD, must
  * itself be promoted to a rebuild. */
 static void
@@ -1364,10 +1346,22 @@ promoteRebuilds(Vector *nodes)
 {
     int i;
     DagNode *node;
+    int j;
+    DagNode *dep;
+
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	if (node->build_type == REBUILD_NODE) {
-	    promoteRebuildDeps(node);
+	if ((node->build_type == EXISTS_NODE) ||
+	    (node->build_type == DIFF_NODE))
+	{
+	    /* This node may need to be promoted to a rebuild node. */
+	    EACH(node->forward_deps, j) {
+		dep = (DagNode *) ELEM(node->forward_deps, j);
+		if (dep->build_type == REBUILD_NODE) {
+		    node->build_type = REBUILD_NODE;
+		    break;
+		}
+	    }
 	}
     }
 }
@@ -1917,7 +1911,7 @@ dagFromDoc(Document *doc)
 //fprintf(stderr, "============RESOLVED==============\n");
 //showVectorDeps(nodes, FALSE);
 
-        //promoteRebuilds(nodes);
+        promoteRebuilds(nodes);
         createMirrorNodes(nodes);
         redirectDeps(nodes);
 
