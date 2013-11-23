@@ -117,6 +117,18 @@
 	      <!-- The function's code has changed. -->
 	      <xsl:value-of select="'Rebuild'"/>
 	    </xsl:when>
+	    <xsl:when 
+		test="../attribute[@status='diff' and @name='bin']">
+	      <!-- The library for the function has changed. -->
+	      <xsl:value-of select="'Rebuild'"/>
+	    </xsl:when>
+	    <xsl:when 
+		test="../attribute[@status='diff' and @name='language']">
+	      <!-- The language of the function has changed.  We are 
+	           to get here without source or bin changing, but what
+	           the hell.  -->
+	      <xsl:value-of select="'Rebuild'"/>
+	    </xsl:when>
 	    <xsl:otherwise>
 	      <xsl:value-of select="'None'"/>
 	    </xsl:otherwise>
@@ -127,6 +139,47 @@
 	  <xsl:when test="$action='Rebuild'">
 	    <xsl:call-template name="function"/>
 	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:if test="../attribute[@name='owner']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:value-of select="concat(' owner to ', @owner, ';&#x0A;')"/>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@name='volatility']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:value-of select="concat(' ', @volatility, ';&#x0A;')"/>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@name='is_strict']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:choose>
+		<xsl:when test="@is_strict='yes'">
+		  <xsl:text> strict;&#x0A;</xsl:text>
+		</xsl:when>
+		<xsl:otherwise>
+		  <xsl:text> called on null input;&#x0A;</xsl:text>
+		</xsl:otherwise>
+	      </xsl:choose>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@name='security_definer']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:choose>
+		<xsl:when test="@security_definer='yes'">
+		  <xsl:text> security definer;&#x0A;</xsl:text>
+		</xsl:when>
+		<xsl:otherwise>
+		  <xsl:text> security invoker;&#x0A;</xsl:text>
+		</xsl:otherwise>
+	      </xsl:choose>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@name='cost']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;')"/>
+	    </xsl:if>
+	  </xsl:otherwise>
 	</xsl:choose>
 
 	<xsl:call-template name="commentdiff"/>

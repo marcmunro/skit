@@ -2,8 +2,6 @@
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
 
-make ddl/schemata.xsl conformant with new feedback, etc.
-
   diff handling for functions:
     WORKING ON THIS.
 
@@ -40,17 +38,17 @@ diffs:
     function diffs:
       change parameter type			fn1
       change parameter name			fn2
-      change parameter mode
-      change owner
+      change parameter mode			fn5
+      change owner				fn6
       change source				fn3
-      change bin
-      change volatility
-      is_strict
-      security_definer
+      change bin				not doable, probably works
+      language					not doable, probably works
+      change volatility				fn6
+      is_strict					fn6
+      security_definer				fn6
       result					fn4
-      result type
-      returns_set
-      cost
+      returns_set				assumed
+      cost					fn6
       result rows
       configuration parameter
       grants

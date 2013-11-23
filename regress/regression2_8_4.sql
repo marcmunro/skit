@@ -115,7 +115,7 @@ begin
   return _state + _next;
 end;
 $_$
-language plpgsql stable cost 5;
+language plpgsql stable cost 5 security definer;
 
 create or replace function "public"."addint4"(
     _state in "pg_catalog"."int4",

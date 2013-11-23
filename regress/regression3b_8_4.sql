@@ -151,6 +151,31 @@ end
 $$
 language plpgsql stable strict;
 
+-- Change parameter mode without affecting signature
+create or replace
+function wibble.fn5(p1 in out varchar, p2 out varchar, p3 out varchar) 
+   returns setof record as
+$$
+begin
+  p2 := p1;
+  p3 := p1;
+end
+$$
+language plpgsql stable strict cost 4;
+
+-- Change owner.
+set session authorization regress;
+
+create 
+function wibble.fn6(p1 varchar) returns setof varchar as
+$$
+begin
+  return next 'x';
+end
+$$
+language plpgsql volatile strict security definer;
+
+reset session authorization;
 
 EOF
  

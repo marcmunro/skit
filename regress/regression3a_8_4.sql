@@ -115,11 +115,10 @@ begin
   return 'x';
 end
 $$
-language plpgsql stable strict;
+language plpgsql stable strict cost 1000;
 
 reset session authorization;
 
-revoke create on schema wibble from wibble;
 
 -- Change result type
 create 
@@ -130,5 +129,34 @@ begin
 end
 $$
 language plpgsql stable strict;
+
+
+-- Change parameter mode without affecting signature
+create 
+function wibble.fn5(p1 in varchar, p2 out varchar, p3 out varchar) 
+   returns setof record as
+$$
+begin
+  p2 := p1;
+  p3 := p1;
+end
+$$
+language plpgsql stable strict;
+
+-- Change owner.
+set session authorization wibble;
+
+create 
+function wibble.fn6(p1 varchar) returns setof varchar as
+$$
+begin
+  return next 'x';
+end
+$$
+language plpgsql stable cost 1000;
+
+reset session authorization;
+
+revoke create on schema wibble from wibble;
 
 EOF

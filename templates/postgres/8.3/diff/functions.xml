@@ -18,7 +18,7 @@
     <attribute name="cost"/>
     <attribute name="security_definer"/>
     <attribute name="is_strict"/>
-    <attribute name="returns_set"/>
+    <attribute name="returns_set" rebuild="true"/>
     <attribute name="bin"/>
     <element type="result" rebuild="true">
       <attribute name="type"/>
@@ -27,6 +27,7 @@
     <element type="params">
       <element type="param" key="position">
 	<attribute name="name"/>
+	<attribute name="mode" rebuild="true"/>
       </element>
     </element>
     <element type="source">

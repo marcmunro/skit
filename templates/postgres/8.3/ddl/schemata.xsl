@@ -53,10 +53,12 @@
     </xsl:if>
 
     <xsl:if test="../@action='diffcomplete'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="commentdiff"/>
-      </print>
+      <xsl:if test="../element[@type='comment']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:call-template name="commentdiff"/>
+	</print>
+      </xsl:if>
     </xsl:if>
 
 
