@@ -173,7 +173,7 @@ begin
   return next 'x';
 end
 $$
-language plpgsql volatile strict security definer;
+language plpgsql volatile strict security definer rows 4;
 
 reset session authorization;
 

@@ -16,6 +16,7 @@
     <attribute name="language"/>
     <attribute name="volatility"/>
     <attribute name="cost"/>
+    <attribute name="rows"/>
     <attribute name="security_definer"/>
     <attribute name="is_strict"/>
     <attribute name="returns_set" rebuild="true"/>

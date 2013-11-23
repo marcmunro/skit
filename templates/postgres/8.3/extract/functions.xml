@@ -39,6 +39,7 @@
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
       	<skit:attr name="cost"/>
+      	<skit:attr name="rows"/>
 
       	<skit:attr name="signature" 
       			 expr="(select function_sigs (select tuple 'oid'))"/>

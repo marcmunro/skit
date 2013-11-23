@@ -71,6 +71,9 @@
     <xsl:if test="@security_definer='yes'">
       <xsl:text> security definer</xsl:text>
     </xsl:if>
+    <xsl:if test="@rows">
+      <xsl:value-of select="concat(' rows ', @rows)"/>
+    </xsl:if>
     <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;')"/>
   </xsl:template>
 
@@ -178,6 +181,11 @@
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
 	      <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;')"/>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@name='rows']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:call-template name="function_header"/>
+	      <xsl:value-of select="concat(' rows ', @rows, ';&#x0A;')"/>
 	    </xsl:if>
 	  </xsl:otherwise>
 	</xsl:choose>

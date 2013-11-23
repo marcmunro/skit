@@ -29,7 +29,8 @@ select p.oid as oid,
        t.typinput::oid as type_input_oid,
        t.typoutput::oid as type_output_oid,
        t.typreceive::oid as type_receive_oid,
-       t.typsend::oid as type_send_oid
+       t.typsend::oid as type_send_oid,
+       case when p.proretset then p.prorows else null end as rows
 from   pg_catalog.pg_proc p
        inner join
           pg_catalog.pg_namespace n

@@ -49,7 +49,7 @@ diffs:
       result					fn4
       returns_set				assumed
       cost					fn6
-      result rows
+      result rows				fn6
       configuration parameter
       grants
       comments					fn2(D), fn3(I)

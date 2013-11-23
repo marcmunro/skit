@@ -1068,5 +1068,19 @@ create view v1 as select 'a' as a, 'b' as b;
 create view v2 as select * from v1;
 create or replace view v1 as select * from v2;
 
+
+-- A plpgsql function that returns a set of rows
+create or replace
+function wibble(p1 varchar)
+  returns setof varchar as
+$$
+begin
+  return next 'a';
+  return next 'b';
+  return next 'c';
+end;
+$$
+language plpgsql security definer cost 20 rows 3;
+
 DBEOF
 
