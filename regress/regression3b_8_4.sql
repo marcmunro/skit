@@ -163,7 +163,7 @@ end
 $$
 language plpgsql stable strict cost 4;
 
--- Change owner.
+-- Change owner and config options
 set session authorization regress;
 
 create 
@@ -175,7 +175,24 @@ end
 $$
 language plpgsql volatile strict security definer rows 4;
 
+alter function wibble.fn6(varchar) set enable_nestloop = 'off';
+
 reset session authorization;
+
+-- Change parameter defaults
+create 
+function wibble.fn7(
+     p1 varchar,
+     p2 varchar,
+     p3 integer default 0,
+     p4 boolean default false) 
+  returns varchar as
+$$
+begin
+  return 'x';
+end
+$$
+language plpgsql stable;
 
 EOF
  

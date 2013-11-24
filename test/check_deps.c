@@ -557,7 +557,7 @@ START_TEST(depset_dia_build)
     boolean failed = FALSE;
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
-    eval("(setq dbver (version '8.3'))");
+    eval("(setq dbver (version '8.4'))");
 
     BEGIN {
 	initTemplatePath(".");
@@ -616,7 +616,7 @@ START_TEST(depset_dia_drop)
 
     BEGIN {
 	initTemplatePath(".");
-	eval("(setq dbver (version '8.3'))");
+	eval("(setq dbver (version '8.4'))");
 	//showMalloc(901);
 	//showFree(415);
 
@@ -673,7 +673,7 @@ START_TEST(depset_dia_both)
 
     BEGIN {
 	initTemplatePath(".");
-	eval("(setq dbver (version '8.3'))");
+	eval("(setq dbver (version '8.4'))");
 	//showMalloc(901);
 	//showFree(415);
 

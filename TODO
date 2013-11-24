@@ -5,6 +5,7 @@ Check that acls are handled properly (returning null if that's what they
   diff handling for functions:
     WORKING ON THIS.
 
+Add handling for FDWs and any other 8.4 things
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
@@ -50,6 +51,7 @@ diffs:
       returns_set				assumed
       cost					fn6
       result rows				fn6
+      arg defaults
       configuration parameter
       grants
       comments					fn2(D), fn3(I)

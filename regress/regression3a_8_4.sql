@@ -105,7 +105,7 @@ language plpgsql stable strict;
 comment on function wibble.fn2(varchar) is 'Old comment';
 
 -- Change function source code with no access to schema
-grant create on schema wibble to wibble;
+grant create, usage on schema wibble to wibble;
 
 set session authorization wibble;
 create 
@@ -143,7 +143,7 @@ end
 $$
 language plpgsql stable strict;
 
--- Change owner.
+-- Change owner and config options
 set session authorization wibble;
 
 create 
@@ -155,8 +155,25 @@ end
 $$
 language plpgsql stable cost 1000;
 
-reset session authorization;
+alter function wibble.fn6(varchar) set enable_hashagg = 'off';
+alter function wibble.fn6(varchar) set enable_mergejoin = 'off';
 
-revoke create on schema wibble from wibble;
+reset session authorization;
+revoke create, usage on schema wibble from wibble;
+
+-- Change parameter defaults
+create 
+function wibble.fn7(
+     p1 varchar,
+     p2 varchar default null,
+     p3 integer default 0,
+     p4 boolean default true) 
+  returns varchar as
+$$
+begin
+  return 'x';
+end
+$$
+language plpgsql stable;
 
 EOF
