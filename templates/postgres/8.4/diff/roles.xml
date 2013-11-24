@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="role" key="name">
+    <!-- The attributes which we wish to compare -->
+    <attribute name="max_connections"/>
+    <attribute name="password"/>
+    <attribute name="expires"/>
+    <attribute name="login"/>
+
+    <element type="config" key="type">
+      <attribute name="value"/>
+    </element>
+
+    <element type="privilege" key="priv"/>
+
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>
+
+  <dbobject type="privilege" key="fqn">
+    <!-- Privileges have been made into dbobjects so that they can be
+         properly tracked as dependencies.  Note that the privilige
+         dbobject really means the grant of a privilege.  The diffs for
+         privileges are dealt with as elements of roles (above).  This
+         dbobject definition is necessary only to allow diffs to be
+         properly recorded (as "None") for the privilege dbobjects -->
+  </dbobject>
+
+</skit:inclusion>  

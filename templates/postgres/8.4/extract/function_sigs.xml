@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <!-- This creates a hash of function oids to function signatures. -->
+
+  <skit:var name="function_sigs" expr="&lt;&gt;"/>
+  <skit:foreach var="function" from="functions">
+    <skit:let>
+      <skit:var name="typetuple"/>
+      <skit:var name="sigargtypes"
+                expr="(split (select tuple 'sigargtypes') ',')"/>
+      <skit:foreach from="sigargtypes" var="arg" map_to="args">
+	<skit:let>
+	  <skit:var name="typetuple" expr="(select alltypes arg)"/>
+	  <skit:result expr="(concat (select typetuple 'schema') '.' 
+			             (select typetuple 'name')
+				     (and (string= 't'
+				            (select typetuple 'array'))
+					  '[]'))"/>
+	</skit:let>
+      </skit:foreach>
+      <skit:var name="signature"
+		expr="(concat (select tuple 'schema') '.' 
+			      (select tuple 'name') '(' 
+			      (join args ',') ')')"/>
+      <skit:exec expr="(hashadd function_sigs 
+		                (select tuple 'oid') signature))"/>
+    </skit:let>
+  </skit:foreach>
+</skit:inclusion>  
+

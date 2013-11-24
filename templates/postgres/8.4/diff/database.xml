@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="database" key="type">
+    <attribute name="tablespace"/>
+    <attribute name="encoding"/>
+    <attribute name="connections"/>
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <element type="comment">
+      <text/>
+    </element>
+
+    <dbobject type="fallbacks" key="type"/>
+    <xi:include href="skitfile:diff/schemata.xml"/>
+  </dbobject>
+
+  <!-- Nothing to do for dbincluster, except tell diff that it exists -->
+  <dbobject type="dbincluster" key="type"/>
+</skit:inclusion>  

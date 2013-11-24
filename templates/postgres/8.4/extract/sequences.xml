@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="sequence" from="sequences" 
+		filter="(string= (select sequence 'schema')
+			         (select schema 'name'))">
+    <sequence>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="tablespace"/>
+      <skit:attr name="privs"/>
+
+      <skit:runsql var="seqcolumn" file="sql/sequence_cols.sql"
+		   params="(concat (select sequence 'schema') '.' 
+			           (select sequence 'name'))">
+	<skit:attr name="start_with"/>
+	<skit:attr name="increment_by"/>
+	<skit:attr name="max_value"/>
+	<skit:attr name="min_value"/>
+	<skit:attr name="cache"/>
+	<skit:attr name="is_cycled"/>
+      </skit:runsql>
+
+      <skit:if test="(select sequence 'comment')">
+	<comment>
+	  <skit:text expr="(select sequence 'comment')"/>
+	</comment>
+      </skit:if>
+
+      <skit:if test="(not (select tuple 'privs'))">
+        <!-- No privileges defined for this sequence, so create
+      	     default grants for the implicit privs -->
+      </skit:if>
+
+      <skit:exec_function name="grants_from_privs"
+			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
+			  automatic="&lt; 
+			     ((select tuple 'owner') . 
+			      (list 'usage' 'select' 'update'))&gt;"/>
+    </sequence>
+  </skit:foreach>
+</skit:inclusion>  
+

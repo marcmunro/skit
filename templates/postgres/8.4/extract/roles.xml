@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+	
+
+  <!-- <skit:exception text="EXCEPTION TEST IN ROLES.XML"/> -->
+  <skit:let>
+    <skit:var name="role_roles"/>
+    <skit:runsql to="role_roles" file="sql/role_roles.sql"/>
+    <skit:runsql file="sql/roles.sql" var="role">
+      <role>
+	<skit:attr name="name"/>
+	<skit:attr name="login"/>
+	<skit:attr name="password"/>
+	<skit:attr name="expires"/>
+	<skit:attr name="max_connections"/>
+
+	<skit:if test="(select role 'config')">
+	  <!-- The regexp below removes the braces around the config 
+	       string. -->
+	  <skit:var name="config_list"
+		    expr="(split (replace (select role 'config') 
+		          /\\{(.*)\\}/ '\1') ',')"/>
+	  <skit:foreach from="config_list" var="config_str">
+	    <skit:let>
+	      <skit:var name="confinfo" expr="(split config_str '=')"/>
+	      <config>
+		<skit:attr name="type" expr="(select confinfo 0)"/>
+		<skit:attr name="value" expr="(select confinfo 1)"/>
+	      </config>
+	    </skit:let>
+	  </skit:foreach>
+	</skit:if>
+
+	<skit:if test="(select role 'comment')">
+	  <comment>
+	    <skit:text expr="(select role 'comment')"/>
+	  </comment>
+	</skit:if>
+	<skit:if test="(string= 'y' (select tuple 'superuser'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'superuser'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'inherit'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'inherit'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'createrole'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'createrole'"/>
+	  </privilege>
+	</skit:if>	
+	<skit:if test="(string= 'y' (select tuple 'createdb'))">
+	  <privilege>
+	    <skit:attr name="priv" expr="'createdb'"/>
+	  </privilege>
+	</skit:if>	
+	
+	<!-- The following is equivalent to the actual foreach below.
+	      This shows how tuplestack and tuple may be used instead of
+	      named variables
+	<skit:foreach from="role_roles"
+		      filter="(string= (select tuple 'to')
+			      (select tuplestack 1 'name'))">	-->
+	<skit:foreach from="role_roles"
+		      var="this_role_role"
+		      filter="(string= (select this_role_role 'to')
+			      (select role 'name'))">	
+	  <grant>	
+	    <skit:attr name="priv"/>
+	    <skit:attr name="from"/>
+	    <skit:attr name="to"/>
+	    <skit:attr name="with_admin"/>
+	  </grant>
+      </skit:foreach>
+
+      </role>
+    </skit:runsql>
+  </skit:let>
+</skit:inclusion>  
+

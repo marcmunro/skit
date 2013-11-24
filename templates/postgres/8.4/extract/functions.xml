@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="function" from="functions" 
+		filter="(string= (select function 'schema')
+			         (select schema 'name'))">
+    <function>
+      <skit:let>
+      	<!-- To deal with the pathological case of a name containing a
+      	     comma, we convert separating commas (those not in quotes) to
+      	     DEL (7F) and then split on the DEL.  If a name contains a DEL
+      	     we will be hosed.  -->
+	<skit:var name="argnames"
+		  expr="(split
+      		          (replace  
+      			    (or (select tuple 'all_argnames') '')
+      			    '((&quot;(//.|[^&quot;])*&quot;)|([^&quot;,]*)),' 
+      			    '\1&#x7F;') '&#x7F;'))"/>
+      	<skit:var name="argnum" expr="0"/>
+	<skit:var name="argtuple"/>
+      	<skit:var name="argtypes" 
+		  expr="(split (select tuple 'argtype_oids') ',')"/>
+      	<skit:var name="argmodes" 
+		  expr="(split (or (select tuple 'all_argmodes') '') ',')"/>
+      	<skit:var name="otherfn"/> 
+	<skit:var name="typoid" expr="(select tuple 'typoid')"/>
+
+      	<skit:attr name="name"/>
+      	<skit:attr name="schema"/>
+      	<skit:attr name="owner"/>
+      	<skit:attr name="language"/>
+      	<skit:attr name="is_strict"/>
+      	<skit:attr name="returns_set"/>
+      	<skit:attr name="volatility"/>
+      	<skit:attr name="security_definer"/>
+      	<skit:attr name="bin"/>
+      	<skit:attr name="privs"/>
+      	<skit:attr name="cost"/>
+      	<skit:attr name="rows"/>
+
+      	<skit:attr name="signature" 
+      			 expr="(select function_sigs (select tuple 'oid'))"/>
+
+	<skit:if test="typoid">
+	  <handler-for-type>	
+	    <skit:attr name="name"
+		       expr="(select basetypes typoid 'name')"/>
+	    <skit:attr name="schema"
+		       expr="(select basetypes typoid 'schema')"/>
+	    <!-- We provide the signatures only of functions that must be
+		 defined before the current type handler function -->
+	    
+	    <skit:if test="(not (string= (select tuple 'oid') 
+			                 (select tuple 'type_input_oid')))">
+	      <!-- Type_input function -->
+	      <skit:attr name="type_input_signature"
+      			 expr="(select function_sigs 
+			         (select tuple 'type_input_oid'))"/>
+	      
+	      <skit:if test="(not (string= (select tuple 'oid') 
+			                   (select tuple 'type_output_oid')))">
+		<!-- Type_output function -->
+		<skit:attr name="type_output_signature"
+      			   expr="(select function_sigs 
+				   (select tuple 'type_output_oid'))"/>
+
+		<skit:if test="(not (string= (select tuple 'oid') 
+			                     (select tuple 'type_send_oid')))">
+		  <!-- Type_send function -->
+		  <skit:attr name="type_send_signature"
+      			     expr="(select function_sigs 
+				     (select tuple 'type_send_oid'))"/>
+
+		  <skit:if test="(not (string= 
+				        (select tuple 'oid') 
+			                (select tuple 'type_receive_oid')))">
+		    <!-- Type_receive function -->
+		    <skit:attr name="type_receive_signature"
+      			       expr="(select function_sigs 
+				       (select tuple 'type_receive_oid'))"/>
+
+		  </skit:if>
+		</skit:if>
+	      </skit:if>
+	    </skit:if>
+	  </handler-for-type>
+	</skit:if>
+	<skit:if test="(select function 'comment')">
+	  <comment>
+	    <skit:text expr="(select function 'comment')"/>
+	  </comment>
+	</skit:if>
+      	<result>
+	  <skit:let>
+      	    <skit:var name="argtuple"
+		      expr="(select alltypes 
+			            (select tuple 'result_type_oid'))"/>
+      	    <skit:attr name="type" expr="(select argtuple 'name')"/>
+      	    <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+	  </skit:let>
+      	</result>
+      	<skit:if test="(select argtypes 0)">
+      	  <params>
+      	    <skit:foreach from="argtypes" var="arg" index="idx">
+      	      <param>
+		<skit:let>
+      		  <skit:var name="argtuple" expr="(select alltypes arg)"/>
+      		  <skit:attr name="type" expr="(select argtuple 'name')"/>
+      		  <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+		  <skit:if test="(string= (select argtuple 'array') 't')">
+      		    <skit:attr name="array" expr="'t')"/>
+		  </skit:if>
+      		  <skit:attr name="name" expr="(select argnames (- idx 1))"/>
+      		  <skit:attr name="mode" expr="(or (select argmodes (-
+      		  idx 1)) 'i')"/>
+      		  <skit:attr name="position" expr="idx"/>
+	        </skit:let>
+      	      </param>
+      	    </skit:foreach>
+      	  </params>
+      	</skit:if>
+      	<source>
+      	  <skit:text name="source"/>
+      	</source>
+      </skit:let>
+
+      <skit:exec_function name="grants_from_privs"
+  			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
+			  automatic="&lt; 
+			     ((select tuple 'owner') . (list 'execute'))
+			      ('public' . (list 'execute'))&gt;"/>
+    </function>
+  </skit:foreach>
+</skit:inclusion>  
+

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:diffrules
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+   version="1.0">
+
+  <!-- We assume that we will only be comparing one database at a time.
+       So, we can simply match our database, and cluster objects based
+       only on object type, hence match="type" for these dbobjects.
+       Also, we would not want to compare on the basis of database name
+       as it is likely we want to compare two different databases and
+       they may have different names. -->
+
+  <dbobject type="cluster" key="type">
+    <attribute name="skit_xml_version" fail="true"
+	       msg="Cannot reconcile xml format diffs between %s and %s"/>
+
+    <xi:include href="skitfile:diff/database.xml"/>
+    <xi:include href="skitfile:diff/roles.xml"/>
+    <xi:include href="skitfile:diff/tablespaces.xml"/>
+    <xi:include href="skitfile:diff/grants.xml"/>
+    <xi:include href="skitfile:diff/languages.xml"/>
+  </dbobject>
+</skit:diffrules>
+

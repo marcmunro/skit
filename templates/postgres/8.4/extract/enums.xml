@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="enum" from="enums" 
+		filter="(string= (select enum 'schema')
+			         (select schema 'name'))">
+    <type subtype="enum" is_defined="t">
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:runsql var="enumlabel" file="sql/enum_labels.sql"
+		   params="(select enum 'oid')">
+	<label>
+	  <skit:attr name="label"/>
+	</label>
+      </skit:runsql>
+      <skit:if test="(select enum 'comment')">
+	<comment>
+	  <skit:text expr="(select enum 'comment')"/>
+	</comment>
+      </skit:if>
+    </type>
+  </skit:foreach>
+</skit:inclusion>  
+
