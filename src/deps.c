@@ -473,7 +473,7 @@ applicationForDep(xmlNode *node)
 
     if (condition_str) {
 	stringLowerInPlace(condition_str);
-	elem = contents = stringSplit(condition_str, &separators);
+	elem = contents = stringSplit(condition_str, &separators, FALSE);
 	while (elem) {
 	    head = ((String *) elem->car)->value;
 	    if (streq(head, "forwards")) {

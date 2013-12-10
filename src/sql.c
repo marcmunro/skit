@@ -155,6 +155,7 @@ tupleGetByIdx(Tuple *tuple, int idx)
     Connection *connection;
     SqlFuncs *functions;
     tuple = (Tuple *) dereference((Object *) tuple);
+
     cursor = (Cursor *) tuple->cursor;
     connection = cursor->connection;
     functions = (SqlFuncs *) connection->sqlfuncs;

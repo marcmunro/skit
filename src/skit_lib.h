@@ -458,6 +458,7 @@ extern boolean checkHash(Hash *hash, void *chunk);
 extern Object *hashNext(Hash *hash, Object **p_placeholder);
 
 // string.c
+extern void appendStr(String *str1, String *str2);
 extern String *stringNew(const char *value);
 extern String *stringNewByRef(char *value);
 extern String *stringDup(String *src);
@@ -466,7 +467,7 @@ extern int stringCmp4Hash(const void *obj1, const void *obj2);
 extern int stringCmp(String *str1, String *str2);
 extern boolean stringMatch(String *str, char *expr);
 extern Int4 *stringToInt4(String *str);
-extern Cons *stringSplit(String *instr, String *split);
+extern Cons *stringSplit(String *instr, String *split, boolean match_quotes);
 extern String *stringLower(String *str);
 extern void stringLowerInPlace(String *str);
 extern String *stringNext(String *str, Object **placeholder);

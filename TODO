@@ -3,7 +3,8 @@ Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
 
   diff handling for functions:
-    WORKING ON THIS.
+    MAYBE ADD MORE REGRESSION TESTS FOR DEFAULTS AND CONFIG_SETTINGS?
+    Make the generated code prettier - (better line breaking, etc)
 
 Add handling for FDWs and any other 8.4 things
 
@@ -51,8 +52,8 @@ diffs:
       returns_set				assumed
       cost					fn6
       result rows				fn6
-      arg defaults
-      configuration parameter
+      arg defaults				fn7
+      configuration parameter			fn6
       grants
       comments					fn2(D), fn3(I)
       owner has privileges to the schema	fn2

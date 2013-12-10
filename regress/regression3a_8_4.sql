@@ -165,7 +165,7 @@ revoke create, usage on schema wibble from wibble;
 create 
 function wibble.fn7(
      p1 varchar,
-     p2 varchar default null,
+     p2 varchar default 'a,b',
      p3 integer default 0,
      p4 boolean default true) 
   returns varchar as

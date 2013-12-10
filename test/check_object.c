@@ -476,7 +476,7 @@ START_TEST(split_str1)
 {
     String *str1 = (String *) objectFromStr("'1.2.3'");
     String *str2 = (String *) objectFromStr("'.'");
-    Object *obj1 = (Object *) stringSplit(str1, str2);
+    Object *obj1 = (Object *) stringSplit(str1, str2, FALSE);
     Object *obj2 = objectFromStr("('1' '2' '3')");
     char *sexp = objectSexp(obj1);
     char *failstr = newstr("stringSplit failure: %s", sexp);
@@ -511,6 +511,30 @@ START_TEST(split_str2)
     failstr = newstr("split_str2: version is wrong: %s", str);
 
     fail_unless(streq(str, "('1' '2' '3')"), failstr);
+    skfree(str);
+    skfree(failstr);
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(split_str3)
+{
+    char *sexpstr;
+    Object *version;
+    char *str;
+    char *failstr;
+
+    sexpstr = newstr("(split '\"1.2\".\"3\"' '.' t)");
+    version = evalSexp(sexpstr);
+    skfree(sexpstr);
+
+    str = objectSexp(version);
+    objectFree(version, TRUE);
+
+    failstr = newstr("split_str3: split result is wrong: %s", str);
+
+    fail_unless(streq(str, "('\"1.2\"' '\"3\"')"), failstr);
     skfree(str);
     skfree(failstr);
     FREEMEMWITHCHECK;
@@ -1129,6 +1153,7 @@ objects_suite(void)
     ADD_TEST(tc_core, objcmp5);
     ADD_TEST(tc_core, split_str1);
     ADD_TEST(tc_core, split_str2);
+    ADD_TEST(tc_core, split_str3);
     ADD_TEST(tc_core, version_chk1);
     ADD_TEST(tc_core, promote);
     ADD_TEST(tc_core, map);

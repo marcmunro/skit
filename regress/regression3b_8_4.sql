@@ -176,6 +176,7 @@ $$
 language plpgsql volatile strict security definer rows 4;
 
 alter function wibble.fn6(varchar) set enable_nestloop = 'off';
+alter function wibble.fn6(varchar) set enable_mergejoin = 'on';
 
 reset session authorization;
 

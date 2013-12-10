@@ -341,6 +341,10 @@ alistExtract(Cons **p_alist, Object *key)
 Object *
 consNth(Cons *list, int n)
 {
+    if (n < 0) {
+	return NULL;
+    }
+
     list = (Cons *) dereference((Object *) list);
 
     while ((n > 0) && list) {

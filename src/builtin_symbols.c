@@ -23,6 +23,7 @@
 // TODO: Check the argument lists to the functions defined in here, and
 // raise errors if they are invalid.
 
+
 static void
 raiseMsg(char *template, char *fn_name, Object *obj)
 {
@@ -190,14 +191,6 @@ fnSetq(Object *obj)
     return (Object *) objRefNew(new);
 }
 
-static void
-appendStr(String *str1, String *str2)
-{
-    char *str1val = str1->value;
-    str1->value = newstr("%s%s", str1->value, str2->value);
-    skfree(str1val);
-}
-
 // (join LIST SEPARATOR)
 static Object *
 fnJoin(Object *obj)
@@ -242,7 +235,7 @@ fnJoin(Object *obj)
     return (Object *) result;
 }
 
-// (split SRC DELIMITERS)
+// (split SRC DELIMITERS &OPTIONAL MATCH_QUOTES)
 // Split a string into a list of string tokens using any character from
 // delimiters.
 static Object *
@@ -251,10 +244,14 @@ fnSplit(Object *obj)
     Cons *cons = (Cons *) obj;
     String *source;
     String *split;
+    boolean match_quotes = FALSE;
     raiseIfNotList("split", obj);
 
     evalCar(cons);
     source = (String *) dereference(cons->car);
+    if (!source) {
+	return NULL;
+    }
     raiseIfNotString("split", source);
 
     cons = (Cons *) cons->cdr;
@@ -263,9 +260,17 @@ fnSplit(Object *obj)
     evalCar(cons);
     split = (String *) dereference(cons->car);
     raiseIfNotString("split", split);
+
+    /* Third parameter is optional */
+    if (cons->cdr) {
+	cons = (Cons *) cons->cdr;	
+	raiseIfNotList("split", (Object *) cons);
+	match_quotes = (cons->car != NULL);
+    }
+    
     raiseIfMoreArgs("split", cons->cdr);
 
-    return (Object *) stringSplit(source, split);
+    return (Object *) stringSplit(source, split, match_quotes);
 }
 
 // Creates copy of source leaving source intact
@@ -351,7 +356,7 @@ fnVersion(Object *obj)
     str = (String *) cons->car;
     raiseIfNotString("version", str);
     dotstr = stringNew(".");
-    split_list = stringSplit(str, dotstr);
+    split_list = stringSplit(str, dotstr, FALSE);
     objectFree((Object *) dotstr, TRUE);
     split_list_list = consNew((Object *) split_list, NULL);
     map_list = consNew((Object *) symbolGet("try-to-int"), 
@@ -790,6 +795,30 @@ fnRegexp(Object *obj)
     return result;
 }
 
+/* Return length of a list as an integer. */
+static Object *
+fnLength(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object *obj1;
+    Int4 *result = NULL;
+
+    if (cons->car) {
+	if (obj1 = objectEval(cons->car)) {
+	    result = int4New(0);
+	    raiseIfNotList("length", (Object *) obj1);
+	    cons = (Cons *) dereference(obj1);
+	    while (cons) {
+		result->value++;
+		cons = (Cons *) cons->cdr;
+	    }
+	    objectFree(obj1, TRUE);
+	}
+    }
+
+    return (Object *) result;
+}
+
 static Object *
 fnHashAdd(Object *obj)
 {
@@ -879,6 +908,7 @@ initBaseSymbols()
     symbolCreate("+", &fnPlus, NULL);
     symbolCreate("-", &fnMinus, NULL);
     symbolCreate("re", &fnRegexp, NULL);                        /*XX*/
+    symbolCreate("length", &fnLength, NULL);
     symbolCreate("hashadd", &fnHashAdd, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
     symbolCreate("skit_xml_version", NULL, (Object *) xml_version);

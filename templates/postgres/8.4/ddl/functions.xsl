@@ -33,6 +33,9 @@
 	</xsl:choose>
       </xsl:if>
       <xsl:value-of select="skit:dbquote(@schema,@type)"/>
+      <xsl:if test="@default">
+	<xsl:value-of select="concat(' default ', @default)"/>
+      </xsl:if>
     </xsl:for-each>
     <xsl:text>)</xsl:text>
   </xsl:template>
@@ -74,7 +77,11 @@
     <xsl:if test="@rows">
       <xsl:value-of select="concat(' rows ', @rows)"/>
     </xsl:if>
-    <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;')"/>
+    <xsl:value-of select="concat(' cost ', @cost)"/>
+    <xsl:for-each select="config_setting">
+      <xsl:value-of select="concat('&#x0A;set ', @name, ' = ', @setting)"/>
+    </xsl:for-each>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
   <xsl:template match="dbobject/function">
@@ -127,9 +134,8 @@
 	    </xsl:when>
 	    <xsl:when 
 		test="../attribute[@status='diff' and @name='language']">
-	      <!-- The language of the function has changed.  We are 
-	           to get here without source or bin changing, but what
-	           the hell.  -->
+	      <!-- The language of the function has changed, which seems
+		   unlikely.  -->
 	      <xsl:value-of select="'Rebuild'"/>
 	    </xsl:when>
 	    <xsl:otherwise>
@@ -187,6 +193,24 @@
 	      <xsl:call-template name="function_header"/>
 	      <xsl:value-of select="concat(' rows ', @rows, ';&#x0A;')"/>
 	    </xsl:if>
+	    <xsl:for-each select="../element[@type='config_setting']">
+	      <xsl:text>alter function </xsl:text>
+	      <xsl:for-each select="../function">
+		<xsl:call-template name="function_header"/>
+	      </xsl:for-each>
+	      <xsl:choose>
+		<xsl:when test="@status='gone'">
+		  <xsl:value-of 
+		      select="concat('&#x0A;reset ', config_setting/@name, 
+			             ';&#x0A;')"/>
+		</xsl:when>
+		<xsl:otherwise>
+		  <xsl:value-of 
+		      select="concat('&#x0A;set ', config_setting/@name, ' = ', 
+			             config_setting/@setting,';&#x0A;')"/>
+		</xsl:otherwise>
+	      </xsl:choose>		
+	    </xsl:for-each>
 	  </xsl:otherwise>
 	</xsl:choose>
 

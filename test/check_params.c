@@ -696,7 +696,7 @@ START_TEST(scatter)
 END_TEST
 #endif
 
-#ifdef unused
+//#ifdef unused
 START_TEST(extract)
 {
     /* Run the database build for a regression test before running this
@@ -714,7 +714,7 @@ START_TEST(extract)
     //showMalloc(20129);
 
     BEGIN {
-	process_args2(8, args);
+	process_args2(7, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -726,13 +726,14 @@ START_TEST(extract)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
+//#endif
 
-#ifdef unused
+//#ifdef unused
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--drop", 
-		    "regress/scratch/regressdb_dump3b.xml", // regression_test1
+    char *args[] = {"./skit", "--generate", "--build", 
+		    "x",
+		    "//regress/scratch/regressdb_dump3b.xml", // regression_test1
 		    "--print", "--full"};
 
     initTemplatePath(".");
@@ -740,7 +741,7 @@ START_TEST(generate)
     //showMalloc(4283);
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(4, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -754,7 +755,7 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
+//#endif
 
 //#ifdef unused
 START_TEST(diff)
@@ -805,7 +806,7 @@ START_TEST(diffgen)
     //showMalloc(299978);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(6, args);
 	//doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	//objectFree((Object *) doc, TRUE);
@@ -988,8 +989,8 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 
     // Populate the regression test database
-    //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
+    ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps2);
 
     // ??

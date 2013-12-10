@@ -16,8 +16,8 @@ select p.oid as oid,
          as all_argmodes,
        regexp_replace(p.proargnames::varchar, E'{\(.*\)}', E'\\1') 
          as all_argnames,
-       regexp_replace(p.proargdefaults::varchar, E'{\(.*\)}', E'\\1') 
-         as all_argdefaults,
+       p.pronargdefaults as default_args_count,
+       pg_get_expr(p.proargdefaults, 0) as all_arg_defaults,
        case when p.prosecdef then 'yes' else null end as security_definer,
        case when p.proisstrict then 'yes' else null end as is_strict,
        case when p.proretset then 'yes' else null end as returns_set,
@@ -34,7 +34,7 @@ select p.oid as oid,
        t.typsend::oid as type_send_oid,
        case when p.proretset then p.prorows else null end as rows,
        regexp_replace(p.proconfig::varchar, E'{\(.*\)}', E'\\1') 
-         as all_config
+         as all_config_settings
 from   pg_catalog.pg_proc p
        inner join
           pg_catalog.pg_namespace n

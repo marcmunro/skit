@@ -481,10 +481,10 @@ handleNewElem(Cons *entry, Object *param)
     String *key = nodeAttribute(rule->node, "key");
     xmlNode *diff = diffElement(source->node, type->value, 
 				DIFFNEW, key? key->value: NULL);
+
     if (diff) {
 	if (results) {
-	    diff->next = results->node;
-	    results->node = diff;
+	    xmlAddSibling(results->node, diff);	    
  	}
 	else {
 	    results = nodeNew(diff);
@@ -502,6 +502,95 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 	     xmlNode *ruleset, xmlNode **p_deps,
 	     boolean *p_do_rebuild);
 
+static String *
+keyFromElement(xmlNode *elem, String *key_type)
+{
+    if (key_type) {
+	return nodeAttribute(elem, key_type->value);
+    }
+    else {
+	return stringNew(elem->name);
+    }
+}
+
+
+static Hash *
+elementHash(
+    xmlNode *content,
+    String *elem_type,
+    String *key_type)
+{
+    Hash *volatile results = hashNew(TRUE);
+    String *volatile key;
+    Node *volatile node;
+    Object *obj;
+    xmlNode *elem = content->children;
+    BEGIN {
+	while (elem = next_elem_of_type(elem, elem_type)) {
+	    key = keyFromElement(elem, key_type);
+	    node = nodeNew(elem);
+	    if (obj = hashAdd(results, (Object *) key, (Object *) node)) {
+		/* There was already a matching element */
+		objectFree(obj, TRUE);
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("diff rule for element %s in <%s/> "
+			     "has multiple matches for \"%s\"", 
+			     elem_type->value, content->name, key->value));
+	    }
+	    elem = elem->next;
+	}
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) results, TRUE);
+    }
+    END;
+    return results;
+}
+
+static xmlNode *
+newDiffElement(
+    xmlNode *element,
+    xmlNode *prev_diffs,
+    xmlNode *diff_details,
+    String *type,
+    char *status,
+    String *key)
+{
+    xmlNode *new_diff = diffElement(element, type->value, status, 
+				    key? key->value: NULL);
+    xmlAddChild(new_diff, diff_details);
+    if (prev_diffs) {
+	xmlAddSibling(prev_diffs, new_diff);
+	return prev_diffs;
+    }
+    return new_diff;
+}
+
+static xmlNode *
+diffsForUnmatchedElements(Hash *elems, xmlNode *diffs, xmlNode *rule)
+{
+    Node *volatile rulenode = nodeNew(rule);
+    Node *volatile diffnode = diffs? nodeNew(diffs): NULL;
+    Cons rule_and_results = {OBJ_CONS, (Object *) rulenode, 
+			     (Object *) diffnode};
+    xmlNode *result = diffs;
+
+    BEGIN {
+	hashEach(elems, handleNewElem, (Object *) &rule_and_results);
+	diffnode = (Node *) rule_and_results.cdr;
+	if (diffnode) {
+	    result = diffnode->node;
+	}
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) rulenode, FALSE);
+	objectFree((Object *) diffnode, FALSE);
+    }
+    END;
+    return result;
+}
+
 /* Return a diff node describing any difference between the elements
  * described by rule, or NULL, if there are no differences. */
 static xmlNode *
@@ -514,110 +603,53 @@ check_element(
 {
     String *volatile elem_type = nodeAttribute(rule, "type");
     String *volatile key_type = nodeAttribute(rule, "key");
-    Node *volatile rulenode = nodeNew(rule);
-    Hash *volatile elems2 = hashNew(TRUE);
-    xmlNode *diff = NULL;
-    xmlNode *prev = NULL;
-    String *key;
+    Hash *volatile elems2 = elementHash(content2, elem_type, key_type);
     xmlNode *elem1 = content1->children;
-    xmlNode *elem2 = content2->children;
-    xmlNode *elem_diffs;
+    xmlNode *elem2;
+    xmlNode *element_diffs = NULL;
+    xmlNode *diffs = NULL;
+    String *key;
     Node *node;
-    Object *obj;
-    Cons results = {OBJ_CONS, (Object *) rulenode, NULL};
 
     BEGIN {
-	/* Build a hash of file2 elements, that we can match against
-	 * file1 elements. */
-	while (elem2 = next_elem_of_type(elem2, elem_type)) {
-	    if (key_type) {
-		key = nodeAttribute(elem2, key_type->value);
-	    }
-	    else {
-		key = stringNew(elem2->name);
-	    }
-	    node = nodeNew(elem2);
-	    if (obj = hashAdd(elems2, (Object *) key, (Object *) node)) {
-		/* There was already a matching element */
-		objectFree(obj, TRUE);
-		RAISE(XML_PROCESSING_ERROR, 
-		      newstr("diff rule for element %s in <%s/> "
-			     "has multiple matches for \"%s\"", 
-			     elem_type->value, content2->name, key->value));
-	    }
-	    elem2 = elem2->next;
-	}
-
-	/* Now handle each element of the given type from file1 */
+	/* Check each element of the given type from contents1 */
 	while (elem1 = next_elem_of_type(elem1, elem_type)) {
-	    if (key_type) {
-		key = nodeAttribute(elem1, key_type->value);
-	    }
-	    else {
-		key = stringNew(elem1->name);
-	    }
-
+	    key = keyFromElement(elem1, key_type);
 	    node = (Node *) hashDel(elems2, (Object *) key);
-	    objectFree((Object *) key, TRUE);
 
 	    if (node) {
 		elem2 = node->node;
-		//dbgNode(elem1);
-		//dbgNode(elem2);
 		objectFree((Object *) node, TRUE);
-		elem_diffs = elementDiffs(elem1, elem2, rule, 
-					  p_deps, p_do_rebuild);
-		if (elem_diffs) {
-		    //dbgNode(elem_diffs);
-		    diff = diffElement(elem2, elem_type->value, DIFFDIFF, 
-				       key_type? key_type->value: NULL);
-		    xmlAddChild(diff, elem_diffs);
-		    if (nodeHasAttribute(rule, "rebuild")) {
-			*p_do_rebuild = TRUE;
-		    }
+		if (element_diffs = elementDiffs(elem1, elem2, rule, 
+						 p_deps, p_do_rebuild))
+		{
+		    diffs = newDiffElement(elem2, diffs, element_diffs,
+					   elem_type, DIFFDIFF, key_type);
+		    *p_do_rebuild |= nodeHasAttribute(rule, "rebuild");
 		}
-		else {
-		    diff = NULL;
-		}
+		
 	    }
-	    else { /* No match for elem1 in content2 */
-		diff = diffElement(elem1, elem_type->value, 
-				   DIFFGONE, key_type? key_type->value: NULL);
+	    else {
+		diffs = newDiffElement(elem1, diffs, NULL,
+				       elem_type, DIFFGONE, key_type);
+		*p_do_rebuild |= nodeHasAttribute(rule, "rebuild");
 	    }
-	    if (diff) {
-		diff->next = prev;
-		prev = diff;
-	    }
+	    objectFree((Object *) key, TRUE);
 	    elem1 = elem1->next;
 	}
 
-	if (prev) {
-	    results.cdr = (Object *) nodeNew(prev);
-	}
-	/* Finally handle any unmatched elements from file2 */
-	hashEach(elems2, handleNewElem, (Object *) &results);
-
+	diffs = diffsForUnmatchedElements(elems2, diffs, rule);
     }
     EXCEPTION(ex);
     FINALLY {
-	objectFree((Object *) rulenode, TRUE);
+	objectFree((Object *) elems2, TRUE);
 	objectFree((Object *) elem_type, TRUE);
 	objectFree((Object *) key_type, TRUE);
-	objectFree((Object *) elems2, TRUE);
     }
     END;
 
-    if (results.cdr) {
-	node = (Node *) results.cdr;
-	diff = node->node;
-	objectFree((Object *) node, TRUE);
-	
-	return diff;
-    }
-
-    return NULL;
+    return diffs;
 }
-
 
 static char *
 evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
@@ -749,6 +781,20 @@ diffDependency(
     return result;
 }
 
+static void
+addSiblingList(xmlNode *cur, xmlNode *list)
+{
+    xmlNode *prev = cur;
+    xmlNode *this = list;
+    xmlNode *next;
+    while (this) {
+	next = this->next;
+	(void) xmlAddSibling(prev, this);
+	prev = this;
+	this = next;
+    }
+} 
+
 
 /* Check the differences between two elements (these may be the
  * contents nodes of two dbobjects, or elements within such contents
@@ -761,7 +807,6 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
     xmlNode *rule;
     xmlNode *result = NULL;
     xmlNode *diff = NULL;
-    xmlNode *prev = NULL;
     xmlNode *dep;
 
     if (ruleset) {
@@ -788,20 +833,19 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 
 		if (dep = diffDependency(rule, content1, content2)) {
 		    if (*p_deps) {
-			(void) xmlAddSibling(*p_deps, dep);
+			addSiblingList(*p_deps, dep);
 		    }
 		    else {
 			*p_deps = dep;
 		    }
 		}
 		
-		if (prev) {
-		    xmlAddNextSibling(prev, diff);
+		if (result) {
+		    addSiblingList(result, diff);
 		}
 		else {
 		    result = diff;
 		}
-		prev = diff;
 	    }
 	    rule = getElement(rule->next);
 	}

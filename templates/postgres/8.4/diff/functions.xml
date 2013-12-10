@@ -29,7 +29,11 @@
       <element type="param" key="position">
 	<attribute name="name"/>
 	<attribute name="mode" rebuild="true"/>
+	<attribute name="default" rebuild="true"/>
       </element>
+    </element>
+    <element type="config_setting" key="name">
+      <attribute name="setting"/>
     </element>
     <element type="source">
       <text/>

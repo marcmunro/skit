@@ -18,6 +18,14 @@
 #include "../exceptions.h"
 #include <regex.h>
 
+void
+appendStr(String *str1, String *str2)
+{
+    char *str1val = str1->value;
+    str1->value = newstr("%s%s", str1->value, str2->value);
+    skfree(str1val);
+}
+
 String *
 stringNewByRef(char *value)
 {
@@ -163,15 +171,71 @@ nextTok(char *instr, char *separators, char **p_placeholder)
     return stringNewByRef(result);
 }
 
+/* Get the last separator used by nextTok, returning it as a String. */
+static String *
+separatorTok(char *placeholder)
+{
+    char *str = skalloc(2);
+    String *result;
+    *str = *(placeholder - 1);
+    *(str + 1) = '\0';
+    result = stringNewByRef(str);
+    return result;
+}
+
+/* The type, if any of quote used in a string. */
+static char
+quoteType(String *str)
+{
+    char *ch = str->value;
+    while (*ch) {
+	if (*ch == '\'' || *ch == '"') {
+	    break;
+	}
+	ch++;
+    }
+    return *ch;
+}
+
+/* True if the string contains an even number of the given type of
+ * quote. */
+static boolean
+quotesMatched(String *str, char quote)
+{
+    char result = TRUE;
+    char *ch = str->value;
+    while (*ch) {
+	if (*ch == quote) {
+	    result = !result;
+	}
+	ch++;
+    }
+    
+    return result;
+}
+
+static void
+rejoinStrings(String *prev, String *separator, String *next)
+{
+    appendStr(prev, separator);
+    appendStr(prev, next);
+    objectFree((Object *) separator, TRUE);
+    objectFree((Object *) next, TRUE);
+}
+
 Cons *
-stringSplit(String *instr, String *split)
+stringSplit(String *instr, String *split, boolean match_quotes)
 {
     Cons *cons;
     Cons *prev = NULL;
     Cons *head = NULL;
     char *mycopy;
     char *placeholder = NULL;
+    String *separator;
     String *entry;
+    char quote = '\0';
+    boolean quotes_matched = TRUE;
+    boolean append_to_prev = FALSE;
 
     assert(instr && instr->type == OBJ_STRING,
 	   "stringSplit: instr must be a String");
@@ -181,14 +245,39 @@ stringSplit(String *instr, String *split)
     mycopy = newstr("%s", instr->value);
 
     while (entry = nextTok(mycopy, split->value, &placeholder)) {
-	cons = consNew((Object *) entry, NULL);
-	if (prev) {
-	    prev->cdr = (Object *) cons;
-	    prev = cons;
+	if (match_quotes) {
+	    if (!quote) {
+		quote = quoteType(entry);
+	    }
+	    if (quote) {
+		if (!quotesMatched(entry, quote)) {
+		    quotes_matched = !quotes_matched;
+		}
+	    }
+	}
+	if (append_to_prev) {
+	    rejoinStrings((String *) prev->car, separator, entry);
 	}
 	else {
-	    head = prev = cons;
+	    cons = consNew((Object *) entry, NULL);
+	    if (prev) {
+		prev->cdr = (Object *) cons;
+		prev = cons;
+	    }
+	    else {
+		head = prev = cons;
+	    }
 	}
+	if (quote) {
+	    append_to_prev = !quotes_matched;
+	    if (append_to_prev) {
+		separator = separatorTok(placeholder);
+	    }
+	}
+    }
+    /* If the final string fails to be matched, just append it anyway. */
+    if (append_to_prev) {
+	rejoinStrings((String *) prev->car, separator, entry);
     }
     skfree(mycopy);
     return head;

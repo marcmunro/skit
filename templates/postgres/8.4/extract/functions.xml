@@ -27,7 +27,10 @@
 		  expr="(split (or (select tuple 'all_argmodes') '') ',')"/>
       	<skit:var name="otherfn"/> 
 	<skit:var name="typoid" expr="(select tuple 'typoid')"/>
-
+	<skit:var name="defaults" 
+		  expr="(split (select tuple 'all_arg_defaults') ',' t)"/>
+	<skit:var name="config_settings" 
+		  expr="(split (select tuple 'all_config_settings') ',' t)"/>
       	<skit:attr name="name"/>
       	<skit:attr name="schema"/>
       	<skit:attr name="owner"/>
@@ -115,13 +118,30 @@
 		  </skit:if>
       		  <skit:attr name="name" expr="(select argnames (- idx 1))"/>
       		  <skit:attr name="mode" expr="(or (select argmodes (-
-      		  idx 1)) 'i')"/>
+					       idx 1)) 'i')"/>
       		  <skit:attr name="position" expr="idx"/>
+		  <skit:if test="defaults">
+		    <skit:var name="default"
+			      expr="(select defaults
+				            (+ idx (- (length defaults)
+				                      (length argtypes) 1)))"/>
+		    <skit:if test="default">
+		      <skit:attr name="default" expr="(replace default
+						               '^ *' '')"/>
+		    </skit:if>
+		  </skit:if>
 	        </skit:let>
       	      </param>
       	    </skit:foreach>
       	  </params>
       	</skit:if>
+	<skit:foreach from="config_settings" var="config">
+	  <config_setting>
+	    <skit:var name="parts" expr="(split config '=' t))"/>
+	    <skit:attr name="name" expr="(select parts 0)"/>
+	    <skit:attr name="setting" expr="(select parts 1)"/>
+	  </config_setting>
+	</skit:foreach>
       	<source>
       	  <skit:text name="source"/>
       	</source>
