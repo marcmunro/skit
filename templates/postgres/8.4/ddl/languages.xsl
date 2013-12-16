@@ -15,7 +15,7 @@
 	     there is no other way of defining the owner using the create
 	     language statement. -->
         <xsl:value-of 
-	    select="concat('&#x0A;set session authorization ',
+	    select="concat('set session authorization ',
 		           $apos, @owner, $apos, 
 		           ';&#x0A;create language ', 
 		           ../@qname, ';&#x0A;')"/>
@@ -41,24 +41,24 @@
     </xsl:if>
 
     <xsl:if test="../@action='diffprep'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:text>&#x0A;</xsl:text>
-	<xsl:for-each select="../attribute">
-	  <xsl:if test="@name='owner'">
-            <xsl:value-of 
-		select="concat('alter language ', ../@qname,
-			       ' owner to ', skit:dbquote(@new),
-			       ';&#x0A;')"/>
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter language ', ../@qname,
+			         ' owner to ', skit:dbquote(@new),
+				 ';&#x0A;')"/>
 	    </xsl:if>
 	  </xsl:for-each>
-      </print>
+	</print>
+      </xsl:if>
     </xsl:if>
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
 	<xsl:call-template name="feedback"/>
-	<xsl:text>&#x0A;</xsl:text>
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>

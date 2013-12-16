@@ -12,18 +12,16 @@
 	<xsl:call-template name="feedback"/>
 	<xsl:choose>
 	  <xsl:when test="../@name='public'">
-            <xsl:text>&#x0A;alter schema </xsl:text>
-            <xsl:value-of select="../@qname"/>
-            <xsl:text> owner to </xsl:text>
+	    <xsl:value-of 
+		select="concat('alter schema ', ../@qname, ' owner to ')"/>
 	  </xsl:when>
 	  <xsl:otherwise>
-            <xsl:text>&#x0A;create schema </xsl:text>
-            <xsl:value-of select="../@qname"/>
-            <xsl:text> authorization </xsl:text>
+	    <xsl:value-of 
+		select="concat('create schema ', ../@qname, 
+			       ' authorization ')"/>
 	  </xsl:otherwise>
 	</xsl:choose>
-        <xsl:value-of select="skit:dbquote(@owner)"/>
-        <xsl:text>;&#x0A;</xsl:text>
+        <xsl:value-of select="concat(skit:dbquote(@owner), ';&#x0A;')"/>
 	<xsl:apply-templates/>
       </print>
     </xsl:if>
@@ -31,25 +29,23 @@
     <xsl:if test="../@action='drop'">
       <print>
 	<xsl:call-template name="feedback"/>
-        <xsl:text>&#x0A;drop schema </xsl:text>
-        <xsl:value-of select="../@qname"/>
-        <xsl:text>;&#x0A;</xsl:text>
+        <xsl:value-of select="concat('drop schema ', ../@qname, ';&#x0A;')"/>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='diffprep'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:for-each select="../attribute">
-	  <xsl:if test="@name='owner'">
-            <xsl:text>&#x0A;alter schema </xsl:text>
-            <xsl:value-of select="../@qname"/>
-            <xsl:text> owner to </xsl:text>
-            <xsl:value-of select="skit:dbquote(@new)"/>
-            <xsl:text>;&#x0A;</xsl:text>
-	  </xsl:if>
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter schema ', ../@qname, ' owner to ',
+			         skit:dbquote(@new), ';&#x0A;')"/>
+	    </xsl:if>
 	  </xsl:for-each>
-      </print>
+	</print>
+      </xsl:if>
     </xsl:if>
 
     <xsl:if test="../@action='diffcomplete'">

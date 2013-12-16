@@ -10,8 +10,6 @@
     <xsl:if test="../@action='build'">
       <print>
 	<xsl:call-template name="feedback"/>
-        <xsl:text>&#x0A;</xsl:text>
-
 	<xsl:if test="@location=''">
 	  <xsl:text>/* This is a default tablespace.  We </xsl:text>
 	  <xsl:text>cannot and should not attempt</xsl:text>

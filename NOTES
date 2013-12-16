@@ -1,97 +1,26 @@
-Dependency handling of file x (generated from regression_test3)
+Rules for layout
 
-INITIAL:
+dbobject headers
+  1 line above
+  (echo contained within)
+  1 line below
 
-NODE: <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>
--->[ 1 <OBJ_DAGNODE (diff) role.cluster.regress>]
-fallback < 2,16 OBJ_DAGNODE (inactive) grant.cluster.keep.regress> for
-  optional->[<OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>]
-<==[ 3 <OBJ_DAGNODE (diff) role.cluster.keep>]
-fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.regress> for
-  optional<=[ 4,8 <OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>]
+If we could tell that we were in a context, we could make this better
 
-NODE: <OBJ_DAGNODE (diff) role.cluster.keep>
--->nil
-<==nil
+dbobject
+  1 line below
 
-NODE: <OBJ_DAGNODE (diff) role.cluster.regress>
--->nil
-<==nil
+alter dbobject statement
+  1 line below
 
-NODE: <OBJ_DAGNODE (inactive) privilege.cluster.keep.superuser>
--->[ 5,13 <OBJ_DAGNODE (diff) role.cluster.keep>]
-<==[ 6,10 <OBJ_DAGNODE (diff) role.cluster.keep>]
+comment
+  1 line below
 
-NODE: <OBJ_DAGNODE (inactive) grant.cluster.keep.regress>
--->nil
-<==nil
+grant
+  no extra lines
 
-NODE: <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>
--->[<OBJ_DAGNODE (build) role.cluster.lose>]
-fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.lose> for
-  optional->[]
-<==[<OBJ_DAGNODE (diff) role.cluster.keep>]
-fallback <OBJ_DAGNODE (inactive) grant.cluster.keep.lose> for
-  optional<=[]
+set session auth
+  no extra lines
 
-
-RESOLVED:
-
-NODE: <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>
--->[ 1 <OBJ_DAGNODE (diff) role.cluster.regress> 
-     2 <OBJ_DAGNODE (fallback) grant.cluster.keep.regress>]
-<==[ 3 <OBJ_DAGNODE (diff) role.cluster.keep> 
-     4 <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser>]
-
-NODE: <OBJ_DAGNODE (diff) role.cluster.keep>
--->nil
-<==nil
-
-NODE: <OBJ_DAGNODE (diff) role.cluster.regress>
--->nil
-<==nil
-
-NODE: <OBJ_DAGNODE (fallback) privilege.cluster.keep.superuser>
--->[ 5 <OBJ_DAGNODE (diff) role.cluster.keep>]
-<==[ 6 <OBJ_DAGNODE (diff) role.cluster.keep>	
-     7 <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser> 
-     8 <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv> 
-     9 <OBJ_DAGNODE (drop) conversion.regressdb.schema2.myconv2>]
-
-NODE: <OBJ_DAGNODE (endfallback) endprivilege.cluster.keep.superuser>
--->[10 <OBJ_DAGNODE (diff) role.cluster.keep> 
-    11 <OBJ_DAGNODE (fallback) privilege.cluster.keep.superuser> 
-    12 <OBJ_DAGNODE (drop) conversion.regressdb.schema2.myconv2>]
-<==[13 <OBJ_DAGNODE (diff) role.cluster.keep>]
-
-NODE: <OBJ_DAGNODE (fallback) grant.cluster.keep.regress>
--->nil
-<==[14 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.regress>]
-
-NODE: <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.regress>
--->[15 <OBJ_DAGNODE (fallback) grant.cluster.keep.regress> 
-    16 <OBJ_DAGNODE (diff) conversion.regressdb.public.myconv>]
-<==nil
-
-NODE: <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>
--->[17 <OBJ_DAGNODE (build) role.cluster.lose> 
-    18 <OBJ_DAGNODE (fallback) grant.cluster.keep.lose>]
-<==[19 <OBJ_DAGNODE (diff) role.cluster.keep> 
-    20 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose>]
-
-NODE: <OBJ_DAGNODE (fallback) grant.cluster.keep.lose>
--->[21 <OBJ_DAGNODE (build) role.cluster.lose> 
-    22 <OBJ_DAGNODE (diff) role.cluster.keep>]
-<==[23 <OBJ_DAGNODE (build) role.cluster.lose> 
-    24 <OBJ_DAGNODE (diff) role.cluster.keep> 
-    25 <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose> 
-    26 <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>]
-
-NODE: <OBJ_DAGNODE (endfallback) endgrant.cluster.keep.lose>
--->[27 <OBJ_DAGNODE (build) role.cluster.lose> 
-    28 <OBJ_DAGNODE (diff) role.cluster.keep> 
-    29 <OBJ_DAGNODE (fallback) grant.cluster.keep.lose> 
-    30 <OBJ_DAGNODE (diff) tablespace.cluster.tbs2>]
-<==[31 <OBJ_DAGNODE (build) role.cluster.lose> 
-    32 <OBJ_DAGNODE (diff) role.cluster.keep>]
-
+reset session auth
+  1 line below

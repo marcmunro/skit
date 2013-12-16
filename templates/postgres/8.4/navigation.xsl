@@ -6,6 +6,8 @@
   extension-element-prefixes="skit"
   version="1.0">
 
+  <xsl:include href="skitfile:ddl/feedback.xsl"/>
+
   <xsl:variable name="apos">&apos;</xsl:variable>
 
   <!-- Doing this explicitly seems to put the xmlns, etc definitions
@@ -26,6 +28,10 @@
 	<xsl:when test="print">
 	  <print>
 	    <xsl:apply-templates mode="print"/>
+	    <!--
+	    <xsl:if test="@type!='grant' and @type!='fallback'">
+	      <xsl:text>&#x0A;</xsl:text>
+	    </xsl:if> -->
 	  </print>
 	</xsl:when>
 	<xsl:otherwise>
@@ -65,7 +71,7 @@
     <print>
       <xsl:if test="@action='arrive'">
 	<xsl:value-of 
-	    select="concat('&#x0A;set session authorization ', $apos, 
+	    select="concat('set session authorization ', $apos, 
 		            @name, $apos, ';&#x0A;')"/>
       </xsl:if>	
 
@@ -80,15 +86,15 @@
   <xsl:template match="dbobject[@type='cluster']" mode="add-nav">
     <print>
       <xsl:if test="@action='arrive'">
-	<xsl:value-of 
-	    select="concat('#### DBOBJECT ', @fqn, '&#x0A;')"/> 
-	<xsl:text>&#x0A;psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
+	<xsl:call-template name="shell-feedback-dbobject"/>
+
+	<xsl:text>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
 	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
 	<xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
       </xsl:if>	
 
       <xsl:if test="@action='depart'">
-	<xsl:text>&#x0A;CLUSTEREOF&#x0A;&#x0A;</xsl:text>
+	<xsl:text>&#x0A;CLUSTEREOF&#x0A;</xsl:text>
       </xsl:if>	
     </print>
   </xsl:template>
@@ -96,10 +102,9 @@
   <xsl:template match="dbobject[@type='database']" mode="add-nav">
     <print>
       <xsl:if test="@action='arrive'">
-	<xsl:value-of 
-	    select="concat('#### DBOBJECT ARRIVE ', @fqn, '&#x0A;')"/> 
+	<xsl:call-template name="shell-feedback-dbobject"/>
         <xsl:value-of 
-	    select="concat('&#x0A;psql -d ', @name,
+	    select="concat('psql -d ', @name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
 			   'set standard_conforming_strings = off;&#x0A;',
 			   'set escape_string_warning = off;&#x0A;')"/>
@@ -107,7 +112,7 @@
 
       <xsl:if test="@action='depart'">
 	<print>
-	  <xsl:value-of select="'&#x0A;DBEOF&#x0A;&#x0A;'"/>
+	  <xsl:value-of select="'&#x0A;DBEOF&#x0A;'"/>
 	</print>
       </xsl:if>	
     </print>

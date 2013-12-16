@@ -11,7 +11,7 @@
       <print>
 	<xsl:call-template name="feedback"/>
         <xsl:value-of 
-	    select="concat('&#x0A;create role ', ../@qname)"/>
+	    select="concat('create role ', ../@qname)"/>
 	<xsl:choose>
 	  <xsl:when test="@login = 'y'">
             <xsl:text> with login;&#x0A;</xsl:text>
@@ -87,7 +87,6 @@
     <xsl:if test="../@action='diffcomplete'">
       <print>
 	<xsl:call-template name="feedback"/>
-	<xsl:text>&#x0A;</xsl:text>
 
 	<xsl:for-each select="../element/config">
 	  <xsl:value-of 

@@ -41,7 +41,7 @@
   </xsl:template>
 
   <xsl:template name="function">
-    <xsl:text>&#x0A;create or replace&#x0A;function </xsl:text>
+    <xsl:text>create or replace&#x0A;function </xsl:text>
     <xsl:call-template name="function_header"/>
     <xsl:text>&#x0A;  returns </xsl:text>
     <xsl:if test="@returns_set">
@@ -103,7 +103,8 @@
 	  <xsl:call-template name="set_owner"/>
 	  
 	  <xsl:value-of 
-	      select="concat('&#x0A;drop function ', ../@qname, ';&#x0A;')"/>
+	      select="concat('drop function ', ../@qname, 
+		             ';&#x0A;&#x0A;')"/>
 	  
 	  <xsl:call-template name="reset_owner"/>
       	</print>
@@ -152,22 +153,24 @@
 	    <xsl:if test="../attribute[@name='owner']">
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
-	      <xsl:value-of select="concat(' owner to ', @owner, ';&#x0A;')"/>
+	      <xsl:value-of select="concat(' owner to ', @owner, 
+				           ';&#x0A;&#x0A;')"/>
 	    </xsl:if>
 	    <xsl:if test="../attribute[@name='volatility']">
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
-	      <xsl:value-of select="concat(' ', @volatility, ';&#x0A;')"/>
+	      <xsl:value-of select="concat(' ', @volatility, 
+				           ';&#x0A;&#x0A;')"/>
 	    </xsl:if>
 	    <xsl:if test="../attribute[@name='is_strict']">
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
 	      <xsl:choose>
 		<xsl:when test="@is_strict='yes'">
-		  <xsl:text> strict;&#x0A;</xsl:text>
+		  <xsl:text> strict;&#x0A;&#x0A;</xsl:text>
 		</xsl:when>
 		<xsl:otherwise>
-		  <xsl:text> called on null input;&#x0A;</xsl:text>
+		  <xsl:text> called on null input;&#x0A;&#x0A;</xsl:text>
 		</xsl:otherwise>
 	      </xsl:choose>
 	    </xsl:if>
@@ -176,22 +179,22 @@
 	      <xsl:call-template name="function_header"/>
 	      <xsl:choose>
 		<xsl:when test="@security_definer='yes'">
-		  <xsl:text> security definer;&#x0A;</xsl:text>
+		  <xsl:text> security definer;&#x0A;&#x0A;</xsl:text>
 		</xsl:when>
 		<xsl:otherwise>
-		  <xsl:text> security invoker;&#x0A;</xsl:text>
+		  <xsl:text> security invoker;&#x0A;&#x0A;</xsl:text>
 		</xsl:otherwise>
 	      </xsl:choose>
 	    </xsl:if>
 	    <xsl:if test="../attribute[@name='cost']">
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
-	      <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;')"/>
+	      <xsl:value-of select="concat(' cost ', @cost, ';&#x0A;&#x0A;')"/>
 	    </xsl:if>
 	    <xsl:if test="../attribute[@name='rows']">
 	      <xsl:text>alter function </xsl:text>
 	      <xsl:call-template name="function_header"/>
-	      <xsl:value-of select="concat(' rows ', @rows, ';&#x0A;')"/>
+	      <xsl:value-of select="concat(' rows ', @rows, ';&#x0A;&#x0A;')"/>
 	    </xsl:if>
 	    <xsl:for-each select="../element[@type='config_setting']">
 	      <xsl:text>alter function </xsl:text>
@@ -202,12 +205,12 @@
 		<xsl:when test="@status='gone'">
 		  <xsl:value-of 
 		      select="concat('&#x0A;reset ', config_setting/@name, 
-			             ';&#x0A;')"/>
+			             ';&#x0A;&#x0A;')"/>
 		</xsl:when>
 		<xsl:otherwise>
 		  <xsl:value-of 
 		      select="concat('&#x0A;set ', config_setting/@name, ' = ', 
-			             config_setting/@setting,';&#x0A;')"/>
+			             config_setting/@setting,';&#x0A;&#x0A;')"/>
 		</xsl:otherwise>
 	      </xsl:choose>		
 	    </xsl:for-each>

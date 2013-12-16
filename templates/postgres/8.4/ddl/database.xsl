@@ -9,11 +9,9 @@
   <xsl:template match="dbobject[@type='dbincluster']/database">
     <xsl:if test="../@action='build'">
       <print>
-	<!-- QQQ -->
+	<xsl:call-template name="feedback"/>
 	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-	<xsl:value-of 
-	    select="concat('&#x0A;create database ', ../@qname,
+	    select="concat('create database ', ../@qname,
 		           ' with&#x0A; owner ',
 			   skit:dbquote(@owner), '&#x0A; encoding ',
 			   $apos, @encoding, $apos, 
@@ -26,9 +24,7 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="feedback"/>
 	<xsl:value-of 
 	    select="concat('&#x0A;-- drop database ', ../@qname, ';&#x0A;')"/>
       </print>
@@ -39,11 +35,9 @@
 
     <xsl:if test="../@action='build'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('#### DBOBJECT ', ../@fqn, '&#x0A;')"/> 
+	<xsl:call-template name="shell-feedback"/>
         <xsl:value-of 
-	    select="concat('&#x0A;psql -d ', ../@name,
+	    select="concat('psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
 			   'set standard_conforming_strings = off;&#x0A;',
 			   'set escape_string_warning = off;&#x0A;')"/>
@@ -53,12 +47,9 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-	<!-- QQQ -->
-	<xsl:value-of 
-	    select="concat('#### DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-
+	<xsl:call-template name="shell-feedback"/>
         <xsl:value-of 
-	    select="concat('&#x0A;psql -d ', ../@name,
+	    select="concat('psql -d ', ../@name,
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
 			   'set standard_conforming_strings = off;&#x0A;',
 			   'set escape_string_warning = off;&#x0A;')"/>
@@ -109,10 +100,9 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-	<!-- QQQ -->
 	<xsl:value-of 
 	    select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-        <xsl:text>DBEOF&#x0A;&#x0A;</xsl:text>
+        <xsl:text>&#x0A;DBEOF&#x0A;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
   </xsl:template>

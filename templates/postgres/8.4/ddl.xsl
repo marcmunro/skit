@@ -60,7 +60,7 @@
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="concat(' is ', $text, ';&#x0A;')"/>
+    <xsl:value-of select="concat(' is ', $text, ';&#x0A;&#x0A;')"/>
   </xsl:template>
 
   <xsl:template name="commentdiff">
@@ -73,7 +73,7 @@
 	      <xsl:value-of select="' null'"/>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <xsl:value-of select="concat('&#x0A;', comment/text())"/>
+	      <xsl:value-of select="comment/text()"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:with-param>
@@ -115,7 +115,7 @@
       <xsl:if test="@from != //cluster/@username">
 	<xsl:value-of 
 	    select="concat('set session authorization ', $apos, 
-		           @from, $apos, ';&#x0A;&#x0A;')"/>
+		           @from, $apos, ';&#x0A;')"/>
       </xsl:if>
     </xsl:if>
   </xsl:template>
@@ -128,16 +128,7 @@
     </xsl:if>
   </xsl:template>
 
-  <xsl:template name="feedback">
-    <xsl:value-of 
-	select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
-    <xsl:if test="skit:eval('echoes') = 't'">
-      <xsl:value-of 
-	  select="concat('&#x0A;\echo ', ../@type, ' ', 
-		          ../@qname, '...&#x0A;')"/>
-    </xsl:if>
-  </xsl:template>
-
+  <xsl:include href="skitfile:ddl/feedback.xsl"/>
 
   <xsl:include href="skitfile:ddl/owner.xsl"/>
   <xsl:include href="skitfile:ddl/cluster.xsl"/>

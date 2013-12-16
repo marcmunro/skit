@@ -11,37 +11,37 @@
       <xsl:copy-of select="@*"/>
       <xsl:if test="@action='fallback'">
 	<print>
-	  <xsl:text>---- DBOBJECT FALLBACK</xsl:text> <!-- QQQ -->
 	  <xsl:choose>
 	    <xsl:when test="@subtype='privilege'">
 	      <xsl:value-of
-		  select="concat('&#x0A;&#x0A;alter user ', @role,
-			  ' with superuser;&#x0A;')"/>
+		  select="concat('alter user ', @role,
+			  ' with superuser;')"/>
 	    </xsl:when>
 	    <xsl:when test="@subtype='grant'">
 	      <xsl:value-of
-		  select="concat('&#x0A;&#x0A;grant ', @from,
-			  ' to ', @to, ';&#x0A;')"/>
+		  select="concat('grant ', @from,
+			  ' to ', @to, ';')"/>
 	    </xsl:when>
 	  </xsl:choose>
+	  <xsl:text>    -- temporary (fallback) privilege&#x0A;</xsl:text>
 	</print>
       </xsl:if>
 
       <xsl:if test="@action='endfallback'">
 	<print>
-	  <xsl:text>---- DBOBJECT END FALLBACK</xsl:text> <!-- QQQ -->
 	  <xsl:choose>
 	    <xsl:when test="@subtype='privilege'">
 	      <xsl:value-of
-		  select="concat('&#x0A;&#x0A;alter user ', fallback/@role,
-			  ' with nosuperuser;&#x0A;')"/>
+		  select="concat('alter user ', fallback/@role,
+			  ' with nosuperuser;')"/>
 	    </xsl:when>
 	    <xsl:when test="@subtype='grant'">
 	      <xsl:value-of
-		  select="concat('&#x0A;&#x0A;revoke ', @from,
-			  ' from ', @to, ';&#x0A;')"/>
+		  select="concat('revoke ', @from,
+			  ' from ', @to, ';')"/>
 	    </xsl:when>
 	  </xsl:choose>
+	  <xsl:text>    -- end temporary (fallback) privilege&#x0A;</xsl:text>
 	</print>
       </xsl:if>
     </xsl:copy>
