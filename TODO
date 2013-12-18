@@ -35,10 +35,12 @@ in a manner consistent with conversions?
     functions		yes
     aggregates		yes
     casts		n/a
-    domains		TODO
-    operators		TODO
+    operators		yes
     operator_families	TODO
     operator_classes	TODO
+    basetypes		TODO
+    composite types	TODO
+    domains		TODO
     sequences		TODO
     tables		TODO
     views		TODO
@@ -52,7 +54,6 @@ Do the concat thing for objects below as in done in generate for
 schemata (in ddl)
 
 diffs:
-    operators (including the concat thing)
     operator_classes (including the concat thing)
     operator_families (including the concat thing)
     types (including the concat thing)

@@ -29,13 +29,11 @@
        apply-templates -->
   <xsl:template match="text()"/>
 
-  <!-- Template for dealing with comments.  This is invoked simply by
-       using xsl:apply-templates from within the template for the 
-       current dbobject -->
-  <xsl:template name="comment">
+  <!-- Template for getting object signatures preceded by the object
+       type name.  -->
+
+  <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
-    <xsl:param name="text"/>
-    <xsl:text>&#x0A;comment on </xsl:text>
     <xsl:choose>
       <xsl:when test="contains(name($objnode), '_')">
 	<xsl:value-of 
@@ -60,17 +58,39 @@
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <!-- Template for dealing with comments.  This is invoked simply by
+       using xsl:apply-templates from within the template for the 
+       current dbobject -->
+  <xsl:template name="comment">
+    <xsl:param name="objnode"/>
+    <xsl:param name="text"/>
+    <xsl:param name="sig" select="''"/>
+    <xsl:text>&#x0A;comment on </xsl:text>
+    <xsl:choose>
+      <xsl:when test="$sig=''">
+	<xsl:call-template name="obj-signature">
+	  <xsl:with-param name="objnode" select="$objnode"/>
+	</xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="$sig"/>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:value-of select="concat(' is ', $text, ';&#x0A;&#x0A;')"/>
   </xsl:template>
 
   <xsl:template name="commentdiff">
+    <xsl:param name="sig" select="''"/>
     <xsl:for-each select="../element[@type='comment']">
       <xsl:call-template name="comment">
 	<xsl:with-param name="objnode" select="../*[name() = ../@type]"/>
+	<xsl:with-param name="sig" select="$sig"/>
 	<xsl:with-param name="text">
 	  <xsl:choose>
 	    <xsl:when test="@status = 'gone'">
-	      <xsl:value-of select="' null'"/>
+	      <xsl:value-of select="'null'"/>
 	    </xsl:when>
 	    <xsl:otherwise>
 	      <xsl:value-of select="comment/text()"/>

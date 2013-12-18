@@ -77,9 +77,9 @@ left outer join
       inner join pg_catalog.pg_namespace pjn
       on pjn.oid = pj.pronamespace
      )
-  on pj.oid = op.oprjoin
-where  n.nspname not in ('pg_catalog')
---and    op.oprcode != 0::oid	-- Ignore incompletely defined operators
+   on pj.oid = op.oprjoin
+where n.nspname not in ('pg_catalog')
+  and op.oprcode != 0::oid	-- Ignore incompletely defined operators
 order by n.nspname, op.oprname;
 
 

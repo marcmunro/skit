@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="operator" key="fqn">
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <attribute name="hashes" rebuild="true"/>
+    <attribute name="merges" rebuild="true"/>
+    <element type="arg" key="position">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="result">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="procedure">
+      <attribute name="signature" rebuild="true"/>
+    </element>
+    <element type="commutator">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="negator">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="restrict">
+      <attribute name="signature" rebuild="true"/>
+    </element>
+    <element type="join">
+      <attribute name="signature" rebuild="true"/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

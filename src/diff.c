@@ -622,15 +622,25 @@ check_element(
 {
     String *volatile elem_type = nodeAttribute(rule, "type");
     String *volatile key_type = nodeAttribute(rule, "key");
-    Hash *volatile elems2 = elementHash(content2, elem_type, key_type);
+    Hash *volatile elems2 = NULL;
     xmlNode *elem1 = content1->children;
     xmlNode *elem2;
     xmlNode *element_diffs = NULL;
     xmlNode *diffs = NULL;
     String *key;
     Node *node;
+    char *tmp;
+    char *errmsg;
 
     BEGIN {
+	if (!elem_type) {
+	    tmp = nodestr(rule);
+	    errmsg = newstr("rule node for element has no type attribute: %s",
+			    tmp);
+	    skfree(tmp);
+	    RAISE(XML_PROCESSING_ERROR, errmsg);
+	}
+	elems2 = elementHash(content2, elem_type, key_type);
 	/* Check each element of the given type from contents1 */
 	while (elem1 = next_elem_of_type(elem1, elem_type)) {
 	    key = keyFromElement(elem1, key_type);

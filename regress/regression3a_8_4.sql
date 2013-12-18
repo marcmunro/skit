@@ -272,5 +272,61 @@ is 'cast comment';
 create cast("public"."postal2" as "public"."mychar")
   without function;
 
+-- Operators
+create or replace function "public"."wib_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."wib"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."wib_out"(
+    in "public"."wib")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create type "public"."wib"(
+  input = "public"."wib_in",
+  output = "public"."wib_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+create or replace function "public"."wib_gt"(
+    in "public"."wib",
+    in "public"."wib")
+  returns "pg_catalog"."bool"
+as 'text_gt'
+language internal immutable strict;
+
+create or replace function "public"."wib_lt"(
+    in "public"."wib",
+    in "public"."wib")
+  returns "pg_catalog"."bool"
+as 'text_lt'
+language internal immutable strict;
+
+create operator "public".< (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_lt",
+  commutator = operator(public.>=),
+  negator = "public".">",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+comment on operator public.<(wib,wib) is
+'this is wib < wib';
+
+create operator "public".<= (
+  leftarg = "public"."wib",
+  rightarg = "public"."wib",
+  procedure = "public"."wib_lt",
+  commutator = "public".">",
+  negator = "public".">=",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
 
 EOF

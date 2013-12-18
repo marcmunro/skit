@@ -6,25 +6,47 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="operator-signature">
+    <xsl:value-of 
+	select="concat('operator ',
+		        skit:dbquote(@schema),
+			'.', @name, '(')"/>
+
+    <xsl:choose>
+      <xsl:when test="arg[@position='left']">
+	<xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
+			                   arg[@position='left']/@name)"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:text>none</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    
+    <xsl:text>, </xsl:text>
+    <xsl:choose>
+      <xsl:when test="arg[@position='right']">
+	<xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
+				           arg[@position='right']/@name)"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:text>none</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:text>)</xsl:text>
+  </xsl:template>
+
+
   <xsl:template match="dbobject/operator">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:if test="skit:eval('echoes') = 't'">
-          <xsl:text>\echo operator </xsl:text>
-          <xsl:value-of select="../@qname"/>
-          <xsl:text>&#x0A;</xsl:text>
-	</xsl:if>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create operator </xsl:text>
-        <xsl:value-of select="skit:dbquote(@schema)"/>
-        <xsl:text>.</xsl:text>
-        <xsl:value-of select="@name"/>
-	<xsl:text> (&#x0A;  leftarg = </xsl:text>
+        <xsl:value-of 
+	    select="concat('create operator ',
+		           skit:dbquote(@schema),
+			   '.', @name,
+			   ' (&#x0A;  leftarg = ')"/>
 	<xsl:choose>
 	  <xsl:when test="arg[@position='left']">
             <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
@@ -75,51 +97,64 @@
 	</xsl:if>
 	<xsl:text>&#x0A;);&#x0A;</xsl:text>
 
-	<xsl:apply-templates/>  <!-- Deal with comments -->
+	<!-- Comment handling is explicit due to the need to use a custom 
+	     object signature for operators. -->
+	<xsl:for-each select="comment">
+	  <xsl:call-template name="comment">
+	    <xsl:with-param name="objnode" select=".."/>
+	    <xsl:with-param name="text" select="./text()"/>
+	    <xsl:with-param name="sig">
+	      <xsl:for-each select="..">
+		<xsl:call-template name="operator-signature"/>
+	      </xsl:for-each>
+	    </xsl:with-param>
+	  </xsl:call-template>
+	</xsl:for-each>
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
-	  
-      	<xsl:text>drop operator </xsl:text>
-        <xsl:value-of select="skit:dbquote(@schema)"/>
-        <xsl:text>.</xsl:text>
-        <xsl:value-of select="@name"/>
-      	<xsl:text>(</xsl:text>
 
-	<xsl:choose>
-	  <xsl:when test="arg[@position='left']">
-            <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
-				               arg[@position='left']/@name)"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:text>none</xsl:text>
-	  </xsl:otherwise>
-	</xsl:choose>
-
-	<xsl:text>, </xsl:text>
-	<xsl:choose>
-	  <xsl:when test="arg[@position='right']">
-            <xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
-				               arg[@position='right']/@name)"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:text>none</xsl:text>
-	  </xsl:otherwise>
-	</xsl:choose>
-      	<xsl:text>);&#x0A;</xsl:text>
+	<xsl:text>drop </xsl:text>
+	<xsl:call-template name="operator-signature"/>
+      	<xsl:text>;&#x0A;</xsl:text>
 	  
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
 
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:variable name="sig">
+	    <xsl:call-template name="operator-signature"/>
+	  </xsl:variable>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter ', $sig, ' owner to ', 
+			         skit:dbquote(@new), ';&#x0A;')"/>
+	    </xsl:if>
+	  </xsl:for-each>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff">
+	  <xsl:with-param name="sig">
+	    <xsl:call-template name="operator-signature"/>
+	  </xsl:with-param>
+	</xsl:call-template>
+      </print>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

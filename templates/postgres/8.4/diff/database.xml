@@ -28,4 +28,5 @@
   <dbobject type="dbincluster" key="type"/>
 
   <xi:include href="skitfile:diff/casts.xml"/>
+  <xi:include href="skitfile:diff/operators.xml"/>
 </skit:inclusion>  
