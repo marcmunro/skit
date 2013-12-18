@@ -243,5 +243,55 @@ alter aggregate public.mysum2(int4) owner to wibble;
 comment on aggregate public.mysum2(int4) is
 'aggregate comment';
 
+
+-- Types
+create or replace function "public"."mycharin"(
+    in "pg_catalog"."cstring")
+  returns "public"."mychar"
+as 'charin'
+language internal immutable strict;
+ 
+grant execute on function "public"."mycharin"(
+    in "pg_catalog"."cstring") to keep;
+
+create or replace function "public"."mycharout"(
+    in "public"."mychar")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create type "public"."mychar"(
+  input = "public"."mycharin",
+  output = "public"."mycharout",
+  passedbyvalue,
+  internallength = 1,
+  alignment = char,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."mychar" is
+'mychar';
+
+create domain "public"."postal2"
+  as "public"."mychar";
+
+
+-- Casts
+create or replace function "public"."mycharsend"(
+    in "public"."mychar")
+  returns "pg_catalog"."bytea"
+as 'charsend'
+language internal immutable strict;
+
+create cast("public"."mychar" as "pg_catalog"."bytea")
+  with function "public"."mycharsend"("public"."mychar")
+  as assignment;
+
+comment on cast("public"."mychar" as "pg_catalog"."bytea")
+is 'changed cast comment';
+
+
+create cast("public"."mychar" as "public"."postal2")
+  without function;
 EOF
  

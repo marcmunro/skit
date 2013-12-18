@@ -9,23 +9,22 @@
   <xsl:template match="dbobject/cast">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>create cast(</xsl:text>
-        <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
-      	<xsl:text> as </xsl:text>
-        <xsl:value-of select="skit:dbquote(target/@schema,target/@type)"/>
-      	<xsl:text>)&#x0A;  </xsl:text>
+	<xsl:call-template name="feedback"/>
+        <xsl:value-of 
+	    select="concat('create cast(',
+                           skit:dbquote(source/@schema,source/@type),
+			   ' as ',
+			   skit:dbquote(target/@schema,target/@type),
+			   ')&#x0A;  ')"/>
 	<xsl:choose>
 	  <xsl:when test="handler-function">
-      	    <xsl:text>with function </xsl:text>
-            <xsl:value-of select="skit:dbquote(handler-function/@schema,
-				               handler-function/@name)"/>
-      	    <xsl:text>(</xsl:text>
-            <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
-      	    <xsl:text>)&#x0A;  </xsl:text>
+	    <xsl:value-of 
+		select="concat('with function ',
+			       skit:dbquote(handler-function/@schema,
+				            handler-function/@name),
+			       '(', 
+			       skit:dbquote(source/@schema,source/@type),
+			       ')&#x0A;  ')"/>
 	  </xsl:when>
 	  <xsl:otherwise>
       	    <xsl:text>without function</xsl:text>
@@ -44,15 +43,20 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>drop cast(</xsl:text>
-        <xsl:value-of select="skit:dbquote(source/@schema,source/@type)"/>
-      	<xsl:text> as </xsl:text>
-        <xsl:value-of select="skit:dbquote(target/@schema,target/@type)"/>
-      	<xsl:text>);&#x0A;  </xsl:text>
+	<xsl:call-template name="feedback"/>
+	<xsl:value-of 
+	    select="concat('drop cast(',
+		           skit:dbquote(source/@schema,source/@type),
+			   ' as ',
+			   skit:dbquote(target/@schema,target/@type),
+			   ');&#x0A;  ')"/>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>
 

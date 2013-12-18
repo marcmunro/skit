@@ -40,6 +40,7 @@ readDbobjectRule(xmlNode *node, Object *rules)
     Node *rulenode = nodeNew(node);
     Cons *rule;
     char *errmsg;
+    char *ruletext;
     /* For now, the rule info is simply a cons cell containing the match
      *  attribute and the node.  This will be expanded as the need
      *  becomes clear.
@@ -50,7 +51,15 @@ readDbobjectRule(xmlNode *node, Object *rules)
 	RAISE(XML_PROCESSING_ERROR, errmsg);
     }
     rule = consNew((Object *) key, (Object *) rulenode);
-    hashAdd((Hash *) rules, (Object *) type, (Object *) rule);
+    rule = (Cons *) hashAdd((Hash *) rules, (Object *) type, (Object *) rule);
+    if (rule) {
+	ruletext = objectSexp((Object *) rule);
+	errmsg = newstr("Duplicate diff rule found for \"%s\".  Rule = \"%s\"", 
+			type->value, ruletext);
+	skfree(ruletext);
+	objectFree((Object *) rule, TRUE);
+	RAISE(XML_PROCESSING_ERROR, errmsg);
+    }
 }
 
 typedef void (NodeOp)(xmlNode *node, Object *obj);
@@ -74,20 +83,30 @@ eachDbobject(xmlNode *node, Object *obj, NodeOp fn)
 static Hash *
 loadDiffRules(String *diffrules)
 {
-    Document *rulesdoc = NULL;
-    Hash *rules = hashNew(TRUE);
+    Document *volatile rulesdoc = NULL;
+    Hash *volatile rules = hashNew(TRUE);
     xmlNode *root;
-    String *rulesdoc_key = stringNew("RULESDOC");
-    rulesdoc = findDoc(diffrules);
-    root = xmlDocGetRootElement(rulesdoc->doc);
-    /* The rules document may not be freed until we have finished using
-     * all of the rules that it describes.  This is most easily achieved
-     * by placing the document into the hash that contains the rules.
-     * This means the document will be freed at the same time as the
-     * rules hash. */
+    String *volatile rulesdoc_key = stringNew("RULESDOC");
 
-    eachDbobject(root, (Object *) rules, readDbobjectRule);
-    hashAdd(rules, (Object *) rulesdoc_key, (Object *) rulesdoc);
+    BEGIN {
+	rulesdoc = findDoc(diffrules);
+	root = xmlDocGetRootElement(rulesdoc->doc);
+
+	/* The rules document may not be freed until we have finished
+	 * using all of the rules that it describes.  This is most
+	 * easily achieved by placing the document into the hash that
+	 * contains the rules.  This means the document will be freed at
+	 * the same time as the rules hash. */
+
+	eachDbobject(root, (Object *) rules, readDbobjectRule);
+	hashAdd(rules, (Object *) rulesdoc_key, (Object *) rulesdoc);
+    }
+    EXCEPTION(ex) {
+	objectFree((Object *) rules, TRUE);
+	objectFree((Object *) rulesdoc, TRUE);
+	objectFree((Object *) rulesdoc_key, TRUE);
+    }
+    END;
     return rules;
 }
 

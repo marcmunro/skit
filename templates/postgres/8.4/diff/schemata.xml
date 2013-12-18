@@ -18,6 +18,7 @@
     </element>
 
     <xi:include href="skitfile:diff/types.xml"/>
+    <xi:include href="skitfile:diff/domains.xml"/>
     <xi:include href="skitfile:diff/functions.xml"/>
     <xi:include href="skitfile:diff/conversions.xml"/>
     <xi:include href="skitfile:diff/aggregates.xml"/>

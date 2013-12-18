@@ -47,13 +47,7 @@
 
     <xsl:if test="../@action='diffcomplete'">
       <print>
-	<xsl:call-template name="shell-feedback"/>
-        <xsl:value-of 
-	    select="concat('psql -d ', ../@name,
-		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
-			   'set standard_conforming_strings = off;&#x0A;',
-			   'set escape_string_warning = off;&#x0A;')"/>
-
+	<xsl:call-template name="feedback"/>
 	<xsl:for-each select="../attribute[@name='connections']">
 	  <xsl:value-of 
 	      select="concat('alter database ', ../@qname,

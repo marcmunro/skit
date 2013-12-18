@@ -26,4 +26,6 @@
 
   <!-- Nothing to do for dbincluster, except tell diff that it exists -->
   <dbobject type="dbincluster" key="type"/>
+
+  <xi:include href="skitfile:diff/casts.xml"/>
 </skit:inclusion>  

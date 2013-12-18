@@ -768,7 +768,7 @@ START_TEST(diff)
 
     initTemplatePath(".");
     //showFree(3563);
-    //showMalloc(5865);
+    //showMalloc(9625);
     //trackMalloc(4097);
 
     BEGIN {
@@ -797,7 +797,7 @@ START_TEST(diffgen)
 		    //"test/data/diffs_1_b.xml", 
 		    "regress/scratch/regressdb_dump3a.xml", 
 		    "regress/scratch/regressdb_dump3b.xml", 
-		    "--generate", 
+		    "--generate", "--debug",
 		    "--print", "--full"};
 
     initTemplatePath(".");

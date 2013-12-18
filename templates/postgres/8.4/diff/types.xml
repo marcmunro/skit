@@ -15,9 +15,4 @@
     </element>
   </dbobject>	
 
-  <dbobject type="table" key="fqn">
-    <!-- Incomplete: in place only temporarily for testing newly built functionality -->
-    <dbobject type="column" key="fqn"/>
-  </dbobject>	
-
 </skit:inclusion>  

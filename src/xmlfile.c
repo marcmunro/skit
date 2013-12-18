@@ -916,11 +916,14 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
 		    debug_before = TRUE;
 		    debug_after = TRUE;
 		}
+		else {
+		    /* Any other value will be interpreted as true, which,
+		     * in this case, is interpreted as 'before'. */
+		    debug_before = TRUE;
+		}
 	    }
 	    else {
-		/* Any other value will be interpreted as true, which,
-		 * in this case, is interpreted as 'before'. */
-		    debug_before = TRUE;
+		debug_before = TRUE;
 	    }
 	    objectFree(debug_value, TRUE);
 	}
