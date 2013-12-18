@@ -131,7 +131,7 @@ $$
 language plpgsql stable strict;
 
 
--- Change parameter mode without affecting signature
+-- Change parameter mode without affecting signature and owner
 create 
 function wibble.fn5(p1 in varchar, p2 out varchar, p3 out varchar) 
    returns setof record as
@@ -145,6 +145,7 @@ language plpgsql stable strict;
 
 grant execute on function wibble.fn5(varchar) to keep;
 revoke execute on function wibble.fn5(varchar) from public;
+alter function wibble.fn5(varchar) owner to keep;
 
 
 -- Change owner and config options

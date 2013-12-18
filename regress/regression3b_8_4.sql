@@ -162,6 +162,7 @@ begin
 end
 $$
 language plpgsql stable strict cost 4;
+alter function wibble.fn5(varchar) owner to wibble;
 
 -- Change owner and config options
 set session authorization regress;

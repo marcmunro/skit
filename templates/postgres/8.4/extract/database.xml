@@ -21,8 +21,9 @@
 			  owner="(select tuple 'owner')"
 			  automatic="&lt; 
 			     ((select tuple 'owner') . 
-			         (list 'create' 'connect' 'temporary'))
-			      ('public' . (list 'connect' 'temporary'))&gt;"/>
+			         (list 'connect' 'temporary'))
+			      ('public' . 
+			         (list 'create' 'connect' 'temporary'))&gt;"/>
      </skit:let>	
 
      <skit:let>

@@ -1,20 +1,19 @@
-Working on aggregates.  use unit test "params diffgen"
 
 
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
-    conversions		TODO
-    schemata		TODO
-    cluster		TODO
-    database		TODO
-    types		TODO
-    functions		TODO
-    domains		TODO
-    casts		TODO
-    operators		TODO
-    operator_families	TODO
-    operator_classes	TODO
-    aggregates		TODO
+    conversions		yes
+    schemata		yes
+    cluster		n/a
+    database		yes
+    types		n/a
+    functions		yes
+    domains		n/a
+    casts		n/a
+    operators		n/a
+    operator_families	n/a
+    operator_classes	n/a
+    aggregates		n/a
     sequences		TODO
     tables		TODO
     views		TODO
@@ -33,13 +32,13 @@ in a manner consistent with conversions?
     cluster		n/a
     database		yes
     types		n/a
-    functions		TODO
-    domains		TODO
+    functions		yes
+    aggregates		yes
     casts		TODO
+    domains		TODO
     operators		TODO
     operator_families	TODO
     operator_classes	TODO
-    aggregates		yes
     sequences		TODO
     tables		TODO
     views		TODO
@@ -49,11 +48,10 @@ in a manner consistent with conversions?
     indices		TODO
 
 
-diffs:
-    do the concat thing for objects below as in done in generate for
-    schemata (in ddl)
+Do the concat thing for objects below as in done in generate for
+schemata (in ddl)
 
-    aggregates (including the concat thing)
+diffs:
     casts (including the concat thing)
     operators (including the concat thing)
     operator_classes (including the concat thing)
