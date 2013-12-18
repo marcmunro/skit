@@ -7,8 +7,7 @@
    version="1.0">
 
   <xsl:template name="function_header">
-    <xsl:value-of select="skit:dbquote(@schema,@name)"/>
-    <xsl:text>(</xsl:text>
+    <xsl:value-of select="concat(skit:dbquote(@schema,@name), '(')"/>
     
     <xsl:for-each select="params/param">
       <xsl:if test="position() != 1">
@@ -48,8 +47,8 @@
       <xsl:text>setof </xsl:text>
     </xsl:if>
     
-    <xsl:value-of select="skit:dbquote(result/@schema,result/@type)"/>
-    <xsl:text>&#x0A;as</xsl:text>
+    <xsl:value-of 
+	select="concat(skit:dbquote(result/@schema,result/@type), '&#x0A;as')"/>
     
     <xsl:choose>
       <xsl:when test="@language='internal'">

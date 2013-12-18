@@ -178,6 +178,9 @@ language plpgsql volatile strict security definer rows 4;
 alter function wibble.fn6(varchar) set enable_nestloop = 'off';
 alter function wibble.fn6(varchar) set enable_mergejoin = 'on';
 
+grant execute on function wibble.fn6(varchar) to keep;
+
+
 reset session authorization;
 
 -- Change parameter defaults
@@ -194,6 +197,50 @@ begin
 end
 $$
 language plpgsql stable;
+
+
+-- Aggregate function.
+create or replace function "public"."addnint4"(
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable cost 5;
+
+create aggregate "public"."mysum" (
+  basetype = "pg_catalog"."int4",
+  sfunc = "addnint4",
+  stype = "pg_catalog"."int4",
+  initcond = '0'
+);
+
+create or replace function "public"."addkint4"(
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable cost 5;
+
+create aggregate "public"."mysum2" (
+  basetype = "pg_catalog"."int4",
+  sfunc = "addkint4",
+  stype = "pg_catalog"."int4",
+  initcond = '0'
+);
+
+alter aggregate public.mysum2(int4) owner to wibble;
+comment on aggregate public.mysum2(int4) is
+'aggregate comment';
 
 EOF
  

@@ -6,43 +6,48 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="aggregate_header">
+    <xsl:value-of 
+	select="concat('aggregate ', skit:dbquote(@schema,@name),
+		       '(')"/>
+    <xsl:choose>
+      <xsl:when test="basetype/@name">
+	<xsl:value-of 
+	    select="skit:dbquote(basetype/@schema,basetype/@name)"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:text>*</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+    <xsl:text>)</xsl:text>
+  </xsl:template>
+
   <xsl:template match="dbobject/aggregate">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create aggregate </xsl:text>
-        <xsl:value-of select="skit:dbquote(@schema,@name)"/>
-	<xsl:text>(</xsl:text>
-	<xsl:choose>
-	  <xsl:when test="basetype/@name">
-            <xsl:value-of 
-	       select="skit:dbquote(basetype/@schema,basetype/@name)"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:text>*</xsl:text>
-	  </xsl:otherwise>
-	</xsl:choose>
-	<xsl:text>) (&#x0A;  sfunc = </xsl:text>
-        <xsl:value-of select="skit:dbquote(transfunc/@schema,transfunc/@name)"/>
-	<xsl:text>,&#x0A;  stype = </xsl:text>
-        <xsl:value-of select="skit:dbquote(transtype/@schema,transtype/@name)"/>
+	<xsl:text>create </xsl:text>
+	<xsl:call-template name="aggregate_header"/>
+	<xsl:value-of
+	    select="concat(' (&#x0A;  sfunc = ', 
+		           skit:dbquote(transfunc/@schema,transfunc/@name),
+			   ',&#x0A;  stype = ',
+			   skit:dbquote(transtype/@schema,transtype/@name))"/>
 	<xsl:if test="@initcond">
-	  <xsl:text>,&#x0A;  initcond = </xsl:text>
-          <xsl:value-of select="@initcond"/>
+	  <xsl:value-of
+	      select="concat(',&#x0A;  initcond = ', @initcond)"/>
 	</xsl:if>
 	<xsl:if test="finalfunc">
-	  <xsl:text>,&#x0A;  finalfunc = </xsl:text>
           <xsl:value-of 
-	     select="skit:dbquote(finalfunc/@schema,finalfunc/@name)"/>
+	     select="concat(',&#x0A;  finalfunc = ',
+                            skit:dbquote(finalfunc/@schema,finalfunc/@name))"/>
 	</xsl:if>
 	<xsl:if test="sortop">
-	  <xsl:text>,&#x0A;  sortop = </xsl:text>
-          <xsl:value-of select="skit:dbquote(sortop/@schema,sortop/@name)"/>
+          <xsl:value-of 
+	     select="concat(',&#x0A;  sortop = ',
+		            skit:dbquote(sortop/@schema,sortop/@name))"/>
 	</xsl:if>
 	<xsl:text>);&#x0A;</xsl:text>
 
@@ -53,27 +58,34 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 	  
-      	<xsl:text>drop aggregate </xsl:text>
-        <xsl:value-of select="skit:dbquote(@schema,@name)"/>
-	<xsl:text>(</xsl:text>
-	<xsl:choose>
-	  <xsl:when test="basetype/@name">
-            <xsl:value-of 
-	       select="skit:dbquote(basetype/@schema, basetype/@name)"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:text>*</xsl:text>
-	  </xsl:otherwise>
-	</xsl:choose>
-	<xsl:text>);&#x0A;</xsl:text>
+      	<xsl:text>drop </xsl:text>
+	<xsl:call-template name="aggregate_header"/>
+	<xsl:text>;&#x0A;</xsl:text>
 	  
 	<xsl:call-template name="reset_owner"/>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+
+	  <xsl:text>alter </xsl:text>
+	  <xsl:call-template name="aggregate_header"/>
+	  <xsl:value-of 
+	      select="concat(' owner to ', @owner, ';&#x0A;')"/>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>
 

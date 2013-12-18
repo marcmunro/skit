@@ -1535,7 +1535,7 @@ static redirectActionType redirect_action
      {REVCOPYC, IGNORE}, {REVCOPYC, IGNORE},      /* REBUILD, DIFF */
      {REVCOPYC, IGNORE}, {REVCOPYC, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
-    {{ERROR, ERROR}, {ERROR, ERROR},        /* BUILD, DROP */
+    {{ERROR, FCOPY}, {REVCOPYC, ERROR},        /* BUILD, DROP */
      {REVCOPYC, FCOPY}, {REVCOPYC, FCOPY},     /* REBUILD, DIFF */
      {ERROR, FCOPY}, {REVCOPYC, ERROR}},    /* FALLBACK, ENDFALLBACK */
     /* DIFF */ 

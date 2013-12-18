@@ -20,6 +20,7 @@
     <xi:include href="skitfile:diff/types.xml"/>
     <xi:include href="skitfile:diff/functions.xml"/>
     <xi:include href="skitfile:diff/conversions.xml"/>
+    <xi:include href="skitfile:diff/aggregates.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

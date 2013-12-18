@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="aggregate" key="fqn">
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <attribute name="initcond" rebuild="true"/>
+    <element type="basetype">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="transtype">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="transfunc">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="finalfunc">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="sortop">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="schema" rebuild="true"/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

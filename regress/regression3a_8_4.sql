@@ -143,6 +143,10 @@ end
 $$
 language plpgsql stable strict;
 
+grant execute on function wibble.fn5(varchar) to keep;
+revoke execute on function wibble.fn5(varchar) from public;
+
+
 -- Change owner and config options
 set session authorization wibble;
 
@@ -175,5 +179,46 @@ begin
 end
 $$
 language plpgsql stable;
+
+
+-- Aggregate functions.
+create or replace function "public"."addint4"(
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable cost 5;
+
+create aggregate "public"."mysum" (
+  basetype = "pg_catalog"."int4",
+  sfunc = "addint4",
+  stype = "pg_catalog"."int4",
+  initcond = '0'
+);
+
+create or replace function "public"."addkint4"(
+    _state in "pg_catalog"."int4",
+    _next in "pg_catalog"."int4")
+  returns "pg_catalog"."int4"
+as 
+$_$
+begin
+  return _state + _next;
+end;
+$_$
+language plpgsql stable cost 5;
+
+create aggregate "public"."mysum2" (
+  basetype = "pg_catalog"."int4",
+  sfunc = "addkint4",
+  stype = "pg_catalog"."int4",
+  initcond = '0'
+);
+
 
 EOF

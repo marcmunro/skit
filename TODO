@@ -1,19 +1,13 @@
-complete the todo comment in fallback.xsl
+Working on aggregates.  use unit test "params diffgen"
 
 
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
-
-
-Add handling for FDWs and any other 8.4 things
-
-Check handling of all existing ownership diffs - are they being handled
-in a manner consistent with conversions?
-    conversions		yes
-    schemata		yes
-    cluster		n/a
-    database		yes
-    types		n/a
+    conversions		TODO
+    schemata		TODO
+    cluster		TODO
+    database		TODO
+    types		TODO
     functions		TODO
     domains		TODO
     casts		TODO
@@ -30,51 +24,53 @@ in a manner consistent with conversions?
     indices		TODO
 
 
+*** Check changing ownership of function.
+
+Check handling of all existing ownership diffs - are they being handled
+in a manner consistent with conversions?
+    conversions		yes
+    schemata		yes
+    cluster		n/a
+    database		yes
+    types		n/a
+    functions		TODO
+    domains		TODO
+    casts		TODO
+    operators		TODO
+    operator_families	TODO
+    operator_classes	TODO
+    aggregates		yes
+    sequences		TODO
+    tables		TODO
+    views		TODO
+    constraints		TODO
+    rules		TODO
+    triggers		TODO
+    indices		TODO
+
+
 diffs:
     do the concat thing for objects below as in done in generate for
     schemata (in ddl)
 
-    functions (including the concat thing)
-
-    function diffs:
-      change parameter type			fn1
-      change parameter name			fn2
-      change parameter mode			fn5
-      change owner				fn6
-      change source				fn3
-      change bin				not doable, probably works
-      language					not doable, probably works
-      change volatility				fn6
-      is_strict					fn6
-      security_definer				fn6
-      result					fn4
-      returns_set				assumed
-      cost					fn6
-      result rows				fn6
-      arg defaults				fn7
-      configuration parameter			fn6
-      grants
-      comments					fn2(D), fn3(I)
-      owner has privileges to the schema	fn2
-      without privileges to the schema		fn3
-
-
-
-
-    types (including the concat thing)
-    domains (including the concat thing)
+    aggregates (including the concat thing)
     casts (including the concat thing)
     operators (including the concat thing)
     operator_classes (including the concat thing)
     operator_families (including the concat thing)
+    types (including the concat thing)
+    domains (including the concat thing)
     sequences (including the concat thing)
-    aggregates (including the concat thing)
     tables (including the concat thing)
     constraints (including the concat thing)
     indices (including the concat thing)
     rules (including the concat thing)
     views (including the concat thing)
     triggers (including the concat thing)
+
+Add handling for FDWs and any other 8.4 things
+
+
 
 generate:
   - Add echoes code to all database objects
