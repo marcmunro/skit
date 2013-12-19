@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="operator_class" key="fqn">
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <attribute name="is_default" rebuild="true"/>
+    <attribute name="intype_name" rebuild="true"/>
+    <attribute name="intype_schema" rebuild="true"/>
+    <attribute name="famlily" rebuild="true"/>
+    <attribute name="family_schema" rebuild="true"/>
+    <attribute name="method" rebuild="true"/>
+    <attribute name="generates_opfamily" rebuild="true"/>
+    <element type="comment">
+      <text/>
+    </element>
+    <element type="opclass_operator" key="strategy">
+      <element type="arg" key="position">
+	<attribute name="name" rebuild="true"/>
+	<attribute name="schema" rebuild="true"/>
+      </element>
+    </element>
+    <element type="opclass_function" key="proc_num">
+      <attribute name="function" rebuild="true"/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>

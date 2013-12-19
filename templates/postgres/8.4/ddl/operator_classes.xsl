@@ -9,25 +9,21 @@
   <xsl:template match="dbobject/operator_class">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create operator class </xsl:text>
-        <xsl:value-of select="../@qname"/>
-	<xsl:text>&#x0A;  </xsl:text>
+        <xsl:value-of 
+	    select="concat('create operator class ', ../@qname, '&#x0A;  ')"/>
 	<xsl:if test="@is_default = 't'">
 	  <xsl:text>default </xsl:text>
 	</xsl:if>
-	<xsl:text>for type </xsl:text>
-        <xsl:value-of select="skit:dbquote(@intype_schema,@intype_name)"/>
-	<xsl:text> using </xsl:text>
-        <xsl:value-of select="@method"/>
+        <xsl:value-of 
+	    select="concat('for type ',
+		           skit:dbquote(@intype_schema,@intype_name),
+			   ' using ', @method)"/>
 	<xsl:if test="(@name != @family) or (@schema != @family_schema)">
-	  <xsl:text> family </xsl:text>
-          <xsl:value-of select="skit:dbquote(@family_schema,@family)"/>
+          <xsl:value-of select="concat(' family ', 
+				       skit:dbquote(@family_schema,@family))"/>
 	</xsl:if >
 	<xsl:text> as</xsl:text>
 	<xsl:for-each select="opclass_operator">
@@ -35,12 +31,9 @@
 	  <xsl:if test="position() != 1">
 	    <xsl:text>,</xsl:text>
 	  </xsl:if>
-	  <xsl:text>&#x0A;  operator </xsl:text>
-	  <xsl:value-of select="@strategy"/>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@schema)"/>
-	  <xsl:text>.</xsl:text>
-	  <xsl:value-of select="@name"/>
+	  <xsl:value-of 
+	      select="concat('&#x0A;  operator ', @strategy, ' ',
+		             skit:dbquote(@schema), '.', @name)"/>
 	  <xsl:if test="(arg[@position='left']/@name != 
                              arg[@position='right']/@name) or
 			(arg[@position='left']/@schema != 
@@ -58,11 +51,9 @@
 	</xsl:for-each>
 	<xsl:for-each select="opclass_function">
 	  <xsl:sort select="@proc_num"/>
-	  <xsl:text>,&#x0A;  function </xsl:text>
-	  <xsl:value-of select="@proc_num"/>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@schema,@name)"/>
-	  <xsl:text>(</xsl:text>
+	  <xsl:value-of 
+	      select="concat(',&#x0A;  function ', @proc_num, ' ',
+		             skit:dbquote(@schema,@name), '(')"/>
 	  <xsl:value-of 
 	     select="skit:dbquote(params/param[@position='1']/@schema,
 		                  params/param[@position='1']/@type)"/>
@@ -81,21 +72,41 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 	  
-	<xsl:text>drop operator class </xsl:text>
-        <xsl:value-of select="../@qname"/>
-	<xsl:text> using </xsl:text>
-        <xsl:value-of select="@method"/>
-	<xsl:text>;&#x0A;</xsl:text>
+        <xsl:value-of 
+	    select="concat('drop operator class ', ../@qname,
+		           ' using ', @method, ';&#x0A;')"/>
 
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
+
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:variable name="method" select="@method"/>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter operator class ', ../@qname,
+			         ' using ', $method,
+			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+	    </xsl:if>
+	  </xsl:for-each>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff"/>
+      </print>
+    </xsl:if>
+
   </xsl:template>
 </xsl:stylesheet>
 

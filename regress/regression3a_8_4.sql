@@ -329,4 +329,212 @@ create operator "public".<= (
   join = "pg_catalog"."scalarltjoinsel");
 
 
+-- Operator Class
+create or replace function "public"."seg_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."seg"
+as '$libdir/seg', 'seg_in'
+language c immutable strict;
+
+create or replace function "public"."seg_out"(
+    in "public"."seg")
+  returns "pg_catalog"."cstring"
+as '$libdir/seg', 'seg_out'
+language c immutable strict;
+
+create type "public"."seg"(
+  input = "public"."seg_in",
+  output = "public"."seg_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."seg" is
+'floating point interval ''FLOAT .. FLOAT'', ''.. FLOAT'', ''FLOAT ..'' or ''FLOAT''';
+
+
+create or replace function "public"."seg_cmp"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."int4"
+as '$libdir/seg', 'seg_cmp'
+language c immutable strict;
+
+comment on function "public"."seg_cmp"("public"."seg","public"."seg") is
+'btree comparison function';
+
+create or replace function "public"."seg_different"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_different'
+language c immutable strict;
+
+comment on function "public"."seg_different"("public"."seg","public"."seg") is
+'different';
+
+create or replace function "public"."seg_ge"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_ge'
+language c immutable strict;
+
+comment on function "public"."seg_ge"("public"."seg","public"."seg") is
+'greater than or equal';
+
+create or replace function "public"."seg_gt"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_gt'
+language c immutable strict;
+
+comment on function "public"."seg_gt"("public"."seg","public"."seg") is
+'greater than';
+
+create or replace function "public"."seg_le"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_le'
+language c immutable strict;
+
+comment on function "public"."seg_le"("public"."seg","public"."seg") is
+'less than or equal';
+
+create or replace function "public"."seg_left"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_left'
+language c immutable strict;
+
+comment on function "public"."seg_left"("public"."seg","public"."seg") is
+'is left of';
+
+create or replace function "public"."seg_lt"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_lt'
+language c immutable strict;
+
+comment on function "public"."seg_lt"("public"."seg","public"."seg") is
+'less than';
+
+create or replace function "public"."seg_right"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_right'
+language c immutable strict;
+
+comment on function "public"."seg_right"("public"."seg","public"."seg") is
+'is right of';
+
+create or replace function "public"."seg_same"(
+    in "public"."seg",
+    in "public"."seg")
+  returns "pg_catalog"."bool"
+as '$libdir/seg', 'seg_same'
+language c immutable strict;
+
+comment on function "public"."seg_same"("public"."seg","public"."seg") is
+'same as';
+
+create operator "public".<< (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_left",
+  commutator = "public".">>",
+  restrict = "pg_catalog"."positionsel",
+  join = "pg_catalog"."positionjoinsel");
+
+create operator "public".<> (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_different",
+  commutator = "public"."<>",
+  negator = "public"."=",
+  restrict = "pg_catalog"."neqsel",
+  join = "pg_catalog"."neqjoinsel");
+
+create operator "public".< (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_lt",
+  commutator = "public".">",
+  negator = "public".">=",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+create operator "public".<= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_le",
+  commutator = "public".">=",
+  negator = "public".">",
+  restrict = "pg_catalog"."scalarltsel",
+  join = "pg_catalog"."scalarltjoinsel");
+
+create operator "public".> (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_gt",
+  commutator = "public"."<",
+  negator = "public"."<=",
+  restrict = "pg_catalog"."scalargtsel",
+  join = "pg_catalog"."scalargtjoinsel");
+
+create operator "public".>= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_ge",
+  commutator = "public"."<=",
+  negator = "public"."<",
+  restrict = "pg_catalog"."scalargtsel",
+  join = "pg_catalog"."scalargtjoinsel");
+
+create operator "public".= (
+  leftarg = "public"."seg",
+  rightarg = "public"."seg",
+  procedure = "public"."seg_same",
+  commutator = operator(public.=),
+  negator = operator(public.<>),
+  restrict = "pg_catalog"."eqsel",
+  join = "pg_catalog"."eqjoinsel",
+  merges,
+  sort1 = operator("public".<),
+  sort2 = operator("public".<),
+  ltcmp = operator("public".<),
+  gtcmp = operator("public".>));
+
+create operator class "public"."seg_ops"
+  default for type "public"."seg" using btree as
+    operator 1  "public".<,
+    operator 2  "public".<=,
+    operator 5  "public".>,
+    operator 4  "public".>=,
+    operator 3  "public".=,
+    function 1  "public"."seg_cmp"("public"."seg","public"."seg");
+
+comment on operator class "public"."seg_ops" using btree is
+'operator class for seg_ops';
+
+
+create operator class "public"."seg_ops2"
+  for type "public"."seg" using btree as
+    operator 1  "public".<,
+    operator 2  "public".<=,
+    operator 5  "public".>,
+    operator 4  "public".>=,
+    operator 3  "public".=,
+    function 1  "public"."seg_cmp"("public"."seg","public"."seg");
+
+comment on operator class "public"."seg_ops2" using btree is
+'operator class for seg_ops2';
+
+
 EOF

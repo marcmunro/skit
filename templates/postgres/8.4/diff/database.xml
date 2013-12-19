@@ -29,4 +29,6 @@
 
   <xi:include href="skitfile:diff/casts.xml"/>
   <xi:include href="skitfile:diff/operators.xml"/>
+  <xi:include href="skitfile:diff/operator_classes.xml"/>
+  <xi:include href="skitfile:diff/operator_families.xml"/>
 </skit:inclusion>  

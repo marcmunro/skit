@@ -11,8 +11,8 @@ Check that acls are handled properly (returning null if that's what they
     domains		n/a
     casts		n/a
     operators		n/a
-    operator_families	n/a
     operator_classes	n/a
+    operator_families	n/a
     aggregates		n/a
     sequences		TODO
     tables		TODO
@@ -22,8 +22,6 @@ Check that acls are handled properly (returning null if that's what they
     triggers		TODO
     indices		TODO
 
-
-*** Check changing ownership of function.
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
@@ -36,8 +34,8 @@ in a manner consistent with conversions?
     aggregates		yes
     casts		n/a
     operators		yes
-    operator_families	TODO
     operator_classes	TODO
+    operator_families	TODO
     basetypes		TODO
     composite types	TODO
     domains		TODO
@@ -67,8 +65,6 @@ diffs:
     triggers (including the concat thing)
 
 Add handling for FDWs and any other 8.4 things
-
-
 
 generate:
   - Add echoes code to all database objects
