@@ -558,6 +558,7 @@ comment on operator class "public"."seg_ops" using btree is
 
 alter operator class "public"."seg_ops" using btree owner to wibble;
 
+create operator family "public"."seg_ops2" using btree;
 
 create operator class "public"."seg_ops2"
   for type "public"."seg" using btree as
@@ -570,6 +571,12 @@ create operator class "public"."seg_ops2"
 
 comment on operator class "public"."seg_ops2" using btree is
 'operator class for seg_ops2';
+
+alter operator family "public"."seg_ops" using btree owner to wibble;
+
+comment on operator family "public"."seg_ops" using btree is
+'operator family for seg_ops with updated comment';
+
 
 EOF
  

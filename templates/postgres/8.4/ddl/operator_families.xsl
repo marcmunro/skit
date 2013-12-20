@@ -9,16 +9,12 @@
   <xsl:template match="dbobject/operator_family">
     <xsl:if test="(../@action='build') and (@auto_generated!='t')">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-	<xsl:text>create operator family </xsl:text>
-        <xsl:value-of select="../@qname"/>
-	<xsl:text>using </xsl:text>
-        <xsl:value-of select="@method"/>
+        <xsl:value-of 
+	    select="concat('create operator family ', ../@qname,
+		           'using ', @method)"/>
 	<xsl:for-each select="opclass_operator">
 	  <xsl:sort select="arg[@position='left']/@name"/>
 	  <xsl:sort select="arg[@position='right']/@name"/>
@@ -26,38 +22,29 @@
 	  <xsl:if test="position() != 1">
 	    <xsl:text>,</xsl:text>
 	  </xsl:if>
-	  <xsl:text>&#x0A;  operator </xsl:text>
-	  <xsl:value-of select="@strategy"/>
-	  <xsl:value-of select="skit:dbquote(@schema)"/>
-	  <xsl:text>.</xsl:text>
-	  <xsl:value-of select="@name"/>
-	  <xsl:text>(</xsl:text>
-	  <xsl:value-of select="skit:dbquote(arg[@position='left']/@schema,
-				             arg[@position='left']/@name)"/>
-	  <xsl:text>,</xsl:text>
-	  <xsl:value-of select="skit:dbquote(arg[@position='right']/@schema,
-				             arg[@position='right']/@name)"/>
-	  <xsl:text>)</xsl:text>
-
+	  <xsl:value-of 
+	      select="concat('&#x0A;  operator ', @strategy,
+		             skit:dbquote(@schema), '.', @name, '(',
+			     skit:dbquote(arg[@position='left']/@schema,
+				          arg[@position='left']/@name), ',',
+			     skit:dbquote(arg[@position='right']/@schema,
+				          arg[@position='right']/@name), ')')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="opclass_function">
 	  <xsl:sort select="params/param[@position='1']/@type"/>
 	  <xsl:sort select="params/param[@position='2']/@type"/>
 	  <xsl:sort select="@proc_num"/>
-	  <xsl:text>,&#x0A;  function </xsl:text>
-	  <xsl:value-of select="@proc_num"/>
-	  <xsl:text> </xsl:text>
-	  <xsl:value-of select="skit:dbquote(@schema,@name)"/>
-	  <xsl:text>(</xsl:text>
-	  <xsl:value-of
-	     select="skit:dbquote(params/param[@position='1']/@schema,
-		                  params/param[@position='1']/@type)"/>
-	  <xsl:text>,</xsl:text>
-	  <xsl:value-of
-	     select="skit:dbquote(params/param[@position='2']/@schema,
-		                  params/param[@position='2']/@type)"/>
-	  <xsl:text>)</xsl:text>
+
+	  <xsl:value-of 
+	      select="concat(',&#x0A;  function ', @proc_num, ' ',
+		             skit:dbquote(@schema,@name), '(',
+			     skit:dbquote(params/param[@position='1']/@schema,
+		                          params/param[@position='1']/@type),
+			     ',',
+			     skit:dbquote(params/param[@position='2']/@schema,
+		                          params/param[@position='2']/@type),
+			     ')')"/>
 	</xsl:for-each>
 
 	<xsl:text>;&#x0A;</xsl:text>
@@ -69,21 +56,43 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	<xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 	  
-	<xsl:text>drop operator family </xsl:text>
-        <xsl:value-of select="../@qname"/>
-	<xsl:text> using </xsl:text>
-        <xsl:value-of select="@method"/>
-	<xsl:text>;&#x0A;</xsl:text>
+	<xsl:text></xsl:text>
+        <xsl:value-of 
+	    select="concat('drop operator family ', ../@qname,
+		           ' using ', @method, ';&#x0A;')"/>
 
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
+
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:variable name="method" select="@method"/>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter operator family ', ../@qname,
+			         ' using ', $method,
+			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+	    </xsl:if>
+	  </xsl:for-each>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff"/>
+      </print>
+    </xsl:if>
+
+
   </xsl:template>
 </xsl:stylesheet>
 

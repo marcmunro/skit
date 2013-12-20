@@ -18,4 +18,10 @@
     </element>
   </dbobject>	
 
+  <!-- This is for comments on operator families that were auto-created -->
+  <dbobject type="comment" key="fqn">
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>
 </skit:inclusion>

@@ -536,5 +536,8 @@ create operator class "public"."seg_ops2"
 comment on operator class "public"."seg_ops2" using btree is
 'operator class for seg_ops2';
 
+comment on operator family "public"."seg_ops" using btree is
+'operator family for seg_ops';
+
 
 EOF
