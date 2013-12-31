@@ -14,12 +14,19 @@
       </dependency-set>
     </attribute>
 
+    <attribute name="subtype" rebuild="true"/>
     <attribute name="delimiter" rebuild="true"/>
     <attribute name="typelen" rebuild="true"/>
     <attribute name="alignment" rebuild="true"/>
     <attribute name="storage" rebuild="true"/>
     <attribute name="passbyval" rebuild="true"/>
     <attribute name="is_defined" rebuild="true"/>
+
+    <element type="column" rebuild="true" key="id">
+      <attribute name="name"/>
+      <attribute name="type"/>
+      <attribute name="type_schema"/>
+    </element>
 
     <element type="comment">
       <text/>

@@ -36,7 +36,7 @@ in a manner consistent with conversions?
     operator_classes	yes
     operator_families	yes
     basetypes		yes
-    composite types	TODO
+    composite types	yes
     domains		TODO
     sequences		TODO
     tables		TODO

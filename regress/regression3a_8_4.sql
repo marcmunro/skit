@@ -557,7 +557,7 @@ comment on operator family seg_ops4 using btree is
 'operator family seg_ops4';
 
 
--- Basetypes
+-- Base types
 
 create or replace function "public"."wib2_in"(
     in "pg_catalog"."cstring")
@@ -606,5 +606,34 @@ create type "public"."wib3"(
 
 comment on type "public"."wib3" is
 'wib3';
+
+
+-- Composite types
+create type "public"."veil_variable_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."veil_variable_t" is
+'veil_variable_t';
+
+
+create type "public"."vv2_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+create type "public"."vv3_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text"
+);
+
+comment on column "public"."vv3_t".name is
+'name column';
+
+
+
 
 EOF

@@ -631,5 +631,37 @@ comment on type "public"."wib3" is
 alter type public.wib3 owner to keep;
 
 
+-- Composite types
+create type "public"."veil_variable_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."veil_variable_t" is
+'veil_variable_t with different comment';
+
+alter type public.veil_variable_t owner to keep;
+
+
+create type "public"."vv2_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."text"
+);
+
+create type "public"."vv3_t" as (
+  "name"   "pg_catalog"."text",
+  "shared"   "pg_catalog"."bool"
+);
+
+comment on type "public"."vv3_t" is
+'vv3_t';
+
+comment on column "public"."vv3_t".name is
+'name column updated';
+
+
+
 EOF
  
