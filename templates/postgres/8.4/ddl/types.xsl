@@ -9,14 +9,10 @@
   <xsl:template match="dbobject/type">
     <xsl:if test="(../@action='build') and (@is_defined = 't')">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-        <xsl:text>create type </xsl:text>
-        <xsl:value-of select="../@qname"/>
+        <xsl:value-of select="concat('create type ', ../@qname)"/>
 	<xsl:choose>
 	  <xsl:when test="@subtype='enum'">
 	    <xsl:text> as enum (&#x0A;  </xsl:text>
@@ -29,32 +25,36 @@
             <xsl:text>);&#x0A;</xsl:text>
 	  </xsl:when>
 	  <xsl:when test="@subtype='basetype'">
-            <xsl:text> (&#x0A;  input = </xsl:text>
-            <xsl:value-of select="skit:dbquote(*[@type='input']/@schema,
-			                       *[@type='input']/@name)"/>
-            <xsl:text>,&#x0A;  output = </xsl:text>
-            <xsl:value-of select="skit:dbquote(*[@type='output']/@schema,
-				               *[@type='output']/@name)"/>
+            <xsl:value-of 
+		select="concat(' (&#x0A;  input = ',
+			       skit:dbquote(*[@type='input']/@schema,
+			                    *[@type='input']/@name),
+			       ',&#x0A;  output = ',
+			       skit:dbquote(*[@type='output']/@schema,
+				            *[@type='output']/@name))"/>
 	    <xsl:if test="*[@type='send']">
-              <xsl:text>,&#x0A;  send = </xsl:text>
-              <xsl:value-of select="skit:dbquote(*[@type='send']/@schema,
-				                 *[@type='send']/@name)"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  send = ',
+			         skit:dbquote(*[@type='send']/@schema,
+				              *[@type='send']/@name))"/>
 	    </xsl:if>
 	    <xsl:if test="*[@type='receive']">
-              <xsl:text>,&#x0A;  receive = </xsl:text>
-              <xsl:value-of select="skit:dbquote(*[@type='receive']/@schema,
-				                 *[@type='receive']/@name)"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  receive = ',
+			         skit:dbquote(*[@type='receive']/@schema,
+				              *[@type='receive']/@name))"/>
 	    </xsl:if>
 	    <xsl:if test="*[@type='analyze']">
-              <xsl:text>,&#x0A;  analyze = </xsl:text>
-              <xsl:value-of select="skit:dbquote(*[@type='analyze']/@schema,
-				                 *[@type='analyze']/@name)"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  analyze = ',
+			         skit:dbquote(*[@type='analyze']/@schema,
+				              *[@type='analyze']/@name))"/>
 	    </xsl:if>
 	    <xsl:choose>
 	      <xsl:when test="@passbyval='yes'">
-		<xsl:text>,&#x0A;  passedbyvalue</xsl:text>
-		<xsl:text>,&#x0A;  internallength = </xsl:text>
-		<xsl:value-of select="@typelen"/>
+		<xsl:value-of 
+		  select="concat(',&#x0A;  passedbyvalue',
+			         ',&#x0A;  internallength = ', @typelen)"/>
 	      </xsl:when>
 	      <xsl:otherwise>
 		<xsl:text>,&#x0A;  internallength = </xsl:text>
@@ -69,21 +69,21 @@
 	      </xsl:otherwise>
 	    </xsl:choose>
 	    <xsl:if test="@alignment">
-              <xsl:text>,&#x0A;  alignment = </xsl:text>
-              <xsl:value-of select="@alignment"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  alignment = ', @alignment)"/>
 	    </xsl:if>
 	    <xsl:if test="@storage">
-              <xsl:text>,&#x0A;  storage = </xsl:text>
-              <xsl:value-of select="@storage"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  storage = ', @storage)"/>
 	    </xsl:if>
 	    <xsl:if test="@element">
-              <xsl:text>,&#x0A;  element = </xsl:text>
-              <xsl:value-of select="'TODO'"/>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  element = ', 'TODO')"/>
 	    </xsl:if>
 	    <xsl:if test="@delimiter">
-              <xsl:text>,&#x0A;  delimiter = &apos;</xsl:text>
-              <xsl:value-of select="@delimiter"/>
-              <xsl:text>&apos;</xsl:text>
+              <xsl:value-of 
+		  select="concat(',&#x0A;  delimiter = ', 
+			         $apos, @delimiter, $apos)"/>
 	    </xsl:if>
 	    <xsl:text>);&#x0A;</xsl:text>
 	  </xsl:when>
@@ -94,13 +94,12 @@
 	    </xsl:for-each>
 	    <xsl:text>);&#x0A;</xsl:text>
 	    <xsl:for-each select="column/comment">
-	      <xsl:text>&#x0A;comment on column </xsl:text>
-	      <xsl:value-of select="../../../@qname"/>
-	      <xsl:text>.</xsl:text>
-	      <xsl:value-of select="skit:dbquote(../@name)"/>
-	      <xsl:text> is&#x0A;</xsl:text>
-	      <xsl:value-of select="text()"/>
-	      <xsl:text>;&#x0A;</xsl:text>
+	      <xsl:value-of
+		  select="concat('&#x0A;comment on column ', 
+		                 ../../../@qname, '.',
+				 skit:dbquote(../@name),
+				 ' is&#x0A;', text(),
+				 ';&#x0A;')"/>
 	    </xsl:for-each>
 	  </xsl:when>
 	</xsl:choose>
@@ -113,17 +112,37 @@
 
     <xsl:if test="../@action='drop'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;drop type </xsl:text>
-        <xsl:value-of select="../@qname"/>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="set_owner"/>
+        <xsl:value-of select="concat('drop type ', ../@qname)"/>
 	<xsl:if test="@subtype='basetype'">
 	  <!-- Basetypes must be dropped using cascade to ensure that
 	       the input, output, etc functions are also dropped -->
           <xsl:text> cascade</xsl:text>
 	</xsl:if>
         <xsl:text>;&#x0A;</xsl:text>
+      </print>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:call-template name="feedback"/>
+	  <xsl:for-each select="../attribute">
+	    <xsl:if test="@name='owner'">
+	      <xsl:value-of 
+		  select="concat('alter type ', ../@qname,
+			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+	    </xsl:if>
+	  </xsl:for-each>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
+    <xsl:if test="../@action='diffcomplete'">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>
 

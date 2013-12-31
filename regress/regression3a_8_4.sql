@@ -557,4 +557,54 @@ comment on operator family seg_ops4 using btree is
 'operator family seg_ops4';
 
 
+-- Basetypes
+
+create or replace function "public"."wib2_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."wib2"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."wib2_out"(
+    in "public"."wib2")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+create type "public"."wib2"(
+  input = "public"."wib2_in",
+  output = "public"."wib2_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."wib2" is
+'wib2';
+
+
+create or replace function "public"."wib3_in"(
+    in "pg_catalog"."cstring")
+  returns "public"."wib3"
+as 'charin'
+language internal immutable strict;
+
+create or replace function "public"."wib3_out"(
+    in "public"."wib3")
+  returns "pg_catalog"."cstring"
+as 'charout'
+language internal immutable strict;
+
+
+create type "public"."wib3"(
+  input = "public"."wib3_in",
+  output = "public"."wib3_out",
+  internallength = 12,
+  alignment = int4,
+  storage = plain,
+  delimiter = ',');
+
+comment on type "public"."wib3" is
+'wib3';
+
 EOF

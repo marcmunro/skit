@@ -35,7 +35,7 @@ in a manner consistent with conversions?
     operators		yes
     operator_classes	yes
     operator_families	yes
-    basetypes		TODO
+    basetypes		yes
     composite types	TODO
     domains		TODO
     sequences		TODO
@@ -51,9 +51,6 @@ Do the concat thing for objects below as in done in generate for
 schemata (in ddl)
 
 diffs:
-    loose operators and functions for operator families
-
-    types (including the concat thing)
     domains (including the concat thing)
     sequences (including the concat thing)
     tables (including the concat thing)

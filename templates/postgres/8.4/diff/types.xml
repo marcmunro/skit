@@ -4,15 +4,27 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="type" key="fqn" rebuild="true">
-    <!-- Incomplete -->
-    <element type="column" key="name">
-      <attribute name="id"/>
-      <attribute name="type"/>
-      <attribute name="type_schema"/>
-      <attribute name="nullable"/>
-      <attribute name="storage_policy"/>
+  <dbobject type="type" key="fqn">
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.cluster.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.cluster.{old.owner}.superuser"/>
+	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+
+    <attribute name="delimiter" rebuild="true"/>
+    <attribute name="typelen" rebuild="true"/>
+    <attribute name="alignment" rebuild="true"/>
+    <attribute name="storage" rebuild="true"/>
+    <attribute name="passbyval" rebuild="true"/>
+    <attribute name="is_defined" rebuild="true"/>
+
+    <element type="comment">
+      <text/>
     </element>
+
   </dbobject>	
 
 </skit:inclusion>  
