@@ -28,8 +28,14 @@
 	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
 	</xsl:if>
 
-	<xsl:call-template name="operator_deps"/>
-	<xsl:call-template name="operator_function_deps"/>
+	<xsl:for-each select="opfamily_operator">
+	  <xsl:call-template name="operator_dep"/>
+	</xsl:for-each>
+
+	<xsl:for-each select="opfamily_function">
+	  <xsl:call-template name="operator_function_dep"/>
+	</xsl:for-each>
+
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy>

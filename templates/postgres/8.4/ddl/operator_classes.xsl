@@ -6,6 +6,26 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="operator_defn">
+    <xsl:value-of 
+	select="concat('operator ', @strategy, ' ',
+		       skit:dbquote(@schema), '.', @name, '(',
+                       skit:dbquote(arg[@position='left']/@schema,
+                                    arg[@position='left']/@name), ',',
+                       skit:dbquote(arg[@position='right']/@schema,
+                                    arg[@position='right']/@name), ')')"/> 
+  </xsl:template>
+
+  <xsl:template name="function_defn">
+    <xsl:value-of 
+	select="concat('function ', @proc_num, ' ',
+		       skit:dbquote(@schema,@name), '(',
+	               skit:dbquote(params/param[@position='1']/@schema,
+		                    params/param[@position='1']/@type), ',',
+		       skit:dbquote(params/param[@position='2']/@schema,
+		                    params/param[@position='2']/@type), ')')"/>
+  </xsl:template>
+
   <xsl:template match="dbobject/operator_class">
     <xsl:if test="../@action='build'">
       <print>
@@ -31,37 +51,14 @@
 	  <xsl:if test="position() != 1">
 	    <xsl:text>,</xsl:text>
 	  </xsl:if>
-	  <xsl:value-of 
-	      select="concat('&#x0A;  operator ', @strategy, ' ',
-		             skit:dbquote(@schema), '.', @name)"/>
-	  <xsl:if test="(arg[@position='left']/@name != 
-                             arg[@position='right']/@name) or
-			(arg[@position='left']/@schema != 
-                             arg[@position='right']/@schema)">
-	    <xsl:text>(</xsl:text>
-	    <xsl:value-of
-	       select="skit:dbquote(arg[@position='left']/@schema,
-		                    arg[@position='left']/@name)"/>
-	    <xsl:text>,</xsl:text>
-	    <xsl:value-of
-	       select="skit:dbquote(arg[@position='right']/@schema,
-		                    arg[@position='right']/@name)"/>
-	    <xsl:text>)</xsl:text>
-	  </xsl:if>
+	  <xsl:text>&#x0A;  </xsl:text>
+	  <xsl:call-template name="operator_defn"/>
 	</xsl:for-each>
+
 	<xsl:for-each select="opclass_function">
 	  <xsl:sort select="@proc_num"/>
-	  <xsl:value-of 
-	      select="concat(',&#x0A;  function ', @proc_num, ' ',
-		             skit:dbquote(@schema,@name), '(')"/>
-	  <xsl:value-of 
-	     select="skit:dbquote(params/param[@position='1']/@schema,
-		                  params/param[@position='1']/@type)"/>
-	  <xsl:text>,</xsl:text>
-	  <xsl:value-of 
-	     select="skit:dbquote(params/param[@position='2']/@schema,
-		                  params/param[@position='2']/@type)"/>
-	  <xsl:text>)</xsl:text>
+	  <xsl:text>,&#x0A;  </xsl:text>
+	  <xsl:call-template name="function_defn"/>
 	</xsl:for-each>
 	<xsl:text>;&#x0A;</xsl:text>
 

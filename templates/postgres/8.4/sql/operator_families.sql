@@ -3,7 +3,7 @@ select opf.oid as oid,
        n.nspname as schema,
        r.rolname as owner,
        am.amname as method,
-       d.deptype = 'a' as auto_generated,
+       coalesce(d.deptype = 'a', false) as auto_generated,
        quote_literal(obj_description(opf.oid, 'pg_opfamily')) as comment
 from   pg_catalog.pg_opfamily opf
 inner join pg_catalog.pg_namespace n
@@ -12,7 +12,7 @@ inner join pg_catalog.pg_roles r
   on r.oid = opf.opfowner
 inner join pg_catalog.pg_am am
   on am.oid = opf.opfmethod
-inner join (pg_catalog.pg_depend d
+left outer join (pg_catalog.pg_depend d
   inner join pg_catalog.pg_class dn
     on dn.oid = d.classid 
   inner join pg_catalog.pg_class rn

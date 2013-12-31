@@ -1,6 +1,5 @@
--- List all operator class procedures.
-select ap.amprocfamily,
-       opf.oid as family_oid,
+-- List all operator family functions.
+select opf.oid as family_oid,
        d.refobjid as class_oid,
        ap.amprocnum as proc_num,
        ap.amproc::oid as proc_oid,
@@ -31,3 +30,4 @@ left outer join (pg_catalog.pg_depend d
   and dn.relname = 'pg_amproc'
 where (   np.nspname != 'pg_catalog'
        or nf.nspname != 'pg_catalog');
+

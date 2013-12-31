@@ -1,4 +1,6 @@
 
+finish operator_family stuff for regression_test1:
+  - diffs
 
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.

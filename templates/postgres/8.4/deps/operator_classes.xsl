@@ -6,28 +6,24 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template name="operator_deps">
-    <xsl:for-each select="opclass_operator">
-      <xsl:if test="@schema != 'pg_catalog'">
-	<dependency fqn="{concat('operator.', 
-			 ancestor::database/@name, '.', 
-			 @schema, '.', @name, '(',
-			 arg[@position='left']/@schema, '.',
-			 arg[@position='left']/@name, ',',
-			 arg[@position='right']/@schema, '.',
-			 arg[@position='right']/@name, ')')}"/>
+  <xsl:template name="operator_dep">
+    <xsl:if test="@schema != 'pg_catalog'">
+      <dependency fqn="{concat('operator.', 
+			ancestor::database/@name, '.', 
+			@schema, '.', @name, '(',
+			arg[@position='left']/@schema, '.',
+			arg[@position='left']/@name, ',',
+			arg[@position='right']/@schema, '.',
+			arg[@position='right']/@name, ')')}"/>
       </xsl:if>
-    </xsl:for-each>
   </xsl:template>
 
-  <xsl:template name="operator_function_deps">
-    <xsl:for-each select="opclass_function">
-      <xsl:if test="@schema != 'pg_catalog'">
-	<dependency fqn="{concat('function.', 
-			 ancestor::database/@name, '.', @function)}"/>
+  <xsl:template name="operator_function_dep">
+    <xsl:if test="@schema != 'pg_catalog'">
+      <dependency fqn="{concat('function.', 
+		        ancestor::database/@name, '.', @function)}"/>
 	
-      </xsl:if>
-    </xsl:for-each>
+    </xsl:if>
   </xsl:template>
 
 
@@ -61,8 +57,14 @@
 
 	<!-- types will be a dependency of operators, etc -->
 
-	<xsl:call-template name="operator_deps"/>
-	<xsl:call-template name="operator_function_deps"/>
+	<xsl:for-each select="opclass_operator">
+	  <xsl:call-template name="operator_dep"/>
+	</xsl:for-each>
+
+	<xsl:for-each select="opclass_function">
+	  <xsl:call-template name="operator_function_dep"/>
+	</xsl:for-each>
+
 	<xsl:call-template name="SchemaGrant"/>
       </dependencies>
       <xsl:copy>

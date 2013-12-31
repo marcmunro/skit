@@ -752,6 +752,14 @@ comment on operator family "public"."seg_ops" using btree is
 'operator family for seg_ops';
 
 
+create operator family seg_ops3 using btree;
+alter operator family seg_ops3 using btree add operator 1 <(seg, seg);
+alter operator family seg_ops3 using btree add operator 2 <=(seg, seg);
+alter operator family seg_ops3 using btree add function 1 seg_cmp(seg, seg);
+
+
+
+
 
 create type "public"."mychar2"(
   input = "public"."mycharin2",

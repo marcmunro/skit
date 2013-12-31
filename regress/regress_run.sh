@@ -184,10 +184,8 @@ regression_test1()
     #build_db regression3b_`pguver`.sql
     build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
-
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump1a.xml ...
-
     echo ...running skit generate... 1>&2
     gendrop scratch/regressdb_dump1a.xml scratch/regressdb_drop1.sql \
 	--simple-sort

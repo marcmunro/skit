@@ -14,40 +14,39 @@
 
         <xsl:value-of 
 	    select="concat('create operator family ', ../@qname,
-		           'using ', @method)"/>
-	<xsl:for-each select="opclass_operator">
-	  <xsl:sort select="arg[@position='left']/@name"/>
-	  <xsl:sort select="arg[@position='right']/@name"/>
-	  <xsl:sort select="@strategy"/>
-	  <xsl:if test="position() != 1">
-	    <xsl:text>,</xsl:text>
-	  </xsl:if>
+		           ' using ', @method, ';&#x0A;')"/>
+
+	<xsl:if test="opfamily_operator or opfamily_function">
 	  <xsl:value-of 
-	      select="concat('&#x0A;  operator ', @strategy,
-		             skit:dbquote(@schema), '.', @name, '(',
-			     skit:dbquote(arg[@position='left']/@schema,
-				          arg[@position='left']/@name), ',',
-			     skit:dbquote(arg[@position='right']/@schema,
-				          arg[@position='right']/@name), ')')"/>
-	</xsl:for-each>
+	      select="concat('alter operator family ', ../@qname,
+		             ' using ', @method, ' add')"/>
+	  <xsl:for-each select="opfamily_operator">
+	    <xsl:sort select="arg[@position='left']/@name"/>
+	    <xsl:sort select="arg[@position='right']/@name"/>
+	    <xsl:sort select="@strategy"/>
 
-	<xsl:for-each select="opclass_function">
-	  <xsl:sort select="params/param[@position='1']/@type"/>
-	  <xsl:sort select="params/param[@position='2']/@type"/>
-	  <xsl:sort select="@proc_num"/>
+	    <xsl:if test="position() != 1">
+	      <xsl:text>,</xsl:text>
+	    </xsl:if>
 
-	  <xsl:value-of 
-	      select="concat(',&#x0A;  function ', @proc_num, ' ',
-		             skit:dbquote(@schema,@name), '(',
-			     skit:dbquote(params/param[@position='1']/@schema,
-		                          params/param[@position='1']/@type),
-			     ',',
-			     skit:dbquote(params/param[@position='2']/@schema,
-		                          params/param[@position='2']/@type),
-			     ')')"/>
-	</xsl:for-each>
+	    <xsl:text>&#x0A;  </xsl:text>
+	    <xsl:call-template name="operator_defn"/>
+	  </xsl:for-each>
 
-	<xsl:text>;&#x0A;</xsl:text>
+	  <xsl:for-each select="opfamily_function">
+	    <xsl:sort select="params/param[@position='1']/@type"/>
+	    <xsl:sort select="params/param[@position='2']/@type"/>
+	    <xsl:sort select="@proc_num"/>
+
+	    <xsl:if test="../opfamily_operator or (position() != 1) ">
+	      <xsl:text>,</xsl:text>
+	    </xsl:if>
+
+	    <xsl:text>&#x0A;  </xsl:text>
+	    <xsl:call-template name="function_defn"/>
+	  </xsl:for-each>
+	  <xsl:text>;&#x0A;</xsl:text>
+	</xsl:if>
 
 	<xsl:apply-templates/>  <!-- Deal with comments -->
 	<xsl:call-template name="reset_owner"/>

@@ -19,8 +19,8 @@
 	</comment>
       </skit:if>
 
-      <skit:exec_function name="opclass_operators"/>
-      <skit:exec_function name="opclass_functions"/>
+      <skit:exec_function name="opfamily_operators"/>
+      <skit:exec_function name="opfamily_functions"/>
     </operator_family>
   </skit:foreach>
 </skit:inclusion>  

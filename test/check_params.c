@@ -732,8 +732,8 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", 
-		    "x",
-		    "//regress/scratch/regressdb_dump3b.xml", // regression_test1
+		    //"x",
+		    "regress/scratch/regressdb_dump1a.xml",
 		    "--print", "--full"};
 
     initTemplatePath(".");

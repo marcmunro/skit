@@ -17,18 +17,13 @@
   <xsl:template match="dbobject/comment">
     <xsl:if test="../@action='build'">
       <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-      	  <xsl:text>&#x0A;-- Comment for automatically generated</xsl:text>
-	  <xsl:text> operator family</xsl:text>
-      	  <xsl:text>&#x0A;comment on operator family </xsl:text>
-	  <xsl:value-of select="../@qname"/>
-      	  <xsl:text> using </xsl:text>
-	  <xsl:value-of select="../@method"/>
-      	  <xsl:text> is&#x0A;</xsl:text>
-	  <xsl:value-of select="text()"/>
-          <xsl:text>;&#x0A;&#x0A;</xsl:text>
+	<xsl:call-template name="feedback"/>
+	<xsl:call-template name="set_owner"/>
+	<xsl:value-of 
+	    select="concat('&#x0A;comment on operator family ',
+		           ../@qname, ' using ', ../@method,
+			   ' is&#x0A;', text(), ';&#x0A;&#x0A;')">
+	</xsl:value-of>
       </print>
     </xsl:if>
 
