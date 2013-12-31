@@ -577,6 +577,9 @@ alter operator family "public"."seg_ops" using btree owner to wibble;
 comment on operator family "public"."seg_ops" using btree is
 'operator family for seg_ops with updated comment';
 
+create operator family seg_ops3 using btree;
+alter operator family seg_ops3 using btree add operator 2 <=(seg, seg);
+
 
 EOF
  

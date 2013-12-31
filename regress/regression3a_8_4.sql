@@ -539,5 +539,22 @@ comment on operator class "public"."seg_ops2" using btree is
 comment on operator family "public"."seg_ops" using btree is
 'operator family for seg_ops';
 
+create operator family seg_ops3 using btree;
+alter operator family seg_ops3 using btree add operator 1 <(seg, seg);
+alter operator family seg_ops3 using btree add function 1 seg_cmp(seg, seg);
+
+comment on operator family seg_ops3 using btree is 
+'operator family seg_ops3';
+
+
+create operator family seg_ops4 using btree;
+alter operator family seg_ops4 using btree add operator 1 <(seg, seg);
+alter operator family seg_ops4 using btree add operator 2 <=(seg, seg);
+alter operator family seg_ops4 using btree add function 1 seg_cmp(seg, seg);
+alter operator family seg_ops4 using btree owner to keep;
+
+comment on operator family seg_ops4 using btree is 
+'operator family seg_ops4';
+
 
 EOF

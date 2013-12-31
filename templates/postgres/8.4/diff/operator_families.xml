@@ -13,6 +13,22 @@
 	<dependency pqn="grant.cluster.{old.owner}.{new.owner}"/>
       </dependency-set>
     </attribute>
+    <attribute name="method" rebuild="true"/>
+    <attribute name="auto_generated" rebuild="true"/>
+
+    <element type="opfamily_operator" key="strategy">
+      <attribute name="name"/>
+      <attribute name="schema"/>
+      <element type="arg" key="position">
+	<attribute name="name"/>
+	<attribute name="schema"/>
+      </element>
+    </element>
+
+    <element type="opfamily_function" key="proc_num">
+      <attribute name="fqn"/>
+    </element>
+
     <element type="comment">
       <text/>
     </element>

@@ -93,7 +93,7 @@
 	      <xsl:value-of select="'null'"/>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <xsl:value-of select="comment/text()"/>
+	      <xsl:value-of select="concat('&#x0A;', comment/text())"/>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	</xsl:with-param>
@@ -104,7 +104,7 @@
   <xsl:template match="comment">
     <xsl:call-template name="comment">
       <xsl:with-param name="objnode" select=".."/>
-      <xsl:with-param name="text" select="./text()"/>
+      <xsl:with-param name="text" select="concat('&#x0A;', ./text())"/>
     </xsl:call-template>
   </xsl:template>
 

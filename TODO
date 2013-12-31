@@ -1,7 +1,4 @@
 
-finish operator_family stuff for regression_test1:
-  - diffs
-
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
     conversions		yes
@@ -89,7 +86,6 @@ docs:
     doxygen
     developers guide
 
-8.4 changes
 9.0 changes
 9.1 changes
 9.2 changes

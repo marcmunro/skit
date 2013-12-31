@@ -14,13 +14,30 @@
 			  ancestor::database/@name, '.', 
 			  @schema, '.', @name, 
 			  '(', @method, ')')"/>
+    <xsl:variable name="owner" select="@owner"/>
+    <!-- If the owner of the operator family is a superuser, this gets
+	 set to "superuser". -->
+    <xsl:variable name="owner_is_superuser"
+		  select="//cluster/role[@name=$owner]/privilege[@priv='superuser']/@priv"/>
     <dbobject type="operator_family" fqn="{$operator_family_fqn}"
 	      name="{@name}" qname="{skit:dbquote(@schema,@name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
+	      parent="{concat(name(..), '.', $parent_core)}"
+	      owner_is_superuser="{$owner_is_superuser}">
+
+      <!-- Operator Families must be created by superusers, so the
+           context stuff here is tricky.  -->
+      <xsl:choose>
+	<xsl:when test="$owner_is_superuser='superuser'">
+	  <xsl:if test="@owner">
+	    <context name="owner" value="{@owner}" 
+		     default="{//cluster/@username}"/>	
+	  </xsl:if>
+	</xsl:when>
+	<xsl:otherwise>
+	    <context name="owner" value="{//cluster/@username}" 
+		     default="{//cluster/@username}"/>	
+	</xsl:otherwise>
+      </xsl:choose>
       <dependencies>
 	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<!-- owner -->
@@ -37,7 +54,20 @@
 	</xsl:for-each>
 
 	<xsl:call-template name="SchemaGrant"/>
+
+        <!-- Depend on someone being a superuser - either owner or
+	     the current user (or rather the one that ran the extract). --> 
+	<dependency-set
+	    fallback="{concat('privilege.cluster.', 
+		              //cluster/@username, '.superuser')}"
+	    parent="ancestor::dbobject[database]">
+	  <dependency fqn="{concat('privilege.cluster.', 
+		                   //cluster/@username, '.superuser')}"/>
+	  <dependency fqn="{concat('privilege.cluster.', 
+			           $owner, '.superuser')}"/>
+	</dependency-set>
       </dependencies>
+
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>

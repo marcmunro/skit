@@ -6,24 +6,37 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template name="operator_defn">
+  <xsl:template name="operator_params_defn">
     <xsl:value-of 
-	select="concat('operator ', @strategy, ' ',
-		       skit:dbquote(@schema), '.', @name, '(',
+	select="concat('(',
                        skit:dbquote(arg[@position='left']/@schema,
                                     arg[@position='left']/@name), ',',
                        skit:dbquote(arg[@position='right']/@schema,
                                     arg[@position='right']/@name), ')')"/> 
+    
+  </xsl:template>
+
+  <xsl:template name="operator_defn">
+    <xsl:value-of 
+	select="concat('operator ', @strategy, ' ',
+		       skit:dbquote(@schema), '.', @name)"/>
+    <xsl:call-template name="operator_params_defn"/>
+  </xsl:template>
+
+  <xsl:template name="function_params_defn">
+    <xsl:value-of 
+	select="concat('(',
+	               skit:dbquote(params/param[@position='1']/@schema,
+		                    params/param[@position='1']/@type), ',',
+		       skit:dbquote(params/param[@position='2']/@schema,
+		                    params/param[@position='2']/@type), ')')"/>
   </xsl:template>
 
   <xsl:template name="function_defn">
     <xsl:value-of 
 	select="concat('function ', @proc_num, ' ',
-		       skit:dbquote(@schema,@name), '(',
-	               skit:dbquote(params/param[@position='1']/@schema,
-		                    params/param[@position='1']/@type), ',',
-		       skit:dbquote(params/param[@position='2']/@schema,
-		                    params/param[@position='2']/@type), ')')"/>
+		       skit:dbquote(@schema,@name))"/>
+    <xsl:call-template name="function_params_defn"/>
   </xsl:template>
 
   <xsl:template match="dbobject/operator_class">
