@@ -634,6 +634,28 @@ comment on column "public"."vv3_t".name is
 'name column';
 
 
+-- Domains
+create domain "public"."postal3"
+  as "public"."mychar"
+  default 'x'::mychar not null;
+
+comment on domain "public"."postal3" is
+'wibble';
+
+create domain "public"."postal4"
+  as "public"."mychar"
+  default 'z'::mychar not null;
+
+create domain "public"."postal5"
+  as "public"."mychar"
+  default 'q'::mychar null;
+
+
+
+create domain "public"."us_postal_code"
+  as "pg_catalog"."text"
+  CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
+
 
 
 EOF

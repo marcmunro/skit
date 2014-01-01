@@ -662,6 +662,31 @@ comment on column "public"."vv3_t".name is
 'name column updated';
 
 
+-- Domains
+create domain "public"."postal3"
+  as "public"."mychar"
+  default 'x'::mychar not null;
+
+comment on domain "public"."postal3" is
+'wibbly';
+
+alter domain public.postal3 owner to keep;
+
+create domain "public"."postal4"
+  as "public"."mychar"
+  default 'z'::mychar null;
+
+create domain "public"."postal5"
+  as "public"."mychar"
+  default 'z'::mychar null;
+
+
+
+-- Incorrect regexp below
+create domain "public"."us_postal_code"
+  as "pg_catalog"."text"
+  CHECK (((VALUE ~ E'^\\d{3}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
+
 
 EOF
  

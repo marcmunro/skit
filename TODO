@@ -1,3 +1,7 @@
+Add test for domains to:
+ - drop constraint 
+ - drop default
+ - use a constraint name that must be quoted
 
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.
@@ -37,7 +41,7 @@ in a manner consistent with conversions?
     operator_families	yes
     basetypes		yes
     composite types	yes
-    domains		TODO
+    domains		yes
     sequences		TODO
     tables		TODO
     views		TODO
@@ -51,7 +55,6 @@ Do the concat thing for objects below as in done in generate for
 schemata (in ddl)
 
 diffs:
-    domains (including the concat thing)
     sequences (including the concat thing)
     tables (including the concat thing)
     constraints (including the concat thing)
