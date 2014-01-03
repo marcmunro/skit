@@ -762,8 +762,8 @@ START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
 		    "regress/scratch/regressdb_dump3b.xml", 
-		    "regress/scratch/regressdb_dump3a.xml", 
-		    "--generate", "--debug", "--full", "--xxxx"};
+		    "regress/scratch/regressdb_dump3a.xml"
+                    };
     Document *doc;
 
     initTemplatePath(".");

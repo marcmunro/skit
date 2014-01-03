@@ -633,6 +633,14 @@ create type "public"."vv3_t" as (
 comment on column "public"."vv3_t".name is
 'name column';
 
+create type "public"."vv4_t" as (
+  "name"   "pg_catalog"."text",
+  "type"   "pg_catalog"."text"
+);
+
+comment on column "public"."vv4_t".name is
+'name column';
+
 
 -- Domains
 create domain "public"."postal3"
@@ -650,12 +658,20 @@ create domain "public"."postal5"
   as "public"."mychar"
   default 'q'::mychar null;
 
+create domain "public"."postal6"
+  as "public"."mychar"
+  default 'x'::mychar not null;
+
 
 
 create domain "public"."us_postal_code"
   as "pg_catalog"."text"
+  constraint "MyConstraintName_Ugh"
   CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
 
+create domain "public"."us_postal_code2"
+  as "pg_catalog"."text"
+  CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
 
 
 EOF

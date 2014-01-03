@@ -1,7 +1,5 @@
-Add test for domains to:
- - drop constraint 
- - drop default
- - use a constraint name that must be quoted
+Think about what to do for automatically named constraints
+
 
 Check that acls are handled properly (returning null if that's what they
   contain, in all of the sql files.

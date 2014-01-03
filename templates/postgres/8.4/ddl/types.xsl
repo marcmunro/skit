@@ -142,6 +142,23 @@
     <xsl:if test="../@action='diffcomplete'">
       <print>
 	<xsl:call-template name="feedback"/>
+	<!-- The only possible diff is that of a column comment -->
+	<xsl:for-each select="../element/element[@type='comment']">
+	  <xsl:value-of select="concat('comment on column ', 
+	                                ../../@qname, '.',
+					skit:dbquote(../column/@name),
+					' is')"/>
+	  <xsl:choose>
+	    <xsl:when test="@status='gone'">
+	      <xsl:text> null;&#x0A;</xsl:text>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:value-of select="concat('&#x0A;', comment/text(),
+				           ';&#x0A;')"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:for-each>
+
 	<xsl:call-template name="commentdiff"/>
       </print>
     </xsl:if>

@@ -98,12 +98,14 @@
 	  <xsl:for-each select="../element[@type='constraint']">
 	    <xsl:value-of
 		select="concat('alter domain ', ../@qname,
-			       ' drop constraint ', constraint/@name,
+			       ' drop constraint ', 
+			       skit:dbquote(constraint/@name),
 			       ';&#x0A;')"/>
 	    <xsl:if test="@status!='gone'">
 	      <xsl:value-of
 		  select="concat('alter domain ', ../@qname,
-			         ' add constraint ', constraint/@name,
+			         ' add constraint ', 
+				 skit:dbquote(constraint/@name),
 				 '&#x0A;  ', 
 				 constraint/source/text(),
 				 ';&#x0A;')"/>
