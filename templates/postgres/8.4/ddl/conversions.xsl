@@ -25,7 +25,6 @@
 			   ';&#x0A;')"/>
 
 	<xsl:apply-templates/>  <!-- Deal with comments -->
-
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
@@ -44,12 +43,10 @@
       <xsl:if test="../attribute[@name='owner']">
 	<print>
 	  <xsl:call-template name="feedback"/>
-	  <xsl:for-each select="../attribute">
-	    <xsl:if test="@name='owner'">
-	      <xsl:value-of 
-		  select="concat('alter conversion ', ../@qname,
-			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-	    </xsl:if>
+	  <xsl:for-each select="../attribute[@name='owner']">
+	    <xsl:value-of 
+		select="concat('alter conversion ', ../@qname,
+			       ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
 	  </xsl:for-each>
 	</print>
       </xsl:if>

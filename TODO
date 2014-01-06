@@ -1,31 +1,53 @@
+Short term plan:
+Abandon sequence work for now and instead do some major refactoring of
+the xsl side of things, particularly ddl and deps.  The aim is to
+considerably reduce the amount of duplicated code (almost all dbobject
+handling has the same template but it is not templated.
+
+1) comment out the sequence diff tests
+2) finish all acl handling changes (to reduce the amount of queued work
+in this list
+3) refactor repeatedly
+4) return to sequence issues <BELOW>.
+
+
+
+
+
+---BELOW------------------------------------------------------------------
+
 Think about what to do for automatically named constraints
 
+Currently stymied on a sequence issue:
 
-Check that acls are handled properly (returning null if that's what they
-  contain, in all of the sql files.
-    conversions		yes
-    schemata		yes
-    cluster		n/a
-    database		yes
-    types		n/a
-    functions		yes
-    domains		n/a
-    casts		n/a
-    operators		n/a
-    operator_classes	n/a
-    operator_families	n/a
-    aggregates		n/a
-    sequences		TODO
-    tables		TODO
-    views		TODO
-    constraints		TODO
-    rules		TODO
-    triggers		TODO
-    indices		TODO
+1) It seems that the owner cannot modify the current value of the
+sequence if they do not have update privilege on the sequence (and
+possibly usage on the schema).  Note that this may be a postgresql bug
+and should be checked, and reported if so.
+
+2) When we change the owner of an object we manually revoke the
+automatically granted privileges and then manually recreate them for the
+new owner.  If we did not do this, 1 would be less of a problem.  One
+possibility is to handle automated privileges specially - this needs
+some thought but would probably be a good thing.
+
+3) Even if doing 2 solves the current issue of 1, there will be other
+special cases of 1 (when the privileges have been manually revoked) and
+so a fallback will be needed.
+
+POSSIBLE SOLUTION: for 2 at least, which will solve most instances of
+1.  For automatic grants to and from the same role, eliminate the role
+name parts of the fqn.  This will mean that no difference is seen for
+automatic grants when ownership of an object changes.  I'm not sure what
+the consequence will be of the pqn changing though - that needs to be
+thought through.
 
 
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
+
+[ This may cease to be an issue after refactoring of the xsl? ]
+
     conversions		yes
     schemata		yes
     cluster		n/a
@@ -49,7 +71,7 @@ in a manner consistent with conversions?
     indices		TODO
 
 
-Do the concat thing for objects below as in done in generate for
+Do the concat thing for objects below as is done in generate for
 schemata (in ddl)
 
 diffs:

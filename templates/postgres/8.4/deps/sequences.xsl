@@ -29,6 +29,7 @@
 	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
 	</xsl:if>
 	<xsl:call-template name="SchemaGrant"/>
+
       </dependencies>
       <xsl:copy>
 	<xsl:copy-of select="@*"/>

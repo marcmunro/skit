@@ -674,4 +674,15 @@ create domain "public"."us_postal_code2"
   CHECK (((VALUE ~ E'^\\d{4}$'::text) OR (VALUE ~ E'^\\d{5}-\\d{4}$'::text)));
 
 
+-- Sequences
+/*
+create sequence "public"."thingy_id_seq"
+  start with 1 increment by 1
+  minvalue 1 maxvalue 9223372036854775807
+  cache 1;
+
+comment on sequence "public"."thingy_id_seq" is
+'thingy';
+*/
+
 EOF

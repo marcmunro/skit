@@ -6,13 +6,7 @@ select c.oid::oid as oid,
        r.rolname as owner,
        case when t.spcname is null then td.spcname
        else t.spcname end as tablespace, 
-       -- Explicitly show default privs if they are not given.
-       -- Defaults are select, insert, update, delete, truncate,
-       -- references and trigger to owner.
-       case when c.relacl is null 
-       then '{' || r.rolname || 
-              '=arwdDxt/' || r.rolname || '}'
-       else c.relacl::text end as privs,
+       c.relacl::text as privs,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
 from   pg_catalog.pg_class c
     inner join pg_catalog.pg_database d

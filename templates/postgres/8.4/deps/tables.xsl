@@ -9,7 +9,7 @@
   <!-- Schema grant dependencies -->
   <xsl:template name="SchemaGrant">
     <xsl:param name="owner" select="@owner"/>
-    <!-- Dependency on schema usage grant to owner, public or self -->
+    <!-- Dependency on schema create grant to owner, public or self -->
     <dependency-set 
 	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]"
@@ -24,6 +24,7 @@
 	<dependency fqn="{concat('privilege.cluster.', $owner, '.superuser')}"/>
       </xsl:if>
     </dependency-set>
+    <!-- Dependency on schema create grant to owner, public or self -->
     <dependency-set 
 	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]"
