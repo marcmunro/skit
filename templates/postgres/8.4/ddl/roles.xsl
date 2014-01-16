@@ -11,7 +11,7 @@
       <print>
 	<xsl:call-template name="feedback"/>
         <xsl:value-of 
-	    select="concat('create role ', ../@qname)"/>
+	    select="concat('&#x0A;create role ', ../@qname)"/>
 	<xsl:choose>
 	  <xsl:when test="@login = 'y'">
             <xsl:text> with login;&#x0A;</xsl:text>
@@ -20,8 +20,13 @@
             <xsl:text> with nologin;&#x0A;</xsl:text>
 	  </xsl:otherwise>
 	</xsl:choose>
+	<xsl:if test="(@password != '') or (@max_connections != '-1') or
+		      (@expires != '') or not(privilege/@priv='inherit') or
+		      privilege or profile or config">
+	  <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
+
 	<xsl:if test="@password != ''">
-          <xsl:text></xsl:text>
           <xsl:value-of 
 	      select="concat('alter role ', ../@qname,
 		             ' password ', $apos,
@@ -34,7 +39,6 @@
 			     ';&#x0A;')"/>
 	</xsl:if>
 	<xsl:if test="@expires != ''">
-          <xsl:text></xsl:text>
           <xsl:value-of 
 	      select="concat('alter role ', ../@qname,
 		             ' valid until ', $apos,
@@ -48,14 +52,12 @@
 	</xsl:if>	
 
 	<xsl:for-each select="privilege">
-	  <xsl:text></xsl:text>
 	  <xsl:value-of 
 	      select="concat('alter role ', ../../@qname,
 		      ' with ', @priv, ';&#x0A;')"/>
 	</xsl:for-each>
 
 	<xsl:for-each select="config">
-          <xsl:text></xsl:text>
           <xsl:value-of 
 	      select="concat('alter role ', ../../@qname,
 		             ' set ', @type, ' = ', @value, ';&#x0A;')"/>

@@ -6,7 +6,9 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Operator families -->
+  <!-- Operator families - because they must be created by superusers, 
+       we have enough special cases that the default dbobject mechanism
+       is not used.  -->
   <xsl:template match="operator_family">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="operator_family_fqn" 

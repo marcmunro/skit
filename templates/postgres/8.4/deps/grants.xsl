@@ -14,62 +14,52 @@
        Because the dependencies on a grantor may potentially be
        satisfied by a number of grants, these dependencies are specified
        in terms of pqn (partially qualified name) rather than fqn (fully
-       qualified name). --> 
- <xsl:template match="role/grant">
+       qualified name).  --> 
+  <xsl:template match="role/grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="grant_name" select="concat($parent_core, '.', @priv)"/>
-    <xsl:variable name="grantor" select="@from"/>
-    <dbobject type="grant" subtype="role" name="{concat(@priv, ':', @to)}"
-	      pqn="{concat('grant.', $grant_name)}"
-	      fqn="{concat('grant.', $grant_name, ':', @from)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
 
-      <context name="owner" value="{@from}" 
-	       default="{//cluster/@username}"/>	
-      <dependencies>
-	<!-- Dependencies on roles from, to and priv -->
-	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
-	<dependency fqn="{concat('role.cluster.', @priv)}"/>
-	<dependency fqn="{concat('role.cluster.', @from)}"/>
-	<dependency fqn="{concat('role.', $parent_core)}"/>
-
-	<!-- Dependencies on previous grant. -->
-	<xsl:choose>
-	  <xsl:when test="@from=@priv">
-	    <!-- No dependency if the role is granted from the role -->
-	  </xsl:when>
-	  <xsl:when 
-	     test="../../role[@name=$grantor]/privilege[@priv='superuser']">
-	    <!-- No dependency if the role is granted from a superuser -->
-	  </xsl:when>
-	  <xsl:otherwise>  
-	    <dependency pqn="{concat('grant.cluster.', @from, '.', @priv)}"/>
-	  </xsl:otherwise>
-	</xsl:choose>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" select="@name"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="subtype" select="'role'"/>
+      <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
+      <xsl:with-param name="owner" select="@from"/>
+      <xsl:with-param name="pqn" select="concat('grant.cluster.', 
+					        @to, '.', @priv)"/>
+      <xsl:with-param name="fqn" select="concat('grant.cluster.', 
+					        @to, '.', @priv, ':', @from)"/>
+    </xsl:apply-templates>
   </xsl:template>
+
+  <xsl:template match="role/grant" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
+    <dependency fqn="{concat(name(..), '.', $parent_core)}"/>
+    <dependency fqn="{concat('role.cluster.', @priv)}"/>
+    <dependency fqn="{concat('role.cluster.', @from)}"/>
+    <dependency fqn="{concat('role.', $parent_core)}"/>
+
+    <!-- Dependencies on previous grant. -->
+    <xsl:choose>
+      <xsl:when test="@from=@priv">
+	<!-- No dependency if the role is granted from the role -->
+      </xsl:when>
+      <xsl:when 
+	  test="../../role[@name=@from]/privilege[@priv='superuser']">
+	<!-- No dependency if the role is granted from a superuser -->
+      </xsl:when>
+      <xsl:otherwise>  
+	<dependency pqn="{concat('grant.cluster.', @from, '.', @priv)}"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
 
   <xsl:template match="grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="grant_name" select="concat($parent_core, '.', 
-					    @priv, ':', @to)"/>
-    <xsl:variable name="grantor" select="@from"/>
-    <!-- The owner attribute is needed when a grant is being done/revoked
-	 from the owner and the owner has changed (in a diff). --> 
-    <dbobject type="grant" 
-	      parent="{concat(name(..), '.', $parent_core)}"
-	      name="{concat(@priv, ':', @to)}"
-	      pqn="{concat('grant.', $grant_name)}"
-	      fqn="{concat('grant.', $grant_name, ':', @from)}"
-	      owner="{../@owner}">
-      <xsl:attribute name="subtype">
+
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="subtype">
 	<xsl:choose>
 	  <xsl:when test="name(..)='sequence'">
 	    <xsl:value-of select="'table'"/>
@@ -78,8 +68,8 @@
 	    <xsl:value-of select="name(..)"/>
 	  </xsl:otherwise>
 	</xsl:choose>
-      </xsl:attribute>
-      <xsl:attribute name="on">
+      </xsl:with-param>
+      <xsl:with-param name="on">
 	<xsl:choose>
 	  <xsl:when test="name(..)='function'">
 	    <xsl:for-each select="..">
@@ -93,13 +83,19 @@
 	    <xsl:value-of select="skit:dbquote(../@name)"/>
 	  </xsl:otherwise>
 	</xsl:choose>	
-      </xsl:attribute>
+      </xsl:with-param>
+      <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
+      <xsl:with-param name="owner" select="../@owner"/>
+      <xsl:with-param name="pqn" select="concat('grant.', $parent_core, '.',
+					        @priv, ':', @to)"/>
+      <xsl:with-param name="fqn" select="concat('grant.', $parent_core,  '.',
+					        @priv, ':', @to, ':', @from)"/>
+    </xsl:apply-templates>
+  </xsl:template>
 
-      <xsl:if test="@from">
-	<context name="owner" value="{@from}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
-      <dependencies>
+  <xsl:template match="grant" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
 	<dependency fqn="{concat(name(..), '.', $parent_core)}"/>
 	<!-- Roles -->
 	<xsl:if test="@to != 'public'">
@@ -160,15 +156,6 @@
 				    '.',
 				    parent::function/handler-for-type/@name)}"/>
 	</xsl:if>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" select="@name"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
   </xsl:template>
-
 </xsl:stylesheet>
 

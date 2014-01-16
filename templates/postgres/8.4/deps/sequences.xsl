@@ -9,36 +9,19 @@
   <!-- Sequences -->
   <xsl:template match="sequence">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="sequence_fqn" 
-		  select="concat('sequence.', 
-			  ancestor::database/@name, '.', 
-			  ancestor::schema/@name, '.', @name)"/>
-    <dbobject type="sequence" fqn="{$sequence_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@schema,@name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
-      <dependencies>
-	<dependency fqn="{concat('schema.', $parent_core)}"/>
-	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
-	</xsl:if>
-	<xsl:if test="@tablespace">
-	  <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
-	</xsl:if>
-	<xsl:call-template name="SchemaGrant"/>
 
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+    </xsl:apply-templates>
+  </xsl:template>
+
+  <xsl:template match="sequence" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
+    <dependency fqn="{concat('schema.', $parent_core)}"/>
+    <xsl:if test="@tablespace">
+      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

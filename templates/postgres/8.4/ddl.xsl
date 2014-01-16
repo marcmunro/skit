@@ -6,7 +6,7 @@
   extension-element-prefixes="skit"
   version="1.0">
 
-  <xsl:variable name="apos">&apos;</xsl:variable>
+  <xsl:include href="skitfile:common_defs.xsl"/>
 
   <!-- Anything not matched explicitly will match this and be copied 
        This handles dbobject, dependencies, etc -->
@@ -17,21 +17,17 @@
     </xsl:copy>
   </xsl:template>
 
-  <!-- Prevent column objects, which themselves may contain comments, 
-       from confusing the comment handling code. -->
-  <xsl:template match="column"/>
-
-  <!-- Ditto for elements (the comment handling could probably use 
-       some refactoring). -->
-  <xsl:template match="element"/>
-
   <!-- Don't do anything with text nodes matched by calls to
-       apply-templates -->
+       apply-templates - text nodes must be copied explicitly as and
+       when needed.  -->
   <xsl:template match="text()"/>
+  <xsl:template match="text()" mode="diffcomplete"/>
+  <xsl:template match="text()" mode="diffprep"/>
+  <xsl:template match="text()" mode="build"/>
+  <xsl:template match="text()" mode="drop"/>
 
   <!-- Template for getting object signatures preceded by the object
        type name.  -->
-
   <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
     <xsl:choose>
@@ -46,7 +42,8 @@
     </xsl:choose>
 
     <xsl:choose>
-      <xsl:when test="(name($objnode) = 'constraint') or (name($objnode) = 'trigger')">
+      <xsl:when test="(name($objnode) = 'constraint') or 
+                      (name($objnode) = 'trigger')">
 	<xsl:value-of 
 	    select="concat(skit:dbquote($objnode/@name), ' on ',
 		           $objnode/../@table_qname)"/>
@@ -78,12 +75,15 @@
 	<xsl:value-of select="$sig"/>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="concat(' is ', $text, ';&#x0A;&#x0A;')"/>
+    <xsl:value-of select="concat(' is ', $text, ';&#x0A;')"/>
   </xsl:template>
 
   <xsl:template name="commentdiff">
     <xsl:param name="sig" select="''"/>
     <xsl:for-each select="../element[@type='comment']">
+      <!-- If comments exist, this conditional print section must be
+           enabled.  -->
+      <do-print/>  
       <xsl:call-template name="comment">
 	<xsl:with-param name="objnode" select="../*[name() = ../@type]"/>
 	<xsl:with-param name="sig" select="$sig"/>
@@ -101,7 +101,8 @@
     </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="comment">
+  <!-- Handle comments as found directly in a dbobject definition.  -->
+  <xsl:template match="dbobject/*[name(.)!='element']/comment">
     <xsl:call-template name="comment">
       <xsl:with-param name="objnode" select=".."/>
       <xsl:with-param name="text" select="concat('&#x0A;', ./text())"/>
@@ -116,7 +117,7 @@
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@owner != //cluster/@username">
 	<xsl:value-of 
-	    select="concat('set session authorization ', $apos, 
+	    select="concat('&#x0A;set session authorization ', $apos, 
 		           @owner, $apos, ';&#x0A;')"/>
       </xsl:if>
     </xsl:if>
@@ -134,7 +135,7 @@
     <xsl:if test="skit:eval('ignore-contexts') = 't'">
       <xsl:if test="@from != //cluster/@username">
 	<xsl:value-of 
-	    select="concat('set session authorization ', $apos, 
+	    select="concat('&#x0A;set session authorization ', $apos, 
 		           @from, $apos, ';&#x0A;')"/>
       </xsl:if>
     </xsl:if>
@@ -148,9 +149,64 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:template name="dbobject">
+    <xsl:element name="print">
+      <!-- diffprep and diffcomplete actions may not actually result in
+           code being created.  Such printable sections are therefor
+	   made conditional.  To enable printing of such conditional
+	   print nodes, a <do-print/> element should be added.  This
+	   conditionality is handled by navigation.xsl -->
+      <xsl:if test="(../@action = 'diffcomplete') or 
+		    (../@action = 'diffprep')">
+	<xsl:attribute name="conditional">yes</xsl:attribute>
+      </xsl:if>
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+
+      <xsl:choose>
+	<xsl:when test="../@action='build'">
+	  <xsl:apply-templates select="." mode="build"/>
+	  <xsl:apply-templates/>   <!-- Deal with comments -->
+	</xsl:when>
+	<xsl:when test="../@action='drop'">
+	  <xsl:apply-templates select="." mode="drop"/>
+	</xsl:when>
+	<xsl:when test="../@action='diffprep'">
+	  <xsl:apply-templates select="." mode="diffprep"/>
+	</xsl:when>
+	<xsl:when test="../@action='diffcomplete'">
+	  <xsl:apply-templates select="." mode="diffcomplete"/>
+	  <xsl:call-template name="commentdiff"/>
+	</xsl:when>
+      </xsl:choose>
+
+      <xsl:call-template name="reset_owner"/>
+    </xsl:element>
+  </xsl:template>
+
+  <!-- This is the default dbobject handling template.  Any explicitly
+       matched template (eg for match="dbobject/cluster" will have a
+       higher priority and so take precedence.  Hence this template only
+       applies when no other has been specified.  -->
+  <xsl:template match="dbobject/*[name(.)=../@type and
+		                  ../@action != 'exists']" priority="-0.5">
+    <xsl:call-template name="dbobject"/>
+  </xsl:template>
+
+  <!-- Special case for viewbase dbobject -->
+  <xsl:template 
+      match="dbobject[@type='viewbase' and @action != 'exists']/view"
+      priority="-0.5">
+    <xsl:call-template name="dbobject"/>
+  </xsl:template>
+
+  <!-- The following objects must not be handled by the template
+       above, and do not elsewhere have their own explicit templates.  -->
+  <xsl:template match="dbobject/privilege"/>
+  <xsl:template match="dbobject/column"/>
+
   <xsl:include href="skitfile:ddl/feedback.xsl"/>
 
-  <xsl:include href="skitfile:ddl/owner.xsl"/>
   <xsl:include href="skitfile:ddl/cluster.xsl"/>
   <xsl:include href="skitfile:ddl/database.xsl"/>
   <xsl:include href="skitfile:ddl/tablespace.xsl"/>

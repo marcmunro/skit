@@ -30,51 +30,36 @@
   <!-- Operator classes -->
   <xsl:template match="operator_class">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="operator_class_fqn" 
-		  select="concat('operator_class.', 
-			  ancestor::database/@name, '.', 
-			  @schema, '.', @name, '(',
-			  @method, ')')"/>
-    <dbobject type="operator_class" fqn="{$operator_class_fqn}"
-	      name="{@name}" qname="{skit:dbquote(@schema, @name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
-      <dependencies>
-	<dependency fqn="{concat('schema.', $parent_core)}"/>
-	<!-- owner -->
-	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
-	</xsl:if>
 
-	<!-- operator family -->
-	<dependency fqn="{concat('operator_family.', 
-			  ancestor::database/@name, '.', 
-			  @family_schema, '.', @family, '(',
-			  @method, ')')}"/>
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="fqn"
+		      select="concat('operator_class.', 
+			             ancestor::database/@name, '.', 
+				     @schema, '.', @name, '(',
+				     @method, ')')"/>
+    </xsl:apply-templates>
+  </xsl:template>
 
-	<!-- types will be a dependency of operators, etc -->
+  <xsl:template match="operator_class" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
-	<xsl:for-each select="opclass_operator">
-	  <xsl:call-template name="operator_dep"/>
-	</xsl:for-each>
+    <dependency fqn="{concat('schema.', $parent_core)}"/>
 
-	<xsl:for-each select="opclass_function">
-	  <xsl:call-template name="operator_function_dep"/>
-	</xsl:for-each>
+    <!-- operator family -->
+    <dependency fqn="{concat('operator_family.', 
+		             ancestor::database/@name, '.', 
+			     @family_schema, '.', @family, '(',
+			     @method, ')')}"/>
 
-	<xsl:call-template name="SchemaGrant"/>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @signature)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+    <!-- types will be a dependency of operators, etc -->
+    <xsl:for-each select="opclass_operator">
+      <xsl:call-template name="operator_dep"/>
+    </xsl:for-each>
+
+    <xsl:for-each select="opclass_function">
+      <xsl:call-template name="operator_function_dep"/>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
 

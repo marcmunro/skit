@@ -6,13 +6,15 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="dbobject/type">
-    <xsl:if test="(../@action='build') and (@is_defined = 't')">
+  <!-- Cannot rely on standard dbobject template as this build action is
+       conditional.  -->
+  <xsl:template match="dbobject[@action='build']/type">
+    <xsl:if test="@is_defined = 't'">
       <print>
 	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
-        <xsl:value-of select="concat('create type ', ../@qname)"/>
+        <xsl:value-of select="concat('&#x0A;create type ', ../@qname)"/>
 	<xsl:choose>
 	  <xsl:when test="@subtype='enum'">
 	    <xsl:text> as enum (&#x0A;  </xsl:text>
@@ -105,64 +107,45 @@
 	</xsl:choose>
 
 	<xsl:apply-templates/>
-
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
+  </xsl:template>
 
-    <xsl:if test="../@action='drop'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-        <xsl:value-of select="concat('drop type ', ../@qname)"/>
-	<xsl:if test="@subtype='basetype'">
-	  <!-- Basetypes must be dropped using cascade to ensure that
-	       the input, output, etc functions are also dropped -->
-          <xsl:text> cascade</xsl:text>
-	</xsl:if>
-        <xsl:text>;&#x0A;</xsl:text>
-      </print>
+  <xsl:template match="type" mode="drop">
+    <xsl:value-of select="concat('&#x0A;drop type ', ../@qname)"/>
+    <xsl:if test="@subtype='basetype'">
+      <!-- Basetypes must be dropped using cascade to ensure that
+	   the input, output, etc functions are also dropped -->
+      <xsl:text> cascade</xsl:text>
     </xsl:if>
+    <xsl:text>;&#x0A;</xsl:text>
+  </xsl:template>
 
-    <xsl:if test="../@action='diffprep'">
-      <xsl:if test="../attribute[@name='owner']">
-	<print>
-	  <xsl:call-template name="feedback"/>
-	  <xsl:for-each select="../attribute">
-	    <xsl:if test="@name='owner'">
-	      <xsl:value-of 
-		  select="concat('alter type ', ../@qname,
-			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-	    </xsl:if>
-	  </xsl:for-each>
-	</print>
-      </xsl:if>
-    </xsl:if>
+  <xsl:template match="type" mode="diffprep">
+    <xsl:for-each select="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('&#x0A;alter type ', ../@qname,
+		         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+    </xsl:for-each>
+  </xsl:template>
 
-    <xsl:if test="../@action='diffcomplete'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<!-- The only possible diff is that of a column comment -->
-	<xsl:for-each select="../element/element[@type='comment']">
-	  <xsl:value-of select="concat('comment on column ', 
-	                                ../../@qname, '.',
-					skit:dbquote(../column/@name),
-					' is')"/>
-	  <xsl:choose>
-	    <xsl:when test="@status='gone'">
-	      <xsl:text> null;&#x0A;</xsl:text>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <xsl:value-of select="concat('&#x0A;', comment/text(),
-				           ';&#x0A;')"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	</xsl:for-each>
-
-	<xsl:call-template name="commentdiff"/>
-      </print>
-    </xsl:if>
-
+  <xsl:template match="type" mode="diffcomplete">
+    <!-- The only possible diff is that of a column comment -->
+    <xsl:for-each select="../element/element[@type='comment']">
+      <do-print/>
+      <xsl:value-of select="concat('&#x0A;comment on column ', 
+			           ../../@qname, '.',
+				   skit:dbquote(../column/@name), ' is')"/>
+      <xsl:choose>
+	<xsl:when test="@status='gone'">
+	  <xsl:text> null;&#x0A;</xsl:text>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="concat('&#x0A;', comment/text(), ';&#x0A;')"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
-

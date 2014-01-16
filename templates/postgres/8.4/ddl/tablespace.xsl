@@ -11,12 +11,12 @@
       <print>
 	<xsl:call-template name="feedback"/>
 	<xsl:if test="@location=''">
-	  <xsl:text>/* This is a default tablespace.  We </xsl:text>
+	  <xsl:text>&#x0A;/* This is a default tablespace.  We </xsl:text>
 	  <xsl:text>cannot and should not attempt</xsl:text>
-	  <xsl:text>&#x0A;   to create it.&#x0A;</xsl:text>
+	  <xsl:text>&#x0A;   to create it.</xsl:text>
 	</xsl:if>
         <xsl:value-of 
-	    select="concat('create tablespace ', ../@qname,
+	    select="concat('&#x0A;create tablespace ', ../@qname,
 		           ' owner ', skit:dbquote(@owner),
 			   '&#x0A;  location ', $apos,
 			   @location, $apos, ';&#x0A;')"/>

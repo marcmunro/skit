@@ -734,7 +734,7 @@ START_TEST(generate)
     char *args[] = {"./skit", "--generate", "--build", 
 		    //"x",
 		    "regress/scratch/regressdb_dump1a.xml",
-		    "--print", "--full"};
+		    "--debug", "--print", "--full"};
 
     initTemplatePath(".");
     //showFree(3549);
@@ -742,6 +742,34 @@ START_TEST(generate)
 
     BEGIN {
 	process_args2(4, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+//#endif
+
+//#ifdef unused
+START_TEST(deps2)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    "regress/scratch/regressdb_dump1a.xml",
+		    "--print", "--full"};
+
+    initTemplatePath(".");
+    //showFree(3549);
+    //showMalloc(4283);
+
+    BEGIN {
+	process_args2(5, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -991,7 +1019,7 @@ params_suite(void)
     // Populate the regression test database
     ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     ADD_TEST(tc_core, generate);   // during development of new db objects
-    //ADD_TEST(tc_core, deps2);
+    ADD_TEST(tc_core, deps2);
 
     // ??
     //ADD_TEST(tc_core, scatter);

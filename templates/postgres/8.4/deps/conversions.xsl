@@ -9,47 +9,27 @@
   <!-- conversions -->
   <xsl:template match="conversion">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="conversion_fqn" 
-		  select="concat('conversion.', $parent_core, '.', @name)"/>
-    <dbobject type="conversion" fqn="{$conversion_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@schema,@name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
-      <dependencies>
-	<dependency fqn="{concat('schema.', $parent_core)}"/>
-	<xsl:for-each select="depends[@function]">
-	  <xsl:choose>
-	    <xsl:when test="@cast">
-	      <dependency fqn="{concat('cast.', 
-			               ancestor::database/@name, 
-				       '.', @cast)}"/>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <dependency fqn="{concat('function.', 
-			                ancestor::database/@name, 
-					'.', @function)}"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	</xsl:for-each>
-	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
-	</xsl:if>
 
-	<xsl:call-template name="SchemaGrant"/>
-      </dependencies>
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+    </xsl:apply-templates>
+  </xsl:template>
 
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+  <xsl:template match="conversion" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
+    <dependency fqn="{concat('schema.', $parent_core)}"/>
+    <xsl:for-each select="depends[@function]">
+      <xsl:choose>
+	<xsl:when test="@cast">
+	  <dependency fqn="{concat('cast.', ancestor::database/@name, 
+				   '.', @cast)}"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <dependency fqn="{concat('function.', ancestor::database/@name, 
+				   '.', @function)}"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
-

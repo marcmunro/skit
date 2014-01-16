@@ -9,40 +9,29 @@
   <!-- triggers -->
   <xsl:template match="trigger">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="trigger_fqn" 
-		  select="concat('trigger.', $parent_core, '.', @name)"/>
-    <dbobject type="trigger" fqn="{$trigger_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@name)}"
-	      table_qname="{skit:dbquote(../@schema, ../@name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@function">
-	<xsl:variable name="schema_name" select="@schema"/>
-	<xsl:variable name="table_name" select="@table"/>
-	<xsl:variable name="table_owner" 
-		      select="//schema[@name=$schema_name]/table[@name=$table_name]/@owner"/>
-	<dependencies>
-	  <dependency fqn="{concat('table.', $parent_core)}"/>
-	  <dependency fqn="{concat('function.', 
-			            ancestor::database/@name, '.', 
-				    @function)}"/>
-	  <xsl:call-template name="SchemaGrant">
-	    <xsl:with-param name="owner" select="../@owner"/>
-	  </xsl:call-template>
-	  <xsl:call-template name="TableGrant">
-	    <xsl:with-param name="priv" select="'trigger'"/>
-	    <xsl:with-param name="owner" select="$table_owner"/>
-	  </xsl:call-template>
-	</dependencies>
-      </xsl:if>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
 
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="qname" select="skit:dbquote(@name)"/>
+      <xsl:with-param name="table_qname" 
+		      select="skit:dbquote(../@schema, ../@name)"/>
+      <xsl:with-param name="do_schema_grant" select="'no'"/>
+    </xsl:apply-templates>
+  </xsl:template>
+
+  <xsl:template match="trigger" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
+    <dependency fqn="{concat('table.', $parent_core)}"/>
+    <dependency fqn="{concat('function.', 
+		             ancestor::database/@name, '.', @function)}"/>
+    <xsl:call-template name="SchemaGrant">
+      <xsl:with-param name="owner" select="../@owner"/>
+    </xsl:call-template>
+    <xsl:call-template name="TableGrant">
+      <xsl:with-param name="priv" select="'trigger'"/>
+      <xsl:with-param name="owner" select="../@owner"/>
+    </xsl:call-template>
   </xsl:template>
 </xsl:stylesheet>
 

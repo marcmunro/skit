@@ -9,15 +9,26 @@
   <!-- Columns -->
   <xsl:template match="table/column">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="column_fqn" 
-		  select="concat('column.', 
-			  ancestor::database/@name, '.', 
-			  ancestor::schema/@name, '.', 
-			  ancestor::table/@name, '.', @name)"/>
-    <dbobject type="column" fqn="{$column_fqn}" name="{@name}"
-	      qname="{skit:dbquote(@name)}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <dependencies>
+
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+    </xsl:apply-templates>
+
+    <!-- Make a second copy of the column (outside of the dbobject
+	 element.  This is so that the table element will directly
+	 contain the columns. -->
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates>
+	<xsl:with-param name="parent_core" 
+			select="concat($parent_core, '.', @name)"/>
+      </xsl:apply-templates>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template match="table/column" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
 	<dependency fqn="{concat('schema.', 
 		          ancestor::database/@name, '.', 
 			  ancestor::schema/@name)}"/>
@@ -27,25 +38,6 @@
 			    ancestor::database/@name, '.', 
 			    @type_schema, '.', @type)}"/>
 	</xsl:if>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
-    <!-- Also create a copy of the column independently of the dbobject
-	 copy.   This allows columns to be processed either as part of
-	 the table dbobject, or directly as columns.  --> 
-    <xsl:copy>
-      <xsl:copy-of select="@*"/>
-      <xsl:apply-templates>
-	<xsl:with-param name="parent_core" 
-			select="concat($parent_core, '.', @name)"/>
-      </xsl:apply-templates>
-    </xsl:copy>
   </xsl:template>
 </xsl:stylesheet>
 

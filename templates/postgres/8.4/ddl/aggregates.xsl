@@ -22,73 +22,45 @@
     <xsl:text>)</xsl:text>
   </xsl:template>
 
-  <xsl:template match="dbobject/aggregate">
-    <xsl:if test="../@action='build'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-
-	<xsl:text>create </xsl:text>
-	<xsl:call-template name="aggregate_header"/>
-	<xsl:value-of
-	    select="concat(' (&#x0A;  sfunc = ', 
-		           skit:dbquote(transfunc/@schema,transfunc/@name),
-			   ',&#x0A;  stype = ',
-			   skit:dbquote(transtype/@schema,transtype/@name))"/>
-	<xsl:if test="@initcond">
-	  <xsl:value-of
-	      select="concat(',&#x0A;  initcond = ', @initcond)"/>
-	</xsl:if>
-	<xsl:if test="finalfunc">
-          <xsl:value-of 
-	     select="concat(',&#x0A;  finalfunc = ',
-                            skit:dbquote(finalfunc/@schema,finalfunc/@name))"/>
-	</xsl:if>
-	<xsl:if test="sortop">
-          <xsl:value-of 
-	     select="concat(',&#x0A;  sortop = ',
-		            skit:dbquote(sortop/@schema,sortop/@name))"/>
-	</xsl:if>
-	<xsl:text>);&#x0A;</xsl:text>
-
-	<xsl:apply-templates/>  <!-- Deal with comments -->
-	<xsl:call-template name="reset_owner"/>
-      </print>
+  <xsl:template match="aggregate" mode="build">
+    <xsl:text>&#x0A;create </xsl:text>
+    <xsl:call-template name="aggregate_header"/>
+    <xsl:value-of
+	select="concat(' (&#x0A;  sfunc = ', 
+		       skit:dbquote(transfunc/@schema,transfunc/@name),
+		       ',&#x0A;  stype = ',
+		       skit:dbquote(transtype/@schema,transtype/@name))"/>
+    <xsl:if test="@initcond">
+      <xsl:value-of
+	  select="concat(',&#x0A;  initcond = ', @initcond)"/>
     </xsl:if>
-
-    <xsl:if test="../@action='drop'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-	  
-      	<xsl:text>drop </xsl:text>
-	<xsl:call-template name="aggregate_header"/>
-	<xsl:text>;&#x0A;</xsl:text>
-	  
-	<xsl:call-template name="reset_owner"/>
-      </print>
+    <xsl:if test="finalfunc">
+      <xsl:value-of 
+	  select="concat(',&#x0A;  finalfunc = ',
+                         skit:dbquote(finalfunc/@schema,finalfunc/@name))"/>
     </xsl:if>
-
-    <xsl:if test="../@action='diffprep'">
-      <xsl:if test="../attribute[@name='owner']">
-	<print>
-	  <xsl:call-template name="feedback"/>
-
-	  <xsl:text>alter </xsl:text>
-	  <xsl:call-template name="aggregate_header"/>
-	  <xsl:value-of 
-	      select="concat(' owner to ', @owner, ';&#x0A;')"/>
-	</print>
-      </xsl:if>
+    <xsl:if test="sortop">
+      <xsl:value-of 
+	  select="concat(',&#x0A;  sortop = ',
+		         skit:dbquote(sortop/@schema,sortop/@name))"/>
     </xsl:if>
+    <xsl:text>);&#x0A;</xsl:text>
+  </xsl:template>
 
-    <xsl:if test="../@action='diffcomplete'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="commentdiff"/>
-      </print>
+  <xsl:template match="aggregate" mode="drop">
+    <xsl:text>&#x0A;drop </xsl:text>
+    <xsl:call-template name="aggregate_header"/>
+    <xsl:text>;&#x0A;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="aggregate" mode="diffprep">
+    <xsl:if test="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:text>&#x0A;alter </xsl:text>
+      <xsl:call-template name="aggregate_header"/>
+      <xsl:value-of 
+	  select="concat(' owner to ', @owner, ';&#x0A;')"/>
     </xsl:if>
-
   </xsl:template>
 </xsl:stylesheet>
 

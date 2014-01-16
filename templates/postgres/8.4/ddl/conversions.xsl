@@ -6,59 +6,32 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="dbobject/conversion">
-    <xsl:if test="../@action='build'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-
-	<xsl:text>create </xsl:text>
-	<xsl:if test="@is_default='t'">
-	  <xsl:text>default </xsl:text>
-	</xsl:if>
-        <xsl:value-of 
-	    select="concat('conversion ', ../@qname,
-	                   '&#x0A;  for ', $apos, @source, $apos,
-			   ' to ', $apos, @destination, $apos,
-			   '&#x0A;  from ',
-			   skit:dbquote(@function_schema,@function_name),
-			   ';&#x0A;')"/>
-
-	<xsl:apply-templates/>  <!-- Deal with comments -->
-	<xsl:call-template name="reset_owner"/>
-      </print>
+  <xsl:template match="conversion" mode="build">
+    <xsl:text>&#x0A;create </xsl:text>
+    <xsl:if test="@is_default='t'">
+      <xsl:text>default </xsl:text>
     </xsl:if>
+    <xsl:value-of 
+	select="concat('conversion ', ../@qname,
+	               '&#x0A;  for ', $apos, @source, $apos,
+		       ' to ', $apos, @destination, $apos,
+		       '&#x0A;  from ',
+		       skit:dbquote(@function_schema,@function_name),
+		       ';&#x0A;')"/>
+  </xsl:template>
 
-    <xsl:if test="../@action='drop'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-        <xsl:value-of 
-	    select="concat('drop conversion ', ../@qname, ';&#x0A;')"/>
-	<xsl:call-template name="reset_owner"/>
-      </print>
-    </xsl:if>
+  <xsl:template match="conversion" mode="drop">
+    <xsl:value-of 
+	select="concat('&#x0A;drop conversion ', ../@qname, ';&#x0A;')"/>
+  </xsl:template>
 
-    <xsl:if test="../@action='diffprep'">
-      <xsl:if test="../attribute[@name='owner']">
-	<print>
-	  <xsl:call-template name="feedback"/>
-	  <xsl:for-each select="../attribute[@name='owner']">
-	    <xsl:value-of 
-		select="concat('alter conversion ', ../@qname,
-			       ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-	  </xsl:for-each>
-	</print>
-      </xsl:if>
-    </xsl:if>
-
-    <xsl:if test="../@action='diffcomplete'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="commentdiff"/>
-      </print>
-    </xsl:if>
-
+  <xsl:template match="conversion" mode="diffprep">
+    <xsl:for-each select="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('&#x0A;alter conversion ', ../@qname,
+		         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
 

@@ -27,74 +27,61 @@
 
   <xsl:template match="function">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="function_fqn" 
-		  select="concat('function.', 
-			  ancestor::database/@name, '.', @signature)"/>
+
     <xsl:variable name="function_qname">
       <xsl:call-template name="function-qname"/>
     </xsl:variable>
-    <dbobject type="function" fqn="{$function_fqn}"
-	      name="{@name}" qname="{$function_qname}"
-	      parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner">
-	<context name="owner" value="{@owner}" 
-		 default="{//cluster/@username}"/>	
-      </xsl:if>
-      <dependencies>
-	<dependency fqn="{concat('schema.', $parent_core)}"/>
-	<xsl:if test="(@language != 'c') and (@language != 'internal')
-	  and (@language != 'sql')">
-	  <dependency fqn="{concat('language.', 
-			   ancestor::database/@name, '.', @language)}"/>
-	</xsl:if>
 
-	<xsl:for-each select="result">
-	  <xsl:call-template name="TypeDep">
-	    <xsl:with-param name="ignore" select="../handler-for-type"/>
-	  </xsl:call-template>
-	</xsl:for-each>
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="fqn"
+		      select="concat('function.', ancestor::database/@name, 
+			             '.', @signature)"/>
+      <xsl:with-param name="qname" select="$function_qname"/>
+      <xsl:with-param name="this_core" 
+		      select="concat(ancestor::database/@name, '.', 
+				     @signature)"/>
+    </xsl:apply-templates>
+  </xsl:template>
 
-	<xsl:for-each select="params/param">
-	  <xsl:call-template name="TypeDep">
-	    <xsl:with-param name="ignore" select="../../handler-for-type"/>
-	  </xsl:call-template>
-	</xsl:for-each>
+  <xsl:template match="function" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
-	<xsl:if test="handler-for-type[@type_input_signature]">
-	  <dependency fqn="{concat('function.', 
-			           ancestor::database/@name, '.',
-				   handler-for-type/@type_input_signature)}"/>
-	</xsl:if>
-	<xsl:if test="handler-for-type[@type_output_signature]">
-	  <dependency fqn="{concat('function.', 
-			           ancestor::database/@name, '.',
-				   handler-for-type/@type_output_signature)}"/>
-	</xsl:if>
-	<xsl:if test="handler-for-type[@type_send_signature]">
-	  <dependency fqn="{concat('function.', 
-			           ancestor::database/@name, '.',
-				   handler-for-type/@type_send_signature)}"/>
-	</xsl:if>
-	<xsl:if test="handler-for-type[@type_receive_signature]">
-	  <dependency fqn="{concat('function.', 
-			           ancestor::database/@name, '.',
-				   handler-for-type/@type_receive_signature)}"/>
-	</xsl:if>
-	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
-	</xsl:if>
-	<xsl:call-template name="SchemaGrant"/>
-      </dependencies>
+    <dependency fqn="{concat('schema.', $parent_core)}"/>
+    <xsl:if test="(@language != 'c') and (@language != 'internal')
+	           and (@language != 'sql')">
+      <dependency fqn="{concat('language.', ancestor::database/@name, 
+		               '.', @language)}"/>
+    </xsl:if>
 
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" 
-			  select="concat(ancestor::database/@name, '.', 
-				         @signature)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+    <xsl:for-each select="result">
+      <xsl:call-template name="TypeDep">
+	<xsl:with-param name="ignore" select="../handler-for-type"/>
+      </xsl:call-template>
+    </xsl:for-each>
+
+    <xsl:for-each select="params/param">
+      <xsl:call-template name="TypeDep">
+	<xsl:with-param name="ignore" select="../../handler-for-type"/>
+      </xsl:call-template>
+    </xsl:for-each>
+
+    <xsl:if test="handler-for-type[@type_input_signature]">
+      <dependency fqn="{concat('function.', ancestor::database/@name, '.',
+			       handler-for-type/@type_input_signature)}"/>
+    </xsl:if>
+    <xsl:if test="handler-for-type[@type_output_signature]">
+      <dependency fqn="{concat('function.', ancestor::database/@name, '.',
+		                handler-for-type/@type_output_signature)}"/>
+    </xsl:if>
+    <xsl:if test="handler-for-type[@type_send_signature]">
+      <dependency fqn="{concat('function.', ancestor::database/@name, '.',
+		                handler-for-type/@type_send_signature)}"/>
+    </xsl:if>
+    <xsl:if test="handler-for-type[@type_receive_signature]">
+      <dependency fqn="{concat('function.', ancestor::database/@name, '.',
+			       handler-for-type/@type_receive_signature)}"/>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

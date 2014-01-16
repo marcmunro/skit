@@ -6,29 +6,22 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-
- <!-- Tablespaces -->
+  <!-- Tablespaces -->
   <xsl:template match="tablespace">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="tbs_fqn" select="concat('tablespace.', 
-					  $parent_core, '.', @name)"/>
-    <dbobject type="tablespace" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{$tbs_fqn}" parent="cluster">
-      <dependencies>
-	<dependency fqn="cluster"/>
-	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.', $parent_core, '.',
-			   @owner)}"/>
-	</xsl:if>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core"
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="parent" select="'cluster'"/>
+      <xsl:with-param name="qname" select="skit:dbquote(@name)"/>
+      <xsl:with-param name="do_schema_grant" select="'no'"/>
+      <xsl:with-param name="do_context" select="'no'"/>
+
+    </xsl:apply-templates>
   </xsl:template>
 
+  <xsl:template match="tablespace" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <dependency fqn="cluster"/>
+  </xsl:template>
 </xsl:stylesheet>

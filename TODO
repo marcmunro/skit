@@ -1,22 +1,10 @@
-Short term plan:
-Abandon sequence work for now and instead do some major refactoring of
-the xsl side of things, particularly ddl and deps.  The aim is to
-considerably reduce the amount of duplicated code (almost all dbobject
-handling has the same template but it is not templated.
+Working on ddl refactoring for grants.
 
-1) comment out the sequence diff tests
-2) finish all acl handling changes (to reduce the amount of queued work
-in this list
-3) refactor repeatedly
-4) return to sequence issues <BELOW>.
-
-
-
-
-
----BELOW------------------------------------------------------------------
 
 Think about what to do for automatically named constraints
+
+PRIORITY: Check label numbering (there appears to be none) for enums
+
 
 Currently stymied on a sequence issue:
 
@@ -86,10 +74,14 @@ diffs:
 Add handling for FDWs and any other 8.4 things
 
 generate:
-  - Add echoes code to all database objects
   - ensure vertical spacing is good in code generated for diffs
     (actually, for all code)
-  - eliminate QQQ commented lines in ddl/*.xsl
+
+allow non-superusers to run skit
+
+shout option for ddl
+
+elininate ddl for the "other case" in ddl/grants.xsl commented around line 44
 
 smart tsort:
     new tsort function
@@ -118,3 +110,9 @@ elegant.  What may be needed is a separation of the fallback nodes into
 fallback and drop-side fallback variants.  Each of these would be
 created when resolving the appropriate DAG (forwards or backwards).
 
+
+
+REFACTORINGS
+Remove as many attributes as possible from the dbobject element.
+Particularly role_name, table_name and qname.  Move any needed fields
+into the actual dbobject (eg table, role, view) objects.

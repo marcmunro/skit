@@ -9,26 +9,17 @@
   <!-- Schemata -->
   <xsl:template match="schema">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="tbs_fqn" select="concat('schema.', 
-					  $parent_core, '.', @name)"/>
-    <dbobject type="schema" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{$tbs_fqn}" parent="{concat(name(..), '.', $parent_core)}">
-      <xsl:if test="@owner != 'public'">
-	<dependencies>
-	  <dependency fqn="{concat('database.', $parent_core)}"/>
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
-	</dependencies>
-      </xsl:if>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core"
-			  select="concat($parent_core, '.', @name)"/>
-	</xsl:apply-templates>
-      </xsl:copy>
-    </dbobject>
+
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="do_schema_grant" select="'no'"/>
+    </xsl:apply-templates>
   </xsl:template>
 
+  <xsl:template match="schema" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
+    <dependency fqn="{concat('database.', $parent_core)}"/>
+  </xsl:template>
 </xsl:stylesheet>
 

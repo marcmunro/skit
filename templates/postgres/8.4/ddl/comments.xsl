@@ -22,7 +22,7 @@
 	<xsl:value-of 
 	    select="concat('&#x0A;comment on operator family ',
 		           ../@qname, ' using ', ../@method,
-			   ' is&#x0A;', text(), ';&#x0A;&#x0A;')">
+			   ' is&#x0A;', text(), ';&#x0A;')">
 	</xsl:value-of>
       </print>
     </xsl:if>

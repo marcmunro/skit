@@ -6,39 +6,15 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="dbobject/trigger">
-    <xsl:if test="../@action='build'">
-      <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:call-template name="set_owner"/>
+  <xsl:template match="trigger" mode="build">
+    <xsl:value-of 
+	select="concat(source/text(), ';&#x0A;')"/>
+  </xsl:template>
 
-        <xsl:value-of select="source/text()"/>
-	<xsl:text>;&#x0A;</xsl:text>
-
-	<xsl:apply-templates/>  <!-- Deal with comments -->
-
-	<xsl:call-template name="reset_owner"/>
-      </print>
-    </xsl:if>
-
-    <xsl:if test="../@action='drop'">
-      <print>
-        <xsl:text>---- DBOBJECT</xsl:text> <!-- QQQ -->
-	<xsl:value-of select="../@fqn"/>
-        <xsl:text>&#x0A;</xsl:text>
-	<xsl:call-template name="set_owner"/>
-	<xsl:text>&#x0A;drop trigger </xsl:text>
-        <xsl:value-of select="../@qname"/>
-	<xsl:text> on </xsl:text>
-	<xsl:value-of select="skit:dbquote(@schema,@table)"/>
-        <xsl:text>;&#x0A;</xsl:text>
-	<xsl:call-template name="reset_owner"/>
-      </print>
-    </xsl:if>
-
+  <xsl:template match="trigger" mode="drop">
+    <xsl:value-of 
+	select="concat('&#x0A;drop trigger ', ../@qname, ' on ',
+		       skit:dbquote(@schema,@table), ';&#x0A;')"/>
   </xsl:template>
 </xsl:stylesheet>
 

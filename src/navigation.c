@@ -146,32 +146,6 @@ nextNodeFrom(DagNode *from, DagNode *to)
 }
 
 static Cons *
-getContextsOld(DagNode *node)
-{
-    xmlNode *context_node;
-    Cons *cell;
-    Cons *contexts = NULL;
-    String *name;
-    String *value;
-    String *dflt;
-
-    if (node) {
-	for (context_node = findFirstChild(node->dbobject, "context");
-	     context_node;
-	     context_node = findNextSibling(context_node, "context")) {
-	    name = nodeAttribute(context_node, "name");
-	    value = nodeAttribute(context_node, "value");
-	    dflt = nodeAttribute(context_node, "default");
-	    cell = consNew((Object *) name, 
-			   (Object *) consNew((Object *) value, 
-					      (Object *) dflt));
-	    contexts = consNew((Object *) cell, (Object *) contexts);
-	}
-    }
-    return contexts;
-}
-
-static Cons *
 getContexts(xmlNode *node)
 {
     xmlNode *context_node;
@@ -211,53 +185,11 @@ dbobjectNode(char *type, char *name)
     return xmlnode;
 }
 
-static DagNode *
-arriveContextNodeOld(String *name, String *value)
-{
-    xmlNode *dbobject = dbobjectNode(name->value, value->value);
-    return dagNodeNew(dbobject, ARRIVE_NODE);
-}
-
 static Node *
 newContextNode(String *name, String *value)
 {
     xmlNode *dbobject = dbobjectNode(name->value, value->value);
     return nodeNew(dbobject);
-}
-
-static DagNode *
-departContextNodeOld(String *name, String *value)
-{
-    xmlNode *dbobject = dbobjectNode(name->value, value->value);
-    return dagNodeNew(dbobject, DEPART_NODE);
-}
-
-static void
-addArriveContextOld(Vector *vec, Cons *context)
-{
-    String *name = (String *) context->car;
-    Cons *cell2 = (Cons *) context->cdr;
-    DagNode *context_node;
-
-    /* Do not close the context, if it is the default. */
-    if (objectCmp(cell2->car, cell2->cdr) != 0) {
-	context_node = arriveContextNodeOld(name, (String *) cell2->car);
-	vectorPush(vec, (Object *) context_node);
-    }
-}
-
-static void
-addDepartContextOld(Vector *vec, Cons *context)
-{
-    String *name = (String *) context->car;
-    Cons *cell2 = (Cons *) context->cdr;
-    DagNode *context_node;
-
-    /* Do not close the context, if it is the default. */
-    if (objectCmp(cell2->car, cell2->cdr) != 0) {
-	context_node = departContextNodeOld(name, (String *) cell2->car);
-	vectorPush(vec, (Object *) context_node);
-    }
 }
 
 static void
@@ -272,54 +204,6 @@ addContext(Vector *vec, Cons *context)
 	context_node = newContextNode(name, (String *) cell2->car);
 	vectorPush(vec, (Object *) context_node);
     }
-}
-
-static Cons *
-getContextNavigationOld(DagNode *from, DagNode *target)
-{
-    Cons *from_contexts;
-    Cons *target_contexts;
-    Cons *this;
-    Cons *this2;
-    Cons *match;
-    Cons *match2;
-    String *name;
-    Vector *departures = vectorNew(10);
-    Vector *arrivals = vectorNew(10);
-    Cons *result = consNew((Object *) departures, (Object *) arrivals);
-
-    /* Contexts are lists of the form: (name value default) */
-    from_contexts = getContextsOld(from);
-    target_contexts = getContextsOld(target);
-
-    while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
-	name = (String *) this->car;
-	if (from_contexts &&
-	    (match = (Cons *) alistExtract(&from_contexts, 
-					   (Object *) name))) {
-	    /* We have the same context for both DagNodes. */
-	    this2 = (Cons *) this->cdr;
-	    match2 = (Cons *) match->cdr;
-	    if (objectCmp(this2->car, match2->car) != 0) {
-		/* Depart the old context, and arrive at the new. */
-		addDepartContextOld(departures, match);
-		addArriveContextOld(arrivals, this);
-	    }
-	    objectFree((Object *) match, TRUE);
-	}
-	else {
-	    /* This is a new context. */
-	    addArriveContextOld(arrivals, this);
-	}
-	objectFree((Object *) this, TRUE);
-    }
-    while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
-	/* Close the final contexts.  Unless we are in a default
-	 * context. */ 
-	addDepartContextOld(departures, this);
-	objectFree((Object *) this, TRUE);
-    }
-    return result;
 }
 
 static Cons *
@@ -394,7 +278,8 @@ navigationToNode(DagNode *start, DagNode *target)
 
     BEGIN {
 	if (handling_context) {
-	    context_nav = getContextNavigationOld(start, target);
+	    context_nav = getContextNavigation(start->dbobject, 
+					       target->dbobject);
 
 	    /* Context departures must happen before any other
 	     * departures and arrivals after */

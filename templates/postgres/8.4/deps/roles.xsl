@@ -6,7 +6,8 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Roles: roles are cluster level objects. -->
+  <!-- Roles: roles are cluster level objects.   As privileges are handled
+       specially in roles we do not use the default dbobject template.  -->
   <xsl:template match="role">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
@@ -35,23 +36,21 @@
   </xsl:template>
 
   <xsl:template match="role/privilege">
-    <!-- A privilege describes, not the privilege itself, but its
-	 assignment to a role.  There may be dependencies on privileges,
-	 which is why they are considered to be dbobjects.  -->
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="priv_name" select="concat($parent_core, '.', @priv)"/>
-    <dbobject type="privilege" name="{@priv}" qname="{skit:dbquote(@priv)}"
-	      fqn="{concat('privilege.', $priv_name)}"
-	      role_qname="{skit:dbquote(../@name)}"
-	      parent="{concat('role.', $parent_core)}">
-      <dependencies>
-	<dependency fqn="{concat('role.', $parent_core)}"/>
-      </dependencies>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-      </xsl:copy>
-    </dbobject>
+
+    <xsl:apply-templates select="." mode="dbobject">
+      <xsl:with-param name="parent_core" select="$parent_core"/>
+      <xsl:with-param name="name" select="@priv"/>
+      <xsl:with-param name="fqn" select="concat('privilege.', $parent_core, 
+					        '.', @priv)"/>
+      <xsl:with-param name="qname" select="skit:dbquote(@priv)"/>
+      <xsl:with-param name="role_qname" select="skit:dbquote(../@name)"/>
+    </xsl:apply-templates>
   </xsl:template>
 
+  <xsl:template match="role/privilege" mode="dependencies">
+    <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
+    <dependency fqn="{concat('role.', $parent_core)}"/>
+  </xsl:template>
 </xsl:stylesheet>

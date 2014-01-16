@@ -6,14 +6,16 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="dbobject/operator_family">
-    <xsl:if test="(../@action='build') and (@auto_generated!='t')">
+  <!-- Cannot use the default dbobject mechanism as creation of operator
+       families is conditional (on @auto-generated) -->
+  <xsl:template match="dbobject[@action='build']/operator_family">
+    <xsl:if test="@auto_generated!='t'">
       <print>
 	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
 
         <xsl:value-of 
-	    select="concat('create operator family ', ../@qname,
+	    select="concat('&#x0A;create operator family ', ../@qname,
 		           ' using ', @method, ';&#x0A;')"/>
 
 	<xsl:if test="opfamily_operator or opfamily_function">
@@ -53,7 +55,7 @@
 	     family under that user.  Now we must alter the ownership. -->
 	<xsl:if test="@owner != ../context[@name='owner']/@value">
 	  <xsl:value-of 
-	      select="concat('alter operator family ', ../@qname,
+	      select="concat('&#x0A;alter operator family ', ../@qname,
 			     ' using ', @method,
 			     ' owner to ', skit:dbquote(@owner), ';&#x0A;')"/>
 	</xsl:if>
@@ -62,102 +64,89 @@
 	<xsl:call-template name="reset_owner"/>
       </print>
     </xsl:if>
+  </xsl:template>
 
-    <xsl:if test="../@action='drop'">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:call-template name="set_owner"/>
-	  
-	<xsl:text></xsl:text>
-        <xsl:value-of 
-	    select="concat('drop operator family ', ../@qname,
-		           ' using ', @method, ';&#x0A;')"/>
+  <xsl:template match="operator_family" mode="drop">
+    <xsl:value-of 
+	select="concat('&#x0A;drop operator family ', ../@qname,
+		       ' using ', @method, ';&#x0A;')"/>
+  </xsl:template>
 
-	<xsl:call-template name="reset_owner"/>
-      </print>
-    </xsl:if>
-
-    <xsl:if test="../@action='diffprep'">
-      <xsl:if test="../attribute[@name='owner']">
-	<print>
-	  <xsl:variable name="method" select="@method"/>
-	  <xsl:call-template name="feedback"/>
-	  <xsl:for-each select="../attribute">
-	    <xsl:if test="@name='owner'">
-	      <xsl:value-of 
-		  select="concat('alter operator family ', ../@qname,
-			         ' using ', $method,
-			         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-	    </xsl:if>
-	  </xsl:for-each>
-	</print>
-      </xsl:if>
-    </xsl:if>
-
-    <xsl:if test="../@action='diffcomplete' and ../element">
-      <print>
-	<xsl:call-template name="feedback"/>
-	<xsl:for-each 
-	    select="../element[(@type='opfamily_operator' or
-		                @type='opfamily_function') and
-			       (@status='gone' or @status='diff')]">
-
-	  <!-- DEBUG NOTE: The code below may not work for dropping the
-	       original version of a diff operator.  We will deal with
-	       that as and when it becomes a problem.  At that point we
-	       will have to reconstruct the original operator definition -->
+  <xsl:template match="operator_family" mode="diffprep">
+    <xsl:if test="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:variable name="method" select="@method"/>
+      <xsl:call-template name="feedback"/>
+      <xsl:for-each select="../attribute">
+	<xsl:if test="@name='owner'">
 	  <xsl:value-of 
-	      select="concat('alter operator family ', ../@qname,
-		             ' using ', ../operator_family/@method, 
-			     ' drop&#x0A;  ')"/>
-	  <xsl:choose>
-	    <xsl:when test="@type='opfamily_operator'">
-	      <xsl:for-each 
-		  select="opfamily_operator">
-		<xsl:value-of select="concat('operator ', @strategy, ' ')"/>
-		<xsl:call-template name="operator_params_defn"/>
-	      </xsl:for-each>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <xsl:for-each 
-		  select="opfamily_function">
-		<xsl:value-of select="concat('function ', @proc_num, ' ')"/>
-		<xsl:call-template name="function_params_defn"/>
-	      </xsl:for-each>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:for-each>
-
-	<xsl:for-each 
-	    select="../element[(@type='opfamily_operator' or
-		                @type='opfamily_function') and
-			       (@status='new' or @status='diff')]">
-	  <xsl:value-of 
-	      select="concat('alter operator family ', ../@qname,
-		             ' using ', ../operator_family/@method, 
-			     ' add&#x0A;  ')"/>
-	  <xsl:choose>
-	    <xsl:when test="@type='opfamily_operator'">
-	      <xsl:for-each 
-		  select="opfamily_operator">
-		<xsl:call-template name="operator_defn"/>
-	      </xsl:for-each>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <xsl:for-each 
-		  select="opfamily_function">
-		<xsl:call-template name="function_defn"/>
-	      </xsl:for-each>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	  <xsl:text>;&#x0A;</xsl:text>
-	</xsl:for-each>
-	<xsl:call-template name="commentdiff"/>
-      </print>
+	      select="concat('&#x0A;alter operator family ', ../@qname,
+			     ' using ', $method,
+			     ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+	</xsl:if>
+      </xsl:for-each>
     </xsl:if>
+  </xsl:template>
 
+  <xsl:template match="operator_family" mode="diffcomplete">
+    <xsl:if test="../element">
+      <do-print/>
+      <xsl:text>&#x0A;</xsl:text>
+      <xsl:for-each 
+	  select="../element[(@type='opfamily_operator' or
+		              @type='opfamily_function') and
+			      (@status='gone' or @status='diff')]">
+
+	<!-- DEBUG NOTE: The code below may not work for dropping the
+	     original version of a diff operator.  We will deal with
+	     that as and when it becomes a problem.  At that point we
+	     will have to reconstruct the original operator definition -->
+	<xsl:value-of 
+	    select="concat('alter operator family ', ../@qname,
+		           ' using ', ../operator_family/@method, 
+			   ' drop&#x0A;  ')"/>
+	<xsl:choose>
+	  <xsl:when test="@type='opfamily_operator'">
+	    <xsl:for-each 
+		select="opfamily_operator">
+	      <xsl:value-of select="concat('operator ', @strategy, ' ')"/>
+	      <xsl:call-template name="operator_params_defn"/>
+	    </xsl:for-each>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:for-each 
+		select="opfamily_function">
+	      <xsl:value-of select="concat('function ', @proc_num, ' ')"/>
+	      <xsl:call-template name="function_params_defn"/>
+	    </xsl:for-each>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:text>;&#x0A;</xsl:text>
+      </xsl:for-each>
+
+      <xsl:for-each 
+	  select="../element[(@type='opfamily_operator' or
+		              @type='opfamily_function') and
+			      (@status='new' or @status='diff')]">
+	<xsl:value-of 
+	    select="concat('alter operator family ', ../@qname,
+		           ' using ', ../operator_family/@method, 
+			   ' add&#x0A;  ')"/>
+	<xsl:choose>
+	  <xsl:when test="@type='opfamily_operator'">
+	    <xsl:for-each 
+		select="opfamily_operator">
+	      <xsl:call-template name="operator_defn"/>
+	    </xsl:for-each>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:for-each select="opfamily_function">
+	      <xsl:call-template name="function_defn"/>
+	    </xsl:for-each>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:text>;&#x0A;</xsl:text>
+      </xsl:for-each>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
-
-

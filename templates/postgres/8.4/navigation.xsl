@@ -6,9 +6,8 @@
   extension-element-prefixes="skit"
   version="1.0">
 
+  <xsl:include href="skitfile:common_defs.xsl"/>
   <xsl:include href="skitfile:ddl/feedback.xsl"/>
-
-  <xsl:variable name="apos">&apos;</xsl:variable>
 
   <!-- Doing this explicitly seems to put the xmlns, etc definitions
        into this, the root node, rather than at many other nodes.  -->
@@ -25,14 +24,11 @@
     <xsl:copy>
       <xsl:copy-of select="@*"/>
       <xsl:choose>
-	<xsl:when test="print">
-	  <print>
-	    <xsl:apply-templates mode="print"/>
-	    <!--
-	    <xsl:if test="@type!='grant' and @type!='fallback'">
-	      <xsl:text>&#x0A;</xsl:text>
-	    </xsl:if> -->
-	  </print>
+	<xsl:when test="print[not(@conditional)] or
+			print[@conditional]/do-print">
+	    <print>
+	      <xsl:apply-templates mode="print"/>
+	    </print>
 	</xsl:when>
 	<xsl:otherwise>
 	  <xsl:apply-templates mode="add-nav" select="."/>
@@ -71,7 +67,7 @@
     <print>
       <xsl:if test="@action='arrive'">
 	<xsl:value-of 
-	    select="concat('set session authorization ', $apos, 
+	    select="concat('&#x0A;set session authorization ', $apos, 
 		            @name, $apos, ';&#x0A;')"/>
       </xsl:if>	
 
