@@ -275,6 +275,9 @@ comment on type "public"."mychar" is
 create domain "public"."postal2"
   as "public"."mychar";
 
+create type schema2.yesno as enum ('yes', 'no');
+
+
 
 -- Casts
 create or replace function "public"."mycharsend"(

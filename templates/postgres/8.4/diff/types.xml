@@ -22,6 +22,10 @@
     <attribute name="passbyval" rebuild="true"/>
     <attribute name="is_defined" rebuild="true"/>
 
+    <element type="label" key="seq_no">
+      <attribute name="label" rebuild="true"/>
+    </element>
+
     <element type="column" key="id">
       <attribute name="name" rebuild="true"/>
       <attribute name="type" rebuild="true"/>

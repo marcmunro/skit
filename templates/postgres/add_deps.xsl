@@ -47,6 +47,76 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- Attempt to identify the base (to schema) of the root part of the 
+       object's fqn --> 
+  <xsl:template name="fqn-base">
+    <xsl:value-of select="ancestor::database/@name"/>
+    <xsl:if test="ancestor::schema">
+      <xsl:value-of select="concat('.', ancestor::schema/@name)"/>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="fqn-root">
+    <xsl:value-of select="ancestor::database/@name"/>
+    <xsl:if test="ancestor::schema">
+      <xsl:value-of select="concat('.', ancestor::schema/@name)"/>
+      <xsl:if test="name(..) != 'schema'">
+	<xsl:value-of select="concat('.', ../@name)"/>
+      </xsl:if>
+    </xsl:if>
+  </xsl:template>
+
+  <!-- Create a pqn dependency entry. -->
+  <xsl:template name="pqn-dep">
+    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="priv" select="@priv"/>
+    <xsl:param name="type" select="name(..)"/>
+    <xsl:param name="root">
+      <xsl:call-template name="fqn-root"/>
+    </xsl:param>
+    <xsl:param name="to"/>
+    <xsl:choose>
+      <xsl:when test="$to = $owner">
+	<!-- qqqqq
+	<dependency pqn="{concat('grant.', $type, '.', $root, '.', $priv)}"/>
+	-->
+	<dependency pqn="{concat('grant.', $type, '.', $root, '.', $priv, ':', $to)}"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<dependency pqn="{concat('grant.', $type, '.', 
+			  $root, '.', $priv, ':', $to)}"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template name="pqn-schema-create">
+    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="root">
+      <xsl:call-template name="fqn-base"/>
+    </xsl:param>
+    <xsl:param name="to"/>
+    <xsl:call-template name="pqn-dep">
+      <xsl:with-param name="to" select="$to"/>
+      <xsl:with-param name="root" select="$root"/>
+      <xsl:with-param name="priv" select="'create'"/>
+      <xsl:with-param name="type" select="'schema'"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template name="pqn-schema-usage">
+    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="root">
+      <xsl:call-template name="fqn-base"/>
+    </xsl:param>
+    <xsl:param name="to"/>
+    <xsl:call-template name="pqn-dep">
+      <xsl:with-param name="to" select="$to"/>
+      <xsl:with-param name="root" select="$root"/>
+      <xsl:with-param name="priv" select="'usage'"/>
+      <xsl:with-param name="type" select="'schema'"/>
+    </xsl:call-template>
+  </xsl:template>
+
   <!-- Schema grant dependencies -->
   <xsl:template name="SchemaGrant">
     <xsl:param name="owner" select="@owner"/>
@@ -56,12 +126,12 @@
 	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  condition="forwards">
-	<dependency pqn="{concat('grant.', 
-			         ancestor::database/@name, '.', 
-				 ancestor::schema/@name, '.create:public')}"/>
-	<dependency pqn="{concat('grant.', 
-			  ancestor::database/@name, '.', 
-			  ancestor::schema/@name, '.create:', $owner)}"/>
+	<xsl:call-template name="pqn-schema-create">
+	  <xsl:with-param name="to" select="'public'"/>
+	</xsl:call-template>
+	<xsl:call-template name="pqn-schema-create">
+	  <xsl:with-param name="to" select="@owner"/>
+	</xsl:call-template>
 	<dependency fqn="{concat('privilege.cluster.', $owner, '.superuser')}"/>
       </dependency-set>
       <!-- Dependency on schema create grant to owner, public or self -->
@@ -69,13 +139,13 @@
 	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  condition="backwards">
-	<dependency pqn="{concat('grant.', 
-		                 ancestor::database/@name, '.', 
-		                 ancestor::schema/@name, '.usage:public')}"/>
+	<xsl:call-template name="pqn-schema-usage">
+	  <xsl:with-param name="to" select="'public'"/>
+	</xsl:call-template>
 	<xsl:if test="$owner">
-	  <dependency 
-	      pqn="{concat('grant.', ancestor::database/@name, '.', 
-		   ancestor::schema/@name, '.usage:', $owner)}"/>
+	  <xsl:call-template name="pqn-schema-usage">
+	    <xsl:with-param name="to" select="@owner"/>
+	  </xsl:call-template>
 	  <dependency fqn="{concat('privilege.cluster.', 
 			           $owner, '.superuser')}"/>
 	</xsl:if>

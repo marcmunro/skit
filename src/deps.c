@@ -528,6 +528,21 @@ appendDep(Object *cur, Object *new)
     }
     return new;
 }
+
+static Vector *
+copyToVector(Cons *cons)
+{
+    int elems = consLen(cons);
+    Vector *result = vectorNew(elems);
+    Cons *this = cons;
+    Object *obj;
+    while (this) {
+	obj = dereference(cons->car);
+	vectorPush(result, obj);
+	this = (Cons *) this->cdr;
+    }
+    return result;
+}
     
 static Object *
 getDepSet(
@@ -587,7 +602,7 @@ getDepSet(
 		    dep = dereference(cons->car);
 		}
 		else {
-		    dep = (Object *) toVector(cons);
+		    dep = (Object *) copyToVector(cons);
 		}
 		result = appendDep(result, dep);
 	    }
@@ -1902,7 +1917,6 @@ dagFromDoc(Document *doc)
 //dbgSexp(doc);
 	identifyParents(nodes, byfqn);
 	bypqn = hashByPqn(nodes);
-
 	addDependencies(nodes, byfqn, bypqn);
 //fprintf(stderr, "============INITIAL==============\n");
 //showVectorDeps(nodes, TRUE);

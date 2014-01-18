@@ -15,6 +15,7 @@
 		   params="(select enum 'oid')">
 	<label>
 	  <skit:attr name="label"/>
+	  <skit:attr name="seq_no"/>
 	</label>
       </skit:runsql>
       <skit:if test="(select enum 'comment')">

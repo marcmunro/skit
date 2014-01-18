@@ -731,7 +731,7 @@ END_TEST
 //#ifdef unused
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--build", 
+    char *args[] = {"./skit", "--generate", "--drop", 
 		    //"x",
 		    "regress/scratch/regressdb_dump1a.xml",
 		    "--debug", "--print", "--full"};

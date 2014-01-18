@@ -19,6 +19,7 @@
 	  <xsl:when test="@subtype='enum'">
 	    <xsl:text> as enum (&#x0A;  </xsl:text>
 	    <xsl:for-each select="label">
+	      <xsl:sort select="@seq_no" data-type="number"/>
 	      <xsl:if test="position() != 1">
 		<xsl:text>,&#x0A;  </xsl:text>
 	      </xsl:if>

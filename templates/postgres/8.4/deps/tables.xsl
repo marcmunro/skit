@@ -14,21 +14,18 @@
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
     <dependency-set
-	fallback="{concat('privilege.cluster.', $owner, 
-		          '.superuser')}"
+	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]">
-      <dependency pqn="{concat('grant.', 
-		       ancestor::database/@name, '.', 
-		       $schema, '.', $table, '.', $priv, ':public')}"/>
+      <xsl:call-template name="pqn-dep">
+	<xsl:with-param name="to" select="'public'"/>
+      	<xsl:with-param name="priv" select="$priv"/>
+      </xsl:call-template>
 
-      <dependency pqn="{concat('grant.', 
-		       ancestor::database/@name, '.', 
-		       $schema, '.', $table, '.', $priv, ':', 
-		       //cluster/@username)}"/>
       <xsl:if test="$owner">
-	<dependency pqn="{concat('grant.', 
-			 ancestor::database/@name, '.', 
-			 $schema, '.', $table, '.', $priv, ':', $owner)}"/>
+	<xsl:call-template name="pqn-dep">
+	  <xsl:with-param name="to" select="$owner"/>
+	  <xsl:with-param name="priv" select="$priv"/>
+	</xsl:call-template>
       </xsl:if>
     </dependency-set>
   </xsl:template>
@@ -50,10 +47,14 @@
       <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
     </xsl:if>
     <xsl:for-each select="constraint[@tablespace]">
-      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      <xsl:if test="@tablespace != ../@tablespace">
+	<dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      </xsl:if>
     </xsl:for-each>
     <xsl:for-each select="index[@tablespace]">
-      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      <xsl:if test="@tablespace != ../@tablespace">
+	<dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      </xsl:if>
     </xsl:for-each>
     <!-- Dependencies on inherited tables -->
     <xsl:for-each select="inherits">

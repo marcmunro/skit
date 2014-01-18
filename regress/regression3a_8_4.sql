@@ -253,6 +253,10 @@ comment on type "public"."mychar" is
 create domain "public"."postal2"
   as "public"."mychar";
 
+create type schema2.yesno as enum ('no', 'yes');
+comment on type schema2.yesno is 'boolean-ish';
+
+
 
 -- Casts
 create or replace function "public"."mycharsend"(
@@ -684,5 +688,4 @@ create sequence "public"."thingy_id_seq"
 comment on sequence "public"."thingy_id_seq" is
 'thingy';
 */
-
 EOF

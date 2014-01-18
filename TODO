@@ -1,9 +1,32 @@
-Working on ddl refactoring for grants.
+WORKING ON:
+change naming of automatically generated grants so that changing the
+ownership does not change these things.
 
 
-Think about what to do for automatically named constraints
 
-PRIORITY: Check label numbering (there appears to be none) for enums
+This should help with the sequence issue below.
+
+APPROACH:
+Grant fqns and pqns should be prefixed grant.<objecttype>   DONE
+
+This is because the name of the objecttype is required to disambiguate
+the actual object (eg a tablespace and a schema could have the same name
+as a role and so the qns of their grants could clash).
+
+We will start with pqns    DONE-------------------------------
+then do fqns               DONE-------------------------------
+then we get back to stuff marked qqqqq in deps/grants.xsl and add_deps.xsl
+
+STATUS:
+Whenever we try removing the :to part of the grant in the pqn name we
+wind up with a cyclic dependency.  Grrr.
+
+
+
+
+
+
+
 
 
 Currently stymied on a sequence issue:
@@ -29,6 +52,12 @@ name parts of the fqn.  This will mean that no difference is seen for
 automatic grants when ownership of an object changes.  I'm not sure what
 the consequence will be of the pqn changing though - that needs to be
 thought through.
+
+
+
+Think about what to do for automatically named constraints
+
+
 
 
 Check handling of all existing ownership diffs - are they being handled
