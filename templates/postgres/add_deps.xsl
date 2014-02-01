@@ -66,7 +66,23 @@
     </xsl:if>
   </xsl:template>
 
-  <!-- Create a pqn dependency entry. -->
+  <!-- Create a pqn dependency entry. 
+       PQNs identify distinct privileges which may have been granted to
+       a role.  They differ from fqns in that the grantor is not part of
+       the name.  This allows us to match on any grant of the required
+       privilege to the grantee, regardless of who it was granted from.
+       PQNs are of two forms:
+       1) A role PQN, which ends in <privilege>:<grantee>
+       2) An owner PQN which ends in <privilege>
+         Owner PQNs are useful for diffs as a change to the ownership of
+         an object will otherwise appear to change a number of grants.
+
+       Params:
+         owner is the owner of the object
+         priv is the priv required
+         type is the object on which the priv is required
+         root is the root part of the fqn for this pqn
+  -->
   <xsl:template name="pqn-dep">
     <xsl:param name="owner" select="@owner"/>
     <xsl:param name="priv" select="@priv"/>
@@ -75,45 +91,44 @@
       <xsl:call-template name="fqn-root"/>
     </xsl:param>
     <xsl:param name="to"/>
-    <xsl:choose>
-      <xsl:when test="$to = $owner">
-	<!-- qqqqq
-	<dependency pqn="{concat('grant.', $type, '.', $root, '.', $priv)}"/>
-	-->
-	<dependency pqn="{concat('grant.', $type, '.', $root, '.', $priv, ':', $to)}"/>
-      </xsl:when>
-      <xsl:otherwise>
-	<dependency pqn="{concat('grant.', $type, '.', 
-			  $root, '.', $priv, ':', $to)}"/>
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:if test="$to = $owner">
+      <!-- Use an owner pqn, though the role pwn will follow in any
+	   case. -->
+      <dependency pqn="{concat('grant.', $type, '.', $root, '.', $priv)}"/>
+    </xsl:if>
+    <dependency pqn="{concat('grant.', $type, '.', 
+		             $root, '.', $priv, ':', $to)}"/>
   </xsl:template>
 
-  <xsl:template name="pqn-schema-create">
-    <xsl:param name="owner" select="@owner"/>
+  <!-- Generate a pqn for a given priv on the parent schema to @to.  -->
+  <xsl:template name="pqn-schema-priv">
     <xsl:param name="root">
       <xsl:call-template name="fqn-base"/>
     </xsl:param>
     <xsl:param name="to"/>
+    <xsl:param name="priv"/>
     <xsl:call-template name="pqn-dep">
+      <xsl:with-param name="owner" select="ancestor::schema/@owner"/>
       <xsl:with-param name="to" select="$to"/>
       <xsl:with-param name="root" select="$root"/>
-      <xsl:with-param name="priv" select="'create'"/>
+      <xsl:with-param name="priv" select="$priv"/>
       <xsl:with-param name="type" select="'schema'"/>
     </xsl:call-template>
   </xsl:template>
 
-  <xsl:template name="pqn-schema-usage">
-    <xsl:param name="owner" select="@owner"/>
-    <xsl:param name="root">
-      <xsl:call-template name="fqn-base"/>
-    </xsl:param>
+  <xsl:template name="pqn-schema-create">
     <xsl:param name="to"/>
-    <xsl:call-template name="pqn-dep">
+    <xsl:call-template name="pqn-schema-priv">
       <xsl:with-param name="to" select="$to"/>
-      <xsl:with-param name="root" select="$root"/>
+      <xsl:with-param name="priv" select="'create'"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template name="pqn-schema-usage">
+    <xsl:param name="to"/>
+    <xsl:call-template name="pqn-schema-priv">
+      <xsl:with-param name="to" select="$to"/>
       <xsl:with-param name="priv" select="'usage'"/>
-      <xsl:with-param name="type" select="'schema'"/>
     </xsl:call-template>
   </xsl:template>
 

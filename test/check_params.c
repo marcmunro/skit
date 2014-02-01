@@ -732,8 +732,8 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
-		    //"x",
-		    "regress/scratch/regressdb_dump1a.xml",
+		    "x",
+		    //"regress/scratch/regressdb_dump1a.xml",
 		    "--debug", "--print", "--full"};
 
     initTemplatePath(".");

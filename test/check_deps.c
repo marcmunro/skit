@@ -342,29 +342,6 @@ requireOptionalDependents(Hash *hash, char *from, ...)
 
 
 
-/* Trivially check the inBuildTypeBitSet function.
- */
-START_TEST(build_type_bitsets)
-{
-    BuildTypeBitSet btbs = BUILD_NODE_BIT + DIFF_NODE_BIT;
-
-    if (inBuildTypeBitSet(btbs, DROP_NODE)) {
-	fail("Unexpected DROP_NODE found in bitset");
-    }
-    if (inBuildTypeBitSet(btbs, DEPART_NODE)) {
-	fail("Unexpected DEPART_NODE found in bitset");
-    }
-    if (!inBuildTypeBitSet(btbs, BUILD_NODE)) {
-	fail("Failed to find BUILD_NODE in bitset");
-    }
-    if (!inBuildTypeBitSet(btbs, DIFF_NODE)) {
-	fail("Failed to find DIFF_NODE in bitset");
-    }
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 /* Test basic build dependencies, using dependency sets */ 
 START_TEST(depset_dag1_build)
 {
@@ -1158,10 +1135,10 @@ START_TEST(fallback)
 	//doc = getDoc("tmp.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
+	//showVectorDeps(nodes, FALSE);
 
 	requireDeps(nodes_by_fqn, "fallback.grant.x.superuser", 
-		    "enddsfallback.grant.x.superuser", 
+		    "drop.fallback.grant.x.superuser",
 		    "role.cluster.x", NULL);
 	requireDeps(nodes_by_fqn, "table.x.public.x", 
 		    "role.cluster.x","schema.x.public", 
@@ -1172,16 +1149,6 @@ START_TEST(fallback)
 		    "table.x.public.x", "role.cluster.x",
 		    "fallback.grant.x.superuser", 
 		     "drop.grant.x.public.x.trigger:x:x", NULL);
-	requireDeps(nodes_by_fqn, "endfallback.grant.x.superuser", 
-		    "fallback.grant.x.superuser",
-		    "table.x.public.x", "grant.x.public.x.trigger:x:x",
-		    "grant.x.public.x.references:x:x", 
-		    "grant.x.public.x.rule:x:x", 
-		    "grant.x.public.x.select:x:x", 
-		    "grant.x.public.x.insert:x:x",
-		    "grant.x.public.x.update:x:x",
-		    "grant.x.public.x.delete:x:x", 
-		    "role.cluster.x", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -1258,7 +1225,6 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
-    ADD_TEST(tc_core, build_type_bitsets);
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);

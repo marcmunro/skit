@@ -1078,7 +1078,7 @@ addDepsForFallback(DagNode *node, DagNode *fallback, boolean forwards)
 }
 
 static void
-addFallbackDeps(
+addFallbackForNode(
     DagNode *subnode, 
     Vector *nodes, 
     DagNode *fallback,
@@ -1091,8 +1091,21 @@ addFallbackDeps(
 	      newstr("No fallback found for dependency-set in %s",
 		  subnode->fqn->value));
     }
-    prepareFallback(fallback, nodes);
-    addDepsForFallback(super, fallback, forwards);
+    if (fallback->build_type == INACTIVE_NODE) {
+	/* This is an inactive fallback node, so we activate it. */
+	prepareFallback(fallback, nodes);
+    }
+
+    if (fallback->fallback_node) {
+	/* This is an activated fallback node */
+	addDepsForFallback(super, fallback, forwards);
+    }
+    else {
+	/* This must be an existing node that is being used as a
+	   fallback.   In this case, it is just as if this were a normal
+	   dependency.  */
+	addDep(super, fallback, forwards? FORWARDS: BACKWARDS);
+    }
 }
 
 
@@ -1208,7 +1221,7 @@ resolveDeps(DagNode *node, boolean forwards, Vector *nodes)
 	 */
 	node->dep_idx = -1;
 	/* Use the specified fallback node for this dependency set. */
-	addFallbackDeps(node, nodes, node->fallback_node, forwards);
+	addFallbackForNode(node, nodes, node->fallback_node, forwards);
     }
 }
 
@@ -1238,6 +1251,9 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 	if (forwards) {
 	    break;
 	}
+	/* Flow through to UNVISITED state.  RESOLVED_F means the same
+	 * as UNVISITED and occurs when resolving backwards deps after
+	 * the forward deps have been resolved. */
     case UNVISITED: 
 	node->status = VISITING;
 	BEGIN {
@@ -1257,7 +1273,8 @@ resolveNode(DagNode *node, DagNode *from, boolean forwards, Vector *nodes)
 	}
     default: 
 	RAISE(TSORT_ERROR, 
-	      newstr("Unexpected node status: %d", node->status));
+	      newstr("Unexpected node status (%d) for node %s", 
+		     node->status, node->fqn->value));
     }
 }
 
@@ -1269,6 +1286,8 @@ nextSubnode(DagNode *sub, boolean forwards)
     }
     return (DagNode *) sub->backward_subnodes;
 }
+
+static DagNode *supe = NULL;
 
 static void
 promoteSubnodeDeps(DagNode *node, boolean forwards)
@@ -1283,6 +1302,11 @@ promoteSubnodeDeps(DagNode *node, boolean forwards)
 	    /* The index gives the chosen dep. */
 	    deps = forwards? sub->forward_deps: sub->backward_deps;
 	    dep = (DagNode *) ELEM(deps, sub->dep_idx);
+
+	    if (dep == supe) {
+		dbgSexp(node);
+		dbgSexp(dep);
+	    }
 
 	    if ((dep->build_type == INACTIVE_NODE) ||
 		(dep->build_type == FALLBACK_NODE))
@@ -1314,7 +1338,9 @@ promoteSubnodeDeps(DagNode *node, boolean forwards)
 	else {
 	    /* No dep was chosen.  The fallback has already been applied
 	     * but it may need to be promoted. */
-	    sub->fallback_node->build_type = FALLBACK_NODE;
+	    if (sub->fallback_node->build_type == INACTIVE_NODE) {
+		sub->fallback_node->build_type = FALLBACK_NODE;
+	    }
 	}
     }
 }
@@ -1336,7 +1362,6 @@ resolveGraphs(Vector *nodes)
 	node = (DagNode *) ELEM(nodes, i);
 	resolveNode(node, NULL, TRUE, nodes);
     }
-
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 	resolveNode(node, NULL, FALSE, nodes);
@@ -1833,7 +1858,6 @@ redirectDeps(Vector *nodes)
 	}
     }
     
-//    showVectorDeps(nodes);
     disableRedundantFallbacks(nodes, fallback_nodes);
 }
 
@@ -1913,28 +1937,47 @@ dagFromDoc(Document *doc)
     Vector *volatile nodes = dagNodesFromDoc(doc);
     byfqn = hashByFqn(nodes);
 
+//    DagNode *lang;
+//    DagNode *grant;
+//    String *key;
     BEGIN {
 //dbgSexp(doc);
 	identifyParents(nodes, byfqn);
 	bypqn = hashByPqn(nodes);
 	addDependencies(nodes, byfqn, bypqn);
+
+//key = stringNew("language.regressdb.plpgsql");
+//lang = (DagNode *) hashGet(byfqn, (Object *) key);
+//objectFree((Object *) key, TRUE);
+//key = stringNew("grant.function.regressdb.public.addint4(pg_catalog.int4,pg_catalog.int4,pg_catalog.int4).execute:public:bark");
+//grant = (DagNode *) hashGet(byfqn, (Object *) key);
+//objectFree((Object *) key, TRUE);
+//key = stringNew("privilege.cluster.bark.superuser");
+//supe = (DagNode *) hashGet(byfqn, (Object *) key);
+//objectFree((Object *) key, TRUE);
+
 //fprintf(stderr, "============INITIAL==============\n");
 //showVectorDeps(nodes, TRUE);
 
         resolveGraphs(nodes);
-//fprintf(stderr, "============RESOLVED==============\n");
+//showDeps(lang, TRUE);
+//fprintf(stderr, "\n");
+//showDeps(grant, TRUE);
+//fprintf(stderr, "\n");
+//fprintf(stderr, "\n============RESOLVED==============\n");
 //showVectorDeps(nodes, FALSE);
 
         promoteRebuilds(nodes);
         createMirrorNodes(nodes);
         redirectDeps(nodes);
 
-//fprintf(stderr, "============REDIRECTED==============\n");
+//fprintf(stderr, "\n============REDIRECTED==============\n");
 //showVectorDeps(nodes, FALSE);
 
         swapBackwardBreakers(nodes);
-//fprintf(stderr, "============SWAPPED==============\n");
+//fprintf(stderr, "\n============SWAPPED==============\n");
 //showVectorDeps(nodes, FALSE);
+//fprintf(stderr, "============DONE==============\n");
 
     }
     EXCEPTION(ex) {

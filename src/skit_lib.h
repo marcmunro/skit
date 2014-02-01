@@ -219,6 +219,9 @@ typedef struct Cursor {
     Connection *connection;
 } Cursor;
 
+
+/* Note that the order of these is significant for redirectActionType in
+ * src/deps.c */
 typedef enum {
     BUILD_NODE = 0,
     DROP_NODE,
@@ -236,16 +239,6 @@ typedef enum {
     DEPART_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
-
-#define BUILD_NODE_BIT 1
-#define DROP_NODE_BIT 2
-#define DIFF_NODE_BIT 8
-#define EXISTS_NODE_BIT 32
-#define ALL_BUILDTYPE_BITS 43
-
-typedef int BuildTypeBitSet;
-#define inBuildTypeBitSet(btbs, bt)		\
-    ((btbs & (1 << (int) bt)) != 0)
 
 typedef enum {
     UNVISITED = 27,

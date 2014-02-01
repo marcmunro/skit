@@ -93,15 +93,14 @@
       <xsl:with-param name="pqn">
 	<xsl:choose>
 	  <xsl:when test="@automatic='yes'">
-	    <!-- qqqqq
+	    <!-- Create an owner pqn entry (see add_deps.xsl template
+		 pqn-dep for more on this.  -->
 	    <xsl:value-of select="concat('grant.', name(..), '.', 
 				         $parent_core, '.', @priv)"/>
-
-	    -->
-	    <xsl:value-of select="concat('grant.', name(..), '.', 
-				         $parent_core, '.', @priv, ':', @to)"/>
 	  </xsl:when>	
 	  <xsl:otherwise>
+	    <!-- Create a role pqn entry (see add_deps.xsl template
+		 pqn-dep for more on this.  -->
 	    <xsl:value-of select="concat('grant.', name(..), '.', 
 				         $parent_core, '.', @priv, ':', @to)"/>
 	  </xsl:otherwise>
