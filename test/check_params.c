@@ -732,7 +732,7 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
-		    "x",
+		    "z2",
 		    //"regress/scratch/regressdb_dump1a.xml",
 		    "--debug", "--print", "--full"};
 
@@ -830,8 +830,8 @@ START_TEST(diffgen)
 
     initTemplatePath(".");
     //registerTestSQL();
-    //showFree(1205);
-    //showMalloc(299978);
+    //showFree(18538);
+    //showMalloc(18538);
 
     BEGIN {
 	process_args2(6, args);

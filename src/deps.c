@@ -164,51 +164,6 @@ isDepNode(xmlNode *node)
     return isDependency(node) || isDependencySet(node) || isDependencies(node);
 }
 
-static xmlNode *
-nextDepElement(xmlNode *start)
-{
-    xmlNode *node = firstElement(start);
-    while (node && !isDepNode(node)) {
-	node = firstElement(node->next);
-    }
-    return node;
-}
-
-static xmlNode *
-nextDependency(xmlNode *depnode, xmlNode *cur)
-{
-    xmlNode *node = NULL;
-    if (!depnode) {
-	return NULL;
-    }
-    if (cur) {
-	node = nextDepElement(cur->next);
-	if (!node) {
-	    if (cur->parent) {
-		/* We must have been stepping through dependencies in a 
-		 * dependencies element. */
-		node = nextDependency(depnode, cur->parent);
-	    }
-	}
-    }
-    else {
-	if (isDependencySet(depnode)) {
-	    node = nextDependency(depnode->children, NULL);
-	}
-	else {
-	    node = nextDepElement(depnode);
-	}
-    }
-
-    if (node && isDependencies(node)) {
-	/* This is a dependencies node.  Return the dependency nodes
-	 * which are its children. */
-	node = nextDependency(node->children, NULL);
-    }
-    return node;
-}
-
-
 /*
  * Identify the type of build action expected for the supplied dbobject
  * node.
@@ -500,118 +455,6 @@ applicationForDep(xmlNode *node)
     return BOTH_DIRECTIONS;
 }
 
-/* 
- * Append dependencies, returning a vector if there are multiple
- * dependencies, otherwise returning a single DagNode.
- */
-static Object *
-appendDep(Object *cur, Object *new)
-{
-    Vector *vec;
-    if (cur) {
-	if (new) {
-	    if (cur->type != OBJ_VECTOR) {
-		vec = vectorNew(10);
-		vectorPush(vec, cur);
-		cur = (Object *) vec;
-	    }
-
-	    if (new->type == OBJ_VECTOR) {
-		vectorAppend((Vector *) cur, (Vector *) new);
-		objectFree((Object *) new, FALSE);
-	    }
-	    else {
-		vectorPush((Vector *) cur, new);
-	    }
-	}
-	return cur;
-    }
-    return new;
-}
-
-static Vector *
-copyToVector(Cons *cons)
-{
-    int elems = consLen(cons);
-    Vector *result = vectorNew(elems);
-    Cons *this = cons;
-    Object *obj;
-    while (this) {
-	obj = dereference(cons->car);
-	vectorPush(result, obj);
-	this = (Cons *) this->cdr;
-    }
-    return result;
-}
-    
-static Object *
-getDepSet(
-    xmlNode *node, 
-    Hash *byfqn, 
-    Hash *bypqn, 
-    DagNode *dbobject,
-    boolean in_depset)
-{
-    xmlNode *depnode = NULL;
-    Object *dep;
-    Cons *cons;
-    Object *result = NULL;
-    String *qn = NULL;
-
-    if (isDependencySet(node)) {
-	while (depnode = nextDependency(node, depnode)) {
-	    dep = getDepSet(depnode, byfqn, bypqn, dbobject, TRUE);
-	    if (dep) {
-		if ((dep->type == OBJ_DAGNODE) &&
-		    (((DagNode *) dep)->build_type == EXISTS_NODE)) {
-		    /* This dependency set is automatically satisfied.
-		     * This means we do not need to return a set but
-		     * just this simple dependency.  So we clean up and
-		     * exit.
-		     */
-
-		    if (result && result->type == OBJ_VECTOR) {
-			objectFree(result, FALSE);
-		    }
-		    return dep;
-		}
-		else {
-		    result = appendDep(result, dep);
-		}
-	    }
-	}
-    }
-    else {
-	if (qn = nodeAttribute(node, "fqn")) {
-	    dep = hashGet(byfqn, (Object *) qn);
-	    if ((!dep) && (!in_depset)) {
-		/* FQN deps must be found unless this is part of a
-		 * dependency set. */
-		char *msg = newstr("Cannot find dependency %s for %s.",
-				   qn->value, dbobject->fqn->value);
-		objectFree((Object *) qn, TRUE);
-		RAISE(TSORT_ERROR, msg);
-	    }
-	    result = appendDep(result, dep);
-	}
-	else if (qn = nodeAttribute(node, "pqn")) {
-	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
-		assert(cons->type == OBJ_CONS, "DEP BY PQN IS NOT A CONS CELL");
-		if (!cons->cdr) {
-		    /* List has only a single element */
-		    dep = dereference(cons->car);
-		}
-		else {
-		    dep = (Object *) copyToVector(cons);
-		}
-		result = appendDep(result, dep);
-	    }
-	}
-	objectFree((Object *) qn, TRUE);
-    }
-    return result;
-}
-
 static void
 addDepToVector(Vector **p_vector, DagNode *dep)
 {
@@ -642,22 +485,6 @@ addDep(DagNode *node, DagNode *dep, DependencyApplication applies)
     }
 }
 
-
-static DagNode *
-newSubNode(DagNode *node, DependencyApplication applies)
-{
-    DagNode *new = dagNodeNew(node->dbobject, OPTIONAL_NODE);
-    new->supernode = node;
-    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
-	new->forward_subnodes = node->forward_subnodes;
-	node->forward_subnodes = new;
-    }
-    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
-	new->backward_subnodes = node->backward_subnodes;
-	node->backward_subnodes = new;
-    }
-    return new;
-}
 
 static DagNode *
 makeBreakerNode(DagNode *from_node, String *breaker_type)
@@ -892,7 +719,8 @@ makeFallbackNode(String *fqn)
     dbobj = domakeFallbackNode(fqn);
     result = dagNodeNew(dbobj, INACTIVE_NODE);
     return result;
-}    
+}
+
 static void
 setParent(DagNode *node, DagNode *parent)
 {
@@ -903,7 +731,7 @@ setParent(DagNode *node, DagNode *parent)
 }
 
 static void
-addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn);
+addDepsForNode(DagNode *dbobject, Vector *allnodes, Hash *byfqn, Hash *bypqn);
 
 static DagNode *
 getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
@@ -941,74 +769,145 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 }
 
 
+static xmlNode *
+nextDependency2(xmlNode *start, xmlNode *prev)
+{
+    xmlNode *node;
+    if (prev) {
+	node = firstElement(prev->next);
+    }
+    else {
+	node = firstElement(start);
+    }
+    while (node && !isDepNode(node)) {
+	node = firstElement(node->next);
+    }
+    return node;
+}
 
-/* Add both forward and back dependencies to a DagNode from the source
- * xml objects.
- */
+static DagNode *
+newSubNode(DagNode *node, DependencyApplication applies, DagNode *fallback)
+{
+    DagNode *new = dagNodeNew(node->dbobject, OPTIONAL_NODE);
+    new->supernode = node;
+    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
+	new->forward_subnodes = node->forward_subnodes;
+	node->forward_subnodes = new;
+	new->forward_deps = vectorNew(10);
+    }
+    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
+	new->backward_subnodes = node->backward_subnodes;
+	node->backward_subnodes = new;
+	new->backward_deps = vectorNew(10);
+    }
+    new->fallback_node = fallback;
+    return new;
+}
+
 static void
-addDepsForNode(DagNode *node, Vector *allnodes, Hash *byfqn, Hash *bypqn)
+processDepNode(
+    DagNode *dbobject, 
+    xmlNode *depnode,
+    DependencyApplication applies,
+    boolean in_depset,
+    Vector *allnodes, 
+    Hash *byfqn, 
+    Hash *bypqn)
+{
+    xmlNode *this = NULL;
+    DagNode *fallback_node;
+    DagNode *subnodef;
+    DagNode *subnodeb;
+    DagNode *dep;
+    Cons *cons;
+    String *qn = NULL;
+    char *tmp;
+    char *errmsg;
+
+    if (isDependencies(depnode)) {
+	applies = applicationForDep(depnode);
+	while (this = nextDependency2(depnode->children, this)) {
+	    processDepNode(dbobject, this, applies, FALSE, 
+			   allnodes, byfqn, bypqn);
+	}
+    }
+    else if (isDependencySet(depnode)) {
+	fallback_node = getFallbackNode(depnode, byfqn, bypqn, allnodes);
+	if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
+	    subnodef = newSubNode(dbobject, FORWARDS, fallback_node);
+	}
+	if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
+	    subnodeb = newSubNode(dbobject, BACKWARDS, fallback_node);
+	}
+	while (this = nextDependency2(depnode->children, this)) {
+	    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
+		processDepNode(subnodef, this, applies, TRUE, 
+			       allnodes, byfqn, bypqn);
+	    }
+	    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
+		processDepNode(subnodeb, this, applies, TRUE, 
+			       allnodes, byfqn, bypqn);
+	    }
+	}	
+	/* TODO: raise an error if no dependencies were found and there
+	 * is no fallback. */
+    }
+    else if (isDependency(depnode)) {
+	if (qn = nodeAttribute(depnode, "fqn")) {
+	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
+		if (in_depset || dep->build_type != EXISTS_NODE) {
+		    /* If dep is an EXISTS_NODE it can be ignored unless
+		     * this is part of a dependency set.  EXISTS_NODE
+		     * elements can always be satisfied, so are redundant
+		     * except for when choosing which dependency in a
+		     * dependency set may be satisfied. */
+		    addDep(dbobject, dep, applies);
+		}
+	    }
+	    else {
+		/* No dep was found.  FQN dependencies must be satisfied
+		 * unless as part of a dependency-set. */
+		if (!in_depset) {
+		    errmsg = newstr("Cannot find dependency %s for %s.",
+				    qn->value, dbobject->fqn->value);
+		    objectFree((Object *) qn, TRUE);
+		    RAISE(TSORT_ERROR, errmsg);
+		}
+	    }
+	}
+	else if (qn = nodeAttribute(depnode, "pqn")) {
+	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
+		while (cons) {
+		    dep = (DagNode *) dereference(cons->car);
+		    addDep(dbobject, dep, applies);
+		    cons = (Cons *) cons->cdr;
+		}
+	    }
+	}
+	objectFree((Object *) qn, TRUE);
+    }
+    else {
+	tmp = nodestr(depnode);
+	errmsg = newstr("Unexpected node type in dbobject %s.   "
+			"Expecting dependency, found: %s", 
+			dbobject->fqn->value, tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+}
+
+static void
+addDepsForNode(DagNode *dbobject, Vector *allnodes, Hash *byfqn, Hash *bypqn)
 {
     xmlNode *depnode = NULL;
-    Object *deps;
-    DagNode *fallback_node;
-    DagNode *sub;
-    DependencyApplication applies;
-    Object *tmp;
 
-    assert(node, "addDepsForNode: no node provided");
-    assert(node->dbobject, "addDepsForNode: node has no dbobject");
+    assert(dbobject, "addDepsForNode: no dbobject provided");
+    assert(dbobject->dbobject, 
+	   "addDepsForNode: dbobject node has no dbobject");
 
-    while (depnode = nextDependency(node->dbobject->children, depnode)) {
-	/* depnode is either a dependency or a dependency-set node and
-	 * so there may be a single dependency or a set of dependencies
-	 * for this depnode.  If there is a set, only one of the
-	 * dependencies from the set needs to be resolved.  We deal with
-	 * that by creating a subnode for dependency sets.
-	 */
-	applies = applicationForDep(depnode);
-	fallback_node = getFallbackNode(depnode, byfqn, bypqn, allnodes);
-	deps = getDepSet(depnode, byfqn, bypqn, node, FALSE);
-
-	if (deps && (deps->type == OBJ_DAGNODE) && 
-	    (((DagNode *) deps)->build_type == EXISTS_NODE))
-	{
-	    /* There is no need to record a dependency against this dep,
-	     * as it is an EXISTS_NODE.
-	     */
-	    continue;
-	}
-
-	if (fallback_node || (deps && (deps->type == OBJ_VECTOR))) {
-
-	    if ((!deps) || ((deps->type != OBJ_VECTOR))) {
-		tmp = deps;
-		deps = (Object *) vectorNew(10);
-		if (tmp) {
-		    setPush((Vector *) deps, tmp);
-		}
-	    }
-	    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
-
-		// No failure before here
-		sub = newSubNode(node, FORWARDS);
-		sub->forward_deps = (Vector *) deps;
-		sub->fallback_node = fallback_node;
-	    }
-
-	    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
-		sub = newSubNode(node, BACKWARDS);
-		if (deps && (applies == BOTH_DIRECTIONS)) {
-		    sub->backward_deps = vectorCopy((Vector *) deps);
-		}
-		else {
-		    sub->backward_deps = (Vector *) deps;
-		}
-		sub->fallback_node = fallback_node;
-	    }
-	}
-	else if (deps) {
-	    addDep(node, (DagNode *) deps, applies);
-	}
+    while (depnode = nextDependency2(dbobject->dbobject->children, depnode)) {
+	processDepNode(dbobject, depnode, BOTH_DIRECTIONS, FALSE,
+		       allnodes, byfqn, bypqn);
     }
 }
 
@@ -1937,40 +1836,22 @@ dagFromDoc(Document *doc)
     Vector *volatile nodes = dagNodesFromDoc(doc);
     byfqn = hashByFqn(nodes);
 
-//    DagNode *lang;
-//    DagNode *grant;
-//    String *key;
     BEGIN {
 //dbgSexp(doc);
 	identifyParents(nodes, byfqn);
 	bypqn = hashByPqn(nodes);
 	addDependencies(nodes, byfqn, bypqn);
 
-//key = stringNew("language.regressdb.plpgsql");
-//lang = (DagNode *) hashGet(byfqn, (Object *) key);
-//objectFree((Object *) key, TRUE);
-//key = stringNew("grant.function.regressdb.public.addint4(pg_catalog.int4,pg_catalog.int4,pg_catalog.int4).execute:public:bark");
-//grant = (DagNode *) hashGet(byfqn, (Object *) key);
-//objectFree((Object *) key, TRUE);
-//key = stringNew("privilege.cluster.bark.superuser");
-//supe = (DagNode *) hashGet(byfqn, (Object *) key);
-//objectFree((Object *) key, TRUE);
-
 //fprintf(stderr, "============INITIAL==============\n");
 //showVectorDeps(nodes, TRUE);
 
         resolveGraphs(nodes);
-//showDeps(lang, TRUE);
-//fprintf(stderr, "\n");
-//showDeps(grant, TRUE);
-//fprintf(stderr, "\n");
 //fprintf(stderr, "\n============RESOLVED==============\n");
 //showVectorDeps(nodes, FALSE);
 
         promoteRebuilds(nodes);
         createMirrorNodes(nodes);
         redirectDeps(nodes);
-
 //fprintf(stderr, "\n============REDIRECTED==============\n");
 //showVectorDeps(nodes, FALSE);
 

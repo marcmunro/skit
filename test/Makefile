@@ -53,7 +53,7 @@ test/log:
 
 # Major target for running all, or as specified in the TESTS variable, unit 
 # tests.
-unit: skit_test test/log
+unit: skit_test test/log test_data
 	@./skit_test $(TESTS)
 
 # Build new suppression files for valgrind from the suppressions test suite

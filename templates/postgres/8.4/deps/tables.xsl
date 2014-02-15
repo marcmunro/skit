@@ -16,13 +16,13 @@
     <dependency-set
 	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]">
-      <xsl:call-template name="pqn-dep">
+      <xsl:call-template name="schema-deps">
 	<xsl:with-param name="to" select="'public'"/>
       	<xsl:with-param name="priv" select="$priv"/>
       </xsl:call-template>
 
       <xsl:if test="$owner">
-	<xsl:call-template name="pqn-dep">
+	<xsl:call-template name="schema-deps">
 	  <xsl:with-param name="to" select="$owner"/>
 	  <xsl:with-param name="priv" select="$priv"/>
 	</xsl:call-template>

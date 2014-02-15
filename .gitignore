@@ -46,6 +46,9 @@ autom4te.cache/
 # The symlink to the good/hacked check header
 /test/check.h
 
+# XML test data files for diffdeps
+test/data/depdiffs_*.xml
+
 # The contents of the testdb subdirectory
 /testdb
 

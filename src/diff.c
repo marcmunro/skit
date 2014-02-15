@@ -151,48 +151,76 @@ keyattrForType(String *type, Hash *rules)
     }
 }
 
+/* Consumes key and type, generally as keys hash entries. */
 static void
 addNodeToHash(Hash *hash, String *type, String *key, xmlNode *dbobject)
 {
     Hash *subhash = (Hash *) hashGet(hash, (Object *) type);
-    Node *node = nodeNew(dbobject);
+    Node *volatile node = nodeNew(dbobject);
     Object *prev;
+    String *to_free = NULL;
 
-    if (subhash) {
-	objectFree((Object*) type, TRUE);
-    }
-    else {
-	subhash = hashNew(TRUE);
-	prev = hashAdd(hash, (Object *) type, (Object *) subhash);
-	if (prev) {
-	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("Dunno what's going on here\n")); 
+    BEGIN {
+	if (subhash) {
+	    to_free = type;
 	}
-    }
+	else {
+	    subhash = hashNew(TRUE);
+	    prev = hashAdd(hash, (Object *) type, (Object *) subhash);
+	    if (prev) {
+		RAISE(XML_PROCESSING_ERROR, 
+		      newstr("Dunno what's going on here\n")); 
+	    }
+	}
 
-    if (prev = hashAdd(subhash, (Object *) key, (Object *) node)) {
-	RAISE(XML_PROCESSING_ERROR, 
-	      newstr("Duplicate dbobject node type = %s, key = %s", 
-		     type->value, key->value));
+	if (prev = hashAdd(subhash, (Object *) key, (Object *) node)) {
+	    node = NULL;  /* Do not free node in the exception handler. */
+	    dbgSexp(prev);
+	    dbgNode(dbobject);
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("Duplicate dbobject node type = %s, key = %s", 
+			 type->value, key->value));
+	}
+	objectFree((Object*) to_free, TRUE);
     }
+    EXCEPTION(ex) {
+	objectFree((Object *) node, FALSE);
+    }
+    END;
 }
 
 static Hash *
 allDbobjects(xmlNode *node, Hash *rules)
 {
-    Hash *hash = hashNew(TRUE);
+    Hash *volatile hash = hashNew(TRUE);
     String *type;
     char *keyattr;
     String *key;
     xmlNode *this = node;
-
-    while (this = getDbobject(this)) {
-	type = dbobjectType(this);
-	keyattr = keyattrForType(type, rules);
-	key = nodeAttribute(this, keyattr);
-	addNodeToHash(hash, type, key, this);
-	this = this->next;
+    char *tmp;
+    char *errmsg;
+    BEGIN {
+	while (this = getDbobject(this)) {
+	    type = dbobjectType(this);
+	    keyattr = keyattrForType(type, rules);
+	    if (key = nodeAttribute(this, keyattr)) {
+		addNodeToHash(hash, type, key, this);
+		this = this->next;
+	    }
+	    else {
+		objectFree((Object *) type, TRUE);
+		tmp = nodestr(node);
+		errmsg = newstr("Cannot find key field %s in node %s.", 
+				keyattr, tmp);
+		skfree(tmp);
+		RAISE(XML_PROCESSING_ERROR, errmsg);
+	    }
+	}
     }
+    EXCEPTION(ex) {
+	objectFree((Object *) hash, TRUE);
+    }
+    END;
 
     return hash;
 }

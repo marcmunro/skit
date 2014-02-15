@@ -86,7 +86,7 @@ check_pglibs:
 # Regression test targets.
 regress_cluster: check_pglibs
 	@if [ -d $(REGRESS_DIR)/REGRESSDB ]; then \
-	    echo Error: database files already exist.; exit 1; fi
+	    $(MAKE) --silent drop_regress_cluster; fi
 	@echo Creating new cluster for regression tests...
 	@echo ...building cluster...
 	@$(PGBIN)/initdb --pgdata $(REGRESS_DIR)/REGRESSDB 2>&1 >$(REGRESS_LOG)

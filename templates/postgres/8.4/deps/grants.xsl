@@ -87,24 +87,17 @@
       </xsl:with-param>
       <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
       <xsl:with-param name="owner" select="../@owner"/>
-      <xsl:with-param name="fqn" 
-		      select="concat('grant.', name(..), '.', $parent_core,  
-			             '.', @priv, ':', @to, ':', @from)"/>
+      <xsl:with-param name="fqn">
+	<xsl:value-of select="concat('grant.', name(..), '.', 
+			             $parent_core, '.', @priv)"/>
+	<xsl:if test="not(@automatic='yes' and @to = @from and 1 = 1)">
+	  <xsl:value-of 
+	      select="concat(':', @to, ':', @from)"/>
+	</xsl:if>
+      </xsl:with-param>
       <xsl:with-param name="pqn">
-	<xsl:choose>
-	  <xsl:when test="@automatic='yes'">
-	    <!-- Create an owner pqn entry (see add_deps.xsl template
-		 pqn-dep for more on this.  -->
-	    <xsl:value-of select="concat('grant.', name(..), '.', 
-				         $parent_core, '.', @priv)"/>
-	  </xsl:when>	
-	  <xsl:otherwise>
-	    <!-- Create a role pqn entry (see add_deps.xsl template
-		 pqn-dep for more on this.  -->
-	    <xsl:value-of select="concat('grant.', name(..), '.', 
-				         $parent_core, '.', @priv, ':', @to)"/>
-	  </xsl:otherwise>
-	</xsl:choose>
+	<xsl:value-of select="concat('grant.', name(..), '.', 
+			             $parent_core, '.', @priv, ':', @to)"/>
       </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
@@ -127,13 +120,13 @@
 	  fallback="{concat('privilege.cluster.', @from, '.superuser')}"
 	  parent="ancestor::dbobject[database]">
 	    
-	<xsl:call-template name="pqn-schema-usage">
+	<xsl:call-template name="deps-schema-usage">
 	  <xsl:with-param name="to" select="@from"/>
 	</xsl:call-template>
-	<xsl:call-template name="pqn-schema-usage">
+	<xsl:call-template name="deps-schema-usage">
 	  <xsl:with-param name="to" select="'public'"/>
 	</xsl:call-template>
-	<xsl:call-template name="pqn-schema-create">
+	<xsl:call-template name="deps-schema-create">
 	  <xsl:with-param name="to" select="@from"/>
 	</xsl:call-template>
 	<dependency 

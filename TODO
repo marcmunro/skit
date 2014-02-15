@@ -1,31 +1,49 @@
+Current Try making fqns for automatic grants, not contain the grantee.
+If this works remove the owner pqn stuff.  Reexamine the pqn-dep
+template and its associates in add_deps.xsl
+
+
 
 WORKING ON:
 
+- BUILDING TEST CASES for NP3.  See test/data/depdiffs_1a.sql
+  test/check_deps.c
+
+TODO: Rename condition attribute of dependencies to direction
+      This is a precursor to creating a condition attribute which
+      enables/disables a dependency-set based on whether we are doing a
+      build, drop or diff.  We need this because create privilege on the
+      schema is required for object creation, but usage is required for
+      object manipulation.
+
+
+
+NP4:
+dep tests fail.  This seems to be a consequence of the ongoing deps
+work.  Let's deal with this later.
+
+Nested Problem 3:
+dependency-sets for owner diffs are incorrect.  See comments in
+diffs/functions.xml for details on what needs to happen.  Unit test
+cases should probably be constructed before tackling this stuff.
+
+Nested Problem 2:
+Trying to make the fqns of grants to the owner of an object simpler than
+other grants.  In this case it is enough to know what has been granted
+and we do not need to know to which or by which role it was granted.
+This will allow ownership of objects to be changed without needing to
+change any grants.  A unit test case should be constructed for this.
+
+Partial changes have been implemented in add_deps.xsl and deps.grants.xsl
 
 Nested Problem 1:
 Stymied on a sequence issue:
 
-1) It seems that the owner cannot modify the current value of the
+It seems that the owner cannot modify the current value of the
 sequence if they do not have update privilege on the sequence (and
 possibly usage on the schema).  Note that this may be a postgresql bug
 and should be checked, and reported if so.
 
-2) When we change the owner of an object we manually revoke the
-automatically granted privileges and then manually recreate them for the
-new owner.  If we did not do this, 1 would be less of a problem.  One
-possibility is to handle automated privileges specially - this needs
-some thought but would probably be a good thing.
-
-3) Even if doing 2 solves the current issue of 1, there will be other
-special cases of 1 (when the privileges have been manually revoked) and
-so a fallback will be needed.
-
-POSSIBLE SOLUTION: for 2 at least, which will solve most instances of
-1.  For automatic grants to and from the same role, eliminate the role
-name parts of the fqn.  This will mean that no difference is seen for
-automatic grants when ownership of an object changes.  I'm not sure what
-the consequence will be of the pqn changing though - that needs to be
-thought through.
 
 
 Item: Think about what to do for automatically named constraints

@@ -687,5 +687,7 @@ create sequence "public"."thingy_id_seq"
 
 comment on sequence "public"."thingy_id_seq" is
 'thingy';
+
+create sequence wibble.x;
 */
 EOF
