@@ -28,7 +28,6 @@ skitHome(char *executable)
     char *expr = "/[^/]*$";
     regex_t regex;
     regmatch_t matches[1];
-    int result;
     int errcode;
     int len;
     char *homedir;
@@ -55,7 +54,7 @@ skitHome(char *executable)
     }
 }
 
-void
+static void
 process_args(int argc,
 	     char *argv[])
 {

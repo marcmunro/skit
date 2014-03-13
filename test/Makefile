@@ -23,12 +23,13 @@ TEST_SOURCES = $(wildcard $(TEST_DIR)/*.c)
 TEST_HEADERS = $(wildcard $(TEST_DIR)/*.h)
 
 TEST_OBJECTS = $(TEST_SOURCES:%.c=%.o)
-TEST_DEPS = $(TEST_SOURCES:.c=.d)
+TEST_DEPS = $(TEST_OBJECTS:.o=.d)
 TEST_GARBAGE = $(garbage:%=$(TEST_DIR)/%)
 
-LIBCHECK = /usr/lib/libcheck.a
-#LIBCHECK = /home/marc/dpkg/check-0.9.8/src/.libs/libcheck.a
+# Include dependency files for each test file
+-include $(TEST_DEPS) #$(TEST_DIR)/alltests.dep
 
+LIBCHECK = /usr/lib/libcheck.a
 
 MEMCHECK_OPTIONS = --leak-check=full --show-reachable=yes --trace-children=yes 
 SUPPRESSION_FILES = $(wildcard valgrind/*_suppressions)
@@ -39,13 +40,24 @@ VALGRIND_BASIC_OPTIONS = --tool=memcheck $(MEMCHECK_OPTIONS) \
 GEN_SUPPRESSIONS = $(VALGRIND_BASIC_OPTIONS) --gen-suppressions=all
 VALGRIND_OPTIONS = $(VALGRIND_BASIC_OPTIONS) $(MEMCHECK_SUPPRESSIONS)
 
-# Include dependency files for each test file
-include $(TEST_DEPS) $(TEST_DIR)/alltests.dep
 
 
 # Build skit unit test executable from sources.
-skit_test:	$(TEST_OBJECTS) $(SRC_TESTED_OBJECTS)
-	$(CC) $(LDFLAGS) $(TEST_OBJECTS) $(SRC_TESTED_OBJECTS) $(LIBCHECK) -o $@
+# Also create the alltests.dep Makefile.  This identifies all of the
+# components of the grind and skgrind targets, which are used to run
+# individual grind and skgrind tests.
+skit_test:	$(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST)
+	@echo "  LINK" $@
+	@$(CC) $(LDFLAGS) $(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST) \
+		$(LIBCHECK) -o $@
+	@echo "  CREATE" $(TEST_DIR)/alltests.dep FROM $@ 
+	@./skit_test -r $(SUPP_FLAG) 2>/dev/null | \
+	    while read suite test; do \
+	        echo grind__$${suite}: $${suite}__$${test}.grind; \
+	        echo _grind: grind__$${suite}; \
+	        echo skgrind__$${suite}: $${suite}__$${test}.skgrind; \
+	        echo _skgrind: skgrind__$${suite}; \
+	    done > $(TEST_DIR)/alltests.dep
 
 test/log:
 	@-mkdir test/log 2>/dev/null
@@ -137,18 +149,6 @@ tests_distclean: tests_clean
 	@valgrind/run_valgrind $(VALGRIND_OPTIONS) \
 		./skit_test -n `$(TARG_TO_TEST)` | grep .
 
-# Create the alltests.dep Makefile.  This identifies all of the components
-# of the grind and skgrind targets, which are used to run individual
-# grind and skgrind tests.
-$(TEST_DIR)/alltests.dep: skit_test
-	@./skit_test -r $(SUPP_FLAG) 2>/dev/null | \
-	    while read suite test; do \
-	        echo grind__$${suite}: $${suite}__$${test}.grind; \
-	        echo _grind: grind__$${suite}; \
-	        echo skgrind__$${suite}: $${suite}__$${test}.skgrind; \
-	        echo _skgrind: skgrind__$${suite}; \
-	    done > $@ 
-	@echo Recreated $@
 
 
 # Describe what this makefile can build

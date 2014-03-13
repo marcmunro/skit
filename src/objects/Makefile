@@ -18,19 +18,19 @@
 # possibly misguided, attempt to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
 
-.PHONY: objects_clean objects_help
+.PHONY: src/objects_clean src/objects_help
 
 OBJECTS_DIR = src/objects
 OBJECTS_SOURCES = $(wildcard $(OBJECTS_DIR)/*.c)
-OBJECTS_HEADERS = $(wildcard $(OBJECTS_DIR)/*.h)
-
 OBJECTS_OBJECTS = $(OBJECTS_SOURCES:%.c=%.o)
-OBJECTS_DEPS = $(OBJECTS_SOURCES:.c=.d)
 OBJECTS_GARBAGE = $(garbage:%=$(OBJECTS_DIR)/%)
 
+SKIT_OBJECTS := $(SKIT_OBJECTS) $(OBJECTS_OBJECTS)
 
-# Include dependency files for each source file
-include $(OBJECTS_DEPS) 
+OBJECTS_DEPS = $(OBJECTS_OBJECTS:.o=.d)
+
+# Include dependency files for each object
+-include $(OBJECTS_DEPS) 
 
 
 # Remove the shared library and all generated/intermediate files

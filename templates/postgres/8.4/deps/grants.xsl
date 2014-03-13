@@ -20,13 +20,15 @@
 
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
-      <xsl:with-param name="subtype" select="'role'"/>
       <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
       <xsl:with-param name="owner" select="@from"/>
-      <xsl:with-param name="pqn" select="concat('grant.role.cluster.', 
-					        @to, '.', @priv)"/>
       <xsl:with-param name="fqn" select="concat('grant.role.cluster.', 
 					        @to, '.', @priv, ':', @from)"/>
+      <xsl:with-param name="others">
+	<param name="subtype" value="role"/>
+	<param name="pqn" 
+	       value="{concat('grant.role.cluster.', @to, '.', @priv)}"/>
+      </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
 
@@ -60,31 +62,6 @@
 
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
-      <xsl:with-param name="subtype">
-	<xsl:choose>
-	  <xsl:when test="name(..)='sequence'">
-	    <xsl:value-of select="'table'"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:value-of select="name(..)"/>
-	  </xsl:otherwise>
-	</xsl:choose>
-      </xsl:with-param>
-      <xsl:with-param name="on">
-	<xsl:choose>
-	  <xsl:when test="name(..)='function'">
-	    <xsl:for-each select="..">
-	      <xsl:call-template name="function-qname"/>
-	    </xsl:for-each>
-	  </xsl:when>
-	  <xsl:when test="../@schema">
-	    <xsl:value-of select="skit:dbquote(../@schema, ../@name)"/>
-	  </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:value-of select="skit:dbquote(../@name)"/>
-	  </xsl:otherwise>
-	</xsl:choose>	
-      </xsl:with-param>
       <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
       <xsl:with-param name="owner" select="../@owner"/>
       <xsl:with-param name="fqn">
@@ -95,9 +72,39 @@
 	      select="concat(':', @to, ':', @from)"/>
 	</xsl:if>
       </xsl:with-param>
-      <xsl:with-param name="pqn">
-	<xsl:value-of select="concat('grant.', name(..), '.', 
-			             $parent_core, '.', @priv, ':', @to)"/>
+      <xsl:with-param name="others">
+	<param name="pqn" 
+	       value="{concat('grant.', name(..), '.', 
+			      $parent_core, '.', @priv, ':', @to)}"/>
+	<param name="subtype">
+	  <xsl:attribute name="value">
+	    <xsl:choose>
+	      <xsl:when test="name(..)='sequence'">
+		<xsl:value-of select="'table'"/>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:value-of select="name(..)"/>
+	      </xsl:otherwise>
+	    </xsl:choose>
+	  </xsl:attribute>
+	</param>
+	<param name="on">
+	  <xsl:attribute name="value">
+	    <xsl:choose>
+	      <xsl:when test="name(..)='function'">
+		<xsl:for-each select="..">
+		  <xsl:call-template name="function-qname"/>
+		</xsl:for-each>
+	      </xsl:when>
+	      <xsl:when test="../@schema">
+		<xsl:value-of select="skit:dbquote(../@schema, ../@name)"/>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:value-of select="skit:dbquote(../@name)"/>
+	      </xsl:otherwise>
+	    </xsl:choose>	
+	  </xsl:attribute>
+	</param>
       </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>

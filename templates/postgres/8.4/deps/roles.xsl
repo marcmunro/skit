@@ -44,7 +44,9 @@
       <xsl:with-param name="fqn" select="concat('privilege.', $parent_core, 
 					        '.', @priv)"/>
       <xsl:with-param name="qname" select="skit:dbquote(@priv)"/>
-      <xsl:with-param name="role_qname" select="skit:dbquote(../@name)"/>
+      <xsl:with-param name="others">
+	<param name="role_qname" value="{skit:dbquote(../@name)}"/>
+      </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
 

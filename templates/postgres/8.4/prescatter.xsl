@@ -21,26 +21,24 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="dbobject/dependencies">
-    <!-- We may as well remove the dependency elements now.  We won't be
-         needing them.
-      -->
-  </xsl:template>
+  <!-- We may as well remove the dependency elements now.  We won't be
+       needing them.
+  -->
+  <xsl:template match="dbobject/dependencies"/>
 
-  <xsl:template match="dbobject/context">
-    <!-- We may as well remove the context elements now.  We won't be
-         needing them.
-      -->
-  </xsl:template>
+  <!-- ditto for context elements.  -->
+  <xsl:template match="dbobject/context"/>
+
+  <!-- and extra-schema-priv-elements.  -->
+  <xsl:template match="dbobject/extra-schema-privs"/>
 
   <xsl:template match="dbobject[@type='grant']">
     <!-- We remove the dbobject for grants. -->
     <xsl:apply-templates/>
   </xsl:template>
 
-  <xsl:template match="dbobject[@type='dbincluster']">
-    <!-- We remove this entire dbobject -->
-  </xsl:template>
+  <!-- We remove this entire dbobject -->
+  <xsl:template match="dbobject[@type='dbincluster']"/>
 
   <xsl:template match="*">
     <xsl:copy>

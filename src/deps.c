@@ -412,6 +412,21 @@ conditionForDep(xmlNode *node)
     return condition_str;
 }
 
+String *
+directionForDep(xmlNode *node)
+{
+    String *direction_str = nodeAttribute(node, "direction");
+    if (direction_str) {
+	stringLowerInPlace(direction_str);
+    }
+    else {
+	if (isDependencies(node->parent)) {
+	    return directionForDep(node->parent);
+	}
+    }
+    return direction_str;
+}
+
 /* 
  * Identify to which sides of the DAG, the current dependency or
  * dependency-set applies.
@@ -419,40 +434,25 @@ conditionForDep(xmlNode *node)
 static DependencyApplication 
 applicationForDep(xmlNode *node)
 {
-    String *condition_str = nodeAttribute(node, "condition");
-    String separators = {OBJ_STRING, " ()"};
-    Cons *contents;
-    Cons *elem;
-    char *head;
+    String *direction_str = directionForDep(node);
     DependencyApplication result;
 
-    if (condition_str) {
-	stringLowerInPlace(condition_str);
-	elem = contents = stringSplit(condition_str, &separators, FALSE);
-	while (elem) {
-	    head = ((String *) elem->car)->value;
-	    if (streq(head, "forwards")) {
-		result = FORWARDS;
-	    }
-	    else if (streq(head, "backwards")) {
-		result = BACKWARDS;
-	    }
-	    else {
-		result = CUSTOM;
-	    }
-	    elem = (Cons *) elem->cdr;
+    if (direction_str) {
+	if (streq(direction_str->value, "forwards")) {
+	    result = FORWARDS;
 	}
-
-	objectFree((Object *) condition_str, TRUE);
-	objectFree((Object *) contents, TRUE);
-	return result;
+	else if (streq(direction_str->value, "backwards")) {
+	    result = BACKWARDS;
+	}
+	else {
+	    result = CUSTOM;
+	}
+	objectFree((Object *) direction_str, TRUE);
     }
     else {
-	if (isDependencies(node->parent)) {
-	    return applicationForDep(node->parent);
-	}
+	result = BOTH_DIRECTIONS;
     }
-    return BOTH_DIRECTIONS;
+    return result;
 }
 
 static void
@@ -769,8 +769,9 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 }
 
 
+/* TODO: Fix the api for this function - it is ugly. */
 static xmlNode *
-nextDependency2(xmlNode *start, xmlNode *prev)
+nextDependency(xmlNode *start, xmlNode *prev)
 {
     xmlNode *node;
     if (prev) {
@@ -783,6 +784,17 @@ nextDependency2(xmlNode *start, xmlNode *prev)
 	node = firstElement(node->next);
     }
     return node;
+}
+
+
+boolean
+directionMatch(DependencyApplication applies, boolean forwards)
+{
+    switch (applies) {
+    case FORWARDS: return forwards;
+    case BACKWARDS: return !forwards;
+    default: return TRUE;
+    }
 }
 
 static DagNode *
@@ -808,12 +820,12 @@ static void
 processDepNode(
     DagNode *dbobject, 
     xmlNode *depnode,
-    DependencyApplication applies,
     boolean in_depset,
     Vector *allnodes, 
     Hash *byfqn, 
     Hash *bypqn)
 {
+    DependencyApplication applies;
     xmlNode *this = NULL;
     DagNode *fallback_node;
     DagNode *subnodef;
@@ -824,10 +836,10 @@ processDepNode(
     char *tmp;
     char *errmsg;
 
+    applies = applicationForDep(depnode);
     if (isDependencies(depnode)) {
-	applies = applicationForDep(depnode);
-	while (this = nextDependency2(depnode->children, this)) {
-	    processDepNode(dbobject, this, applies, FALSE, 
+	while (this = nextDependency(depnode->children, this)) {
+	    processDepNode(dbobject, this, FALSE, 
 			   allnodes, byfqn, bypqn);
 	}
     }
@@ -839,13 +851,13 @@ processDepNode(
 	if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
 	    subnodeb = newSubNode(dbobject, BACKWARDS, fallback_node);
 	}
-	while (this = nextDependency2(depnode->children, this)) {
+	while (this = nextDependency(depnode->children, this)) {
 	    if ((applies == FORWARDS) || (applies == BOTH_DIRECTIONS)) {
-		processDepNode(subnodef, this, applies, TRUE, 
+		processDepNode(subnodef, this, TRUE, 
 			       allnodes, byfqn, bypqn);
 	    }
 	    if ((applies == BACKWARDS) || (applies == BOTH_DIRECTIONS)) {
-		processDepNode(subnodeb, this, applies, TRUE, 
+		processDepNode(subnodeb, this, TRUE, 
 			       allnodes, byfqn, bypqn);
 	    }
 	}	
@@ -871,6 +883,8 @@ processDepNode(
 		    errmsg = newstr("Cannot find dependency %s for %s.",
 				    qn->value, dbobject->fqn->value);
 		    objectFree((Object *) qn, TRUE);
+		    dbgSexp(dbobject);
+		    dNode(depnode);
 		    RAISE(TSORT_ERROR, errmsg);
 		}
 	    }
@@ -905,9 +919,8 @@ addDepsForNode(DagNode *dbobject, Vector *allnodes, Hash *byfqn, Hash *bypqn)
     assert(dbobject->dbobject, 
 	   "addDepsForNode: dbobject node has no dbobject");
 
-    while (depnode = nextDependency2(dbobject->dbobject->children, depnode)) {
-	processDepNode(dbobject, depnode, BOTH_DIRECTIONS, FALSE,
-		       allnodes, byfqn, bypqn);
+    while (depnode = nextDependency(dbobject->dbobject->children, depnode)) {
+	processDepNode(dbobject, depnode, FALSE, allnodes, byfqn, bypqn);
     }
 }
 
@@ -923,6 +936,114 @@ addDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
        this = (DagNode *) ELEM(nodes, i);
        assert(this->type == OBJ_DAGNODE, "incorrect node type");
        addDepsForNode(this, nodes, byfqn, bypqn);
+   }
+}
+
+
+
+static void
+processDepNode2(
+    DagNode *dbobject, 
+    xmlNode *depnode,
+    Vector *allnodes, 
+    Hash *byfqn, 
+    Hash *bypqn)
+{
+    DependencyApplication applies;
+    xmlNode *this = NULL;
+    DagNode *fallback_node;
+    DagNode *subnodef;
+    DagNode *subnodeb;
+    DagNode *dep;
+    Cons *cons;
+    String *qn = NULL;
+    char *tmp;
+    char *errmsg;
+
+    applies = applicationForDep(depnode);
+    if (isDependencies(depnode)) {
+	while (this = nextDependency(depnode->children, this)) {
+	    processDepNode2(dbobject, this, allnodes, byfqn, bypqn);
+	}
+    }
+    else if (isDependencySet(depnode)) {
+	/* Dependency sets are processed later, when we have enough
+	 * information to handle conditionality (in
+	 * resolveConditional()).
+	 */
+    }
+    else if (isDependency(depnode)) {
+	if (qn = nodeAttribute(depnode, "fqn")) {
+	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
+		if (dep->build_type != EXISTS_NODE) {
+		    /* If dep is an EXISTS_NODE it can be ignored.
+		     * dependencies on EXISTS_NODE elements can always
+		     * be satisfied, so dependencies on them are
+		     * effectively redundant.
+		     */
+		    addDep(dbobject, dep, applies);
+		}
+	    }
+	    else {
+		/* No dep was found.  FQN dependencies must be
+		 * satisfied.
+		 */
+		errmsg = newstr("Cannot find dependency %s for %s.",
+				qn->value, dbobject->fqn->value);
+		objectFree((Object *) qn, TRUE);
+		dbgSexp(dbobject);
+		dNode(depnode);
+		RAISE(TSORT_ERROR, errmsg);
+	    }
+	}
+	else if (qn = nodeAttribute(depnode, "pqn")) {
+	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
+		while (cons) {
+		    dep = (DagNode *) dereference(cons->car);
+		    addDep(dbobject, dep, applies);
+		    cons = (Cons *) cons->cdr;
+		}
+	    }
+	}
+	objectFree((Object *) qn, TRUE);
+    }
+    else {
+	tmp = nodestr(depnode);
+	errmsg = newstr("Unexpected node type in dbobject %s.   "
+			"Expecting dependency, found: %s", 
+			dbobject->fqn->value, tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+}
+
+static void
+addUnconditionalDepsForNode(
+    DagNode *dbobject, 
+    Vector *allnodes, 
+    Hash *byfqn, 
+    Hash *bypqn)
+{
+    xmlNode *depnode = NULL;
+
+    assert(dbobject, "addDepsForNode: no dbobject provided");
+    assert(dbobject->dbobject, 
+	   "addDepsForNode: dbobject node has no dbobject");
+
+    while (depnode = nextDependency(dbobject->dbobject->children, depnode)) {
+	processDepNode2(dbobject, depnode, allnodes, byfqn, bypqn);
+    }
+}
+
+static void
+addUnconditionalDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn)
+{
+   DagNode *volatile this = NULL;
+   int volatile i;
+   EACH(nodes, i) {
+       this = (DagNode *) ELEM(nodes, i);
+       assert(this->type == OBJ_DAGNODE, "incorrect node type");
+       addUnconditionalDepsForNode(this, nodes, byfqn, bypqn);
    }
 }
 
@@ -959,6 +1080,51 @@ prepareFallback(DagNode *fallback, Vector *nodes)
 	/* Add dependencies from endfallback to fallback. */
 	addDep(endfallback, fallback, FORWARDS);
 	addDep(fallback, endfallback, BACKWARDS);
+    }
+}
+
+static void
+activateFallback(DagNode *fallback, Vector *nodes)
+{
+    DagNode *endfallback;
+    DagNode *dep;
+    char *endfqn;
+    int i;
+
+    assert(fallback && fallback->type == OBJ_DAGNODE, 
+	   "activateFallback: node is not a DagNode");
+ 
+    if (fallback->build_type == INACTIVE_NODE) {
+	assert(!fallback->fallback_node,
+	       "activateFallback: fallback_node already defined");
+	
+	endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
+	endfqn = newstr("end%s", endfallback->fqn->value);
+	skfree(endfallback->fqn->value);
+	endfallback->fqn->value = endfqn;
+	endfallback->parent = fallback->parent;
+	fallback->fallback_node = endfallback;
+	endfallback->fallback_node = fallback;
+	setPush(nodes, (Object *) endfallback);
+
+	/* Copy dependencies from fallback node to endfallback (they
+	 * both depend on the same objects (eg the role to be given
+	 * superuser in the postgres fallback to superuser instance). */
+	EACH(fallback->forward_deps, i) {
+	    dep = (DagNode *) ELEM(fallback->forward_deps, i);
+	    addDep(endfallback, dep, FORWARDS);
+	}
+	EACH(fallback->backward_deps, i) {
+	    dep = (DagNode *) ELEM(fallback->backward_deps, i);
+	    addDep(endfallback, dep, BACKWARDS);
+	}
+
+	/* Add dependencies from endfallback to fallback. */
+	addDep(endfallback, fallback, FORWARDS);
+	addDep(fallback, endfallback, BACKWARDS);
+
+	fallback->build_type = FALLBACK_NODE;
+	endfallback->build_type = ENDFALLBACK_NODE;
     }
 }
 
@@ -1244,6 +1410,461 @@ promoteSubnodeDeps(DagNode *node, boolean forwards)
     }
 }
 
+static void
+resolveNodeUnconditional(DagNode *node, boolean forwards, Vector *nodes);
+
+static void
+resolveDepsUnconditional(DagNode *node, boolean forwards, Vector *nodes)
+{
+    Vector *volatile deps = forwards? node->forward_deps: node->backward_deps;
+    int volatile i;
+    boolean volatile cyclic_exception;
+    DagNode *volatile dep;
+    DagNode *breaker;
+    DagNode *cycle_node;
+    char *tmpmsg;
+    char *errmsg;
+
+    if (deps) {
+	EACH(deps, i) {
+	    dep = (DagNode *) ELEM(deps, i);
+	    node->dep_idx = i;
+	    if (dep->build_type == INACTIVE_NODE) {
+		/* TODO: Figure out if this logic still makes sense - it
+		 * may be a remnant from a past version that is no
+		 * longer appropriate since we refactored. */
+
+		/* Dependencies on inactive fallback nodes are not
+ 		 * considered to be satisfied, so try the next one. */
+		continue;
+	    }
+	    BEGIN {
+		cyclic_exception = FALSE;
+		resolveNodeUnconditional(dep, forwards, nodes);
+	    }
+	    EXCEPTION(ex);
+	    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+		cyclic_exception = TRUE;
+		cycle_node = (DagNode *) ex->param;
+		errmsg = newstr("%s", ex->text);
+	    }
+	    END;
+	    if (cyclic_exception) {
+		//printSexp(stderr, "Cycling at: ", (Object *) dep);
+		//printSexp(stderr, "  from: ", (Object *) node);
+
+		if (breaker = getBreakerFor(dep, nodes)) {
+		    /* Replace the current dependency on dep with
+		     * one instead on breaker.  Breaker has been created
+		     * with the same dependencies as depnode, so we must
+		     * remove from it the dependency that causes the
+		     * cycle.  Then we replace the current dependency on
+		     * depnode with one instead on breaker and finally
+		     * we retry processing this, modified, dependency. */
+		    
+		    skfree(errmsg);
+		    processBreaker(node, dep, breaker, forwards);
+		    i--;
+		    continue;
+		}
+
+		/* We were unable to resolve the cyclic dependency in
+ 		 * this node.  Update the errmsg and re-raise it - maybe
+ 		 * one of our callers will be able to resolve it.
+		 */
+		if (node == cycle_node) {
+		    /* We are at the start of the cyclic dependency.
+		     * Set errmsg to describe this, and reset cycle_node
+		     * for the RAISE below. */ 
+		    tmpmsg = newstr("Cyclic dependency detected: %s->%s", 
+				    node->fqn->value, errmsg);
+		    cycle_node = NULL;
+		}
+		else if (cycle_node) {
+		    /* We are somewhere in the cycle of deps.  Add the
+		     * current node to the error message. */ 
+		    tmpmsg = newstr("%s->%s", node->fqn->value, errmsg);
+		}
+		else {
+		    /* We are outside of the cyclic deps.  Add this node
+		     * to the error message so we can see how we got
+		     * to this point.  */ 
+		    tmpmsg = newstr("%s from %s", errmsg, node->fqn->value);
+		}
+
+		skfree(errmsg);
+		node->dep_idx = -1;
+
+		RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
+	    }
+	    //else {
+	    //	printSexp(stderr, "Resolved: ", (Object *) dep);
+	    //	printSexp(stderr, "  from: ", (Object *) node);
+	    //}
+	}
+    }
+}
+
+static void
+resolveNodeUnconditional(DagNode *node, boolean forwards, Vector *nodes)
+{
+    assert(node && node->type == OBJ_DAGNODE, 
+	   "resolveNodeConditional: node is not a DagNode");
+    switch (node->status) {
+    case VISITING:
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
+    case RESOLVED_F:
+	if (forwards) {
+	    break;
+	}
+	/* Flow through to UNVISITED state.  RESOLVED_F here means the
+	 * same as UNVISITED and occurs when resolving backwards deps
+	 * after the forward deps have been resolved.  Having two states
+	 * for RESOLVED means that we don't have to explicitly reset the
+	 * state after processing each direction.  */
+    case UNVISITED: 
+	node->status = VISITING;
+	BEGIN {
+	    resolveDepsUnconditional(node, forwards, nodes);
+	}
+	EXCEPTION(ex) {
+	    node->status = UNVISITED;
+	    RAISE();
+	}
+	END;
+	node->status = forwards? RESOLVED_F: RESOLVED;
+	break;
+    case RESOLVED:
+	if (!forwards) {
+	    break;
+	}
+    default: 
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected node status (%d) for node %s", 
+		     node->status, node->fqn->value));
+    }
+}
+
+
+/* Resolves the non-optional parts of the forward and backward DAGS,
+ * eliminating cycles.  The algorithm for resolving the graph is
+ * essentially a classic tsort algorithm, with cyclic exceptions trapped
+ * and handled by adding a cycle breaker.
+ */
+static void
+resolveUnconditional(Vector *nodes)
+{
+    DagNode *node;
+    int i;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	resolveNodeUnconditional(node, TRUE, nodes);
+    }
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	resolveNodeUnconditional(node, FALSE, nodes);
+    }
+}
+
+static xmlNode *
+nextDepNode(xmlNode *from, xmlNode *root)
+{
+    xmlNode *node;
+    if (from) {
+	if (from->children) {
+	    node = firstElement(from->children);
+	}
+	else {
+	    node = firstElement(from->next);
+	}
+
+	while (TRUE) {
+	    if (node) {
+		if (isDepNode(node)) {
+		    return node;
+		}
+		node = firstElement(node->next);
+	    }
+	    else {
+		from = from->parent;
+		if (!from || (from == root)) {
+		    return NULL;
+		}
+		node = firstElement(from->next);
+	    }
+	}
+    }
+    return NULL;
+}
+
+static xmlNode *
+nextDepSet(xmlNode *from, xmlNode *dbobject, boolean forwards)
+{
+    DependencyApplication applies;
+    xmlNode *node = nextDepNode(from, dbobject);
+
+    while (node) {
+	if (isDependencySet(node)) {
+	    applies = applicationForDep(node);
+	    if (directionMatch(applies, forwards)) {
+		return node;
+	    }
+	}
+	node = nextDepNode(node, dbobject);
+    }
+    return node;
+}
+ 
+static xmlNode *
+nextDependency2(xmlNode *from, xmlNode *parent)
+{
+    xmlNode *node = nextDepNode(from, parent);
+
+    while (node) {
+	if (isDependency(node)) {
+	    return node;
+	}
+	node = nextDepNode(node, parent);
+    }
+    return node;
+}
+
+static void
+resolveNodeConditional(
+    DagNode *node, 
+    boolean forwards, 
+    Vector *nodes,
+    Hash *byfqn,
+    Hash *bypqn);
+
+static DagNode *
+resolveDependencySet(
+    xmlNode *volatile depset, 
+    volatile boolean forwards,
+    Vector *volatile nodes,
+    Hash *volatile byfqn,
+    Hash *volatile bypqn)
+{
+    xmlNode *volatile depnode;
+    DagNode *volatile dep = NULL;
+    String *qn;
+    volatile Cons single_dep = {OBJ_CONS, NULL, NULL};
+    volatile Cons *volatile deps;
+
+    depnode = depset;
+    while (depnode = nextDependency2(depnode, depset)) {
+	deps = NULL;
+	if (qn = nodeAttribute(depnode, "fqn")) {
+	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
+		single_dep.car = (Object *) dep;
+		deps = &single_dep;
+	    }
+	}
+	else if (qn = nodeAttribute(depnode, "pqn")) {
+	    deps = (Cons *) hashGet(bypqn, (Object *) qn);
+	}
+	objectFree((Object *) qn, TRUE);
+
+	while (deps) {
+	    BEGIN {
+		dep = (DagNode *) dereference(deps->car);
+		resolveNodeConditional(dep, forwards, nodes, byfqn, bypqn);
+		/* If there is a cyclic dependency, we will not reach
+		 * this point as an exception will have been raised.
+		 */
+		deps = NULL; 
+	    }
+	    EXCEPTION(ex);
+	    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+		/* Nothing to do here, we just continue trying other
+		 * dependencies from the set.  If this is the last dep,
+		 * the function must return NULL.
+		 */
+		dep = NULL;
+	    }
+	    END;
+	    if (dep) {
+		/* We found a dep, so return it. */
+		return dep;
+	    }
+	    deps = (Cons *) deps->cdr;
+	}
+    }
+    return dep;
+}
+
+/* Returns a vector of DagNode references (for all of the resolved
+ * dependencies), to the caller. */
+static void
+resolveDepsConditional(
+    DagNode *node, 
+    volatile boolean forwards, 
+    Vector *volatile nodes, 
+    Hash *volatile byfqn, 
+    Hash *volatile bypqn)
+{
+    Vector *volatile deps = forwards? node->forward_deps: node->backward_deps;
+    int i;
+    DagNode *dep;
+    xmlNode *depset = node->dbobject;
+    Vector *volatile resolved_deps = NULL;
+
+    /* Traverse the unconditional deps first. */
+    if (deps) {
+	EACH(deps, i) {
+	    dep = (DagNode *) ELEM(deps, i);
+	    resolveNodeConditional(dep, forwards, nodes, byfqn, bypqn);
+	}
+    }
+
+    BEGIN {
+	while (depset = nextDepSet(depset, node->dbobject, forwards)) {
+	    dep = resolveDependencySet(depset, forwards, nodes, byfqn, bypqn);
+	    if (!dep) {
+		dep = getFallbackNode(depset, byfqn, bypqn, nodes);
+		if (!dep) {
+		    RAISE(TSORT_ERROR,
+			  newstr("Unable to resolve dependency-set for %s.",
+				 node->fqn->value));
+		}
+	    }
+	    if (!resolved_deps) {
+		resolved_deps = vectorNew(10);
+	    }
+	    vectorPush(resolved_deps, (Object *) dep);
+	}
+    }
+    EXCEPTION(ex) {
+	if (resolved_deps) {
+	    objectFree((Object *) resolved_deps, TRUE);
+	}
+    }
+    END;
+    node->tmp_fdeps = resolved_deps;
+}
+
+static void
+resolveNodeConditional(
+    DagNode *node, 
+    boolean forwards, 
+    Vector *nodes,
+    Hash *byfqn,
+    Hash *bypqn)
+{
+    DagNodeStatus orig_status;
+
+    assert(node && node->type == OBJ_DAGNODE, 
+	   "resolveNodeCconditional: node is not a DagNode");
+    switch (node->status) {
+    case VISITING:
+	RAISE(TSORT_CYCLIC_DEPENDENCY, 
+	      newstr("%s", node->fqn->value), node);
+    case RESOLVED_F:
+	if (forwards) {
+	    break;
+	}
+	/* Flow through to UNVISITED state.  RESOLVED_F here means the
+	 * same as UNVISITED and occurs when resolving backwards deps
+	 * after the forward deps have been resolved.  Having two states
+	 * for RESOLVED means that we don't have to explicitly reset the
+	 * state after processing each direction.  */
+    case UNVISITED: 
+	orig_status = node->status;
+	node->status = VISITING;
+	BEGIN {
+	    if (node->tmp_fdeps) {
+		objectFree((Object *) node->tmp_fdeps, FALSE);
+	    }
+	    resolveDepsConditional(node, forwards, nodes, byfqn, bypqn);
+	}
+	EXCEPTION(ex) {
+	    node->status = orig_status;
+	    RAISE();
+	}
+	END;
+	node->status = forwards? RESOLVED_F: RESOLVED;
+	break;
+    case RESOLVED:
+	if (!forwards) {
+	    break;
+	}
+    default: 
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected node status (%d) for node %s", 
+		     node->status, node->fqn->value));
+    }
+    return;
+}
+
+static void
+addDepToNode(DagNode *node, DagNode *dep, boolean forwards) {
+    Vector **p_deps = forwards? &(node->forward_deps): &(node->backward_deps);
+
+    if (dep->build_type == FALLBACK_NODE) {
+	addDepsForFallback(node, dep, forwards);
+    }
+    else {
+	addDepToVector(p_deps, dep);
+    }
+}
+
+
+/* Once the conditional deps have been resolved, each node containing
+ * such deps will have a vector in tmp_fdeps.  Move the contents of this
+ * into the appropriate xxxx_deps array. 
+ */
+static void
+addResolvedConditionalDeps(Vector *nodes, boolean forwards)
+{
+    DagNode *node;
+    int i;
+    DagNode *dep;
+    int j;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	if (node->tmp_fdeps) {
+	    EACH(node->tmp_fdeps, j) {
+		dep = (DagNode *) ELEM(node->tmp_fdeps, j);
+		if (dep->build_type == INACTIVE_NODE) {
+		    /* This dependency is on a fallback node that has
+		     * not yet been activated. */
+		    activateFallback(dep, nodes);
+		}
+		addDepToNode(node, dep, forwards);
+	    }
+	    objectFree((Object *) node->tmp_fdeps, FALSE);
+	    node->tmp_fdeps = NULL;
+	}
+    }
+}
+
+/* Resolves the optional parts of the forward and backward DAGS,
+ * identifying a suitable dependency for each dependency-set, or
+ * invoking the fallback if no suitable existing dependency can be
+ * found.
+ */
+static void
+resolveConditional(Vector *nodes, Hash *byfqn, Hash *bypqn)
+{
+    DagNode *node;
+    int i;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	resolveNodeConditional(node, TRUE, nodes, byfqn, bypqn);
+    }
+    addResolvedConditionalDeps(nodes, TRUE);
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	resolveNodeConditional(node, FALSE, nodes, byfqn, bypqn);
+    }
+    addResolvedConditionalDeps(nodes, FALSE);
+}
+
 /* Takes the dependency graphs (forward_deps and backward_deps), and
  * resolves them into true DAGs, elimminating cycles, and choosing a
  * single appropriate dependency (or fallback) from each dependency set.
@@ -1277,6 +1898,96 @@ resolveGraphs(Vector *nodes)
 	promoteSubnodeDeps(node, FALSE);
     }
 }
+
+
+/* If we are a promotable node and any of our forward dependencies are
+ * on a rebuild node, we promote node to be a rebuild node.
+ */
+static boolean
+promoteRebuildForwards(DagNode *node)
+{
+    int i;
+    DagNode *dep;
+    switch (node->status) {
+    case UNVISITED:
+	/* This node's status has already been reset by this operation.
+	 * There is notyhing more to be done with it.
+	 */
+	 break;
+    case RESOLVED:
+	if ((node->build_type == EXISTS_NODE) ||
+	    (node->build_type == DIFF_NODE)) {
+	    /* This node is promotable. */
+	    EACH(node->forward_deps, i) {
+		dep = (DagNode *) ELEM(node->forward_deps, i);
+		if (promoteRebuildForwards(dep)) {
+		    /* We depend on a REBUILD_NODE, promote this node,
+		     * and we are done.  */
+		    node->build_type = REBUILD_NODE;
+		    break;
+		}
+	    }
+	}
+	break;
+    default:
+	RAISE(DEPS_ERROR, 
+	      newstr("promoteRebuildForwards: unexpected status: %d",
+		     node->status));
+    }
+    node->status = UNVISITED;
+    return node->build_type == REBUILD_NODE;
+}
+
+
+static void promoteBackwardDeps(DagNode *node);
+
+/* If we are a rebuild node, we will promote any of our backward
+ * dependents that we can.
+ */
+static void
+promoteRebuildBackwards(DagNode *node)
+{
+    if ((node->build_type == EXISTS_NODE) ||
+	(node->build_type == DIFF_NODE)) {
+	node->build_type = REBUILD_NODE;
+    }
+    promoteBackwardDeps(node);
+}
+
+static void
+promoteBackwardDeps(DagNode *node)
+{
+    int i;
+    DagNode *dep;
+    if (node->build_type == REBUILD_NODE) {
+	EACH(node->backward_deps, i) {
+	    dep = (DagNode *) ELEM(node->backward_deps, i);
+	    promoteRebuildBackwards(dep);
+	}
+    }
+}
+
+/* Any node that depends on a node with a buld_type of REBUILD, must
+ * itself be promoted to a rebuild.   All nodes start with a status of
+ * RESOLVED and will finish with a status of UNVISITED. 
+ */ 
+static void
+promoteRebuildsNew(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    boolean promote;
+ 
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	(void) promoteRebuildForwards(node);
+    }
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	promoteBackwardDeps(node);
+    }
+}
+
 
 /* Any node that depends on a node with a buld_type of REBUILD, must
  * itself be promoted to a rebuild. */
@@ -1323,33 +2034,34 @@ findContext(xmlNode *node)
 }
 
 static void
-processConditionalContexts(DagNode *node, DagNode *mirror_node)
+processDirectionalContexts(DagNode *node, DagNode *mirror_node)
 {
     xmlNode *context = findContext(node->dbobject);
     xmlNode *next;
     xmlNode *copy;
-    String *condition = nodeAttribute(context, "condition");
-    if (condition) {
+    // TODO: Rewrite this to simplify.
+    String *direction = nodeAttribute(context, "direction");
+    if (direction) {
 	next = getElement(context->next);
 	if (!streq("context", (char *) next->name)) {
-	    objectFree((Object *) condition, TRUE);
+	    objectFree((Object *) direction, TRUE);
 	    RAISE(XML_PROCESSING_ERROR, 
-		  newstr("Conditional contexts are not paired in %s",
+		  newstr("Directional contexts are not paired in %s",
 			 node->fqn->value));
 	}
 
 	copy = xmlCopyNode(node->dbobject, 1);
-	if (streq(condition->value, "backwards")) {
+	if (streq(direction->value, "backwards")) {
 	    /*  We remove the backwards context from node, and the
 	     *  forwards context from mirror_node. */
 	    xmlUnlinkNode(context);
 	    xmlFreeNode(context);
 	    context = findContext(copy);
 	    next = getElement(context->next);
-	    objectFree((Object *) condition, TRUE);
-	    condition = nodeAttribute(next, "condition");
-	    if (streq(condition->value, "forwards")) {
-		objectFree((Object *) condition, TRUE);
+	    objectFree((Object *) direction, TRUE);
+	    direction = nodeAttribute(next, "direction");
+	    if (direction && streq(direction->value, "forwards")) {
+		objectFree((Object *) direction, TRUE);
 		/* Remove the forwards node from our copy. */
 		xmlUnlinkNode(next);
 		xmlFreeNode(next);
@@ -1362,17 +2074,17 @@ processConditionalContexts(DagNode *node, DagNode *mirror_node)
 		mirror_node->dbobject = copy;
 	    }
 	    else {
-		objectFree((Object *) condition, TRUE);
+		objectFree((Object *) direction, TRUE);
 		RAISE(XML_PROCESSING_ERROR, 
-		      newstr("Failed to find forwards conditional context "
+		      newstr("Failed to find forwards directional context "
 			     "in %s.", node->fqn->value));
 	    }
 		
 	}
 	else {
-	    objectFree((Object *) condition, TRUE);
+	    objectFree((Object *) direction, TRUE);
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("Not implemented: handling of conditional contexts"
+		  newstr("Not implemented: handling of directional contexts"
 			 " in unexpected order"));
 	}
     }
@@ -1396,7 +2108,7 @@ makeMirrorNode(DagNode *node, DagNodeBuildType build_type, char *prefix)
     }
     mirror->parent = parent;
     node->mirror_node = mirror;
-    processConditionalContexts(node, mirror);
+    processDirectionalContexts(node, mirror);
 }
 
 /* For nodes which must be expanded into a pair of nodes, create the
@@ -1466,7 +2178,7 @@ static redirectActionType redirect_action
     /* Array is indexed by [node->build_type][depnode->build_type]
      *      [build_direction (backwards before forwards)] */
     /* BUILD */ 
-    {{IGNORE, FCOPY}, {ERROR, ERROR},       /* BUILD, DROP */
+    {{IGNORE, FCOPY}, {REVCOPYC, IGNORE},       /* BUILD, DROP */
      {IGNORE, FCOPY}, {IGNORE, FCOPY},       /* REBUILD, DIFF */
      {IGNORE, FCOPY}, {IGNORE, ERROR}},     /* FALLBACK, ENDFALLBACK */
     /* DROP */ 
@@ -1835,31 +2547,74 @@ dagFromDoc(Document *doc)
     Hash *volatile bypqn = NULL;
     Vector *volatile nodes = dagNodesFromDoc(doc);
     byfqn = hashByFqn(nodes);
+    boolean original = TRUE;
+
+    // Need to add a new promoteRebuilds which will be done before
+    // handling conditional deps.  This is so that the build-type for
+    // each node can be known in order to apply optional deps
+    // conditionally.  The new promoteRebuilds can only be done after
+    // resolving the graphs for all non-conditional dependencies, so
+    // that cycle-breakers will have been added if necessary.  This
+    // means that our new dagFromDep proceeds in the following steps:
+    // - addDependencies
+    // - resolveUnconditionalDeps
+    // - promoteRebuilds
+    // - resolveConditionalDeps
+    // - createMirrorNodes
+    // - redirectDeps
+    // - swapBackwardBreakers
+
 
     BEGIN {
 //dbgSexp(doc);
 	identifyParents(nodes, byfqn);
 	bypqn = hashByPqn(nodes);
-	addDependencies(nodes, byfqn, bypqn);
+	if (original) {
+	    addDependencies(nodes, byfqn, bypqn);
 
 //fprintf(stderr, "============INITIAL==============\n");
 //showVectorDeps(nodes, TRUE);
 
-        resolveGraphs(nodes);
+	    resolveGraphs(nodes);
 //fprintf(stderr, "\n============RESOLVED==============\n");
 //showVectorDeps(nodes, FALSE);
 
-        promoteRebuilds(nodes);
-        createMirrorNodes(nodes);
-        redirectDeps(nodes);
+	    promoteRebuilds(nodes);
+	    createMirrorNodes(nodes);
+	    redirectDeps(nodes);
 //fprintf(stderr, "\n============REDIRECTED==============\n");
 //showVectorDeps(nodes, FALSE);
 
-        swapBackwardBreakers(nodes);
+	    swapBackwardBreakers(nodes);
 //fprintf(stderr, "\n============SWAPPED==============\n");
 //showVectorDeps(nodes, FALSE);
 //fprintf(stderr, "============DONE==============\n");
 
+	}
+	else {
+	    addUnconditionalDependencies(nodes, byfqn, bypqn);
+
+	    resolveUnconditional(nodes);
+//fprintf(stderr, "\n============RESOLVED (U)==============\n");
+//showVectorDeps(nodes, FALSE);
+
+	    promoteRebuildsNew(nodes);  
+//fprintf(stderr, "\n============PROMOTED==============\n");
+//showVectorDeps(nodes, FALSE);
+
+
+	    resolveConditional(nodes, byfqn, bypqn);
+fprintf(stderr, "\n============RESOLVED (C)==============\n");
+showVectorDeps(nodes, FALSE);
+
+
+	    createMirrorNodes(nodes);
+	    redirectDeps(nodes);
+//fprintf(stderr, "\n============REDIRECTED==============\n");
+//showVectorDeps(nodes, FALSE);
+
+	    swapBackwardBreakers(nodes);
+	}
     }
     EXCEPTION(ex) {
 	objectFree((Object *) byfqn, FALSE);

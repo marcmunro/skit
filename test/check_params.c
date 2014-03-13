@@ -732,37 +732,8 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
-		    "z2",
-		    //"regress/scratch/regressdb_dump1a.xml",
+		    "regress/scratch/dbdump/cluster.xml",
 		    "--debug", "--print", "--full"};
-
-    initTemplatePath(".");
-    //showFree(3549);
-    //showMalloc(4283);
-
-    BEGIN {
-	process_args2(4, args);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	//RAISE();
-	//fail("extract fails with exception");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-//#endif
-
-//#ifdef unused
-START_TEST(deps2)
-{
-    char *args[] = {"./skit", "--adddeps",
-		    "regress/scratch/regressdb_dump1a.xml",
-		    "--print", "--full"};
 
     initTemplatePath(".");
     //showFree(3549);
@@ -786,6 +757,63 @@ END_TEST
 //#endif
 
 //#ifdef unused
+START_TEST(deps1a)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    //"regress/scratch/regressdb_dump1a.xml",
+		    "test/data/depdiffs_1a.xml",
+		    "--print", "--full"};
+
+    initTemplatePath(".");
+    //showFree(3549);
+    //showMalloc(4283);
+
+    BEGIN {
+	process_args2(5, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(deps1b)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    //"regress/scratch/regressdb_dump1a.xml",
+		    "test/data/depdiffs_1b.xml",
+		    "--print", "--full"};
+
+    initTemplatePath(".");
+    //showFree(3549);
+    //showMalloc(4283);
+
+    BEGIN {
+	process_args2(5, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+//#endif
+
+#ifdef unused
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -815,7 +843,7 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
 //#ifdef unused
 START_TEST(diffgen)
@@ -1001,9 +1029,9 @@ params_suite(void)
     ADD_TEST(tc_core, option_usage);  
 
     // When we start back on diff, these need to be re-instated
-    ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, difflist);
+    //ADD_TEST(tc_core, diffgen);
 
     //ADD_TEST(tc_core, gather);
 
@@ -1017,9 +1045,10 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 
     // Populate the regression test database
-    ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
-    ADD_TEST(tc_core, deps2);
+    //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, deps1a);
+    //ADD_TEST(tc_core, deps1b);
 
     // ??
     //ADD_TEST(tc_core, scatter);

@@ -7,20 +7,27 @@ psql -d postgres -v home=`pwd` <<'CLUSTEREOF'
 create role r1 with login;
 create role rs with superuser;
 
-create database test_data with owner r1;
+create database regressdb with owner r1;
 
 CLUSTEREOF
 
-psql -d test_data -U r1 << 'EOF'
+psql -d regressdb -U r1 << 'EOF'
 
 -- Test case 1
-create schema s1;
-comment on schema s1 is 's1';
-create sequence s1.t1;
-comment on sequence s1.t1 is 't1';
-create sequence s1.t1b;
+create schema n1;
+comment on schema n1 is 'n1';
+create sequence n1.s1;
+comment on sequence n1.s1 is 's1';
+create sequence n1.s1b;
 
-
+-- Test case 2
+create schema n2;
+comment on schema n2 is 'n2';
+create sequence n2.s2;
+comment on sequence n2.s2 is 's2';
+create sequence n2.s2b;
+revoke usage on schema n2 from r1;
+reset session authorization;
 
 
 EOF

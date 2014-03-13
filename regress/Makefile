@@ -155,6 +155,16 @@ regression_test3: skit regression_test_precond
 	 export PG_DUMP="$(PG_DUMP)"; \
 	 $(REGRESS_RUN) 3
 
+regression_test4: skit regression_test_precond
+	@$(MAKE) --no-print-directory drop_regress_db
+	@export REGRESSDB_PORT=$(REGRESSDB_PORT); \
+	 export REGRESSDB_HOST=$(REGRESSDB_HOST); \
+	 export REGRESS_LOG=$(REGRESS_LOG); \
+	 export REGRESS_DIR=$(REGRESS_DIR); \
+	 export PGPORT=$(REGRESSDB_PORT); \
+	 export PG_DUMP="$(PG_DUMP)"; \
+	 $(REGRESS_RUN) 4
+
 # This integrates with unit testing so that unit tests can be run
 # from the regression test data while development and testing is
 # under way.
@@ -168,7 +178,7 @@ prep: regression_test_precond drop_regress_db
 	 $(REGRESS_RUN) prep
 
 regress: skit regress_cluster regression_test1 regression_test2 \
-		regression_test3
+		#regression_test3 regression_test4
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 

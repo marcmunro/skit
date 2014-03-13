@@ -34,24 +34,19 @@ include $(top_builddir)/Makefile.global
 SUBDIRS = src test dbscript regress doc test/data
 include $(SUBDIRS:%=%/Makefile)
 
-scatter:	skit
-	rm -rf regress/scratch/dbdump/
-	./skit -t extract.xml --dbtype=postgres --connect "dbname = 'regressdb' port = 5432 host = /var/run/postgresql" --scatter --path regress/scratch/dbdump
+CCNAME := $(shell echo $(CC) | tr '[a-z]' '[A-Z]')
 
 
-gend:	skit
-	./skit --generate --drop  regress/scratch/regressdb_dump1a.xml
+# compile and generate dependency info
+%.o: %.c
+	@echo "  $(CCNAME)" $*
+	@$(CC) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $*.o
+	@$(CC) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
-genb:	skit
-	./skit --generate --build  regress/scratch/regressdb_dump1a.xml
-
-diff:	skit
-	./skit --diff xx xx
-
-# Build per-source object dependency files for inclusion
-%.d: %.c
-	@echo Recreating $@...
-	@$(CC) -M -MT $*.o $(CPPFLAGS) $< >$@
+## Build per-source object dependency files for inclusion
+#%.d: %.c
+#	@echo Recreating $@...
+#	@$(CC) -M -MT $*.o $(CPPFLAGS) $< >$@
 
 check: skit
 	./skit -t list.xml x.xml

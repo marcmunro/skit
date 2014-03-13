@@ -163,13 +163,13 @@
               <dependency fqn="schema.skittest.public"/>
               <dependency fqn="view.skittest.public.v2"/>
               <dependency fqn="role.cluster.marc"/>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="forwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="forwards">
                 <dependency pqn="grant.skittest.public.create:public"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency fqn="privilege.cluster.marc.superuser"/>
               </dependency-set>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="backwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="backwards">
                 <dependency pqn="grant.skittest.public.usage:public"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>
@@ -187,13 +187,13 @@
               <dependency fqn="schema.skittest.public"/>
               <dependency fqn="view.skittest.public.v3"/>
               <dependency fqn="role.cluster.marc"/>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="forwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="forwards">
                 <dependency pqn="grant.skittest.public.create:public"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency fqn="privilege.cluster.marc.superuser"/>
               </dependency-set>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="backwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="backwards">
                 <dependency pqn="grant.skittest.public.usage:public"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>
@@ -211,13 +211,13 @@
               <dependency fqn="schema.skittest.public"/>
               <dependency fqn="view.skittest.public.v1"/>
               <dependency fqn="role.cluster.marc"/>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="forwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="forwards">
                 <dependency pqn="grant.skittest.public.create:public"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency pqn="grant.skittest.public.create:marc"/>
                 <dependency fqn="privilege.cluster.marc.superuser"/>
               </dependency-set>
-              <dependency-set fallback="fallback.grant.marc.superuser" condition="backwards">
+              <dependency-set fallback="fallback.grant.marc.superuser" direction="backwards">
                 <dependency pqn="grant.skittest.public.usage:public"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>
                 <dependency pqn="grant.skittest.public.usage:marc"/>

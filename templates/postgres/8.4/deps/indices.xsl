@@ -14,9 +14,9 @@
       <xsl:with-param name="parent_core" select="$parent_core"/>
       <xsl:with-param name="qname" 
 		      select="skit:dbquote(../@schema, @name)"/>
-      <xsl:with-param name="table_qname" 
-		      select="skit:dbquote(../@schema, ../@name)"/>
-
+      <xsl:with-param name="others">
+	<param name="table_qname" value="{skit:dbquote(../@schema, ../@name)}"/>
+      </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
 

@@ -290,6 +290,7 @@ getNodeDeps(xmlNode *node)
     Hash *deps = hashNew(TRUE);
     xmlNode *this = getElement(node->children);
     xmlNode *dep;
+    // TODO: rewrite variable name, maybe simplify.
     String *condition;
 
     while (this) {
@@ -298,7 +299,9 @@ getNodeDeps(xmlNode *node)
 	}
 	else {
 	    if (isDepNode(this)) {
-		condition = conditionForDep(this);
+		if (!(condition = directionForDep(this))) {
+		    condition = stringNew("");
+		}
 		dep = xmlCopyNode(this, 1);
 		(void) hashVectorAppend(deps, (Object *) condition, 
 					(Object *) nodeNew(dep));
@@ -328,6 +331,7 @@ addNodeDeps(xmlNode *result_parent, xmlNode *node)
 static xmlNode *
 copyContext(xmlNode *node, char *condition)
 {
+    // TODO: change parameter name to direction
     xmlNode *this = getElement(node->children);
     xmlNode *result = NULL;
 
@@ -337,7 +341,7 @@ copyContext(xmlNode *node, char *condition)
     if (this) {
 	result = xmlCopyNode(this, 1);
 	if (condition) {
-	    (void) xmlNewProp(result, "condition", condition);
+	    (void) xmlNewProp(result, "direction", condition);
 	}
         
     }
@@ -349,12 +353,15 @@ static xmlNode *
 skipToContents(xmlNode *node)
 {
     xmlNode *this = NULL;
+    String *type = nodeAttribute(node, "type");
+
     if (node) {
 	this = getElement(node->children);
-	while (this && (isDepNode(this) || isContextNode(this))) { 
+	while (this && !streq(this->name, type->value)) {
 	    this = this->next;
 	}
     }
+    objectFree((Object *) type, TRUE);
     return this;
 }
 
@@ -749,6 +756,8 @@ evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
 	    attr = xmlGetProp(content1, name);
 	}
 	if (!attr) {
+	    dbgNode(content1);
+	    dbgNode(content2);
 	    RAISE(XML_PROCESSING_ERROR,
 		  newstr("Unable to find attribute %s (for %s)\n", name,
 			 new? "new": "old"));
@@ -980,11 +989,11 @@ freeDepsHash(Hash *hash)
 }
 
 static xmlNode *
-makeDependenciesNode(char *condition)
+makeDependenciesNode(char *direction)
 {
     xmlNode *deps = xmlNewNode(NULL, BAD_CAST "dependencies");
-    if (condition) {
-	(void) xmlNewProp(deps, "condition", condition);
+    if (direction) {
+	(void) xmlNewProp(deps, "direction", direction);
     }
     return deps;
 }

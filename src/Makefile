@@ -27,28 +27,35 @@ SRC_SUBDIRS = $(SRC_DIR)/objects
 include $(SRC_SUBDIRS:%=%/Makefile)
 
 SRC_SOURCES = $(wildcard $(SRC_DIR)/*.c)
-#SRC_SOURCES = $(filter skit.c, $(SRC_ALL_SOURCES))
-SRC_HEADERS = $(wildcard $(SRC_DIR)/*.h)
-
-SRC_OBJECTS = $(SRC_SOURCES:%.c=%.o) $(OBJECTS_OBJECTS)
-SRC_TESTED_OBJECTS = $(filter-out %/skit.o, $(SRC_OBJECTS)) 
-SRC_DEPS = $(SRC_SOURCES:.c=.d)
+SRC_OBJECTS = $(SRC_SOURCES:%.c=%.o)
 SRC_GARBAGE = $(garbage:%=$(SRC_DIR)/%)
 
-# Include dependency files for each source file
-include $(SRC_DEPS) 
+SKIT_OBJECTS := $(SKIT_OBJECTS) $(SRC_OBJECTS)
+
+# All skit objects except the one containing main() need to be part
+# of the skit_test executable.  SKIT_OBJECTS_FOR_TEST defines that set
+# of objects.
+SKIT_OBJECTS_FOR_TEST = $(filter-out %/skit.o, $(SKIT_OBJECTS)) 
+
+SRC_DEPS = $(SRC_OBJECTS:.o=.d)
+
+# Include dependency files for each object
+-include $(SRC_DEPS) 
 
 # Build skit from sources.
-skit:	$(SRC_OBJECTS)
-	$(CC) $(LDFLAGS) $(SRC_OBJECTS) -o $@
+skit:	$(SKIT_OBJECTS)
+	@echo "  LINK" $@
+	@$(CC) $(LDFLAGS) $(SKIT_OBJECTS) -o $@
 
 
 # Remove the shared library and all generated/intermediate files
 src_clean: $(SRC_SUBDIRS:%=%_clean)
 	@echo Cleaning src...
-	@rm -f $(SRC_OBJECTS) $(SRC_DEPS) \
-	       $(SRC_GARBAGE) skit
+	@rm -f $(SRC_OBJECTS) $(SRC_DEPS) $(SRC_GARBAGE) skit
 
 # Describe what this makefile can build
 src_help: $(SRC_SUBDIRS:%=%_help)
 	@echo "skit         - build the skit executable"
+
+
+

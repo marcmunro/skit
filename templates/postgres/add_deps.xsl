@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet 
-  xmlns:skit="http://www.bloodnok.com/xml/skit"
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-  xmlns:xi="http://www.w3.org/2003/XInclude"
-  version="1.0">
+    xmlns:skit="http://www.bloodnok.com/xml/skit"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xi="http://www.w3.org/2003/XInclude"
+    xmlns:exsl="http://exslt.org/common"
+    extension-element-prefixes="exsl"
+    version="1.0">
 
   <xsl:output method="xml" indent="yes"/>
   <xsl:strip-space elements="*"/>
@@ -67,6 +69,7 @@
     </xsl:if>
   </xsl:template>
 
+
   <!-- Create schema dependency entries for a dependency-set.  
        This creates dependency entries for public grants of $priv, 
        grants of $priv to $to, and automatic grants to $to if $to is the
@@ -124,7 +127,7 @@
       <dependency-set 
 	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
-	  condition="forwards">
+	  direction="forwards">
 	<xsl:call-template name="deps-schema-create">
 	  <xsl:with-param name="to" select="@owner"/>
 	</xsl:call-template>
@@ -134,7 +137,7 @@
       <dependency-set 
 	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
-	  condition="backwards">
+	  direction="backwards">
 	<xsl:if test="$owner">
 	  <xsl:call-template name="deps-schema-usage">
 	    <xsl:with-param name="to" select="@owner"/>
@@ -196,51 +199,33 @@
 					 '.', $name)"/>
     <xsl:param name="parent" select="concat(name(..), '.', $parent_core)"/>
     <xsl:param name="owner" select="@owner"/>
-    <xsl:param name="table_qname"/>
-    <xsl:param name="cycle_breaker"/>
-    <xsl:param name="role_qname"/>
-    <xsl:param name="subtype"/>
-    <xsl:param name="pqn"/>
-    <xsl:param name="on"/>
     <xsl:param name="this_core" select="concat($parent_core, '.', @name)"/>
     <xsl:param name="do_schema_grant" select="'yes'"/>
     <xsl:param name="do_context" select="'yes'"/>
+    <xsl:param name="others" select="false()"/>
     <dbobject type="{$type}" name="{$name}" fqn="{$fqn}" qname="{$qname}" 
 	      parent="{$parent}">
-      <xsl:if test="$cycle_breaker">
-	<xsl:attribute name="cycle_breaker">
-	  <xsl:value-of select="$cycle_breaker"/>
+      <xsl:if test="$others">
+	<xsl:for-each select="exsl:node-set($others)/param">
+	  <xsl:attribute name="{@name}">
+	  <xsl:value-of select="@value"/>
 	</xsl:attribute>
+	</xsl:for-each>
       </xsl:if>
-      <xsl:if test="$table_qname">
-	<xsl:attribute name="table_qname">
-	  <xsl:value-of select="$table_qname"/>
-	</xsl:attribute>
+
+      <xsl:if test="ancestor::schema and comment">
+	<!-- This object is a descendent of a schema and contains a
+	     comment.  To create a comment, "usage" privilege is required
+	     on the schema.  Note: the default schema privilege required
+	     to create the object is "create".  --> 
+	<extra-schema-privs action="build" priv="usage"/>
       </xsl:if>
-      <xsl:if test="$role_qname">
-	<xsl:attribute name="role_qname">
-	  <xsl:value-of select="$role_qname"/>
-	</xsl:attribute>
-      </xsl:if>
-      <xsl:if test="$subtype">
-	<xsl:attribute name="subtype">
-	  <xsl:value-of select="$subtype"/>
-	</xsl:attribute>
-      </xsl:if>
-      <xsl:if test="$pqn">
-	<xsl:attribute name="pqn">
-	  <xsl:value-of select="$pqn"/>
-	</xsl:attribute>
-      </xsl:if>
-      <xsl:if test="$on">
-	<xsl:attribute name="on">
-	  <xsl:value-of select="$on"/>
-	</xsl:attribute>
-      </xsl:if>
+
       <xsl:if test="$owner and $do_context = 'yes'">
 	<context name="owner" value="{$owner}" 
 		 default="{//cluster/@username}"/>	
       </xsl:if>
+
       <dependencies>
 	<xsl:apply-templates select="." mode="dependencies">
 	  <xsl:with-param name="parent_core" select="$parent_core"/>

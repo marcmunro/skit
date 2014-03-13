@@ -676,6 +676,7 @@ extern boolean isDependency(xmlNode *node);
 extern boolean isDependencies(xmlNode *node);
 extern boolean isDepNode(xmlNode *node);
 extern String *conditionForDep(xmlNode *node);
+extern String *directionForDep(xmlNode *node);
 
 extern void showDeps(DagNode *node, boolean show_optional);
 extern void showVectorDeps(Vector *nodes, boolean show_optional);

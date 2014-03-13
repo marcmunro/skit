@@ -159,10 +159,12 @@ hasDep(Hash *hash, char *from, char *to)
 
     if (!fnode) {
 	fail("Cannot find source node %s ", from);
+	return FALSE;
     }
 
     if (!tnode) {
 	fail("Cannot find dependency %s ", to);
+	return FALSE;
     }
     
     return hasDependency(fnode, tnode);
@@ -255,6 +257,7 @@ hasDeps(char *testid, Hash *hash, char *from, ...)
 
     if (!fromnode) {
 	fail("Test %s: cannot find %s ", testid, from);
+	return FALSE;
     }
     else {
 	dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
@@ -288,6 +291,7 @@ requireOptionalDependencies(char *testid, Hash *hash, char *from, ...)
     fromnode = (DagNode *) findDagNode(hash, from);
     if (!fromnode) {
 	fail("Test %s: cannot find %s ", testid, from);
+	return;
     }
 
     EACH(deplist, i) {
@@ -326,6 +330,7 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
     tonode = (DagNode *) findDagNode(hash, from);
     if (!tonode) {
 	fail("Test %s: cannot find %s ", testid, key->value);
+	return;
     }
 
     EACH(deplist, i) {
@@ -802,7 +807,7 @@ START_TEST(cyclic_build)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes, FALSE);
 	
 	if (hasDeps("CB_0", nodes_by_fqn, "view.skittest.public.v3", 
 		    "viewbase.skittest.public.v1",
@@ -1265,34 +1270,41 @@ static void
 check_testcase_1(Hash *nodes_by_fqn)
 {
     requireDeps("D1_TC1_1", nodes_by_fqn, 
-		"diffcomplete.sequence.test_data.s1.t1", 
-		"diffcomplete.schema.test_data.s1",
-		"diffprep.sequence.test_data.s1.t1", NULL);
-    
+		"diffcomplete.sequence.test_data.n1.s1", 
+		"diffcomplete.schema.test_data.n1",
+		"diffprep.sequence.test_data.n1.s1", NULL);
+    requireDeps("D1_TC1_2", nodes_by_fqn, 
+		"drop.sequence.test_data.n1.s1a", 
+		"drop.grant.sequence.test_data.n1.s1a.usage", 
+		"drop.grant.sequence.test_data.n1.s1a.update", 
+		"drop.grant.sequence.test_data.n1.s1a.select", 
+		NULL);
+    requireDeps("D1_TC1_3", nodes_by_fqn, 
+		"build.sequence.test_data.n1.s1b", 
+		"diffcomplete.schema.test_data.n1", NULL);
 }
 
 static void
 check_testcase_2(Hash *nodes_by_fqn)
 {
-    requireDeps("D1_TC2_1", nodes_by_fqn, 
-		"diffcomplete.sequence.test_data.s2.t2",
-		"diffcomplete.schema.test_data.s2",
-		"diffprep.sequence.test_data.s2.t2",
-		NULL);
+    requireDeps("D1_TC1_2", nodes_by_fqn, 
+		"diffcomplete.sequence.test_data.n1.s1", 
+		"diffcomplete.schema.test_data.n1",
+		"diffprep.sequence.test_data.n1.s1", NULL);
 }
 
 /* Dependency diff tests. */
 START_TEST(depdiffs_1)
 {
-    Document *diffs;
-    Vector *nodes;
-    Hash *nodes_by_fqn;
+    Document *volatile diffs = NULL;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
 
     initTemplatePath(".");
     diffs = depdiffs("test/data/depdiffs_1a.xml",
 		     "test/data/depdiffs_1b.xml");
 
-    dbgSexp(diffs);
+    //dbgSexp(diffs);
 
     BEGIN {
 	nodes = dagFromDoc(diffs);
@@ -1303,16 +1315,17 @@ START_TEST(depdiffs_1)
 	/* See comments in test/data/depdiffs_1a.sql for a description
 	   of each test case. */
 	check_testcase_1(nodes_by_fqn);
-	//check_testcase_2(nodes_by_fqn);
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) diffs, TRUE);
+	check_testcase_2(nodes_by_fqn);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    FINALLY {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) diffs, TRUE);
     }
     END;
 
@@ -1337,7 +1350,7 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_drop);
     ADD_TEST(tc_core, cyclic_both);
     ADD_TEST(tc_core, cond);
-    ADD_TEST(tc_core, depdiffs_1);
+    //ADD_TEST(tc_core, depdiffs_1);
 
     ADD_TEST(tc_core, fallback);
 				

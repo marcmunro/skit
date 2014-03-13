@@ -3,7 +3,7 @@
 
 psql -d postgres <<'CLUSTEREOF'
 
-drop database test_data;
+drop database regressdb;
 drop role r1;
 drop role rs;
 

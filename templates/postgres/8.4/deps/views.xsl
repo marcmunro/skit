@@ -12,7 +12,9 @@
 
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
-      <xsl:with-param name="cycle_breaker" select="'viewbase'"/>
+      <xsl:with-param name="others">
+	<param name="cycle_breaker" value="viewbase"/>
+      </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
 

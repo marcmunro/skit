@@ -19,6 +19,8 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 #include<libxslt/extensions.h>
+#include <libexslt/exslt.h>
+#include <libexslt/exsltconfig.h>
 
 static char URI[] ="http://www.bloodnok.com/xml/skit";
 
@@ -112,6 +114,8 @@ xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs)
 void
 registerXSLTFunctions(xsltTransformContextPtr ctxt)
 {
+    exsltRegisterAll();
+
     xsltRegisterExtFunction(ctxt, (const xmlChar *) "dbquote",
 			    (const xmlChar *) URI, xsltDBQuoteFunction);
     xsltRegisterExtFunction(ctxt, (const xmlChar *) "eval",

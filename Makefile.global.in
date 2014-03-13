@@ -31,17 +31,12 @@ LDLAGS=			-g -O2
 endif
 
 
-# Turn off optimisation as it makes gdb harder to use
-
-
-
 override CPPFLAGS := -I ./test \
          @GLIB_CFLAGS@ \
 	 @PQINCPATH@ @XML_CFLAGS@ \
 	 @XSLT_CFLAGS@ $(CPPFLAGS) 
 
-override LDFLAGS := @GLIB_LIBS@ @PQLIB@ @XML_LIBS@ \
-	 @XSLT_LIBS@ $(LDFLAGS)
+override LDFLAGS := @GLIB_LIBS@ @PQLIB@ @EXSLT_LIBS@ $(LDFLAGS)
 
 LIBCHECK = @CHECK_LIBS@
 
@@ -49,4 +44,4 @@ XSLTPROC = @XSLTPROC@
 
 ifeq ($(GCC), yes)
 	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations
-
+endif

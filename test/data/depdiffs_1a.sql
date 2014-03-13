@@ -12,25 +12,56 @@
 # - object owner has/has no superuser rights
 # - schema has create/usage granted to public
 # 
-# 
-# test 	schema 	object 	create priv on schema	usage priv on schema	superuser
-#	owner	owner	schema	object	public	schema	object	public	to
-#	role	role	owner	owner		owner	owner		
-#	old new	old new	old new old new		old new old new		old new
-#						                        
-#   1	r1  r1	r1  r1	yes -	yes -	  -	yes -	yes -	  -	-   -
-#   2	r1  r1	r1  r1							
+#     +--------+-------+----------------------+----------------------+----------+
+# test|	schema |object |create priv on schema |usage priv on schema  | superuser|
+#     | owner  |owner  +-------+-------+------+-------+-------+------+    to    |
+#     | role   |role   |schema |object |public|schema |object |public|  owner   |
+#     |        |       |owner  |owner  |      |owner  |owner  |      |          |
+#     +----+---+---+---+---+---+---+---+      +---+---+---+---+      +----+-----+
+#     | old|new|old|new|old|new|old|new|      |old|new|old|new|      | old|new  |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#   1 | r1 |r1 |r1 |r1 |yes|yes| - | - |  -   |yes|yes| - | - |  -   | -  | -   |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#   2 | r1 |r1 |r1 |r1 |yes|yes| - | - |  -   |yes|no | - | - |  no  | no | no  |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+#     +----+---+---+---+---+---+---+---+------+---+---+---+---+------+----+-----+
+#     |    |   |   |   |   |   |   |   |      |   |   |   |   |      |    |     |
+
+# Notes on permissions required for operations
+# In order to create an object in a schema you need create permission on the schema
+# In order to do any other ddl on the object you need usage permission
 
 
 psql -d postgres -v home=`pwd` <<'CLUSTEREOF'
 create role r1 with login;
+create role r2 with login;
 create role rs with superuser;
 
-create database test_data with owner r1;
+create database regressdb with owner r1;
 
 CLUSTEREOF
 
-psql -d test_data -U r1 << 'EOF'
+psql -d regressdb -U r1 << 'EOF'
 
 -- Each test case has
 -- a change made to the schema - comment
@@ -41,8 +72,15 @@ psql -d test_data -U r1 << 'EOF'
 -- Test case 1
 -- No ownership changes.  Schema owner has access to schema, sequence
 -- owned by schema owner.
-create schema s1;
-create sequence s1.t1;
-create sequence s1.t1a;
+create schema n1;
+create sequence n1.s1;
+create sequence n1.s1a;
+
+-- Test case 2
+-- No ownership changes.  Schema owner loses usage priv on schema, sequence
+-- owned by schema owner.
+create schema n2;
+create sequence n2.s2;
+create sequence n2.s2a;
 
 EOF

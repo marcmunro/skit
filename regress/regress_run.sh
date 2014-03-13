@@ -287,6 +287,63 @@ regression_test3()
     echo Regression test 3 complete 1>&2
 }
 
+
+regression_test4()
+{
+    echo "Running regression test 4 (diffs)..." 1>&2
+    mkdir regress/scratch 2>/dev/null
+    rm -rf scratch/dbdump/*
+    # Get up to date dumps of each of 2 starting databases
+    build_db regression4b_`pguver`.sql
+    echo ...Creating target diff database... 1>&2
+    dump_db regressdb scratch/regressdb_test4b.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test4b.gdmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump4b.xml ...
+    echo ...running skit generate to create initial drop... 1>&2
+    gendrop scratch/regressdb_dump4b.xml scratch/regressdb_drop4b.sql \
+	     --ignore-contexts
+    execdrop scratch/regressdb_drop4b.sql
+
+    echo ...Creating source diff database... 1>&2
+    build_db regression4a_`pguver`.sql
+    dump_db regressdb scratch/regressdb_test4a.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test4a.gdmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump4a.xml ...
+    echo "...diff source->target..." 1>&2
+
+    gendiff scratch/regressdb_dump4a.xml scratch/regressdb_dump4b.xml \
+	scratch/regressdb_diff4a2b.sql  
+    execdiff scratch/regressdb_diff4a2b.sql
+
+    echo "...checking db equivalence to target..." 1>&2
+    dump_db regressdb scratch/regressdb_test4b2.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test4b2.gdmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump4b2.xml ...
+    diffdump scratch/regressdb_test4b.dmp scratch/regressdb_test4b2.dmp
+
+    diffglobals scratch/regressdb_test4b.gdmp  scratch/regressdb_test4b2.gdmp
+    echo "...diff target->source..." 1>&2
+    gendiff scratch/regressdb_dump4b.xml scratch/regressdb_dump4a.xml \
+	scratch/regressdb_diff4b2a.sql
+
+    execdiff scratch/regressdb_diff4b2a.sql
+
+    echo "...checking db equivalence to source ..." 1>&2
+    dump_db regressdb scratch/regressdb_test4a2.dmp ...
+    dump_db_globals regressdb scratch/regressdb_test4a2.gdmp ...
+    extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
+	    scratch/regressdb_dump4a2.xml ...
+    diffdump scratch/regressdb_test4a.dmp scratch/regressdb_test4a2.dmp
+    diffglobals scratch/regressdb_test4a.gdmp  scratch/regressdb_test4a2.gdmp
+
+    rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
+    echo Regression test 4 complete 1>&2
+}
+
+
 # Prep the regression test database for use in temporary unit tests
 # This allows make unit to be used for testing against a real database
 # while we are developing new functionality.
@@ -369,6 +426,7 @@ if [ "x$1" = "" ]; then
     regression_test1 >${REGRESS_LOG}
     regression_test2 >>${REGRESS_LOG}
     regression_test3 >>${REGRESS_LOG}
+    regression_test4 >>${REGRESS_LOG}
 fi
 
 if [ "x$1" = "x1" ]; then
@@ -383,6 +441,11 @@ fi
 
 if [ "x$1" = "x3" ]; then
     regression_test3 >>${REGRESS_LOG}
+    shift
+fi
+
+if [ "x$1" = "x4" ]; then
+    regression_test4 >>${REGRESS_LOG}
     shift
 fi
 

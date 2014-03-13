@@ -24,7 +24,7 @@ DATA_SOURCES = $(wildcard $(TESTDATA_DIR)/*.sql)
 DATA_TARGETS = $(DATA_SOURCES:.sql=.xml)
 
 DROP_TESTDATA_DB = sh $(TESTDATA_DIR)/depdiffs_drop.sh
-CONNECT_STR = dbname='test_data' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}
+CONNECT_STR = dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}
 
 
 # Rebuild 

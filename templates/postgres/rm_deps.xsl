@@ -36,6 +36,9 @@
   <!-- Eliminate context elements -->
   <xsl:template match="dbobject/context"/>
 
+  <!-- Ignore extra-schema-privs elements -->
+  <xsl:template match="dbobject/extra-schema-privs"/>
+
   <!-- Eliminate dependency convenience objects -->
   <xsl:template match="allroles"/>
   <xsl:template match="alltbs"/>
@@ -58,6 +61,8 @@
     </xsl:for-each>	
   </xsl:template>
     
+
+
   <!-- Main template for database objects -->
   <xsl:template match="*">
     <xsl:copy>
