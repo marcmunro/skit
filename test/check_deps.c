@@ -124,6 +124,7 @@ buildPrefixLen(DagNodeBuildType type)
 	      newstr("Unhandled build type %d in buildPrefixLen", 
 		     (int) type));
     }
+    return 0;
 }
 
 /* This function is all over the map for historical reasons.  It would
@@ -329,7 +330,7 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
     va_end(params);
     tonode = (DagNode *) findDagNode(hash, from);
     if (!tonode) {
-	fail("Test %s: cannot find %s ", testid, key->value);
+	fail("Test %s: cannot find %s ", testid, from);
 	return;
     }
 
@@ -1244,6 +1245,7 @@ START_TEST(cond)
 }
 END_TEST
 
+#ifdef wibble
 static Document *
 depdiffs(char *path1, char *path2)
 {
@@ -1260,12 +1262,14 @@ depdiffs(char *path1, char *path2)
     diffs_root = doDiff(diffrules, FALSE);
     objectFree((Object *) diffrules, TRUE);
 
-    docnode = xmlNewDoc("1.0");
+    docnode = xmlNewDoc((xmlChar *) "1.0");
     xmlDocSetRootElement(docnode, diffs_root);
     result = documentNew(docnode, NULL);
     return result;
 }
+#endif
 
+#ifdef wibble
 static void
 check_testcase_1(Hash *nodes_by_fqn)
 {
@@ -1332,6 +1336,7 @@ START_TEST(depdiffs_1)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
 Suite *
 deps_suite(void)

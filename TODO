@@ -6,6 +6,7 @@ Nested Problem 6:
   - modify roles to not contain the cluster element as part of the name
   - replace test deps depdiffs 1
   - check params tests, replace or disable those that are commented out
+    LATEST CONDITIONAL IS ON NEW_DEPS
   - reactivate regression tests 3 and 4 
 
 

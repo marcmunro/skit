@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include "skit_lib.h"
 #include "skit_param.h"

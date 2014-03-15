@@ -86,6 +86,7 @@ sqlConnect()
     }
 			 
     RAISE(PARAMETER_ERROR, newstr("Unhandled database type"));
+    return NULL;
 }
 
 /* Called after executing an action.  This tells us that the next time
@@ -278,6 +279,7 @@ cursorIndex(Cursor *cursor, String *fieldname)
 	      newstr("Db cursorindex function is not registered"));
     }
     functions->cursorindex(cursor, fieldname);
+    return NULL;
 }
 
 static char *
@@ -329,6 +331,7 @@ applyNthParam(char *qrystr, int n, Object *param)
     RAISE(NOT_IMPLEMENTED_ERROR,
 	  newstr("applyParams cannot deal with non-string objects (%d)",
 		 param? param->type: 0));
+    return NULL;
 }
 
 char *

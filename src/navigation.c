@@ -21,7 +21,8 @@
 static boolean
 xmlnodeMatch(xmlNode *node, char *name)
 {
-    return node && (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
+    return node && (node->type == XML_ELEMENT_NODE) && 
+	streq((char *) node->name, name);
 }
 
 
@@ -416,9 +417,9 @@ commonAncestor(Vector *vec1, Vector *vec2)
 static boolean
 fqnEq(xmlNode *node1, xmlNode *node2)
 {
-    xmlChar *fqn1 = xmlGetProp(node1, "fqn");
-    xmlChar *fqn2 = xmlGetProp(node2, "fqn");
-    boolean result = streq(fqn1, fqn2);
+    xmlChar *fqn1 = xmlGetProp(node1, (xmlChar *) "fqn");
+    xmlChar *fqn2 = xmlGetProp(node2, (xmlChar *) "fqn");
+    boolean result = streq((char *) fqn1, (char *) fqn2);
     xmlFree(fqn1);
     xmlFree(fqn2);
     return result;
@@ -580,7 +581,7 @@ doAddNavigation(
 	    EACH(departures, i) {
 		nav = (Node *) ELEM(departures, i);
 		new = nav->node;
-		xmlSetProp(new, "action", "depart");
+		xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "depart");
 		xmlAddChild(parent, new);
 		nav->node = NULL;
 		nav_from = new;
@@ -591,7 +592,7 @@ doAddNavigation(
 	    EACH(arrivals, i) {
 		nav = (Node *) ELEM(arrivals, i);
 		new = nav->node;
-		xmlSetProp(new, "action", "arrive");
+		xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "arrive");
 		xmlAddChild(parent, new);
 		nav->node = NULL;
 	    }
@@ -610,7 +611,7 @@ static boolean
 nodeHasPrintElement(xmlNode *node)
 {
     while (node = getNextNode(node)) {
-	if (streq(node->name, "print")) {
+	if (streq((char *) node->name, "print")) {
 	    return TRUE;
 	}
 	if (nodeHasPrintElement(node->children)) {
@@ -659,3 +660,4 @@ addNavigationToDoc(
     }
     END;
 }
+

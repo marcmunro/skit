@@ -122,6 +122,7 @@ exec_broken_list1(void *ignore)
 {
     UNUSED(ignore);
     (void) objectFromStr("(42 43 44 (. 567))");
+    return 0;
 }
 
 START_TEST(broken_list1)
@@ -146,6 +147,7 @@ exec_broken_list2(void *ignore)
 {
     UNUSED(ignore);
     (void) objectFromStr("(1 . 567 789)");
+    return 0;
 }
 
 START_TEST(broken_list2)
@@ -170,6 +172,7 @@ exec_broken_list3(void *ignore)
 {
     UNUSED(ignore);
     (void) objectFromStr("( 567 789]");
+    return 0;
 }
 
 START_TEST(broken_list3)
@@ -194,6 +197,7 @@ exec_broken_list4(void *ignore)
 {
     UNUSED(ignore);
     (void) objectFromStr("(string= 'y' (get tuple 'superuser')");
+    return 0;
 }
 
 START_TEST(broken_list4)

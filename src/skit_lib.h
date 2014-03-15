@@ -626,8 +626,8 @@ extern Object *xmlTraverse(xmlNode *start, TraverserFn *traverser,
 			   Object *param);
 extern Object *xpathEach(Document *doc, String *xpath,
 			 TraverserFn *traverser, Object *param);
-extern String *nodeAttribute(xmlNodePtr node, const xmlChar *name);
-extern boolean nodeHasAttribute(xmlNodePtr node, const xmlChar *name);
+extern String *nodeAttribute(xmlNodePtr node, char *name);
+extern boolean nodeHasAttribute(xmlNodePtr node, char *name);
 extern void readDocDbver(Document *doc);
 extern xmlNode *getElement(xmlNode *node);
 extern xmlNode *getText(xmlNode *node);

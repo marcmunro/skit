@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include "skit_lib.h"
 #include "exceptions.h"
@@ -203,14 +204,14 @@ chunkInfo(void *chunk)
     sprintf(keystr, "%p", chunk);
     if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 				     &key, &contents)) {
-	fprintf(stderr, "Chunk %p is malloc'd  as number %d\n", 
+	fprintf(stderr, "Chunk %p is malloc'd  as number %lu\n", 
 		chunk, (intptr_t) contents);
     }
     else {
 	hash = freeTable();
 	if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 					 &key, &contents)) {
-	    fprintf(stderr, "Chunk %p was freed as number %d\n", 
+	    fprintf(stderr, "Chunk %p was freed as number %lu\n", 
 		    chunk, (intptr_t) contents);
 	    memdebug("in chunkinfo");
 	}
@@ -328,7 +329,7 @@ showChunk(
      * free the strings! */
     UNUSED(param);
 
-    fprintf(stderr, "Chunk %d not freed: %s.", 
+    fprintf(stderr, "Chunk %lu not freed: %s.", 
 	    (intptr_t) contents, (char *) key);
     ptr = toPtr((char *) key);
 
@@ -462,6 +463,7 @@ checkChunk(void *chunk, void *check_for)
     free(keystr);
     memdebug("checkChunk");
     RAISE(MEMORY_ERROR, newstr("checkChunk: Chunk %p not allocated", chunk));
+    return FALSE;
 }
 
 #endif

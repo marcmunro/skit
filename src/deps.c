@@ -121,7 +121,8 @@ showVectorDeps(Vector *nodes, boolean show_optional)
 static boolean
 xmlnodeMatch(xmlNode *node, char *name)
 {
-    return node && (node->type == XML_ELEMENT_NODE) && streq(node->name, name);
+    return node && (node->type == XML_ELEMENT_NODE) && 
+	streq((char *) node->name, name);
 }
 
 /* Find the nearest (xml document) ancestor node of the given type. */
@@ -143,19 +144,19 @@ findAncestor(xmlNode *start, char *name)
 boolean
 isDependencySet(xmlNode *node)
 {
-    return streq(node->name, DEPENDENCY_SET_STR);
+    return streq((char *) node->name, DEPENDENCY_SET_STR);
 }
 
 boolean
 isDependency(xmlNode *node)
 {
-    return streq(node->name, DEPENDENCY_STR);
+    return streq((char *) node->name, DEPENDENCY_STR);
 }
 
 boolean
 isDependencies(xmlNode *node)
 {
-    return streq(node->name, DEPENDENCIES_STR);
+    return streq((char *) node->name, DEPENDENCIES_STR);
 }
 
 boolean
@@ -178,14 +179,14 @@ buildTypeForDagNode(Node *node)
     char *errmsg = NULL;
     DagNodeBuildType build_type = UNSPECIFIED_NODE;
 
-    if (nodeHasAttribute(node->node , "fallback")) {
+    if (nodeHasAttribute(node->node , (xmlChar *) "fallback")) {
 	/* By default, we don't want to do anything for a fallback
  	 * node.  Marking it as an exists node achieves that.  The
  	 * build_type will be modified if anything needs to actually
  	 * reference the fallback node.  */
 	build_type = EXISTS_NODE;
     }
-    else if (diff = nodeAttribute(node->node , "diff")) {
+    else if (diff = nodeAttribute(node->node , (xmlChar *) "diff")) {
 	if (streq(diff->value, DIFFSAME)) {
 	    build_type = EXISTS_NODE;
 	}
@@ -205,13 +206,13 @@ buildTypeForDagNode(Node *node)
 	    build_type = REBUILD_NODE;
 	}
 	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
 	    errmsg = newstr("buildTypeForDagnode: unexpected diff "
 			    "type \"%s\" in %s", diff->value, fqn->value);
 	}
 	objectFree((Object *) diff, TRUE);
     }
-    else if (action = nodeAttribute(node->node , "action")) { 
+    else if (action = nodeAttribute(node->node , (xmlChar *) "action")) { 
 	tmp = action;
 	action = stringLower(action);
 	objectFree((Object *) tmp, TRUE);
@@ -228,7 +229,7 @@ buildTypeForDagNode(Node *node)
 	    build_type = EXISTS_NODE;
 	}
 	else {
-	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
+	    fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
 	    errmsg = newstr("buildTypeForDagnode: unexpected action "
 			    "type \"%s\" in %s", action->value, fqn->value);
 	}
@@ -248,10 +249,9 @@ buildTypeForDagNode(Node *node)
 		build_type = DROP_NODE;
 	    }
 	    else {
-		fqn = nodeAttribute(((Node *) node)->node, "fqn");
+		fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
 		errmsg = newstr("buildTypeForDagnode: cannot identify "
-				"build type for node %s", 
-				diff->value, fqn->value);
+				"build type for node %s", fqn->value);
 	    }
 	}
     }
@@ -275,7 +275,7 @@ addDagNodeToVector(Object *this, Object *vector)
     DagNode *dagnode = NULL;
 
     BEGIN {
-	if (streq(node->node->name, "dbobject")) {
+	if (streq((char *) node->node->name, "dbobject")) {
 	    dagnode = dagNodeNew(node->node, UNSPECIFIED_NODE);
 	    dagnode->build_type = buildTypeForDagNode(node);
 	    vectorPush((Vector *) vector, (Object *) dagnode);
@@ -350,9 +350,9 @@ hashByPqn(Vector *vector)
     EACH(vector, i) {
 	node = (DagNode *) ELEM(vector, i);
 	assert(node->type == OBJ_DAGNODE, "Incorrect node type");
-	pqn = xmlGetProp(node->dbobject, "pqn");
+	pqn = xmlGetProp(node->dbobject, (xmlChar *) "pqn");
 	if (pqn) {
-	    key = stringNew(pqn);
+	    key = stringNew((char *) pqn);
 	    xmlFree(pqn);
 	    new = (Object *) objRefNew((Object *) node);
 	    if (entry = (Cons *) hashGet(hash, (Object *) key)) {
@@ -384,7 +384,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	assert(node->dbobject, "identifyParents: no dbobject node");
 	parent = findAncestor(node->dbobject, "dbobject");
-	parent_fqn  = nodeAttribute(parent, "fqn");
+	parent_fqn  = nodeAttribute(parent, (xmlChar *) "fqn");
 	if (parent_fqn) {
 	    node->parent = (DagNode *) hashGet(nodes_by_fqn, 
 					       (Object *) parent_fqn);
@@ -399,7 +399,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 String *
 conditionForDep(xmlNode *node)
 {
-    String *condition_str = nodeAttribute(node, "condition");
+    String *condition_str = nodeAttribute(node, (xmlChar *) "condition");
     if (condition_str) {
 	stringLowerInPlace(condition_str);
     }
@@ -415,7 +415,7 @@ conditionForDep(xmlNode *node)
 String *
 directionForDep(xmlNode *node)
 {
-    String *direction_str = nodeAttribute(node, "direction");
+    String *direction_str = nodeAttribute(node, (xmlChar *) "direction");
     if (direction_str) {
 	stringLowerInPlace(direction_str);
     }
@@ -490,8 +490,8 @@ static DagNode *
 makeBreakerNode(DagNode *from_node, String *breaker_type)
 {
     xmlNode *dbobject = from_node->dbobject;
-    xmlChar *old_fqn = xmlGetProp(dbobject, "fqn");
-    char *fqn_suffix = strstr(old_fqn, ".");
+    xmlChar *old_fqn = xmlGetProp(dbobject, (xmlChar *) "fqn");
+    char *fqn_suffix = strstr((char *) old_fqn, ".");
     char *new_fqn = newstr("%s%s", breaker_type->value, fqn_suffix);
     xmlNode *breaker_dbobject = xmlCopyNode(dbobject, 1);
     DagNode *breaker;
@@ -499,9 +499,10 @@ makeBreakerNode(DagNode *from_node, String *breaker_type)
     Vector *deps;
     int i;
     boolean forwards;
-    xmlSetProp(breaker_dbobject, "type", breaker_type->value);
-    xmlUnsetProp(breaker_dbobject, "cycle_breaker");
-    xmlSetProp(breaker_dbobject, "fqn", new_fqn);
+    xmlSetProp(breaker_dbobject, (xmlChar *) "type", 
+	       (xmlChar *) breaker_type->value);
+    xmlUnsetProp(breaker_dbobject, (xmlChar *) "cycle_breaker");
+    xmlSetProp(breaker_dbobject, (xmlChar *) "fqn", (xmlChar *) new_fqn);
     xmlFree(old_fqn);
     skfree(new_fqn);
 
@@ -538,7 +539,8 @@ getBreakerFor(DagNode *node, Vector *nodes)
     String *breaker_type;
 
     if (!node->breaker) {
-	if (breaker_type = nodeAttribute(node->dbobject, "cycle_breaker")) {
+	if (breaker_type = nodeAttribute(node->dbobject, 
+					 (xmlChar *) "cycle_breaker")) {
 	    node->breaker = makeBreakerNode(node, breaker_type);
 	    objectFree((Object *) breaker_type, TRUE);
 	    setPush(nodes, (Object *) node->breaker);
@@ -688,7 +690,7 @@ getRootNode(xmlNode *dep_node)
 static DagNode *
 parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
 {
-    String *parent = nodeAttribute(dep_node, "parent");
+    String *parent = nodeAttribute(dep_node, (xmlChar *) "parent");
     xmlNode *node = NULL;
     DagNode *result;
     String *fqn;
@@ -704,7 +706,7 @@ parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
 	RAISE(XML_PROCESSING_ERROR, 
 	      newstr("No root node found for fallback"));
     }
-    fqn = nodeAttribute(node, "fqn");
+    fqn = nodeAttribute(node, (xmlChar *) "fqn");
     result = (DagNode *) hashGet(byfqn, (Object *) fqn);
     objectFree((Object *) fqn, TRUE);
     return result;
@@ -742,7 +744,7 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 
     if (isDependencySet(dep_node)) {
 	BEGIN {
-	    fallback = nodeAttribute(dep_node, "fallback");
+	    fallback = nodeAttribute(dep_node, (xmlChar *) "fallback");
 	    if (fallback) {
 		fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
 		if (!fallback_node) {
@@ -787,7 +789,7 @@ nextDependency(xmlNode *start, xmlNode *prev)
 }
 
 
-boolean
+static boolean
 directionMatch(DependencyApplication applies, boolean forwards)
 {
     switch (applies) {
@@ -865,7 +867,7 @@ processDepNode(
 	 * is no fallback. */
     }
     else if (isDependency(depnode)) {
-	if (qn = nodeAttribute(depnode, "fqn")) {
+	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		if (in_depset || dep->build_type != EXISTS_NODE) {
 		    /* If dep is an EXISTS_NODE it can be ignored unless
@@ -889,7 +891,7 @@ processDepNode(
 		}
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, "pqn")) {
+	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
 	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
 		while (cons) {
 		    dep = (DagNode *) dereference(cons->car);
@@ -951,9 +953,6 @@ processDepNode2(
 {
     DependencyApplication applies;
     xmlNode *this = NULL;
-    DagNode *fallback_node;
-    DagNode *subnodef;
-    DagNode *subnodeb;
     DagNode *dep;
     Cons *cons;
     String *qn = NULL;
@@ -973,7 +972,7 @@ processDepNode2(
 	 */
     }
     else if (isDependency(depnode)) {
-	if (qn = nodeAttribute(depnode, "fqn")) {
+	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		if (dep->build_type != EXISTS_NODE) {
 		    /* If dep is an EXISTS_NODE it can be ignored.
@@ -996,7 +995,7 @@ processDepNode2(
 		RAISE(TSORT_ERROR, errmsg);
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, "pqn")) {
+	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
 	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
 		while (cons) {
 		    dep = (DagNode *) dereference(cons->car);
@@ -1656,13 +1655,13 @@ resolveDependencySet(
     depnode = depset;
     while (depnode = nextDependency2(depnode, depset)) {
 	deps = NULL;
-	if (qn = nodeAttribute(depnode, "fqn")) {
+	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		single_dep.car = (Object *) dep;
 		deps = &single_dep;
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, "pqn")) {
+	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
 	    deps = (Cons *) hashGet(bypqn, (Object *) qn);
 	}
 	objectFree((Object *) qn, TRUE);
@@ -1976,7 +1975,6 @@ promoteRebuildsNew(Vector *nodes)
 {
     int i;
     DagNode *node;
-    boolean promote;
  
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
@@ -2040,7 +2038,7 @@ processDirectionalContexts(DagNode *node, DagNode *mirror_node)
     xmlNode *next;
     xmlNode *copy;
     // TODO: Rewrite this to simplify.
-    String *direction = nodeAttribute(context, "direction");
+    String *direction = nodeAttribute(context, (xmlChar *) "direction");
     if (direction) {
 	next = getElement(context->next);
 	if (!streq("context", (char *) next->name)) {
@@ -2059,7 +2057,7 @@ processDirectionalContexts(DagNode *node, DagNode *mirror_node)
 	    context = findContext(copy);
 	    next = getElement(context->next);
 	    objectFree((Object *) direction, TRUE);
-	    direction = nodeAttribute(next, "direction");
+	    direction = nodeAttribute(next, (xmlChar *) "direction");
 	    if (direction && streq(direction->value, "forwards")) {
 		objectFree((Object *) direction, TRUE);
 		/* Remove the forwards node from our copy. */
@@ -2288,16 +2286,17 @@ redirectNodeDeps(DagNode *node, DagNode *dep, int direction)
 	break;
     case IGNORE:
 	return;
+    default:
+	showDeps(node, TRUE);
+	showDeps(dep, TRUE);
+	RAISE(DEPS_ERROR, 
+	      newstr("%s dep from (%s) %s to (%s) %s not handled.", 
+		     direction? "Forward": "Backward",
+		     nameForBuildType(node->build_type),
+		     node->fqn->value, 
+		     nameForBuildType(dep->build_type),
+		     dep->fqn->value));
     }
-    showDeps(node, TRUE);
-    showDeps(dep, TRUE);
-    RAISE(DEPS_ERROR, 
-	  newstr("%s dep from (%s) %s to (%s) %s not handled.", 
-		 direction? "Forward": "Backward",
-		 nameForBuildType(node->build_type),
-		 node->fqn->value, 
-		 nameForBuildType(dep->build_type),
-		 dep->fqn->value));
 }
 
 static void

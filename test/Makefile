@@ -50,7 +50,7 @@ skit_test:	$(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST)
 	@echo "  LINK" $@
 	@$(CC) $(LDFLAGS) $(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST) \
 		$(LIBCHECK) -o $@
-	@echo "  CREATE" $(TEST_DIR)/alltests.dep FROM $@ 
+	@echo "  CREATE" $(TEST_DIR)/alltests.dep USING $@ 
 	@./skit_test -r $(SUPP_FLAG) 2>/dev/null | \
 	    while read suite test; do \
 	        echo grind__$${suite}: $${suite}__$${test}.grind; \

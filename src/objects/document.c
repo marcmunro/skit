@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <libxml/xinclude.h>
 #include "../skit_lib.h"
 #include "../exceptions.h"
 
@@ -121,7 +122,7 @@ xpathEval(Document *doc, xmlNode *node, char *expr)
 	setXPathContext(doc);
     }
     doc->xpath_context->node = node;
-    return xmlXPathEvalExpression(expr, doc->xpath_context);
+    return xmlXPathEvalExpression((xmlChar *) expr, doc->xpath_context);
 }
 
 Document *
@@ -387,7 +388,7 @@ skitfileRead(void *context, char *buffer, int len)
 static void
 setup_input_readers()
 {
-    static done = FALSE;
+    static boolean done = FALSE;
     if (!done) {
 	xmlRegisterDefaultInputCallbacks();
 
@@ -408,7 +409,7 @@ is_options_node(Document *doc)
     boolean result = FALSE;
     if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
 	name = xmlTextReaderName(doc->reader);
-	result = streq(name, "skit:options");
+	result = streq((char *) name, "skit:options");
 	xmlFree(name);
     }
     return result;
@@ -440,11 +441,11 @@ process_option_node(Document *doc)
     Object *validated_value = NULL;
 
     BEGIN {
-	name = getAttribute(doc->reader, "name");
-	dflt = getAttribute(doc->reader, "default");
-	value = getAttribute(doc->reader, "value");
-	type = getAttribute(doc->reader, "type");
-	required = getAttribute(doc->reader, "required");
+	name = getAttribute(doc->reader, (xmlChar *) "name");
+	dflt = getAttribute(doc->reader, (xmlChar *) "default");
+	value = getAttribute(doc->reader, (xmlChar *) "value");
+	type = getAttribute(doc->reader, (xmlChar *) "type");
+	required = getAttribute(doc->reader, (xmlChar *) "required");
 	if (name) {
 	    if (!type) {
 		type = stringNew("flag");
@@ -501,8 +502,8 @@ process_option_node(Document *doc)
 static void
 process_alias_node(Document *doc)
 {
-    String *volatile name = getAttribute(doc->reader, "for");
-    String *volatile alias = getAttribute(doc->reader, "value");
+    String *volatile name = getAttribute(doc->reader, (xmlChar *) "for");
+    String *volatile alias = getAttribute(doc->reader, (xmlChar *) "value");
     BEGIN {
 	if (name) {
 	    if (alias) {
@@ -545,10 +546,10 @@ process_possible_option(Document *doc)
     BEGIN {
 	if (xmlTextReaderNodeType(doc->reader) == XML_READER_TYPE_ELEMENT) {
 	    name = xmlTextReaderName(doc->reader);
-	    if (streq(name, "option")) {
+	    if (streq((char *) name, "option")) {
 		process_option_node(doc);
 	    }
-	    else if (streq(name, "alias")) {
+	    else if (streq((char *) name, "alias")) {
 		process_alias_node(doc);
 	    }
 	    xmlFree(name);
@@ -608,6 +609,7 @@ docFromFile(String *path)
 		else {
 		    process_possible_option(doc);
 		}
+	    default:;   	/* To eliminate compiler warning. */
 	    }
 	    xmlTextReaderPreserve(doc->reader);
 	    ret = xmlTextReaderRead(doc->reader);
@@ -789,7 +791,7 @@ printPrintable(FILE *fp, xmlNode *node)
 {
     if (node) {
 	do {
-	    if (streq(node->name, "print")) {
+	    if (streq((char *) node->name, "print")) {
 		printThis(fp, node);
 	    }
 	    printPrintable(fp, getNextNode(node->children));
@@ -813,7 +815,7 @@ documentPrintXML(FILE *fp, Document *doc)
 
     if (doc->doc) {
 	xmlDocDumpFormatMemory(doc->doc, &xmlbuf, &buffersize, 1);
-	fputs(xmlbuf, fp);
+	fputs((char *) xmlbuf, fp);
 	xmlFree(xmlbuf);
     }
 }
@@ -921,7 +923,7 @@ docIsPrintable(Document *doc)
 {
     xmlNode *node = getFirstNode(doc);
     if (node) {
-	return streq(node->name, "printable");
+	return streq((char *) node->name, "printable");
     }
     return FALSE;
 }
@@ -934,14 +936,14 @@ docHasDeps(Document *doc)
 	return FALSE;
     }
 
-    if (streq(node->name, "printable")) {
+    if (streq((char *) node->name, "printable")) {
 	node = getNextNode(node->next);
     }
 
-    if (node && streq(node->name, "params")) {
+    if (node && streq((char *) node->name, "params")) {
 	node = getNextNode(node->next);
     }
-    if (node && streq(node->name, "dbobject")) {
+    if (node && streq((char *) node->name, "dbobject")) {
 	return TRUE;
     }
     return FALSE;
@@ -952,7 +954,7 @@ findClusterNode(Object *this, Object *ignore)
 {
     UNUSED(ignore);
 
-    if (streq(((Node *) this)->node->name, "cluster")) {
+    if (streq((char *) ((Node *) this)->node->name, "cluster")) {
 	return (Object *) nodeNew(((Node *) this)->node);
     }
     return NULL;
@@ -1088,9 +1090,9 @@ xpathEach(Document *doc, String *xpath,
 
 String *
 nodeAttribute(xmlNodePtr node, 
-	      const xmlChar *name)
+	      char *name)
 {
-    xmlChar *value = xmlGetProp(node, name);
+    xmlChar *value = xmlGetProp(node, (xmlChar *) name);
     String *result;
 
     if (value) {
@@ -1102,10 +1104,9 @@ nodeAttribute(xmlNodePtr node,
 }
 
 boolean
-nodeHasAttribute(xmlNodePtr node, 
-	         const xmlChar *name)
+nodeHasAttribute(xmlNodePtr node, char *name)
 {
-    xmlChar *value = xmlGetProp(node, name);
+    xmlChar *value = xmlGetProp(node, (xmlChar *) name);
 
     if (value) {
 	xmlFree(value);

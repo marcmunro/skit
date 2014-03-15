@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <glob.h>
 #include <libgen.h>
 #include "skit_lib.h"
@@ -81,7 +82,8 @@ addAttribute(xmlNodePtr node,
 	     String *value)
 {
     if (name && value) {
-	(void) xmlNewProp(node, name->value, value->value);
+	(void) xmlNewProp(node, (xmlChar *) name->value, 
+			  (xmlChar *) value->value);
     }
 }
 
@@ -389,6 +391,7 @@ execFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     RAISE(XML_PROCESSING_ERROR,
 	  newstr("No expr provided for skit:exec"));
+    return NULL;
 }
 
 static Cons *mapvars = NULL;
@@ -835,7 +838,7 @@ handleFunctionParams(xmlNode *template_node, xmlNode *function_node)
 	    current = current->next;
 	}
 	else if ((ns = current->ns) && 
-		 streq(ns->prefix, "skit") &&
+		 streq((char *) ns->prefix, "skit") &&
 		 streq((char *) current->name, "parameter")) {
 	    getParam(template_node, current);
 	    current = current->next;
@@ -983,7 +986,7 @@ execXSLproc(xmlNode *template_node, xmlNode *parent_node, int depth)
     return result;
 }
 
-static 
+static void
 addSavedTextNode(xmlNode *parent, xmlNode *text)
 {
     if (text) {
@@ -995,7 +998,7 @@ static xmlNode *copyNodeContents(xmlNode *source);
 
 /* Note that we do not copy text nodes that precede an element that we
  * are not going to copy. */ 
-static
+static void
 copyKidsContents(xmlNode *parent, xmlNode *kid)
 {
     xmlNode *newkid;
@@ -1027,8 +1030,8 @@ copyNodeContents(xmlNode *source)
     xmlNode *kids = NULL;
 
     if (source->type == XML_ELEMENT_NODE) {
-	if (streq(source->name, "dbobject") ||
-	    streq(source->name, "dependencies"))  {
+	if (streq((char *) source->name, "dbobject") ||
+	    streq((char *) source->name, "dependencies"))  {
 	    return NULL;
 	}
 	else {
@@ -1059,7 +1062,7 @@ actionName(DagNode *node)
 static void
 addActionNode(xmlNode *root, xmlNode *node, char *action)
 {
-    xmlNewProp(node, "action", action);
+    xmlNewProp(node, (xmlChar *) "action", (xmlChar *) action);
     xmlAddChild(root, node);
 }
 
@@ -1232,7 +1235,7 @@ findDbobject(xmlNode *node)
     xmlNode *kid;
 
     while (this) {
-	if (streq(this->name, "dbobject")) {
+	if (streq((char *) this->name, "dbobject")) {
 	    return this;
 	}
 	if (kid = findDbobject(this->children)) {
@@ -1331,7 +1334,7 @@ attribute_eq(xmlNode *node1, xmlNode *node2, const xmlChar *name)
     xmlChar *text2 = xmlGetProp(node2, name);
     int eq;
     if (text1 && text2) {
-	eq = streq(text1, text2);
+	eq = streq((char *) text1, (char *) text2);
     }
     else {
 	eq = FALSE;
@@ -1376,7 +1379,7 @@ nodes_match(xmlNode *node1, xmlNode *node2)
     switch (node1->type) {
     case XML_ELEMENT_NODE:
 	/* Check element names are the same. */
-	if (!streq(node1->name, node2->name)) {
+	if (!streq((char *) node1->name, (char *) node2->name)) {
 	    return FALSE;
 	}
 	if (!all_node_attributes_match(node1, node2)) {
@@ -1387,12 +1390,13 @@ nodes_match(xmlNode *node1, xmlNode *node2)
 	/* Check element text is the same. */
 	text1 = xmlNodeGetContent(node1);
 	text2 = xmlNodeGetContent(node2);
-	eq = streq(text1, text2);
+	eq = streq((char *) text1, (char *) text2);
 	xmlFree(text1);
 	xmlFree(text2);
 	if (!eq) {
 	    return FALSE;
 	}
+    default:;  /* Quieten the compiler warnings */
     }
     return trees_match(node1->children, node2->children);
 }
@@ -1404,7 +1408,7 @@ is_empty_text_node(xmlNode *node)
     char *c;
     if (node->type == XML_TEXT_NODE) {
 	text = xmlNodeGetContent(node);
-	for (c = text; *c != '\0'; c++) {
+	for (c = (char *) text; *c != '\0'; c++) {
 	    if (!isspace(*c)) {
 		xmlFree(text);
 		return FALSE;
@@ -1538,7 +1542,7 @@ copyWithEval(xmlNode *node)
     xmlNode *new;
     char *text;
     if (node->type == XML_COMMENT_NODE) {
-	text = evalText(node->content);
+	text = evalText((char *) node->content);
 	new = xmlNewComment((xmlChar *) text);
 	skfree(text);
     }
@@ -1928,8 +1932,8 @@ processGatherNodes(xmlNode *node, char *filename)
     while (cur_node) {
 	if ((cur_node->type == XML_ELEMENT_NODE) &&
 	    (ns = cur_node->ns) && 
-	    streq(ns->prefix, "skit") &&
-	    streq(cur_node->name, "gather")) 
+	    streq((char *) ns->prefix, "skit") &&
+	    streq((char *) cur_node->name, "gather")) 
 	{
 	    gatherDocsIntoNode(cur_node, filename);
 	    /* Now we remove the gather node, and any preceding text node. */
@@ -2192,6 +2196,7 @@ execXmlNodeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 	RAISE(XML_PROCESSING_ERROR, 
 	      newstr("No processor defined for skit:%s", template_node->name));
     }
+    return NULL;
 }
 
 static xmlNode *
@@ -2203,10 +2208,10 @@ processNode(xmlNode *template_node, xmlNode *parent_node, int depth)
     assert(template_node, "template_node is NULL in processNode");
     //fprintf(stderr, "processNode: template=%s, parent=%s\n", 
     //	    nodeName(template_node), nodeName(parent_node));
-    if ((ns = template_node->ns) && streq(ns->prefix, "skit")) {
+    if ((ns = template_node->ns) && streq((char *) ns->prefix, "skit")) {
        this = execXmlNodeFn(template_node, parent_node, depth);
     }
-    else if ((ns = template_node->ns) && streq(ns->prefix, "xi")) {
+    else if ((ns = template_node->ns) && streq((char *) ns->prefix, "xi")) {
 	/* We have found an xi:include node.  This will happen if
 	 * inclusions have not yet been processed by finishDocument(),
 	 * which should only be because we have deferred the processing
@@ -2265,7 +2270,7 @@ nodeLocation(xmlNode *node)
 {
     xmlDoc *doc = node->doc;
     xmlChar *uri = xmlNodeGetBase(doc, node);
-    String *my_uri = stringNew(uri);
+    String *my_uri = stringNew((char *) uri);
     Document *skitdoc = (Document *) doc->_private;
     Cons *cons = getDocumentInclusion(skitdoc, my_uri);
     char *filename;
@@ -2298,8 +2303,7 @@ processElement(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    xmlNodeGetBase(template_node->doc, template_node)); */
 	    
     BEGIN {
-	switch (template_node->type) {
-	case XML_ELEMENT_NODE:
+	if (template_node->type == XML_ELEMENT_NODE) {
 	    result = processNode(template_node, parent_node, depth);
 	}
     }
@@ -2400,7 +2404,7 @@ processTemplate(Document *template)
     if (newroot = processNode(root, NULL, 1)) {
 	doc = newroot->doc;
 	if (!doc) {
-	    doc = xmlNewDoc("1.0");
+	    doc = xmlNewDoc((xmlChar *) "1.0");
 	    xmlDocSetRootElement(doc, newroot);
 	}
 	result = documentNew(doc, NULL);
@@ -2431,10 +2435,11 @@ addParamAttribute(Cons *entry, Object *params_node)
     case OBJ_INT4:
 	param = newstr("%d", ((Int4 *) value)->value);
 	break;
+    default:;  /* Quieten the compiler warnings. */
     }
     if (param) {
 	node = ((Node *) params_node)->node;
-	(void)  xmlNewProp(node, key->value, param);
+	(void)  xmlNewProp(node, (xmlChar *) key->value, (xmlChar *) param);
 	skfree(param);
     }
 

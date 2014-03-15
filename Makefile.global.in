@@ -42,6 +42,7 @@ LIBCHECK = @CHECK_LIBS@
 
 XSLTPROC = @XSLTPROC@
 
-ifeq ($(GCC), yes)
-	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations
+ifeq ($(CC), gcc)
+	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations \
+			-Wno-parentheses -Wno-format-zero-length
 endif

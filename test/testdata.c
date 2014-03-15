@@ -14,6 +14,7 @@
 
 
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include "../src/skit_lib.h"
 #include "../src/exceptions.h"

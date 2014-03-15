@@ -58,6 +58,7 @@ buildPrefixLen(DagNodeBuildType type)
 	      newstr("Unhandled build type %d in buildPrefixLen", 
 		     (int) type));
     }
+    return 0;
 }
 
 static boolean

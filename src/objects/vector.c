@@ -229,12 +229,12 @@ vectorGet(Vector *vec, Object *key)
 	newkey = stringToInt4((String *) key);
 	result = vectorNth(vec, newkey->value);
 	objectFree((Object *) newkey, TRUE);
-	return result;
     }
     else {
 	RAISE(LIST_ERROR, newstr("vectorGet: invalid type (%s) for key",
 				 objTypeName(key)));
     }
+    return result;
 }
 
 void

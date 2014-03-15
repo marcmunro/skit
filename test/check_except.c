@@ -350,6 +350,7 @@ do_exceptions_new12(void *ignore)
 {
     UNUSED(ignore);
     RAISE();
+    return 0;
 }
 
 
@@ -376,6 +377,7 @@ do_exceptions_new13(void *ignore)
 {
     UNUSED(ignore);
     RAISE(71, newstr("LOOKY HERE"));
+    return 0;
 }
 
 // Check that RAISE(x) fails properly when no exception handler is defined
@@ -403,6 +405,7 @@ do_exceptions_new14(void *ignore)
     UNUSED(ignore);
     a = catcher2(14);
     fail_unless(a == 22, "Function result 22 expected, got %d\n", a);
+    return a;
 }
 
 // Check that RAISE fails properly from an exception block
@@ -503,6 +506,7 @@ do_exceptions_3(void *ignore)
 {
     UNUSED(ignore);
     (void) catcher(99, raiser1);
+    return 0;
 }
 
 START_TEST(exceptions_3)

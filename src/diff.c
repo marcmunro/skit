@@ -26,12 +26,6 @@ readDocs(Document **p_doc1, Document **p_doc2)
     *p_doc2 = docStackPop();
 }
 
-static boolean
-isContextNode(xmlNode *node)
-{
-    return streq("context", (char *) node->name);
-}
-
 static void
 readDbobjectRule(xmlNode *node, Object *rules)
 {
@@ -269,7 +263,7 @@ getMatch(xmlNode *node, Hash *objects, Hash *rules)
 static void
 setDiff(xmlNode *node, DiffType difftype)
 {
-    xmlChar *type;
+    char  *type;
     switch (difftype) {
     case IS_NEW: type = DIFFNEW; break;
     case IS_GONE: type = DIFFGONE; break;
@@ -280,7 +274,7 @@ setDiff(xmlNode *node, DiffType difftype)
     case HAS_DIFFKIDS: type = DIFFKIDS; break;
     }
 
-    (void) xmlNewProp(node, (const xmlChar *) "diff", type);
+    (void) xmlNewProp(node, (const xmlChar *) "diff", (xmlChar *) type);
 }
 
 
@@ -341,7 +335,8 @@ copyContext(xmlNode *node, char *condition)
     if (this) {
 	result = xmlCopyNode(this, 1);
 	if (condition) {
-	    (void) xmlNewProp(result, "direction", condition);
+	    (void) xmlNewProp(result, (xmlChar *) "direction", 
+			      (xmlChar *) condition);
 	}
         
     }
@@ -357,7 +352,7 @@ skipToContents(xmlNode *node)
 
     if (node) {
 	this = getElement(node->children);
-	while (this && !streq(this->name, type->value)) {
+	while (this && !streq((char *) this->name, type->value)) {
 	    this = this->next;
 	}
     }
@@ -375,7 +370,7 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
     String *volatile attr2 = nodeAttribute(content2, attr_name->value);
     String *volatile old = NULL;
     String *volatile new = NULL;
-    xmlChar *status = NULL;
+    char *status = NULL;
     xmlNode *diff = NULL;
     
     if (attr1) {
@@ -420,7 +415,8 @@ check_attribute(xmlNode *content1, xmlNode *content2, xmlNode *rule)
 	    diff = xmlNewNode(NULL, BAD_CAST "attribute");
 	    (void) xmlNewProp(diff, (const xmlChar *) "name", 
 			      (xmlChar *) attr_name->value);
-	    (void) xmlNewProp(diff, (const xmlChar *) "status", status);
+	    (void) xmlNewProp(diff, (const xmlChar *) "status", 
+			      (xmlChar *) status);
 	    if (old) {
 		(void) xmlNewProp(diff, (const xmlChar *) "old", 
 				  (xmlChar *) old->value);
@@ -453,7 +449,7 @@ text_diff(xmlChar *str1, xmlChar *str2)
     xmlNode *textnode;
     xmlNodePtr text;
 
-    if (streq(str1, str2)) {
+    if (streq((char *) str1, (char *) str2)) {
 	return NULL;
     }
 
@@ -489,12 +485,12 @@ check_text(xmlNode *content1, xmlNode *content2)
 	    xmlFree(str2);
 	}
 	else {
-	    diff = text_diff(str1, "");
+	    diff = text_diff(str1, (xmlChar *) "");
 	}
 	xmlFree(str1);
     }
     else if (str2) {
-	    diff = text_diff("", str2);
+	    diff = text_diff((xmlChar *) "", str2);
 	    xmlFree(str2);
     }
     return diff;
@@ -504,7 +500,7 @@ static xmlNode *
 next_elem_of_type(xmlNode *node, String *elem_type)
 {
     while (node = getElement(node)) {
-	if (streq(node->name, elem_type->value)) {
+	if (streq((char *) node->name, elem_type->value)) {
 	    return node;
 	}
 	node = node->next;
@@ -516,10 +512,10 @@ static xmlNode *
 diffElement(xmlNode *source, char *type, char *status, char *key)
 {
     xmlNode *diff = xmlNewNode(NULL, BAD_CAST "element");
-    (void) xmlNewProp(diff, (const xmlChar *) "status", status);
-    (void) xmlNewProp(diff, (const xmlChar *) "type", type);
+    (void) xmlNewProp(diff, (const xmlChar *) "status", (xmlChar *) status);
+    (void) xmlNewProp(diff, (const xmlChar *) "type", (xmlChar *) type);
     if (key) {
-	(void) xmlNewProp(diff, (const xmlChar *) "key", key);
+	(void) xmlNewProp(diff, (const xmlChar *) "key", (xmlChar *) key);
     }
     xmlAddChild(diff, xmlCopyNode(source, 1));
     return diff;
@@ -563,7 +559,7 @@ keyFromElement(xmlNode *elem, String *key_type)
 	return nodeAttribute(elem, key_type->value);
     }
     else {
-	return stringNew(elem->name);
+	return stringNew((char *) elem->name);
     }
 }
 
@@ -720,7 +716,7 @@ evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
 {
     char *result = newstr("");
     char *tmp;
-    char *remaining = expr;
+    char *remaining = (char *) expr;
     char *brace;
     char *name;
     xmlChar *attr;
@@ -750,10 +746,10 @@ evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
 	}
 	name = brace + 5;
 	if (new) {
-	    attr = xmlGetProp(content2, name);
+	    attr = xmlGetProp(content2, (xmlChar *) name);
 	}
 	else {
-	    attr = xmlGetProp(content1, name);
+	    attr = xmlGetProp(content1, (xmlChar *) name);
 	}
 	if (!attr) {
 	    dbgNode(content1);
@@ -794,7 +790,7 @@ evalDiffDepProps(
 	name = attr->name;
 	expr = xmlGetProp(depnode, name);
 	value = evalAttr(expr, content1, content2);
-	(void) xmlNewProp(target, name, value);
+	(void) xmlNewProp(target, name, (xmlChar *) value);
 	skfree(value);
     }
 }
@@ -879,14 +875,14 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 	rule = getElement(ruleset->children);
 
 	while (rule) {
-	    if (streq(rule->name, "attribute")) {
+	    if (streq((char *) rule->name, "attribute")) {
 		diff = check_attribute(content1, content2, rule);
 	    }
-	    else if (streq(rule->name, "element")) {
+	    else if (streq((char *) rule->name, "element")) {
 		diff = check_element(content1, content2, rule, 
 				     p_deps, p_do_rebuild);
 	    }
-	    else if (streq(rule->name, "text")) {
+	    else if (streq((char *) rule->name, "text")) {
 		diff = check_text(content1, content2);
 	    }
 	    else {
@@ -993,7 +989,7 @@ makeDependenciesNode(char *direction)
 {
     xmlNode *deps = xmlNewNode(NULL, BAD_CAST "dependencies");
     if (direction) {
-	(void) xmlNewProp(deps, "direction", direction);
+	(void) xmlNewProp(deps, (xmlChar *) "direction", (xmlChar *) direction);
     }
     return deps;
 }
@@ -1255,8 +1251,9 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     String *time2 = nodeAttribute(dump2, "time");
     boolean has_diffs;
 
-    (void) xmlNewProp(result, "dbname2", dbname2->value);
-    (void) xmlNewProp(result, "time2", time2->value);
+    (void) xmlNewProp(result, (xmlChar *) "dbname2", 
+		      (xmlChar *) dbname2->value);
+    (void) xmlNewProp(result, (xmlChar *) "time2", (xmlChar *) time2->value);
     objectFree((Object *) dbname2, TRUE);
     objectFree((Object *) time2, TRUE);
     BEGIN {

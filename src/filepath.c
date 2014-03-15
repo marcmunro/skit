@@ -13,7 +13,10 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <fnmatch.h>
 #include "skit_lib.h"
 #include "exceptions.h"
 #include <glob.h>
@@ -94,7 +97,7 @@ searchdir(Hash *hash, char *path, char *pattern)
 	}
 	else {
 	    /* Assume the dirent is for a file */
-	    if (fnmatch(pattern, direntry->d_name) == 0) {
+	    if (fnmatch(pattern, direntry->d_name, 0) == 0) {
 		hashkey = newstr("%s/%s", realpath, direntry->d_name);
 		hashAdd(hash, (Object *) stringNewByRef(hashkey), 
 		        (Object *) symbolGet("t"));

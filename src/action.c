@@ -15,6 +15,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "skit_lib.h"
 #include "skit_param.h"
 #include "exceptions.h"
@@ -606,6 +607,7 @@ parseDbtype(Object *obj)
 	str = newstr("dbtype \"%s\" is not known to skit\n", dbtype->value);
 	objectFree((Object *) dbtype, TRUE);
 	RAISE(PARAMETER_ERROR, str);
+	return NULL;
     }
 }
 

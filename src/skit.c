@@ -52,6 +52,7 @@ skitHome(char *executable)
 	RAISE(FILEPATH_ERROR,
 	      newstr("skitHome: No '/' character found in %s", executable));
     }
+    return NULL;
 }
 
 static void

@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "../skit_lib.h"
 #include "../exceptions.h"
 #include <regex.h>
@@ -293,6 +294,7 @@ stringToInt4(String *str)
 	return int4New(atoi(str->value));
     }
     RAISE(TYPE_MISMATCH, newstr("Cannot convert %s to integer", str->value));
+    return NULL;
 }
 
 String *

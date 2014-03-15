@@ -47,8 +47,8 @@ typeName(ObjType type)
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
+    default: return "UNKNOWN_OBJECT_TYPE";
     }
-    return "UNKNOWN_OBJECT_TYPE";
 }
 
 char *
@@ -335,8 +335,9 @@ objectRead(TokenStr *sexp)
 static Object *
 trappedObjectRead(TokenStr *sexp)
 {
+    Object *obj;
     BEGIN {
-	RETURN(objectRead(sexp));
+        obj = objectRead(sexp);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -344,6 +345,7 @@ trappedObjectRead(TokenStr *sexp)
 				 ex->text, sexp->instr));
     }
     END;
+    return obj;
 }
 
 
@@ -385,6 +387,7 @@ objectCmp(Object *obj1, Object *obj2)
 	    return stringCmp((String *) obj1, (String *) obj2);
 	default: 
 	    objectCmpFail(obj1, obj2);
+	    return 0;
     }
 }
 
@@ -578,8 +581,8 @@ nameForBuildType(DagNodeBuildType build_type)
     case BUILD_AND_DROP_NODE: return "build and drop";
     case FALLBACK_NODE: return "fallback";
     case ENDFALLBACK_NODE: return "endfallback";
+    default: return "UNKNOWNBUILDTYPE";
     }
-    return "UNKNOWNBUILDTYPE";
 }
 
 /* Return dynamically-created string representation of object. 
@@ -640,7 +643,7 @@ objectSexp(Object *obj)
 	return newstr("/%s/", ((Regexp *) obj)->src_str);
     default: 
 	// TODO: improve this string.
-	return newstr("{BROKEN OBJECT: %x}", obj);
+	return newstr("{BROKEN OBJECT: %p}", obj);
 	
 	fails = newstr("objectSexp: Unhandled type: %d\n", obj->type);
 	RAISE(UNHANDLED_OBJECT_TYPE, fails);
@@ -702,11 +705,11 @@ objectCopy(Object *obj)
     case OBJ_HASH: 
 	return (Object *) hashCopy((Hash *) obj);
     default: 
-	fails = newstr("objectCopy: Unhandled type: %d in %x\n", 
+	fails = newstr("objectCopy: Unhandled type: %d in %p\n", 
 			obj->type, obj);
 	RAISE(UNHANDLED_OBJECT_TYPE, fails);
     }
-    
+    return NULL;
 }
 
 
@@ -865,8 +868,8 @@ isCollection(Object *object)
     case OBJ_STRING:
     case OBJ_HASH:
 	return TRUE;
+    default: return FALSE;
     }
-    return FALSE;
 }
 
 Object *
@@ -957,4 +960,5 @@ checkObj(Object *obj, void *chunk)
 			 obj->type));
 	}
     }
+    return FALSE;
 }

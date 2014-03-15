@@ -13,6 +13,7 @@
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <libpq-fe.h>
 #include "skit_lib.h"
 #include "exceptions.h"
@@ -265,6 +266,7 @@ pgsqlExecQry(Connection *connection,
 	}
 	RAISE(SQL_ERROR, 
 		  newstr("Fatal postgres error: %s", PQresultErrorMessage(NULL)));
+	return NULL;
 }
 
 static Object *

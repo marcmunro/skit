@@ -46,9 +46,9 @@ START_TEST(morehash_suppressions)
     for (i = 0; i < 1000; i++) {
 	hash = hashNew(TRUE);
 	hashAdd(hash, (Object *) stringNewByRef(newstr("AAX%dQZX", i)), 
-		(Object *) stringNewByRef(newstr("*d", 7*i)));
+		(Object *) stringNewByRef(newstr("%d", 7*i)));
 	hashAdd(hash, (Object *) stringNewByRef(newstr("qAX%dQZX", i)), 
-		(Object *) stringNewByRef(newstr("*d", 12347*i)));
+		(Object *) stringNewByRef(newstr("%d", 12347*i)));
 	vectorPush(vec, (Object *) hash);
     }
     objectFree((Object *) vec, TRUE);

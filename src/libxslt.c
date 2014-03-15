@@ -18,7 +18,8 @@
 #include "exceptions.h"
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
-#include<libxslt/extensions.h>
+#include <libxslt/extensions.h>
+#include <libxslt/xsltutils.h>
 #include <libexslt/exslt.h>
 #include <libexslt/exsltconfig.h>
 

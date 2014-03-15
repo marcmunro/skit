@@ -239,4 +239,5 @@ validateParamValue(String *type, String *value)
     }
     /* Should not reach this point */
     RAISE(OUT_OF_BOUNDS, newstr("validateParamValue: coding error"));
+    return NULL;
 }

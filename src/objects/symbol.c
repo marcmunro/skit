@@ -356,6 +356,7 @@ symbolExec(Symbol *sym, Object *obj)
     errmsg = newstr("Cannot execute %s as a function", tmp);
     skfree(tmp);
     RAISE(LIST_ERROR, errmsg);
+    return NULL;
 }
 
 boolean

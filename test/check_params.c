@@ -696,7 +696,7 @@ START_TEST(scatter)
 END_TEST
 #endif
 
-//#ifdef unused
+#ifdef NEW_DEPS
 START_TEST(extract)
 {
     /* Run the database build for a regression test before running this
@@ -726,9 +726,9 @@ START_TEST(extract)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
-//#ifdef unused
+#ifdef NEW_DEPS
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
@@ -754,9 +754,9 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
-//#ifdef unused
+#ifdef NEW_DEPS
 START_TEST(deps1a)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -811,7 +811,7 @@ START_TEST(deps1b)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
 #ifdef unused
 START_TEST(diff)
@@ -845,7 +845,7 @@ START_TEST(diff)
 END_TEST
 #endif
 
-//#ifdef unused
+#ifdef NEW_DEPS
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -877,10 +877,10 @@ START_TEST(diffgen)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
 
-//#ifdef unused
+#ifdef NEW_DEPS
 START_TEST(difflist)
 {
     char *args[] = {"./skit", "-t", "diff.xml", 
@@ -913,7 +913,7 @@ START_TEST(difflist)
     FREEMEMWITHCHECK;
 }
 END_TEST
-//#endif
+#endif
 
 static int
 do_list(void *ignore)
@@ -936,6 +936,7 @@ do_list(void *ignore)
 	fprintf(stderr, "%s\n", ex->backtrace);
     }
     END;
+    return 0;
 }
 
 
@@ -984,6 +985,7 @@ do_deps(void *ignore)
     END;
 
     FREEMEMWITHCHECK;
+    return 0;
 }
 
 START_TEST(deps)

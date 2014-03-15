@@ -134,13 +134,13 @@ consRead(Object *closer, TokenStr *sexp)
 	    }
 	}
 	setCdr(cons, cdr);
-	RETURN(cons);
     }
     EXCEPTION(e) {
 	objectFree((Object *) cons, TRUE);
 	RAISE();
     }
     END;
+    return cons;
 }
 
 
@@ -383,12 +383,12 @@ consGet(Cons *list, Object *key)
 	    }
 	    list = (Cons *) list->cdr;
 	}
-	return NULL;
     }
     else {
 	RAISE(LIST_ERROR, newstr("consGet: invalid type (%s) for key",
 				 objTypeName(key)));
     }
+    return NULL;
 }
 
 /* Iterator function for lists */

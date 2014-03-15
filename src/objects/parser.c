@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include "../skit_lib.h"
 
@@ -194,7 +195,10 @@ tokenTypeName(TokenType tt)
     case TOKEN_QUOTE_STR:     return "TOKEN_QUOTE_STR";
     case TOKEN_REGEXP:        return "TOKEN_REGEXP";
     case TOKEN_BROKEN_STR:    return "TOKEN_BROKEN_STR";
+    case TOKEN_OPEN_ANGLE:    return "TOKEN_OPEN_ANGLE";
+    case TOKEN_CLOSE_ANGLE:   return "TOKEN_CLOSE_ANGLE";
     }
+    return "UNKONWN_TOKEN";
 }
 
 char *
