@@ -40,8 +40,8 @@ CCNAME := $(shell echo $(CC) | tr '[a-z]' '[A-Z]')
 # compile and generate dependency info
 %.o: %.c
 	@echo "  $(CCNAME)" $*
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $*.o
-	@$(CC) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
+	@$(CC) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $*.o
+	@$(CC) -M -MT $*.o $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
 ## Build per-source object dependency files for inclusion
 #%.d: %.c

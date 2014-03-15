@@ -179,14 +179,14 @@ buildTypeForDagNode(Node *node)
     char *errmsg = NULL;
     DagNodeBuildType build_type = UNSPECIFIED_NODE;
 
-    if (nodeHasAttribute(node->node , (xmlChar *) "fallback")) {
+    if (nodeHasAttribute(node->node , "fallback")) {
 	/* By default, we don't want to do anything for a fallback
  	 * node.  Marking it as an exists node achieves that.  The
  	 * build_type will be modified if anything needs to actually
  	 * reference the fallback node.  */
 	build_type = EXISTS_NODE;
     }
-    else if (diff = nodeAttribute(node->node , (xmlChar *) "diff")) {
+    else if (diff = nodeAttribute(node->node, "diff")) {
 	if (streq(diff->value, DIFFSAME)) {
 	    build_type = EXISTS_NODE;
 	}
@@ -206,13 +206,13 @@ buildTypeForDagNode(Node *node)
 	    build_type = REBUILD_NODE;
 	}
 	else {
-	    fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
 	    errmsg = newstr("buildTypeForDagnode: unexpected diff "
 			    "type \"%s\" in %s", diff->value, fqn->value);
 	}
 	objectFree((Object *) diff, TRUE);
     }
-    else if (action = nodeAttribute(node->node , (xmlChar *) "action")) { 
+    else if (action = nodeAttribute(node->node, "action")) { 
 	tmp = action;
 	action = stringLower(action);
 	objectFree((Object *) tmp, TRUE);
@@ -229,7 +229,7 @@ buildTypeForDagNode(Node *node)
 	    build_type = EXISTS_NODE;
 	}
 	else {
-	    fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
+	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
 	    errmsg = newstr("buildTypeForDagnode: unexpected action "
 			    "type \"%s\" in %s", action->value, fqn->value);
 	}
@@ -249,7 +249,7 @@ buildTypeForDagNode(Node *node)
 		build_type = DROP_NODE;
 	    }
 	    else {
-		fqn = nodeAttribute(((Node *) node)->node, (xmlChar *) "fqn");
+		fqn = nodeAttribute(((Node *) node)->node, "fqn");
 		errmsg = newstr("buildTypeForDagnode: cannot identify "
 				"build type for node %s", fqn->value);
 	    }
@@ -384,7 +384,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 	assert(node->type == OBJ_DAGNODE, "incorrect node type");
 	assert(node->dbobject, "identifyParents: no dbobject node");
 	parent = findAncestor(node->dbobject, "dbobject");
-	parent_fqn  = nodeAttribute(parent, (xmlChar *) "fqn");
+	parent_fqn  = nodeAttribute(parent, "fqn");
 	if (parent_fqn) {
 	    node->parent = (DagNode *) hashGet(nodes_by_fqn, 
 					       (Object *) parent_fqn);
@@ -399,7 +399,7 @@ identifyParents(Vector *nodes, Hash *nodes_by_fqn)
 String *
 conditionForDep(xmlNode *node)
 {
-    String *condition_str = nodeAttribute(node, (xmlChar *) "condition");
+    String *condition_str = nodeAttribute(node, "condition");
     if (condition_str) {
 	stringLowerInPlace(condition_str);
     }
@@ -415,7 +415,7 @@ conditionForDep(xmlNode *node)
 String *
 directionForDep(xmlNode *node)
 {
-    String *direction_str = nodeAttribute(node, (xmlChar *) "direction");
+    String *direction_str = nodeAttribute(node, "direction");
     if (direction_str) {
 	stringLowerInPlace(direction_str);
     }
@@ -539,8 +539,7 @@ getBreakerFor(DagNode *node, Vector *nodes)
     String *breaker_type;
 
     if (!node->breaker) {
-	if (breaker_type = nodeAttribute(node->dbobject, 
-					 (xmlChar *) "cycle_breaker")) {
+	if (breaker_type = nodeAttribute(node->dbobject, "cycle_breaker")) {
 	    node->breaker = makeBreakerNode(node, breaker_type);
 	    objectFree((Object *) breaker_type, TRUE);
 	    setPush(nodes, (Object *) node->breaker);
@@ -690,7 +689,7 @@ getRootNode(xmlNode *dep_node)
 static DagNode *
 parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
 {
-    String *parent = nodeAttribute(dep_node, (xmlChar *) "parent");
+    String *parent = nodeAttribute(dep_node, "parent");
     xmlNode *node = NULL;
     DagNode *result;
     String *fqn;
@@ -706,7 +705,7 @@ parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
 	RAISE(XML_PROCESSING_ERROR, 
 	      newstr("No root node found for fallback"));
     }
-    fqn = nodeAttribute(node, (xmlChar *) "fqn");
+    fqn = nodeAttribute(node, "fqn");
     result = (DagNode *) hashGet(byfqn, (Object *) fqn);
     objectFree((Object *) fqn, TRUE);
     return result;
@@ -744,7 +743,7 @@ getFallbackNode(xmlNode *dep_node, Hash *byfqn, Hash *bypqn, Vector *allnodes)
 
     if (isDependencySet(dep_node)) {
 	BEGIN {
-	    fallback = nodeAttribute(dep_node, (xmlChar *) "fallback");
+	    fallback = nodeAttribute(dep_node, "fallback");
 	    if (fallback) {
 		fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
 		if (!fallback_node) {
@@ -867,7 +866,7 @@ processDepNode(
 	 * is no fallback. */
     }
     else if (isDependency(depnode)) {
-	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
+	if (qn = nodeAttribute(depnode, "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		if (in_depset || dep->build_type != EXISTS_NODE) {
 		    /* If dep is an EXISTS_NODE it can be ignored unless
@@ -891,7 +890,7 @@ processDepNode(
 		}
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
+	else if (qn = nodeAttribute(depnode, "pqn")) {
 	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
 		while (cons) {
 		    dep = (DagNode *) dereference(cons->car);
@@ -972,7 +971,7 @@ processDepNode2(
 	 */
     }
     else if (isDependency(depnode)) {
-	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
+	if (qn = nodeAttribute(depnode, "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		if (dep->build_type != EXISTS_NODE) {
 		    /* If dep is an EXISTS_NODE it can be ignored.
@@ -995,7 +994,7 @@ processDepNode2(
 		RAISE(TSORT_ERROR, errmsg);
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
+	else if (qn = nodeAttribute(depnode, "pqn")) {
 	    if (cons = (Cons *) hashGet(bypqn, (Object *) qn)) {
 		while (cons) {
 		    dep = (DagNode *) dereference(cons->car);
@@ -1655,13 +1654,13 @@ resolveDependencySet(
     depnode = depset;
     while (depnode = nextDependency2(depnode, depset)) {
 	deps = NULL;
-	if (qn = nodeAttribute(depnode, (xmlChar *) "fqn")) {
+	if (qn = nodeAttribute(depnode, "fqn")) {
 	    if (dep = (DagNode *) hashGet(byfqn, (Object *) qn)) {
 		single_dep.car = (Object *) dep;
 		deps = &single_dep;
 	    }
 	}
-	else if (qn = nodeAttribute(depnode, (xmlChar *) "pqn")) {
+	else if (qn = nodeAttribute(depnode, "pqn")) {
 	    deps = (Cons *) hashGet(bypqn, (Object *) qn);
 	}
 	objectFree((Object *) qn, TRUE);
@@ -2038,7 +2037,7 @@ processDirectionalContexts(DagNode *node, DagNode *mirror_node)
     xmlNode *next;
     xmlNode *copy;
     // TODO: Rewrite this to simplify.
-    String *direction = nodeAttribute(context, (xmlChar *) "direction");
+    String *direction = nodeAttribute(context, "direction");
     if (direction) {
 	next = getElement(context->next);
 	if (!streq("context", (char *) next->name)) {
@@ -2057,7 +2056,7 @@ processDirectionalContexts(DagNode *node, DagNode *mirror_node)
 	    context = findContext(copy);
 	    next = getElement(context->next);
 	    objectFree((Object *) direction, TRUE);
-	    direction = nodeAttribute(next, (xmlChar *) "direction");
+	    direction = nodeAttribute(next, "direction");
 	    if (direction && streq(direction->value, "forwards")) {
 		objectFree((Object *) direction, TRUE);
 		/* Remove the forwards node from our copy. */
