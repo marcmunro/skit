@@ -181,6 +181,7 @@ typedef struct Document {
 typedef struct Node {
     ObjType          type;
     xmlNode         *node;
+    struct Node     *parent;
 } Node;
 
 typedef struct FnReference {
@@ -696,8 +697,7 @@ extern Vector *tsort(Document *doc);
 
 // navigation.c
 extern Vector *navigationToNode(DagNode *current, DagNode *target);
-extern void addNavigationToDoc(xmlNode *parent, Vector *nodes,
-			       boolean handle_contexts);
+extern void addNavigationToDoc(xmlNode *parent);
 
 // libxslt.c
 extern void registerXSLTFunctions(xsltTransformContextPtr ctxt);

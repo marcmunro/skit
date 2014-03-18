@@ -728,7 +728,6 @@ START_TEST(extract)
 END_TEST
 #endif
 
-#ifdef NEW_DEPS
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
@@ -740,7 +739,7 @@ START_TEST(generate)
     //showMalloc(4283);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(4, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -754,7 +753,6 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
 
 #ifdef NEW_DEPS
 START_TEST(deps1a)
@@ -1048,7 +1046,7 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
 

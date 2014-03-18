@@ -203,8 +203,12 @@
     <xsl:param name="do_schema_grant" select="'yes'"/>
     <xsl:param name="do_context" select="'yes'"/>
     <xsl:param name="others" select="false()"/>
-    <dbobject type="{$type}" name="{$name}" fqn="{$fqn}" qname="{$qname}" 
-	      parent="{$parent}">
+    <dbobject type="{$type}" name="{$name}" fqn="{$fqn}" qname="{$qname}">
+      <xsl:if test="$parent != 'None'">
+	<xsl:attribute name="parent">
+	  <xsl:value-of select="$parent"/>
+	</xsl:attribute>
+      </xsl:if>
       <xsl:if test="$others">
 	<xsl:for-each select="exsl:node-set($others)/param">
 	  <xsl:attribute name="{@name}">
@@ -229,6 +233,7 @@
       <dependencies>
 	<xsl:apply-templates select="." mode="dependencies">
 	  <xsl:with-param name="parent_core" select="$parent_core"/>
+	  <xsl:with-param name="parent" select="$parent"/>
 	</xsl:apply-templates>
 
 	<xsl:if test="@owner != 'public'">

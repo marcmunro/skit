@@ -341,193 +341,99 @@ navigationToNode(DagNode *start, DagNode *target)
     return results;
 }
 
-/* Find the parent dboject node for a given dbobject.
- */
-static Node *
-getParent(xmlNode *dbobject, Hash *byfqn)
-{
-    Object *volatile key = NULL;
-    Node *result = NULL;
-
-    if (key = (Object *) nodeAttribute(dbobject, "parent")) {
-	BEGIN {
-	    result = (Node *) hashGet(byfqn, key);
-	    assert(result, "No parent dbobject found for %s", 
-		   ((String *) key)->value);
-	}
-	EXCEPTION(ex);
-	FINALLY {
-	    objectFree(key, TRUE);
-	}
-	END;
-    }
-    return result;
-}
-
-/* Return a vector of fqns (Strings) describing the ancestry of
- * dbobject, starting from the node and working up.
- */
-static Vector *
-getAncestry(xmlNode *dbobject, Hash *byfqn)
-{
-    Vector *result = vectorNew(10);
-    String *fqn;
-    Node *ancestor;
-
-    BEGIN {
-	while (dbobject) {
-	    fqn = nodeAttribute(dbobject, "fqn");
-	    assert(fqn, "assumed dbobject has no fqn");
-	    vectorPush(result, (Object *) fqn);
-
-	    if (ancestor = getParent(dbobject, byfqn)) {
-		dbobject = ancestor->node;
-		assert(dbobject, "missing xmlnode in Node");
-	    }
-	    else {
-		break;
-	    }
-	}
-    }
-    EXCEPTION(ex) {
-	objectFree((Object *) result, TRUE);
-    }
-    END;
-    return result;
-}
-
-/* Identify the nearest common ancestor from 2 vectors of fqn Strings. */
-static String *
-commonAncestor(Vector *vec1, Vector *vec2)
-{
-    String *result = NULL;
-    int i1 = vec1->elems;
-    int i2 = vec2->elems;
-
-    while (i1 && i2) {
-	i1--, i2--;
-	if (!stringeq((String *) ELEM(vec1, i1), (String *) ELEM(vec2, i2))) {
-	    return result;
-	}
-	result = (String *) ELEM(vec1, i1);
-    }
-    return result;
-}
-
-static boolean
-fqnEq(xmlNode *node1, xmlNode *node2)
-{
-    xmlChar *fqn1 = xmlGetProp(node1, (xmlChar *) "fqn");
-    xmlChar *fqn2 = xmlGetProp(node2, (xmlChar *) "fqn");
-    boolean result = streq((char *) fqn1, (char *) fqn2);
-    xmlFree(fqn1);
-    xmlFree(fqn2);
-    return result;
-}
-
-
 /* Add departure navigation nodes to the departures vector. */
 static void
-departFrom(
-    xmlNode *nav_from,
-    Vector *ancestry, 
-    String *ancestor, 
-    Vector *departures,
-    Hash *byfqn)
+departFrom(Node *nav_from, Node *ancestor, Vector *departures)
 {
-    int i;
-    String *this;
-    Node *depart_from;
-    Node *nav_node;
+    Node *this_node;
     xmlNode *new;
+    Node *nav_node;
 
-    EACH(ancestry, i) {
-	this = (String *) ELEM(ancestry, i);
-	if (ancestor && stringeq(this, ancestor)) {
-	    /* We are done, we have reached our ancestor. */
-	    break;
-	}
+    this_node = nav_from->parent;
+    while (this_node != ancestor) {
+	assert(this_node, "departFrom: something wrong with ancestry!");
+
 	/* Add a departure from this into our departures vector. */
-	depart_from = (Node *) hashGet(byfqn, (Object *) this);
-	
-	if (! fqnEq(nav_from, depart_from->node)) {
-	    /* If this is the nav_from node we don't need to depart from
-	       it.  The node's own action should do that for us. */
-	    new = xmlCopyNode(depart_from->node, 2);
-	    nav_node = nodeNew(new);
-	    vectorPush(departures, (Object *) nav_node);
-	}
+	new = xmlCopyNode(this_node->node, 2);
+	nav_node = nodeNew(new);
+	vectorPush(departures, (Object *) nav_node);
+
+	this_node = this_node->parent;
     }
 }
 
 /* Add arrival navigation nodes to the arrivals vector. */
 static void
-arriveAt(
-    xmlNode *nav_to,
-    Vector *ancestry, 
-    String *ancestor, 
-    Vector *arrivals,
-    Hash *byfqn)
+arriveAt(Node *nav_to, Node *ancestor, Vector *arrivals)
 {
-    int i;
-    String *this;
-    Node *arrive_at;
-    Node *nav_node;
+    Node *this_node;
     xmlNode *new;
+    Node *nav_node;
 
-    EACH(ancestry, i) {
-	this = (String *) ELEM(ancestry, i);
-	if (ancestor && stringeq(this, ancestor)) {
-	    /* We are done, we have reached our ancestor. */
-	    break;
-	}
-	/* Add an arrival to this into our arrivals vector. */
-	arrive_at = (Node *) hashGet(byfqn, (Object *) this);
-	if (! fqnEq(nav_to, arrive_at->node)) {
-	    /* If this is the nav_to node we don't need to arrive at
-	       it.  The node's own action should do that for us. */
-	    new = xmlCopyNode(arrive_at->node, 2);
-	    nav_node = nodeNew(new);
-	    vectorInsert(arrivals, (Object *) nav_node, 0);
-	}
+    this_node = nav_to->parent;
+    while (this_node != ancestor) {
+	assert(this_node, "arriveAt: something wrong with ancestry!");
+
+	/* Add a departure from this into our departures vector. */
+	new = xmlCopyNode(this_node->node, 2);
+	nav_node = nodeNew(new);
+	vectorInsert(arrivals, (Object *) nav_node, 0);
+
+	this_node = this_node->parent;
     }
 }
 
+static Vector *
+ancestryStack(Node *node)
+{
+    Vector *result = vectorNew(10);
+    while (node) {
+	vectorPush(result, (Object *) node);
+	node = node->parent;
+    }
+    return result;
+}
 
-/* Given from = a.b.c and to = a.d.e.f, our navigation would be
- * departures = [b], arrivals = [d, e]
- */
+static Node*
+commonAncestorNew(Node *nav_from, Node *nav_to)
+{
+    Node *result = NULL;
+    Vector *from_stack;
+    Vector *to_stack;
+    Node *ancestor;
+    if (nav_from && nav_to) {
+	from_stack = ancestryStack(nav_from);
+	to_stack = ancestryStack(nav_to);
+	
+	while (ancestor = (Node *) vectorPop(from_stack)) {
+	    if (ancestor != (Node *) vectorPop(to_stack)) {
+		break;
+	    }
+	    /* This is a common ancestor, so it might be the result. */
+	    result = ancestor;
+	}
+
+	objectFree((Object *) from_stack, FALSE);
+	objectFree((Object *) to_stack, FALSE);
+    }
+    return result;
+}
+
 static void
 getNodeNavigation(
-    xmlNode *nav_from, 
-    xmlNode *nav_to, 
-    Hash *byfqn,
+    Node *nav_from, 
+    Node *nav_to, 
     Vector *arrivals,
     Vector *departures)
 {
-    Vector *volatile from_ancestry = getAncestry(nav_from, byfqn);
-    Vector *volatile to_ancestry = NULL;
-    String *common_ancestor;
+    Node *common_ancestor = commonAncestorNew(nav_from, nav_to);
+    if (nav_from && (nav_from != common_ancestor)) {
+	departFrom(nav_from, common_ancestor, departures);
+    }
 
-    //dbgNode(nav_from);
-    //dbgNode(nav_to);
-    //dbgSexp(from_ancestry);
-    BEGIN {
-	to_ancestry = getAncestry(nav_to, byfqn);
-	//dbgSexp(to_ancestry);
-	common_ancestor = commonAncestor(from_ancestry, to_ancestry);
-	//dbgSexp(common_ancestor);
-	departFrom(nav_from, from_ancestry, common_ancestor, departures, byfqn);
-	arriveAt(nav_to, to_ancestry, common_ancestor, arrivals, byfqn);
-	//dbgSexp(departures);
-	//dbgSexp(arrivals);
+    if (nav_to && (nav_to != common_ancestor)) {
+	arriveAt(nav_to, common_ancestor, arrivals);
     }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) from_ancestry, TRUE);
-	objectFree((Object *) to_ancestry, TRUE);
-    }
-    END
 }
 
 
@@ -548,11 +454,9 @@ makeNodesHash(Vector *nodes)
 
 static void
 doAddNavigation(
-    xmlNode *parent, 
-    xmlNode *nav_from, 
-    xmlNode *nav_to, 
-    Hash *byfqn,
-    boolean handle_contexts)
+    xmlNode *parent,
+    Node *nav_from, 
+    Node *nav_to)
 {
     Cons *context_nav;
     Vector *volatile departures = NULL;
@@ -561,50 +465,37 @@ doAddNavigation(
     xmlNode *new;
     int i;
 
-    if (handle_contexts) {
-	context_nav = getContextNavigation(nav_from, nav_to);
-	departures = (Vector *) context_nav->car;
-	arrivals = (Vector *) context_nav->cdr;
-	objectFree((Object *) context_nav, FALSE);
-    }
-    else
-    {
-	arrivals = vectorNew(10);
-	departures = vectorNew(10);
-    }
+    context_nav = getContextNavigation(nav_from? nav_from->node: NULL, 
+				       nav_to? nav_to->node: NULL);
+    departures = (Vector *) context_nav->car;
+    arrivals = (Vector *) context_nav->cdr;
+    objectFree((Object *) context_nav, FALSE);
 
-    BEGIN {
-	getNodeNavigation(nav_from, nav_to, byfqn, arrivals, departures);
+    getNodeNavigation(nav_from, nav_to, arrivals, departures);
 
-	//fprintf(stderr, "-----------------------\n");
-	if (nav_from) {
-	    EACH(departures, i) {
-		nav = (Node *) ELEM(departures, i);
-		new = nav->node;
-		xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "depart");
-		xmlAddChild(parent, new);
-		nav->node = NULL;
-		nav_from = new;
-	    }
-	}
-	
-	if (nav_to) {
-	    EACH(arrivals, i) {
-		nav = (Node *) ELEM(arrivals, i);
-		new = nav->node;
-		xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "arrive");
-		xmlAddChild(parent, new);
-		nav->node = NULL;
-	    }
+    if (nav_from) {
+	EACH(departures, i) {
+	    nav = (Node *) ELEM(departures, i);
+	    new = nav->node;
+	    xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "depart");
+	    xmlAddChild(parent, new);
+	    nav->node = NULL;
 	}
     }
-    EXCEPTION(ex);
-    FINALLY {
-	xmlAddChild(parent, nav_to);
-	objectFree((Object *) departures, TRUE);
-	objectFree((Object *) arrivals, TRUE);
+
+    if (nav_to) {
+	EACH(arrivals, i) {
+	    nav = (Node *) ELEM(arrivals, i);
+	    new = nav->node;
+	    xmlSetProp(new, (xmlChar *) "action", (xmlChar *) "arrive");
+	    xmlAddChild(parent, new);
+	    nav->node = NULL;
+	}
+	xmlAddChild(parent, nav_to->node);
     }
-    END;
+
+    objectFree((Object *) departures, TRUE);
+    objectFree((Object *) arrivals, TRUE);
 }
 
 static boolean
@@ -622,42 +513,106 @@ nodeHasPrintElement(xmlNode *node)
     return FALSE;
 }
 
-void
-addNavigationToDoc(
-    xmlNode *parent_node, 
-    Vector *nodes,
-    boolean handle_contexts)
+/* Find a dbobject node by doing a depth first traversal of nodes. */
+static xmlNode *
+findDbobject(xmlNode *node)
 {
-    Node *this;
-    xmlNode *nav_from;
-    xmlNode *nav_to = NULL;
+    xmlNode *this = getElement(node);
+    xmlNode *kid;
+
+    while (this) {
+	if (streq((char *) this->name, "dbobject")) {
+	    return this;
+	}
+	if (kid = findDbobject(this->children)) {
+	    return kid;
+	}
+	this = getElement(this->next);
+    }
+    return NULL;
+}
+
+static Vector *
+vectorFromDoc(xmlNode *parent)
+{
+    xmlNode *dbobject;
+    Vector *volatile vec = vectorNew(100);
+    Hash *volatile by_fqn = hashNew(TRUE);
+    String *fqn;
+    String *parent_fqn;
+    Node *node;
     int i;
-    Hash *byfqn = makeNodesHash(nodes);
+
+    dbobject = findDbobject(parent);
 
     BEGIN {
-	EACH (nodes, i) {
-	    this = (Node *) ELEM(nodes, i);
-
-	    if (nodeHasPrintElement(this->node)) {
-		/* If this node contains no <print> elements, there is
-		 * no work to be done for it, so no point in adding any
-		 * navigation. */
-		nav_from = nav_to;
-		nav_to = this->node;
-		doAddNavigation(parent_node, nav_from, nav_to, 
-				byfqn, handle_contexts);
+	/* First pass, add each dbobject into the results vector, and
+	   into the by_fqn hash. */
+	while (dbobject) {
+	    if (fqn = nodeAttribute(dbobject, "fqn")) {
+		node = nodeNew(dbobject);
+		vectorPush(vec, (Object *) node);
+		(void) hashAdd(by_fqn, (Object *) fqn, (Object *) node);
 	    }
+	    else {
+		RAISE(XML_PROCESSING_ERROR, newstr("No FQN found for node"));
+	    }
+	    dbobject = findDbobject(dbobject->next);
 	}
-
-	if (nav_to) {
-	    doAddNavigation(parent_node, nav_to, NULL, 
-			    byfqn, handle_contexts);
+	
+	/* Second pass, remove each dbobject from the doc and add
+	 * parents to the nodes vector. */
+	EACH(vec, i) {
+	    node = (Node *) ELEM(vec, i);
+	    if (parent_fqn = nodeAttribute(node->node, "parent")) {
+		node->parent = (Node *) hashGet(by_fqn, (Object *) parent_fqn);
+		objectFree((Object *) parent_fqn, TRUE);
+	    }
+	    else {
+		node->parent = NULL;
+	    }
+	    xmlUnlinkNode(node->node);
 	}
     }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) byfqn, FALSE);
+    EXCEPTION(ex) {
+	objectFree((Object *) vec, TRUE);
+	objectFree((Object *) by_fqn, FALSE);
     }
     END;
+
+    objectFree((Object *) by_fqn, FALSE);
+    return vec;
+}
+
+void
+addNavigationToDoc(xmlNode *parent_node)
+{
+    Node *this;
+    Node *node_from;
+    Node *node_to = NULL;
+    int i;
+    Vector *nodes;
+    Hash *byfqn;
+
+    nodes = vectorFromDoc(parent_node);
+    byfqn = makeNodesHash(nodes);
+    EACH(nodes, i) {
+	this = (Node *) ELEM(nodes, i);
+	
+	if (nodeHasPrintElement(this->node)) {
+	    /* If this node contains no <print> elements, there is
+	     * no work to be done for it, so no point in adding any
+	     * navigation. */
+	    node_from = node_to;
+	    node_to = this;
+	    doAddNavigation(parent_node, node_from, node_to);
+	}
+    }
+	
+    if (node_to) {
+	doAddNavigation(parent_node, node_to, NULL);
+    }
+    objectFree((Object *) nodes, TRUE);
+    objectFree((Object *) byfqn, FALSE);
 }
 

@@ -1066,122 +1066,6 @@ addActionNode(xmlNode *root, xmlNode *node, char *action)
     xmlAddChild(root, node);
 }
 
-static void
-addNavigationNodes(xmlNode *root_node, DagNode *cur, DagNode *target)
-{
-    Vector *volatile navigation = NULL;
-    DagNode *this;
-    int i;
-
-    BEGIN {
-	navigation = navigationToNode(cur, target);
-	EACH(navigation, i) {
-	    this = (DagNode *) ELEM(navigation, i);
-	    addActionNode(root_node, this->dbobject, actionName(this));
-	}
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) navigation, TRUE);
-    }
-    END;
-}
-
-static void
-addActionNodes(xmlNode *root_node, Vector *sorted_nodes, int from, int to)
-{
-    DagNode *next;
-    xmlNode *copy;
-    int i;
-    for (i = from; i <= to; i++) {
-	next = (DagNode *) ELEM(sorted_nodes, i);
-	if (next->build_type != EXISTS_NODE) {
-	    copy = copyObjectNode(next->dbobject);
-	    addActionNode(root_node, copy, actionName(next));
-	}
-    }
-}
-
-static Vector *
-extractExistsNodes(Vector *nodes)
-{
-    Vector *exists_nodes = vectorNew(nodes->elems);
-    int from;
-    int to  = 0;
-    DagNode *node;
-
-    EACH(nodes, from) {
-	node = (DagNode *) ELEM(nodes, from);
-	if (node->build_type == EXISTS_NODE) {
-	    vectorPush(exists_nodes, (Object *) node);
-	}
-	else {
-	    ELEM(nodes, to) = (Object *) node;
-	    to++;
-	}
-    }
-    nodes->elems = to;
-    return exists_nodes;
-}
-
-
-// TODO: Deprecate the old docFromVector code
-static void
-docFromVectorOld(xmlNode *root_node, Vector *sorted_nodes)
-{
-    DagNode *nav_from = NULL;
-    DagNode *nav_to;
-    int from_idx = 0;
-    int i;
-    Vector *exists_nodes = extractExistsNodes(sorted_nodes);
-    
-    EACH(sorted_nodes, i) {
-	nav_to = (DagNode *) ELEM(sorted_nodes, i);
-	addNavigationNodes(root_node, nav_from, nav_to);
-	addActionNodes(root_node, sorted_nodes, from_idx, i);
-	nav_from = nav_to;
-	from_idx = i + 1;
-    }
-    addActionNodes(root_node, sorted_nodes, from_idx, sorted_nodes->elems - 1);
-    addNavigationNodes(root_node, nav_from, NULL);
-
-    /* We could not free the exists_nodes until now as they are used for
-     * figuring out the navigation. */
-    objectFree((Object *) exists_nodes, TRUE);
-}
-
-// TODO: Deprecate the old gensort code
-static xmlNode *
-execGensort(xmlNode *template_node, xmlNode *parent_node, int depth)
-{
-    String *volatile input = nodeAttribute(template_node, "input");
-    Document *volatile source_doc = NULL;
-    Vector *volatile sorted = NULL;
-    xmlNode *root;
-    xmlDocPtr xmldoc;
-    UNUSED(depth);
-
-    BEGIN {
-	if (input && (streq(input->value, "pop"))) {
-	    source_doc = docStackPop();
-	}
-	sorted = tsort(source_doc);
-	xmldoc = xmlNewDoc(BAD_CAST "1.0");
-	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
-	xmlDocSetRootElement(xmldoc, root);
-	docFromVectorOld(root, sorted);
-	(void) documentNew(xmldoc, NULL);
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) sorted, TRUE);
-	objectFree((Object *) input, TRUE);
-	objectFree((Object *) source_doc, TRUE);
-    }
-    END;
-    return root;
-}
-
 void
 docFromVector(xmlNode *root_node, Vector *sorted_nodes)
 {
@@ -1227,78 +1111,14 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
     return root;
 }
 
-/* Find a dbobject node by doing a depth first traversal of nodes. */
-static xmlNode *
-findDbobject(xmlNode *node)
-{
-    xmlNode *this = getElement(node);
-    xmlNode *kid;
-
-    while (this) {
-	if (streq((char *) this->name, "dbobject")) {
-	    return this;
-	}
-	if (kid = findDbobject(this->children)) {
-	    return kid;
-	}
-	this = getElement(this->next);
-    }
-    return NULL;
-}
-
-/* Create a vector of dbobject nodes from a sorted document, removing
- * the sorted nodes from the source document.
- */
-static Vector *
-vectorFromDoc(xmlNode *parent)
-{
-    xmlNode *dbobject;
-    Vector *volatile vec = vectorNew(100);
-    Node *object_node;
-    int i;
-
-    dbobject = findDbobject(parent);
-
-    BEGIN {
-	/* First pass, add each dbobject into the results vector */
-	while (dbobject) {
-	    object_node = nodeNew(dbobject);
-	    vectorPush(vec, (Object *) object_node);
-	    dbobject = findDbobject(dbobject->next);
-	}
-	
-	/* Second pass, remove each dbobject from the doc. */
-	EACH(vec, i) {
-	    object_node = (Node *) ELEM(vec, i);
-	    xmlUnlinkNode(object_node->node);
-	}
-    }
-    EXCEPTION(ex) {
-	objectFree((Object *) vec, TRUE);
-    }
-    END;
-
-    return vec;
-}
-
 /* Add navigation nodes to a document containing sorted, unnested
  * dbobject nodes. */
 static xmlNode *
 execAddNavigation(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    Symbol *ignore_contexts = symbolGet("ignore-contexts");
-    Vector *volatile nodes;
     (void) processRemaining(template_node->children, parent_node, depth);
 
-    nodes = vectorFromDoc(parent_node);
-    BEGIN {
-	addNavigationToDoc(parent_node, nodes, ignore_contexts == NULL);
-    }
-    EXCEPTION(ex);
-    FINALLY {
-	objectFree((Object *) nodes, TRUE);
-    }
-    END;
+    addNavigationToDoc(parent_node);
 
     return NULL;
 }
@@ -2167,7 +1987,6 @@ initSkitProcessors()
 	addProcessor("stylesheet", &stylesheetFn);
 	addProcessor("var", &execVar);
 	addProcessor("xslproc", &execXSLproc);
-	addProcessor("gensort", &execGensort); // DEPRECATE
     }
 }
 
