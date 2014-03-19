@@ -25,7 +25,7 @@
 
     <dependency fqn="{concat('table.', $parent_core)}"/>
     <xsl:if test="@tablespace">
-      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      <dependency fqn="{concat('tablespace.', @tablespace)}"/>
     </xsl:if>
     <xsl:for-each select="reftable[@refschema != 'pg_catalog']">
       <dependency fqn="{concat('table.', ancestor::database/@name, '.', 

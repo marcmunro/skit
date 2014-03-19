@@ -85,10 +85,12 @@
     </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="database" mode="drop">
+  <xsl:template match="dbobject[@type='database' and 
+		                @action='drop']/database">
     <xsl:value-of 
 	select="concat('---- DBOBJECT ', ../@fqn, '&#x0A;')"/> 
     <xsl:text>&#x0A;DBEOF&#x0A;&#x0A;</xsl:text>
   </xsl:template>
+
 </xsl:stylesheet>
 

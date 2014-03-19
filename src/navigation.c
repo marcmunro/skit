@@ -348,8 +348,16 @@ departFrom(Node *nav_from, Node *ancestor, Vector *departures)
     Node *this_node;
     xmlNode *new;
     Node *nav_node;
+    String *action = nodeAttribute(nav_from->node, "action");
 
-    this_node = nav_from->parent;
+    if (streq(action->value, "drop")) {
+	/* We do not depart from a node we are dropping. */
+	this_node = nav_from->parent;
+	
+    }
+    else {
+	this_node = nav_from;
+    }
     while (this_node != ancestor) {
 	assert(this_node, "departFrom: something wrong with ancestry!");
 
@@ -360,6 +368,7 @@ departFrom(Node *nav_from, Node *ancestor, Vector *departures)
 
 	this_node = this_node->parent;
     }
+    objectFree((Object *) action, TRUE);
 }
 
 /* Add arrival navigation nodes to the arrivals vector. */
@@ -471,8 +480,14 @@ doAddNavigation(
     arrivals = (Vector *) context_nav->cdr;
     objectFree((Object *) context_nav, FALSE);
 
+    //fprintf(stderr, "\n\n");
+    //dbgSexp(nav_from);
+    //dbgSexp(nav_to);
+
     getNodeNavigation(nav_from, nav_to, arrivals, departures);
 
+    //dbgSexp(departures);
+    //dbgSexp(arrivals);
     if (nav_from) {
 	EACH(departures, i) {
 	    nav = (Node *) ELEM(departures, i);
@@ -612,6 +627,7 @@ addNavigationToDoc(xmlNode *parent_node)
     if (node_to) {
 	doAddNavigation(parent_node, node_to, NULL);
     }
+    //dNode(parent_node);
     objectFree((Object *) nodes, TRUE);
     objectFree((Object *) byfqn, FALSE);
 }

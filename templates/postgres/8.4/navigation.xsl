@@ -50,18 +50,9 @@
     </xsl:copy>
   </xsl:template>
 
-  <!-- This template is called for the dbobjects that require navigation
-       processing.  No dbobject should match this: all should be handled
-       explicitly by type below.   IE, this is a catch-all for debugging
-       purposes. -->
-  <xsl:template match="*" mode="add-nav">
-    <THIS-DBOBJECT-TYPE-NEEDS-EXPLICIT-HANDLING-IN-NAVIGATION-DOT-XSL>
-      <xsl:copy>
-	<xsl:copy-of select="@*"/>
-      </xsl:copy>
-    </THIS-DBOBJECT-TYPE-NEEDS-EXPLICIT-HANDLING-IN-NAVIGATION-DOT-XSL>
-    <xsl:apply-templates mode="add-nav"/>
-  </xsl:template>
+  <!-- This template is called for the dbobjects that require no
+       navigation processing.  -->
+  <xsl:template match="*" mode="add-nav"/>
 
   <xsl:template match="dbobject[@type='context']" mode="add-nav">
     <print>

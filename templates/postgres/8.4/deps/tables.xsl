@@ -44,16 +44,16 @@
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>
     <xsl:if test="@tablespace">
-      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      <dependency fqn="{concat('tablespace.', @tablespace)}"/>
     </xsl:if>
     <xsl:for-each select="constraint[@tablespace]">
       <xsl:if test="@tablespace != ../@tablespace">
-	<dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	<dependency fqn="{concat('tablespace.', @tablespace)}"/>
       </xsl:if>
     </xsl:for-each>
     <xsl:for-each select="index[@tablespace]">
       <xsl:if test="@tablespace != ../@tablespace">
-	<dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+	<dependency fqn="{concat('tablespace.', @tablespace)}"/>
       </xsl:if>
     </xsl:for-each>
     <!-- Dependencies on inherited tables -->

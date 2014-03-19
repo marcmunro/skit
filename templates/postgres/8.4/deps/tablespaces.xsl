@@ -10,9 +10,28 @@
   <xsl:template match="tablespace">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
+    <!-- Figure out whether we should consider the database or the
+         cluster to be our parent.  It will be the database if this is
+	 not the database's default tablespace.  -->
+    <xsl:variable name="name">
+      <xsl:value-of select="@name"/>
+    </xsl:variable>
+    <xsl:variable name="parent">
+      <xsl:choose>
+	<xsl:when test="../database[@tablespace=$name]">
+	  <xsl:value-of select="'cluster'"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="concat('database.', ../database/@name)"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
-      <xsl:with-param name="parent" select="'cluster'"/>
+      <xsl:with-param name="this_core" select="@name"/>
+      <xsl:with-param name="parent" select="$parent"/>
+      <xsl:with-param name="fqn" select="concat('tablespace.', @name)"/>
       <xsl:with-param name="qname" select="skit:dbquote(@name)"/>
       <xsl:with-param name="do_schema_grant" select="'no'"/>
       <xsl:with-param name="do_context" select="'no'"/>
@@ -22,6 +41,7 @@
 
   <xsl:template match="tablespace" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <dependency fqn="cluster"/>
+    <xsl:param name="parent"/>
+    <dependency fqn="{$parent}"/>
   </xsl:template>
 </xsl:stylesheet>

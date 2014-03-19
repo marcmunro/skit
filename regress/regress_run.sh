@@ -1,4 +1,6 @@
 #! /bin/sh
+#
+
 errcheck()
 {
     iam=`whoami`
@@ -21,7 +23,7 @@ build_db()
 {
     echo ...creating base objects... 1>&2
     echo ==== BUILDING DB FROM ${REGRESS_DIR}/$1 $2====
-    exitonerr sh ${REGRESS_DIR}/$1 
+    exitonerr sh -e ${REGRESS_DIR}/$1 
     echo ==== FINISHED BUILD FROM $1 ====
 }
 
@@ -78,7 +80,7 @@ execdrop()
 {
     echo ...executing drop script... 1>&2
     echo ==== RUNNING DROP SCRIPT $1 ==== 
-    exitonerr sh ${REGRESS_DIR}/$1
+    exitonerr sh -e ${REGRESS_DIR}/$1
     echo ...checking that database is empty... 1>&2
     pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | wc -l | \
             grep ^1$ >/dev/null
@@ -104,7 +106,7 @@ execdiff()
 {
     echo ......executing diff script... 1>&2
     echo ==== RUNNING DIFF SCRIPT $1 ==== 
-    sh ${REGRESS_DIR}/$1 2>&1 | errcheck
+    sh -e ${REGRESS_DIR}/$1 2>&1 | errcheck
     errexit
 }
 
@@ -112,7 +114,7 @@ execbuild()
 {
     echo ...executing build script... 1>&2
     echo ==== RUNNING BUILD SCRIPT $1 ==== 
-    exitonerr sh ${REGRESS_DIR}/$1
+    exitonerr sh -e ${REGRESS_DIR}/$1
 }
 
 # This should be used in place of cmd; errexit as it gives better feedback.
