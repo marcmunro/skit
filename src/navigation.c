@@ -152,7 +152,7 @@ getContexts(xmlNode *node)
     xmlNode *context_node;
     Cons *cell;
     Cons *contexts = NULL;
-    String *name;
+    String *type;
     String *value;
     String *dflt;
 
@@ -160,10 +160,11 @@ getContexts(xmlNode *node)
 	for (context_node = findFirstChild(node, "context");
 	     context_node;
 	     context_node = findNextSibling(context_node, "context")) {
-	    name = nodeAttribute(context_node, "name");
+	    type = nodeAttribute(context_node, "type");
+	    assert(type, "Missing type attribute for context");
 	    value = nodeAttribute(context_node, "value");
 	    dflt = nodeAttribute(context_node, "default");
-	    cell = consNew((Object *) name, 
+	    cell = consNew((Object *) type, 
 			   (Object *) consNew((Object *) value, 
 					      (Object *) dflt));
 	    contexts = consNew((Object *) cell, (Object *) contexts);
@@ -216,20 +217,20 @@ getContextNavigation(xmlNode *from, xmlNode *target)
     Cons *this2;
     Cons *match;
     Cons *match2;
-    String *name;
+    String *type;
     Vector *departures = vectorNew(10);
     Vector *arrivals = vectorNew(10);
     Cons *result = consNew((Object *) departures, (Object *) arrivals);
 
-    /* Contexts are lists of the form: (name value default) */
+    /* Contexts are lists of the form: (type value default) */
     from_contexts = getContexts(from);
     target_contexts = getContexts(target);
 
     while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
-	name = (String *) this->car;
+	type = (String *) this->car;
 	if (from_contexts &&
 	    (match = (Cons *) alistExtract(&from_contexts, 
-					   (Object *) name))) {
+					   (Object *) type))) {
 	    /* We have the same context for both DagNodes. */
 	    this2 = (Cons *) this->cdr;
 	    match2 = (Cons *) match->cdr;

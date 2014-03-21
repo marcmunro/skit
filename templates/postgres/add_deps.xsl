@@ -226,7 +226,7 @@
       </xsl:if>
 
       <xsl:if test="$owner and $do_context = 'yes'">
-	<context name="owner" value="{$owner}" 
+	<context type="owner" value="{$owner}" 
 		 default="{//cluster/@username}"/>	
       </xsl:if>
 

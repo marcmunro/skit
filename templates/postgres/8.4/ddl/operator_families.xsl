@@ -53,7 +53,7 @@
 	<!-- If context value is not the same as owner, we must be using 
 	     a superuser context and we will have created the operator 
 	     family under that user.  Now we must alter the ownership. -->
-	<xsl:if test="@owner != ../context[@name='owner']/@value">
+	<xsl:if test="@owner != ../context[@type='owner']/@value">
 	  <xsl:value-of 
 	      select="concat('&#x0A;alter operator family ', ../@qname,
 			     ' using ', @method,

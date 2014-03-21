@@ -31,12 +31,12 @@
       <xsl:choose>
 	<xsl:when test="$owner_is_superuser='superuser'">
 	  <xsl:if test="@owner">
-	    <context name="owner" value="{@owner}" 
+	    <context type="owner" value="{@owner}" 
 		     default="{//cluster/@username}"/>	
 	  </xsl:if>
 	</xsl:when>
 	<xsl:otherwise>
-	    <context name="owner" value="{//cluster/@username}" 
+	    <context type="owner" value="{//cluster/@username}" 
 		     default="{//cluster/@username}"/>	
 	</xsl:otherwise>
       </xsl:choose>

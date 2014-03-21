@@ -731,8 +731,8 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", 
-		    "x",
-		    //"regress/scratch/dbdump/cluster.xml",
+		    //"x",
+		    "regress/scratch/dbdump/cluster.xml",
 		    "--debug", "--print", "--full"};
 
     initTemplatePath(".");
