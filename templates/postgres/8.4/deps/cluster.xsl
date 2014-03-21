@@ -34,7 +34,7 @@
 
   <!-- The dbincluster object (responsible for actual database creation) -->
   <xsl:template match="database">
-    <xsl:variable name="fqn" select="concat('dbincluster.cluster.', 
+    <xsl:variable name="fqn" select="concat('dbincluster.', 
 				     @name)"/>
     <dbobject type="dbincluster" name="{@name}" 
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}" parent="cluster">
@@ -63,7 +63,7 @@
 	      qname="{skit:dbquote(@name)}" 
 	      fqn="{concat('database.', @name)}">
       <dependencies>
-	<dependency fqn="{concat('dbincluster.cluster.', @name)}"/>
+	<dependency fqn="{concat('dbincluster.', @name)}"/>
       </dependencies>
       <database>
 	<xsl:copy-of select="@*"/>
