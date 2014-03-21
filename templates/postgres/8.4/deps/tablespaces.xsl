@@ -60,7 +60,6 @@
 	<dependency fqn="{$parent}"/>
       </xsl:otherwise>
     </xsl:choose>
-    <dependency fqn="{$parent}"/>
 
   </xsl:template>
 </xsl:stylesheet>

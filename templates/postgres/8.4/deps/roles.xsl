@@ -10,12 +10,45 @@
        specially in roles we do not use the default dbobject template.  -->
   <xsl:template match="role">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+
+    <!-- Figure out whether we should consider the database or the
+         cluster to be our parent.  It will be the database if this is
+	 not the database's owner.  -->
+    <xsl:variable name="name">
+      <xsl:value-of select="@name"/>
+    </xsl:variable>
+
+    <xsl:variable name="parent">
+      <xsl:choose>
+	<xsl:when test="../database[@owner=$name]">
+	  <xsl:value-of select="'cluster'"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="concat('database.', ../database/@name)"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
 	      fqn="{concat('role.', @name)}"
-	      parent="cluster">
-      <dependencies>
-	<dependency fqn="cluster"/>
-      </dependencies>
+	      parent="{$parent}">
+
+      <xsl:choose>
+	<xsl:when test="$parent='cluster'">
+	  <!-- If the parent is the cluster, this must be the database's 
+	       owner.  It might still be possible to manipulate it
+	       within the database if we are not doing a build or drop,
+	       so we allow a conditional dependency on the database. -->
+	<dependency-set>
+	  <dependency fqn="concat('database.', ../database/@name)"/>
+	  <dependency fqn="cluster"/>
+	</dependency-set>
+	</xsl:when>
+	<xsl:otherwise>
+	  <dependency fqn="{$parent}"/>
+	</xsl:otherwise>
+      </xsl:choose>
+
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
