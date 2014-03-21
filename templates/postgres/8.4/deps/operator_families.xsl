@@ -44,7 +44,7 @@
 	<dependency fqn="{concat('schema.', $parent_core)}"/>
 	<!-- owner -->
 	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	  <dependency fqn="{concat('role.', @owner)}"/>
 	</xsl:if>
 
 	<xsl:for-each select="opfamily_operator">
@@ -60,12 +60,12 @@
         <!-- Depend on someone being a superuser - either owner or
 	     the current user (or rather the one that ran the extract). --> 
 	<dependency-set
-	    fallback="{concat('privilege.cluster.', 
+	    fallback="{concat('privilege.role.', 
 		              //cluster/@username, '.superuser')}"
 	    parent="ancestor::dbobject[database]">
-	  <dependency fqn="{concat('privilege.cluster.', 
+	  <dependency fqn="{concat('privilege.role.', 
 		                   //cluster/@username, '.superuser')}"/>
-	  <dependency fqn="{concat('privilege.cluster.', 
+	  <dependency fqn="{concat('privilege.role.', 
 			           $owner, '.superuser')}"/>
 	</dependency-set>
       </dependencies>

@@ -21,7 +21,7 @@
       <xsl:choose>
 	<xsl:when test="$subtype='privilege'">
 	  <xsl:variable name="names" 
-			select="substring-after(@fqn, 'privilege.cluster.')"/> 
+			select="substring-after(@fqn, 'privilege.role.')"/> 
 	  <xsl:variable name="role" 
 			select="substring-before($names, '.')"/> 
 	  <xsl:variable name="priv" 
@@ -29,7 +29,7 @@
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
 		    role="{$role}" parent="cluster">
 	    <dependencies>
-	      <dependency fqn="{concat('role.cluster.', $role)}"/>
+	      <dependency fqn="{concat('role.', $role)}"/>
 	    </dependencies>
 	    <fallback fqn="{@fqn}" role="{$role}" privilege="{$priv}"/>
 	  </dbobject>
@@ -37,7 +37,7 @@
 	<xsl:when test="$subtype='grant'">
 	  <xsl:variable name="names" 
 			select="substring-after(@fqn, 
-				'grant.cluster.')"/> 
+				'grant.role.')"/> 
 
 	  <xsl:variable name="to" 
 			select="substring-before($names, '.')"/> 
@@ -46,8 +46,8 @@
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
 		    from="{$from}" to="{$to}" parent="cluster">
 	    <dependencies>
-	      <dependency fqn="{concat('role.cluster.', $from)}"/>
-	      <dependency fqn="{concat('role.cluster.', $to)}"/>
+	      <dependency fqn="{concat('role.', $from)}"/>
+	      <dependency fqn="{concat('role.', $to)}"/>
 	    </dependencies>
 	  </dbobject>
 	</xsl:when>

@@ -564,18 +564,18 @@ START_TEST(depset_dia_build)
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes, FALSE);
-	requireDeps("DDB_1", nodes_by_fqn, "role.cluster.x", "cluster", NULL);
+	requireDeps("DDB_1", nodes_by_fqn, "role.x", "cluster", NULL);
 	requireDeps("DDB_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "cluster", "role.cluster.x", 
-		    "privilege.cluster.x.superuser", NULL);  // 5, 7
+		    "cluster", "role.x", 
+		    "privilege.role.x.superuser", NULL);  // 5, 7
 
-	requireDeps("DDB_3", nodes_by_fqn, "privilege.cluster.x.superuser", 
-		    "role.cluster.x", NULL); // 3
+	requireDeps("DDB_3", nodes_by_fqn, "privilege.role.x.superuser", 
+		    "role.x", NULL); // 3
 
-	requireDeps("DDB_4", nodes_by_fqn, "endprivilege.cluster.x.superuser", 
-		    "privilege.cluster.x.superuser",  
+	requireDeps("DDB_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
+		    "privilege.role.x.superuser",  
                     "table.cluster.ownedbyx", 
-		    "role.cluster.x", 
+		    "role.x", 
 		    NULL); // 11, 9, 1
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -619,19 +619,19 @@ START_TEST(depset_dia_drop)
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes, FALSE);
-	requireDeps("DDD_1", nodes_by_fqn, "role.cluster.x", 
+	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
-		    "privilege.cluster.x.superuser",
-		    "endprivilege.cluster.x.superuser", NULL);  // 6, 4, 2
+		    "privilege.role.x.superuser",
+		    "endprivilege.role.x.superuser", NULL);  // 6, 4, 2
 
 	requireDeps("DDD_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "privilege.cluster.x.superuser", NULL);  // 8
+		    "privilege.role.x.superuser", NULL);  // 8
 
-	requireDeps("DDD_3", nodes_by_fqn, "privilege.cluster.x.superuser", 
+	requireDeps("DDD_3", nodes_by_fqn, "privilege.role.x.superuser", 
 		    NULL); // 
 
-	requireDeps("DDD_4", nodes_by_fqn, "endprivilege.cluster.x.superuser", 
-		    "privilege.cluster.x.superuser",  
+	requireDeps("DDD_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
+		    "privilege.role.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -677,38 +677,38 @@ START_TEST(depset_dia_both)
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes, FALSE);
-	requireDeps("DD2_1", nodes_by_fqn, "role.cluster.x", 
-		    "cluster", "drop.role.cluster.x", NULL);  // 15
+	requireDeps("DD2_1", nodes_by_fqn, "role.x", 
+		    "cluster", "drop.role.x", NULL);  // 15
 
 	requireDeps("DD2_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "cluster", "role.cluster.x", "drop.table.cluster.ownedbyx", 
-		    "privilege.cluster.x.superuser", NULL);  // 5, 13, 7
+		    "cluster", "role.x", "drop.table.cluster.ownedbyx", 
+		    "privilege.role.x.superuser", NULL);  // 5, 13, 7
 
-	requireDeps("DD2_3", nodes_by_fqn, "privilege.cluster.x.superuser", 
-		    "role.cluster.x", 
-		    "enddsprivilege.cluster.x.superuser", 
+	requireDeps("DD2_3", nodes_by_fqn, "privilege.role.x.superuser", 
+		    "role.x", 
+		    "enddsprivilege.role.x.superuser", 
 		    NULL); // 3, 14
 
-	requireDeps("DD2_4", nodes_by_fqn, "endprivilege.cluster.x.superuser", 
-		    "privilege.cluster.x.superuser",  
+	requireDeps("DD2_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
+		    "privilege.role.x.superuser",  
                     "table.cluster.ownedbyx", 
-		    "role.cluster.x", 
+		    "role.x", 
 		    NULL); // 11, 9, 1
 
-	requireDeps("DD2_5", nodes_by_fqn, "drop.role.cluster.x", 
+	requireDeps("DD2_5", nodes_by_fqn, "drop.role.x", 
 		    "drop.table.cluster.ownedbyx", 
-		    "enddsprivilege.cluster.x.superuser", 
-		    "dsprivilege.cluster.x.superuser", 
+		    "enddsprivilege.role.x.superuser", 
+		    "dsprivilege.role.x.superuser", 
 		    NULL); // 6, 2, 4
 
 	requireDeps("DD2_6", nodes_by_fqn, "drop.table.cluster.ownedbyx", 
-		    "dsprivilege.cluster.x.superuser", 
+		    "dsprivilege.role.x.superuser", 
 		    NULL); // 8
 
 	requireDeps("DD2_7", nodes_by_fqn, 
-		    "enddsprivilege.cluster.x.superuser", 
+		    "enddsprivilege.role.x.superuser", 
 		    "drop.table.cluster.ownedbyx", 
-		    "dsprivilege.cluster.x.superuser", 
+		    "dsprivilege.role.x.superuser", 
 		    NULL); // 10, 12
 
 	objectFree((Object *) nodes_by_fqn, FALSE);

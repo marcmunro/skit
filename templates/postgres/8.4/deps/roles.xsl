@@ -10,9 +10,8 @@
        specially in roles we do not use the default dbobject template.  -->
   <xsl:template match="role">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
-    <xsl:variable name="role_name" select="concat($parent_core, '.', @name)"/>
     <dbobject type="role" name="{@name}" qname="{skit:dbquote(@name)}"
-	      fqn="{concat('role.', $role_name)}"
+	      fqn="{concat('role.', @name)}"
 	      parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>
@@ -20,7 +19,7 @@
       <xsl:copy>
 	<xsl:copy-of select="@*"/>
 	<xsl:apply-templates>
-	  <xsl:with-param name="parent_core" select="$role_name"/>
+	  <xsl:with-param name="parent_core" select="@name"/>
 	</xsl:apply-templates>
 	<!-- We copy the privileges directly as it is within the role
 	     deinition that we assign them.  Note that in order to
@@ -41,8 +40,8 @@
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
       <xsl:with-param name="name" select="@priv"/>
-      <xsl:with-param name="fqn" select="concat('privilege.', $parent_core, 
-					        '.', @priv)"/>
+      <xsl:with-param name="fqn" select="concat('privilege.role.', 
+					        $parent_core, '.', @priv)"/>
       <xsl:with-param name="qname" select="skit:dbquote(@priv)"/>
       <xsl:with-param name="others">
 	<param name="role_qname" value="{skit:dbquote(../@name)}"/>

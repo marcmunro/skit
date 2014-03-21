@@ -125,24 +125,24 @@
     <xsl:if test="$owner">
       <!-- Dependency on schema create grant to owner, public or self -->
       <dependency-set 
-	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
+	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  direction="forwards">
 	<xsl:call-template name="deps-schema-create">
 	  <xsl:with-param name="to" select="@owner"/>
 	</xsl:call-template>
-	<dependency fqn="{concat('privilege.cluster.', $owner, '.superuser')}"/>
+	<dependency fqn="{concat('privilege.role.', $owner, '.superuser')}"/>
       </dependency-set>
       <!-- Dependency on schema create grant to owner, public or self -->
       <dependency-set 
-	  fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
+	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  direction="backwards">
 	<xsl:if test="$owner">
 	  <xsl:call-template name="deps-schema-usage">
 	    <xsl:with-param name="to" select="@owner"/>
 	  </xsl:call-template>
-	  <dependency fqn="{concat('privilege.cluster.', 
+	  <dependency fqn="{concat('privilege.role.', 
 			           $owner, '.superuser')}"/>
 	</xsl:if>
       </dependency-set>
@@ -237,7 +237,7 @@
 	</xsl:apply-templates>
 
 	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	  <dependency fqn="{concat('role.', @owner)}"/>
 	</xsl:if>
 
 	<xsl:if test="$do_schema_grant = 'yes'">

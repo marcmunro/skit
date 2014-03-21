@@ -22,12 +22,12 @@
       <xsl:with-param name="parent_core" select="$parent_core"/>
       <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
       <xsl:with-param name="owner" select="@from"/>
-      <xsl:with-param name="fqn" select="concat('grant.role.cluster.', 
+      <xsl:with-param name="fqn" select="concat('grant.role.', 
 					        @to, '.', @priv, ':', @from)"/>
       <xsl:with-param name="others">
 	<param name="subtype" value="role"/>
 	<param name="pqn" 
-	       value="{concat('grant.role.cluster.', @to, '.', @priv)}"/>
+	       value="{concat('grant.role.', @to, '.', @priv)}"/>
       </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
@@ -36,9 +36,9 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat(name(..), '.', $parent_core)}"/>
-    <dependency fqn="{concat('role.cluster.', @priv)}"/>
+    <dependency fqn="{concat('role.', @priv)}"/>
     <xsl:if test="@priv != @from">
-      <dependency fqn="{concat('role.cluster.', @from)}"/>
+      <dependency fqn="{concat('role.', @from)}"/>
     </xsl:if>
 
     <!-- Dependencies on previous grant. -->
@@ -51,7 +51,7 @@
 	<!-- No dependency if the role is granted from a superuser -->
       </xsl:when>
       <xsl:otherwise>  
-	<dependency pqn="{concat('grant.role.cluster.', @from, '.', @priv)}"/>
+	<dependency pqn="{concat('grant.role.', @from, '.', @priv)}"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -115,16 +115,16 @@
     <dependency fqn="{concat(name(..), '.', $parent_core)}"/>
     <!-- Roles -->
     <xsl:if test="@to != 'public'">
-      <dependency fqn="{concat('role.cluster.', @to)}"/>
+      <dependency fqn="{concat('role.', @to)}"/>
     </xsl:if>
     <xsl:if test="(@from != 'public') and (@to != @from)">
-      <dependency fqn="{concat('role.cluster.', @from)}"/>
+      <dependency fqn="{concat('role.', @from)}"/>
     </xsl:if>
 
     <!-- Dependencies on usage of schema. -->
     <xsl:if test="../@schema">
       <dependency-set
-	  fallback="{concat('privilege.cluster.', @from, '.superuser')}"
+	  fallback="{concat('privilege.role.', @from, '.superuser')}"
 	  parent="ancestor::dbobject[database]">
 	    
 	<xsl:call-template name="deps-schema-usage">
@@ -137,7 +137,7 @@
 	  <xsl:with-param name="to" select="@from"/>
 	</xsl:call-template>
 	<dependency 
-	    fqn="{concat('privilege.cluster.', @from, '.superuser')}"/>
+	    fqn="{concat('privilege.role.', @from, '.superuser')}"/>
       </dependency-set>
     </xsl:if>
 

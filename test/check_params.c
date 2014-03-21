@@ -730,8 +730,9 @@ END_TEST
 
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--drop", 
-		    "regress/scratch/dbdump/cluster.xml",
+    char *args[] = {"./skit", "--generate", "--build", 
+		    "x",
+		    //"regress/scratch/dbdump/cluster.xml",
 		    "--debug", "--print", "--full"};
 
     initTemplatePath(".");
@@ -1046,7 +1047,7 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
 

@@ -44,7 +44,7 @@
 	  <dependency fqn="{concat('tablespace.', @tablespace)}"/>
 	</xsl:if>
 	<xsl:if test="@owner != 'public'">
-	  <dependency fqn="{concat('role.cluster.', @owner)}"/>
+	  <dependency fqn="{concat('role.', @owner)}"/>
 	</xsl:if>
       </dependencies>
       <xsl:copy>

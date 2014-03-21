@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="skittest" time="20090611091918">
   <dbobject type="cluster" fqn="cluster">
-    <dbobject type="role" name="x" qname="x" fqn="role.cluster.x">
+    <dbobject type="role" name="x" qname="x" fqn="role.x">
       <dependencies>
 	<dependency fqn="cluster"/>
       </dependencies>
@@ -11,12 +11,12 @@
     <dbobject type="table" name="ownedbyx" qname="ownedbyx" fqn="table.cluster.ownedbyx">
       <dependencies>
         <dependency fqn="cluster"/>
-        <dependency fqn="role.cluster.x"/>
-        <dependency-set fallback="privilege.cluster.x.superuser" direction="forwards">
-	  <dependency pqn="privilege.cluster.x.superuser"/>
+        <dependency fqn="role.x"/>
+        <dependency-set fallback="privilege.role.x.superuser" direction="forwards">
+	  <dependency pqn="privilege.role.x.superuser"/>
         </dependency-set>
-        <dependency-set fallback="privilege.cluster.x.superuser" direction="backwards">
-	  <dependency pqn="privilege.cluster.x.superuser"/>
+        <dependency-set fallback="privilege.role.x.superuser" direction="backwards">
+	  <dependency pqn="privilege.role.x.superuser"/>
         </dependency-set>
       </dependencies>
       <table name="ownedbyx" owner="x"/>

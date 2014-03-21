@@ -14,7 +14,7 @@
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
     <dependency-set
-	fallback="{concat('privilege.cluster.', $owner, '.superuser')}"
+	fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]">
       <xsl:call-template name="schema-deps">
 	<xsl:with-param name="to" select="'public'"/>
