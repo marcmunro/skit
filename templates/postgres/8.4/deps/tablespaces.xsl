@@ -16,7 +16,8 @@
     <xsl:variable name="name">
       <xsl:value-of select="@name"/>
     </xsl:variable>
-    <xsl:variable name="parent">
+
+   <xsl:variable name="parent">
       <xsl:choose>
 	<xsl:when test="../database[@tablespace=$name]">
 	  <xsl:value-of select="'cluster'"/>
@@ -42,6 +43,24 @@
   <xsl:template match="tablespace" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
     <xsl:param name="parent"/>
+
+    <xsl:choose>
+      <xsl:when test="$parent='cluster'">
+	<!-- If the parent is the cluster, this must be the database's
+   	     default tablespace.  It might still be possible to
+	     manipulate it within the database if we are not doing a
+	     build or drop, so we allow a conditional dependency on the
+	     database. -->
+	<dependency-set>
+	  <dependency fqn="concat('database.', ../database/@name)"/>
+	  <dependency fqn="cluster"/>
+	</dependency-set>
+      </xsl:when>
+      <xsl:otherwise>
+	<dependency fqn="{$parent}"/>
+      </xsl:otherwise>
+    </xsl:choose>
     <dependency fqn="{$parent}"/>
+
   </xsl:template>
 </xsl:stylesheet>
