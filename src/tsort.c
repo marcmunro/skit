@@ -26,7 +26,7 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
     int i;
     DagNode *dep;
 
-    if (deps = node->forward_deps) {
+    if (deps = node->deps) {
 	EACH(deps, i) {
 	    dep = (DagNode *) ELEM(deps, i);
 	    tsort_node(nodes, dep, results);

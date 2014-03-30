@@ -47,6 +47,7 @@ typeName(ObjType type)
     case OBJ_MISC: return "OBJ_MISC";
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
+    case OBJ_DEPENDENCYSET: return "OBJ_DEPENDENCYSET";
     default: return "UNKNOWN_OBJECT_TYPE";
     }
 }
@@ -431,9 +432,9 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
-
+#ifdef wibble
 static DagNode *
-basicDagNode()
+basicDagNodeOld()
 {
     DagNode *new = skalloc(sizeof(DagNode));
     new->type = OBJ_DAGNODE;
@@ -456,6 +457,21 @@ basicDagNode()
     
     return new;
 }
+#endif
+
+static DagNode *
+basicDagNode()
+{
+    DagNode *new = skalloc(sizeof(DagNode));
+    new->type = OBJ_DAGNODE;
+    new->fqn = NULL;
+    new->dbobject = NULL;
+    new->build_type = UNSPECIFIED_NODE;
+    new->status = UNVISITED;
+    new->deps = NULL;
+    
+    return new;
+}
 
 DagNode *
 dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
@@ -468,20 +484,41 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->fqn = fqn;
     new->dbobject = node;
     new->build_type = build_type;
+    new->deps = NULL;
+    new->tmp_deps = NULL;
+    new->parent = NULL;
+    new->mirror_node = NULL;
     return new;
 }
 
-static void
-doDagNodeFree(DagNode *node)
+DependencySet *
+dependencySetNew()
 {
-    objectFree((Object *) node->fqn, TRUE);
-    objectFree((Object *) node->forward_deps, FALSE);
-    objectFree((Object *) node->backward_deps, FALSE);
-    skfree(node);
+    DependencySet *new = skalloc(sizeof(DependencySet));
+    new->type = OBJ_DEPENDENCYSET;
+    new->deps = vectorNew(10);
+    new->chosen_dep = -1;
+    new->is_temporary = FALSE;
+    new->degrade_if_missing = FALSE;
+    new->fallback = NULL;
+    return new;
 }
 
+Dependency *
+dependencyNew(DagNode *dep)
+{
+    Dependency *new = skalloc(sizeof(Dependency));
+    new->type = OBJ_DEPENDENCY;
+    new->dep = dep;
+    new->depset = NULL;
+    new->direction = UNKNOWN_DIRECTION;
+    return new;
+}
+
+
+#ifdef wibble
 static void
-dagNodeFree(DagNode *node)
+dagNodeFreeOld(DagNode *node)
 {
     DagNode *sub;
     DagNode *tmp;
@@ -507,6 +544,24 @@ dagNodeFree(DagNode *node)
 
     doDagNodeFree(node);
 }
+#endif
+
+static void
+dagNodeFree(DagNode *node)
+{
+    objectFree((Object *) node->fqn, TRUE);
+    objectFree((Object *) node->deps, FALSE);
+    objectFree((Object *) node->tmp_deps, FALSE);
+    skfree(node);
+}
+
+static void
+dependencySetFree(DependencySet *depset)
+{
+    objectFree((Object *) depset->deps, FALSE);
+    skfree(depset);
+}
+
 
 /* Free a dynamically allocated object. */
 void
@@ -548,6 +603,10 @@ objectFree(Object *obj, boolean free_contents)
 	    cursorFree((Cursor *) obj); break;
 	case OBJ_DAGNODE:
 	    dagNodeFree((DagNode *) obj); break;
+	case OBJ_DEPENDENCY:
+	    skfree(obj); break;
+	case OBJ_DEPENDENCYSET:
+	    dependencySetFree((DependencySet *) obj); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -631,6 +690,16 @@ objectSexp(Object *obj)
 	return tmp2;
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
+    case OBJ_DEPENDENCY:
+	tmp = objectSexp((Object *) ((Dependency *) obj)->dep);
+	tmp2 = newstr("<%s %s>", objTypeName(obj), tmp);
+	skfree(tmp);
+	return tmp2;
+    case OBJ_DEPENDENCYSET:
+	tmp = objectSexp((Object *) ((DependencySet *) obj)->deps);
+	tmp2 = newstr("<%s %s>", objTypeName(obj), tmp);
+	skfree(tmp);
+	return tmp2;
     case OBJ_DAGNODE:
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
 		      nameForBuildType(((DagNode *) obj)->build_type), 

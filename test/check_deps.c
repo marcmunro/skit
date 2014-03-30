@@ -62,7 +62,7 @@ void eval(char *str)
 static boolean
 hasDependency(DagNode *node, DagNode *dep)
 {
-    Vector *vector = node->forward_deps;
+    Vector *vector = node->deps;
     Object *depobj;
     int i;
     if (vector) {
@@ -209,12 +209,12 @@ requireDeps(char *testid, Hash *hash, char *from, ...)
 	fail("Cannot find %s ", from);
     }
     else {
-	dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
+	dep_elems = (fromnode->deps)? fromnode->deps->elems: 0;
 	
 	if (dep_elems != count) {
 	    fail("Test %s.  Not all dependencies of %s accounted for (expecting %d got %d)", 
 		 testid, from, count, 
-		 (fromnode->forward_deps)? fromnode->forward_deps->elems: 0);
+		 (fromnode->deps)? fromnode->deps->elems: 0);
 	}
     }
 }
@@ -261,7 +261,7 @@ hasDeps(char *testid, Hash *hash, char *from, ...)
 	return FALSE;
     }
     else {
-	dep_elems = (fromnode->forward_deps)? fromnode->forward_deps->elems: 0;
+	dep_elems = (fromnode->deps)? fromnode->deps->elems: 0;
 	
 	if (dep_elems != count) {
 	    return FALSE;
@@ -348,8 +348,345 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
 	 testid, tonode->fqn->value);
 }
 
+/* Simpleset possible dependendcy test.  All objects being built,
+   no obtional dependencies, no special cases. */
+START_TEST(deps_simple_build)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/deps_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("DSB_1", nodes_by_fqn, 
+		    "dbincluster.regressdb", "cluster", NULL);
+	requireDeps("DSB_2", nodes_by_fqn, 
+		    "database.regressdb", "dbincluster.regressdb", NULL);
+	requireDeps("DSB_3", nodes_by_fqn, 
+		    "schema.regressdb.public", "database.regressdb", NULL);
+	requireDeps("DSB_4", nodes_by_fqn, 
+		    "language.regressdb.plpgsql", "database.regressdb", NULL);
+	requireDeps("DSB_5", nodes_by_fqn, 
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSB_6", nodes_by_fqn, 
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSB_7", nodes_by_fqn, 
+		    "function.regressdb.public.seg2int(public.seg)",
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", 
+		    "language.regressdb.plpgsql", NULL);
+	requireDeps("DSB_8", nodes_by_fqn, 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSB_9", nodes_by_fqn, 
+		    "function.regressdb.public.seg_out(public.seg)",
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_simple_build fails with exception");
+    }
+}
+END_TEST
 
 
+START_TEST(deps_simple_drop)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq drop t)");
+	doc = getDoc("test/data/deps_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("DSD_1", nodes_by_fqn, 
+		    "cluster", "dbincluster.regressdb", NULL);
+	requireDeps("DSD_2", nodes_by_fqn, 
+		    "dbincluster.regressdb", "database.regressdb", NULL);
+	requireDeps("DSD_3", nodes_by_fqn, 
+		    "database.regressdb", 
+		    "schema.regressdb.public", 
+		    "language.regressdb.plpgsql", NULL);
+	requireDeps("DSD_4", nodes_by_fqn, 
+		    "schema.regressdb.public", 
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "function.regressdb.public.seg2int(public.seg)",
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSD_5", nodes_by_fqn, 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSD_6", nodes_by_fqn, 
+		    "function.regressdb.public.seg_out(public.seg)", 
+		    "type.regressdb.public.seg", NULL);
+	requireDeps("DSD_7", nodes_by_fqn, 
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "function.regressdb.public.seg2int(public.seg)", NULL);
+	requireDeps("DSD_8", nodes_by_fqn, 
+		    "language.regressdb.plpgsql",
+		    "function.regressdb.public.seg2int(public.seg)", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_simple_drop fails with exception");
+    }
+}
+END_TEST
+
+
+START_TEST(deps_simple_rebuild)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq build t)");
+	eval("(setq drop t)");
+	doc = getDoc("test/data/deps_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("DSR_1", nodes_by_fqn, 
+		    "dbincluster.regressdb", "cluster", 
+		    "drop.dbincluster.regressdb", NULL);
+	requireDeps("DSR_2", nodes_by_fqn, 
+		    "database.regressdb", "dbincluster.regressdb", 
+		    "drop.database.regressdb", NULL);
+	requireDeps("DSR_3", nodes_by_fqn, 
+		    "schema.regressdb.public", "database.regressdb", 
+		    "drop.schema.regressdb.public", NULL);
+	requireDeps("DSR_4", nodes_by_fqn, 
+		    "language.regressdb.plpgsql", "database.regressdb", 
+		    "drop.language.regressdb.plpgsql", NULL);
+	requireDeps("DSR_5", nodes_by_fqn, 
+		    "type.regressdb.public.seg", "schema.regressdb.public", 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "function.regressdb.public.seg_out(public.seg)", 
+		    "drop.type.regressdb.public.seg", NULL);
+	requireDeps("DSR_6", nodes_by_fqn, 
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "type.regressdb.public.seg", "schema.regressdb.public", 
+		    "drop.function.regressdb.public.seg_cmp"
+		    "(public.seg,public.seg)",  NULL);
+	requireDeps("DSR_7", nodes_by_fqn, 
+		    "function.regressdb.public.seg2int(public.seg)",
+		    "type.regressdb.public.seg", "schema.regressdb.public", 
+		    "drop.function.regressdb.public.seg2int(public.seg)",
+		    "language.regressdb.plpgsql", NULL);
+	requireDeps("DSR_8", nodes_by_fqn, 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "drop.function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSR_9", nodes_by_fqn, 
+		    "function.regressdb.public.seg_out(public.seg)",
+		    "drop.function.regressdb.public.seg_out(public.seg)",
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSR_10", nodes_by_fqn, 
+		    "drop.cluster", "drop.dbincluster.regressdb", NULL);
+	requireDeps("DSR_11", nodes_by_fqn, 
+		    "drop.dbincluster.regressdb", 
+		    "drop.database.regressdb", NULL);
+	requireDeps("DSR_12", nodes_by_fqn, 
+		    "drop.database.regressdb", "drop.schema.regressdb.public", 
+		    "drop.language.regressdb.plpgsql", NULL);
+	requireDeps("DSR_13", nodes_by_fqn, 
+		    "drop.schema.regressdb.public", 
+		    "drop.type.regressdb.public.seg",
+		    "drop.function.regressdb.public.seg_cmp"
+		    "(public.seg,public.seg)",
+		    "drop.function.regressdb.public.seg2int(public.seg)",
+		    "drop.function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "drop.function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSR_14", nodes_by_fqn, 
+		    "drop.function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "drop.type.regressdb.public.seg",
+		    "drop.function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSR_15", nodes_by_fqn, 
+		    "drop.function.regressdb.public.seg_out(public.seg)", 
+		    "drop.type.regressdb.public.seg", NULL);
+	requireDeps("DSR_16", nodes_by_fqn, 
+		    "drop.type.regressdb.public.seg",
+		    "drop.function.regressdb.public.seg_cmp"
+		    "(public.seg,public.seg)",
+		    "drop.function.regressdb.public.seg2int(public.seg)", NULL);
+	requireDeps("DSR_17", nodes_by_fqn, 
+		    "drop.language.regressdb.plpgsql",
+		    "drop.function.regressdb.public.seg2int(public.seg)", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_simple_rebuild fails with exception");
+    }
+}
+END_TEST
+
+#ifdef wibble
+/* Like deps_simple_build but the source file contains dependency sets.
+ */
+START_TEST(depset_simple_build)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/depset_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("DSSB_1", nodes_by_fqn, 
+		    "dbincluster.regressdb", "cluster", NULL);
+	requireDeps("DSSB_2", nodes_by_fqn, 
+		    "database.regressdb", "dbincluster.regressdb", NULL);
+	requireDeps("DSSB_3", nodes_by_fqn, 
+		    "schema.regressdb.public", "database.regressdb", NULL);
+	requireDeps("DSSB_4", nodes_by_fqn, 
+		    "language.regressdb.plpgsql", "database.regressdb", NULL);
+	requireDeps("DSSB_5", nodes_by_fqn, 
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSSB_6", nodes_by_fqn, 
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSSB_7", nodes_by_fqn, 
+		    "function.regressdb.public.seg2int(public.seg)",
+		    "type.regressdb.public.seg",
+		    "schema.regressdb.public", 
+		    "language.regressdb.plpgsql", NULL);
+	requireDeps("DSSB_8", nodes_by_fqn, 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+	requireDeps("DSSB_9", nodes_by_fqn, 
+		    "function.regressdb.public.seg_out(public.seg)",
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "schema.regressdb.public", NULL);
+
+	// TODO: Add tests for the roles.
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_simple_build fails with exception");
+    }
+}
+END_TEST
+#endif
+
+
+#ifdef wibble2
 /* Test basic build dependencies, using dependency sets */ 
 START_TEST(depset_dag1_build)
 {
@@ -369,7 +706,7 @@ START_TEST(depset_dag1_build)
 	//dbgSexp(nodes);
 
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 
 	requireDeps("D1B_1", nodes_by_fqn, 
 		    "role.cluster.r1", "role.cluster.r3", NULL);
@@ -563,7 +900,7 @@ START_TEST(depset_dia_build)
 	//dbgSexp(doc);
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 	requireDeps("DDB_1", nodes_by_fqn, "role.x", "cluster", NULL);
 	requireDeps("DDB_2", nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "cluster", "role.x", 
@@ -618,7 +955,7 @@ START_TEST(depset_dia_drop)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
 		    "privilege.role.x.superuser",
@@ -676,7 +1013,7 @@ START_TEST(depset_dia_both)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 	requireDeps("DD2_1", nodes_by_fqn, "role.x", 
 		    "cluster", "drop.role.x", NULL);  // 15
 
@@ -808,7 +1145,7 @@ START_TEST(cyclic_build)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 	
 	if (hasDeps("CB_0", nodes_by_fqn, "view.skittest.public.v3", 
 		    "viewbase.skittest.public.v1",
@@ -1161,7 +1498,7 @@ START_TEST(fallback)
 	//doc = getDoc("tmp.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes, FALSE);
+	//showVectorDeps(nodes);
 
 	requireDeps("F_1", nodes_by_fqn, "fallback.grant.x.superuser", 
 		    "drop.fallback.grant.x.superuser",
@@ -1314,7 +1651,7 @@ START_TEST(depdiffs_1)
 	nodes = dagFromDoc(diffs);
 	nodes_by_fqn = dagnodeHash(nodes);
 	fprintf(stderr, "\n============FINAL==============\n");
-	showVectorDeps(nodes, FALSE);
+	showVectorDeps(nodes);
 
 	/* See comments in test/data/depdiffs_1a.sql for a description
 	   of each test case. */
@@ -1337,6 +1674,7 @@ START_TEST(depdiffs_1)
 }
 END_TEST
 #endif
+#endif
 
 Suite *
 deps_suite(void)
@@ -1344,20 +1682,23 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
-    ADD_TEST(tc_core, depset_dag1_build);
-    ADD_TEST(tc_core, depset_dag1_drop);
-    ADD_TEST(tc_core, depset_dag1_both);
-    ADD_TEST(tc_core, depset_dia_build);
-    ADD_TEST(tc_core, depset_dia_drop);
-    ADD_TEST(tc_core, depset_dia_both);
-    ADD_TEST(tc_core, depset_diff);
-    ADD_TEST(tc_core, cyclic_build);
-    ADD_TEST(tc_core, cyclic_drop);
-    ADD_TEST(tc_core, cyclic_both);
-    ADD_TEST(tc_core, cond);
+    ADD_TEST(tc_core, deps_simple_build);
+    ADD_TEST(tc_core, deps_simple_drop);
+    ADD_TEST(tc_core, deps_simple_rebuild);
+    //ADD_TEST(tc_core, depset_dag1_build);
+    //ADD_TEST(tc_core, depset_dag1_drop);
+    //ADD_TEST(tc_core, depset_dag1_both);
+    //ADD_TEST(tc_core, depset_dia_build);
+    //ADD_TEST(tc_core, depset_dia_drop);
+    //ADD_TEST(tc_core, depset_dia_both);
+    //ADD_TEST(tc_core, depset_diff);
+    //ADD_TEST(tc_core, cyclic_build);
+    //ADD_TEST(tc_core, cyclic_drop);
+    //ADD_TEST(tc_core, cyclic_both);
+    //ADD_TEST(tc_core, cond);
     //ADD_TEST(tc_core, depdiffs_1);
 
-    ADD_TEST(tc_core, fallback);
+    //ADD_TEST(tc_core, fallback);
 				
     suite_add_tcase(s, tc_core);
 

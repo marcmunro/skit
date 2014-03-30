@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20140321134603">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+    <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.17" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
+      <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.regressdb" parent="cluster">
+        <dependencies>
+          <dependency fqn="cluster"/>
+        </dependencies>
+        <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
+          <comment>'old comment'</comment>
+        </database>
+      </dbobject>
+    </cluster>
+  </dbobject>
+  <dbobject type="database" visit="true" name="regressdb" qname="regressdb" fqn="database.regressdb">
+    <dependencies>
+      <dependency fqn="dbincluster.regressdb"/>
+    </dependencies>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1">
+      <comment>'old comment'</comment>
+      <revoke from="regress" to="public" priv="create"/>
+      <dbobject type="language" name="plpgsql" fqn="language.regressdb.plpgsql" qname="plpgsql" parent="database.regressdb">
+        <context type="owner" value="bark" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+        </dependencies>
+        <language name="plpgsql" owner="bark" handler_schema="pg_catalog" handler_function="plpgsql_call_handler" validator_schema="pg_catalog" validator_function="plpgsql_validator" comment="'this is plpgsql'">
+          <comment>'this is plpgsql'</comment>
+        </language>
+      </dbobject>
+      <dbobject type="schema" name="public" fqn="schema.regressdb.public" qname="public" parent="database.regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+        </dependencies>
+        <schema name="public" owner="regress" privs="{regress=UC/regress,=UC/regress}">
+          <comment>'old public schema'</comment>
+
+          <dbobject type="type" name="seg" fqn="type.regressdb.public.seg" qname="public.seg" parent="schema.regressdb.public">
+            <extra-schema-privs action="build" priv="usage"/>
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+              <dependency fqn="function.regressdb.public.seg_out(public.seg)"/>
+            </dependencies>
+            <type name="seg" schema="public" owner="bark" subtype="basetype" delimiter="," typelen="12" alignment="int4" storage="plain" is_defined="t">
+              <handler-function type="input" name="seg_in" schema="public" signature="public.seg_in(pg_catalog.cstring)"/>
+              <handler-function type="output" name="seg_out" schema="public" signature="public.seg_out(public.seg)"/>
+              <comment>'floating point interval ''FLOAT .. FLOAT'', ''.. FLOAT'', ''FLOAT ..'' or ''FLOAT'''</comment>
+            </type>
+          </dbobject>
+
+          <dbobject type="function" name="seg2int" fqn="function.regressdb.public.seg2int(public.seg)" qname="public.seg2int(public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="language.regressdb.plpgsql"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+            </dependencies>
+            <function name="seg2int" schema="public" owner="bark" language="plpgsql" is_strict="yes" volatility="immutable" cost="100" signature="public.seg2int(public.seg)">
+              <result type="int4" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" name="_in" mode="i" position="1"/>
+              </params>
+              <source>
+begin
+  return 1;
+end;
+</source>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_cmp" fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)" qname="public.seg_cmp(public.seg,public.seg)" parent="schema.regressdb.public">
+            <extra-schema-privs action="build" priv="usage"/>
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+            </dependencies>
+            <function name="seg_cmp" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_cmp(public.seg,public.seg)">
+              <comment>'btree comparison function'</comment>
+              <result type="int4" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_cmp</source>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_in" fqn="function.regressdb.public.seg_in(pg_catalog.cstring)" qname="public.seg_in(pg_catalog.cstring)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+            </dependencies>
+            <function name="seg_in" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_in(pg_catalog.cstring)">
+              <handler-for-type name="seg" schema="public"/>
+              <result type="seg" schema="public"/>
+              <params>
+                <param type="cstring" schema="pg_catalog" mode="i" position="1"/>
+              </params>
+              <source>seg_in</source>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_out" fqn="function.regressdb.public.seg_out(public.seg)" qname="public.seg_out(public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+            </dependencies>
+            <function name="seg_out" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_out(public.seg)">
+              <handler-for-type name="seg" schema="public" type_input_signature="public.seg_in(pg_catalog.cstring)"/>
+              <result type="cstring" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+              </params>
+              <source>seg_out</source>
+            </function>
+          </dbobject>
+        </schema>
+      </dbobject>
+    </database>
+  </dbobject>
+</dump>

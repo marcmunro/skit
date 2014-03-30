@@ -1274,3 +1274,31 @@ getText(xmlNode *node)
     return node;
 }
 
+#define DEPENDENCIES_STR "dependencies"
+#define DEPENDENCY_STR "dependency"
+#define DEPENDENCY_SET_STR "dependency-set"
+
+boolean
+isDependencySet(xmlNode *node)
+{
+    return streq((char *) node->name, DEPENDENCY_SET_STR);
+}
+
+boolean
+isDependency(xmlNode *node)
+{
+    return streq((char *) node->name, DEPENDENCY_STR);
+}
+
+boolean
+isDependencies(xmlNode *node)
+{
+    return streq((char *) node->name, DEPENDENCIES_STR);
+}
+
+boolean
+isDepNode(xmlNode *node)
+{
+    return isDependency(node) || isDependencySet(node) || isDependencies(node);
+}
+

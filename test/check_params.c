@@ -730,9 +730,9 @@ END_TEST
 
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--build", 
-		    //"x",
-		    "regress/scratch/dbdump/cluster.xml",
+    char *args[] = {"./skit", "--generate", "--build", "--drop",
+		    "x",
+		    //"regress/scratch/dbdump/cluster.xml",
 		    "--debug", "--print", "--full"};
 
     initTemplatePath(".");
@@ -740,7 +740,7 @@ START_TEST(generate)
     //showMalloc(4283);
 
     BEGIN {
-	process_args2(4, args);
+	process_args2(5, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

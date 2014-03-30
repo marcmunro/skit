@@ -88,6 +88,7 @@ typedef enum {
     OBJ_TUPLE,
     OBJ_DAGNODE,
     OBJ_DEPENDENCY,
+    OBJ_DEPENDENCYSET,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
     OBJ_DOT,       		/* This is not a real-object */
@@ -244,26 +245,53 @@ typedef enum {
 typedef enum {
     UNVISITED = 27,
     VISITING,
-    RESOLVED_F,         /* Node has been resolved forwards */
-    RESOLVED,           /* Node has been resolved by resolving_tsort */
-    VISITED,            /* Node has been visited by the graph resolver */
-    SORTED,             /* Node has been sorted by tsort */
-    UNBUILDABLE,	// Used in original tsort.c
-    BUILDABLE,		// ditto
-    SELECTED_FOR_BUILD	// ditto
+    RESOLVED,
+    VISITED
 } DagNodeStatus;
 
 /* Used to identify to which side of the DAG, a given dependency
  * applies. */
 typedef enum {
-    BACKWARDS = 0,
+    UNKNOWN_DIRECTION = 0,
+    BACKWARDS,
     FORWARDS,
     BOTH_DIRECTIONS,
-    CUSTOM
 } DependencyApplication;
 
 
 typedef struct DagNode {
+    ObjType          type;
+    String          *fqn;
+    xmlNode         *dbobject;    // Reference only - not to be freed from here
+    DagNodeStatus    status;
+    DagNodeBuildType build_type;
+    boolean          is_degraded;
+    Vector          *deps;   	   // use objectFree(obj, FALSE);
+    Vector          *tmp_deps;     // use objectFree(obj, FALSE);
+    struct DagNode  *parent;   	   // Reference only
+    struct DagNode  *mirror_node;  // Reference only
+} DagNode;
+
+
+typedef struct DependencySet {
+    ObjType          type;
+    int              chosen_dep;  // We use -1 to indicate not chosen
+    boolean          is_temporary;
+    boolean          degrade_if_missing;
+    DagNode         *fallback;
+    Vector          *deps;
+} DependencySet;
+
+
+typedef struct Dependency {
+    ObjType                type;
+    DagNode               *dep;
+    DependencySet         *depset;
+    DependencyApplication  direction;
+} Dependency;
+
+
+typedef struct DagNodeOld {
     ObjType          type;
     String          *fqn;
     xmlNode         *dbobject;    // Reference only - not to be freed from here
@@ -281,7 +309,7 @@ typedef struct DagNode {
     struct DagNode  *forward_subnodes;       	// Linked list
     struct DagNode  *backward_subnodes;       	// Linked list
     struct DagNode  *fallback_node;  
-} DagNode;
+} DagNodeOld;
 
 
 /* Used to conveniently pass around multiple nodes as parameters to
@@ -391,6 +419,8 @@ extern Object *objectFromStr(char *instr);
 extern DagNode *dagNodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
+extern DependencySet *dependencySetNew(void);
+extern Dependency *dependencyNew(DagNode *dep);
 
 #define isSubnode(node)       (node && node->supernode)
 
@@ -679,8 +709,8 @@ extern boolean isDepNode(xmlNode *node);
 extern String *conditionForDep(xmlNode *node);
 extern String *directionForDep(xmlNode *node);
 
-extern void showDeps(DagNode *node, boolean show_optional);
-extern void showVectorDeps(Vector *nodes, boolean show_optional);
+extern void showDeps(DagNode *node);
+extern void showVectorDeps(Vector *nodes);
 
 extern Vector *nodesFromDoc(Document *doc);
 extern Hash *hashByFqn(Vector *vector);

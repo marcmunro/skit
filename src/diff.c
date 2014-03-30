@@ -17,6 +17,7 @@
 #include "skit_lib.h"
 #include "exceptions.h"
 
+#ifdef wibble
 static void
 readDocs(Document **p_doc1, Document **p_doc2)
 {
@@ -1267,16 +1268,20 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     END;
     return result;
 }
+#endif
 
 
 xmlNode *
 doDiff(String *diffrules, boolean swap)
 {
+/*
     Document *volatile doc1 = NULL;
     Document *volatile doc2 = NULL;
     Hash *volatile rules = NULL;
+*/
     xmlNode *result = NULL;
 
+/*
     BEGIN {
 	if (swap) {
 	    readDocs((Document **) &doc1, (Document **) &doc2);
@@ -1297,7 +1302,7 @@ doDiff(String *diffrules, boolean swap)
 	objectFree((Object *) doc2, TRUE);
     }
     END;
-
+*/
     return result;
 }
 
