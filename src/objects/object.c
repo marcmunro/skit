@@ -497,9 +497,10 @@ dependencySetNew()
     DependencySet *new = skalloc(sizeof(DependencySet));
     new->type = OBJ_DEPENDENCYSET;
     new->deps = vectorNew(10);
-    new->chosen_dep = -1;
+    new->explored_deps = 0;
     new->is_temporary = FALSE;
     new->degrade_if_missing = FALSE;
+    new->chosen_dep = NULL;
     new->fallback = NULL;
     return new;
 }
@@ -556,10 +557,36 @@ dagNodeFree(DagNode *node)
 }
 
 static void
-dependencySetFree(DependencySet *depset)
+dependencySetFree(DependencySet *depset, boolean free_contents)
 {
-    objectFree((Object *) depset->deps, FALSE);
-    skfree(depset);
+    Vector *deps = depset->deps;
+    /* The following condition is intended to prevent infinite mutual
+     * recursion between this function and DependencyFree(). */
+    if (deps) {
+	depset->deps = NULL;  /* Now, if we are called recursively, we
+			       * won't attempt to double free depset. */
+	objectFree((Object *) deps, free_contents);
+	skfree(depset);
+    }
+}
+
+static void
+dependencyFree(Dependency *dep, boolean free_contents)
+{
+    DependencySet *depset;
+    if (free_contents) {
+	if (dep->depset) {
+	    /* If this is part of a depset, we must also free the depset. */
+	    depset = dep->depset;
+	    dep->depset = NULL;  /* Ensure that when we get called from 
+				  * dependencySetFree, that we can then
+				  * free dep. */
+	    dependencySetFree(depset, TRUE);
+	    return; /* dep will be freed by the dependencySetFree(), so
+                     * we must return without explicitly freeing dep . */
+	}
+    }
+    skfree((Object *) dep);
 }
 
 
@@ -604,9 +631,9 @@ objectFree(Object *obj, boolean free_contents)
 	case OBJ_DAGNODE:
 	    dagNodeFree((DagNode *) obj); break;
 	case OBJ_DEPENDENCY:
-	    skfree(obj); break;
+	    dependencyFree((Dependency *) obj, free_contents); break;
 	case OBJ_DEPENDENCYSET:
-	    dependencySetFree((DependencySet *) obj); break;
+	    dependencySetFree((DependencySet *) obj, free_contents); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -692,7 +719,8 @@ objectSexp(Object *obj)
 	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_DEPENDENCY:
 	tmp = objectSexp((Object *) ((Dependency *) obj)->dep);
-	tmp2 = newstr("<%s %s>", objTypeName(obj), tmp);
+	tmp2 = newstr("<%s%s %s>", objTypeName(obj), 
+		      ((Dependency *) obj)->depset? "*": "", tmp);
 	skfree(tmp);
 	return tmp2;
     case OBJ_DEPENDENCYSET:

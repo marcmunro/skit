@@ -328,16 +328,32 @@ findNodeDep(xmlNode *node, Hash *byfqn, Hash *bypqn, DagNode *dagnode)
 }
 
 static void
-addDepToTarget(Object *target, Dependency *dep) {
+addDepToTarget(Object *target, Object *dep) 
+{
+    DependencySet *depset;
     if (target->type == OBJ_DAGNODE) {
-	if (!setPush(((DagNode *) target)->deps, (Object *) dep)) {
-	    objectFree((Object *) dep, FALSE);
-	}
+	vectorPush(((DagNode *) target)->deps, dep);
+    }
+    else if (target->type == OBJ_DEPENDENCYSET) {
+	assert(dep->type == OBJ_DEPENDENCY, 
+	       "Cannot add a non-dependency object to a DependencySet.");
+	depset = (DependencySet *) target;
+	vectorPush(depset->deps, dep);
+	((Dependency *) dep)->depset = depset;
     }
     else {
 	RAISE(TSORT_ERROR, 
 	      newstr("addDepToTarget: no implementation for target->type %d",
 		     (int) target->type));
+    }
+}
+
+static void
+addDepSetToTarget(Object *target, DependencySet *depset) 
+{
+    int i;
+    EACH(depset->deps, i) {
+	addDepToTarget(target, ELEM(depset->deps, i));
     }
 }
 
@@ -423,12 +439,17 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
 	return;
     }
     else if (isDependency(depnode)) {
-        deps = findNodeDep(depnode, byfqn, bypqn, node);
-	direction = getDependencyDirection(depnode);
-	deps = convertToDepType(deps, direction);
+        if (deps = findNodeDep(depnode, byfqn, bypqn, node)) {
+	    direction = getDependencyDirection(depnode);
+	    deps = convertToDepType(deps, direction);
+	}
     }
     else if (isDependencySet(depnode)) {
-        RAISE(TSORT_ERROR, newstr("Not implemented - depsets"));
+	deps = (Object *) dependencySetNew();
+        while (this = nextDependency(depnode->children, this)) {
+            recordDepElement(node, this, all_nodes, byfqn,
+			     bypqn, deps);
+        }
     }
     else {
 	tmp = nodestr(depnode);
@@ -438,7 +459,10 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
     }
     if (deps) {
 	if (deps->type == OBJ_DEPENDENCY) {
-	    addDepToTarget(target, (Dependency *) deps);
+	    addDepToTarget(target, deps);
+	}
+	else if (deps->type == OBJ_DEPENDENCYSET) {
+	    addDepSetToTarget(target, (DependencySet *) deps);
 	}
 	else {
 	    dbgSexp(deps);
@@ -572,7 +596,7 @@ transformForDep(DagNode *node, Object *depobj)
 /* Like vectorPush but creates the vector if needed. 
  */
 static void
-mkVectorPush(Vector **p_vector, Object *obj)
+myVectorPush(Vector **p_vector, Object *obj)
 {
     if (!*p_vector) {
 	*p_vector = vectorNew(10);
@@ -580,33 +604,27 @@ mkVectorPush(Vector **p_vector, Object *obj)
     vectorPush(*p_vector, obj);
 }
 
-/* Like sectorPush but creates the vector if needed, and frees
- * obj if it doesn't get pushed. 
- */
-static void
-mkSetPush(Vector **p_vector, Object *obj)
-{
-    if (!*p_vector) {
-	*p_vector = vectorNew(10);
-    }
-    if (!setPush(*p_vector, obj)) {
-	objectFree((Object *) obj, FALSE);
-    }
-}
-
 static void
 tmpifyNodeDep(DagNode *node, Object *depobj)
 {
     Dependency *dep = (Dependency *) depobj;
-    
+    DependencySet *depset;
+    int i;
+
     if (dep->type == OBJ_DEPENDENCY) {
 	if ((dep->direction == FORWARDS) ||
 	    (dep->direction == BOTH_DIRECTIONS)) 
 	{
-	    mkVectorPush(&(node->tmp_deps), (Object *) dep);
+	    myVectorPush(&(node->tmp_deps), (Object *) dep);
 	}
 	else {
-	    objectFree((Object *) dep, FALSE);
+	    objectFree((Object *) dep, TRUE);
+	}
+    }
+    else if (dep->type == OBJ_DEPENDENCYSET) {
+	depset = (DependencySet *) depobj;
+	EACH(depset->deps, i) {
+	    tmpifyNodeDep(node, ELEM(depset->deps, i));
 	}
     }
     else {
@@ -627,10 +645,10 @@ invertNodeDep(DagNode *node, Object *depobj)
 	{
 	    depnode = dep->dep;
 	    dep->dep = node;
-	    mkSetPush(&(depnode->tmp_deps), (Object *) dep);
+	    myVectorPush(&(depnode->tmp_deps), (Object *) dep);
 	}
 	else {
-	    objectFree((Object *) dep, FALSE);
+	    objectFree((Object *) dep, TRUE);
 	}
     }
     else {
@@ -722,15 +740,156 @@ convertDependencies(Vector *nodes)
     int i;
     Dependency *dep;
     int j;
+    Vector *newvec;
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
-	EACH(node->deps, j) {
-	    dep = (Dependency *) ELEM(node->deps, j);
-	    ELEM(node->deps, j) = (Object *) dep->dep;
-	    objectFree((Object *) dep, FALSE);
+	if (node->deps) {
+	    newvec = vectorNew(node->deps->elems);
+	    EACH(node->deps, j) {
+		dep = (Dependency *) ELEM(node->deps, j);
+		assert(dep->type == OBJ_DEPENDENCY,
+		       "Invalid_object type");
+		setPush(newvec, (Object *) dep->dep);
+		objectFree((Object *) dep, TRUE);
+	    }
+	    objectFree((Object *) node->deps, FALSE);
+	    node->deps = newvec;
 	}
     }
 }
+
+typedef enum {
+    ALL_IS_WELL = 0,
+    CYCLIC_EXCEPTION
+} resolver_status;
+
+typedef struct resolver_info {
+    DagNode         *cycle_node;
+    char            *errmsg;
+} resolver_info;
+
+static resolver_status
+resolveNode(DagNode *node, Vector *all_nodes, resolver_info *info);
+
+static resolver_status
+resolveDeps(DagNode *node, Vector *all_nodes, resolver_info *info)
+{
+    int i;
+    Dependency *dep;
+    DependencySet *depset;
+    resolver_status status;
+
+    EACH (node->deps, i) {
+	dep = (Dependency *) ELEM(node->deps, i);
+	if (depset = dep->depset) {
+	    if (!depset->chosen_dep) {
+		/* Try this dep. */
+		status = resolveNode(dep->dep, all_nodes, info);
+		if (status == CYCLIC_EXCEPTION) {
+		    /* We will attempt to find other deps in this
+		     * depset, or maybe use the fallback to resolve the
+		     * cycle. */
+		    skfree(info->errmsg);
+		    info->errmsg = NULL;
+		    info->cycle_node = NULL;
+		    status = ALL_IS_WELL;
+		}
+		else if (status == ALL_IS_WELL) {
+		    depset->chosen_dep = dep;
+		}
+	    }
+	}
+	else {
+	    status = resolveNode(dep->dep, all_nodes, info);
+	}
+	if (status) {
+	    return status;
+	}
+    }
+    return ALL_IS_WELL;
+}
+
+static resolver_status
+resolveNode(DagNode *node, Vector *all_nodes, resolver_info *info)
+{
+    resolver_status status;
+    char *tmp;
+    switch (node->status) {
+    case VISITED:
+	/* This node has already been resolved, so nohing more to do. */
+	return ALL_IS_WELL;
+    case VISITING:
+	info->errmsg = newstr("%s", node->fqn->value);
+	info->cycle_node = node;
+	return CYCLIC_EXCEPTION;
+    case UNVISITED:
+	node->status = VISITING;
+	status = resolveDeps(node, all_nodes, info);
+	if (status == CYCLIC_EXCEPTION) {
+	    /* Add more information to info->errmsg. */
+	    tmp = newstr("%s->%s", node->fqn->value, info->errmsg);
+	    skfree(info->errmsg);
+	    info->errmsg = tmp;
+	}
+	node->status = VISITED;
+	return status;
+    default: 
+	RAISE(TSORT_ERROR, 
+	      newstr("Unexpected node status (%d) for node %s", 
+		     node->status, node->fqn->value));
+	return ALL_IS_WELL;
+    }
+}
+
+
+/* This traverses the DAG, picking one dep from each depset (
+ * optionally creating fallbacks), and adding cycle breakers when
+ * necessary.
+ */
+static void
+resolveNodes(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    resolver_info info = {NULL, NULL};
+    resolver_status status;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	if (status = resolveNode(node, nodes, &info)) {
+	    fprintf(stderr, "ERROR: %s\n", info.errmsg);
+	    RAISE(NOT_IMPLEMENTED_ERROR,
+		  newstr("resolveNodes: handling of errors."));
+	}
+    }
+    convertDependencies(nodes);
+}
+
+static void
+freeNodeDeps(DagNode *node)
+{
+    int i;
+    Object *obj;
+    EACH(node->deps, i) {
+	obj = ELEM(node->deps, i);
+	if (obj->type == OBJ_DEPENDENCY) {
+	    objectFree(obj, TRUE);
+	}
+    }
+}
+
+static void
+freeDeps(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	freeNodeDeps(node);
+    }
+}
+
 /*
  * Create a Dag from the supplied doc, returning it as a vector of DocNodes.
  * See the file header comment for a more detailed description of what
@@ -748,18 +907,18 @@ dagFromDoc(Document *doc)
 	bypqn = hashByPqn(nodes);
 	identifyDependencies(nodes, byfqn, bypqn);
 	makeMirrors(nodes);
-	// TODO: promoteRebuild()
+	// TODO: promote rebuilds; remove deps involving an EXISTS_NODE
 	redirectDependencies(nodes);
+	resolveNodes(nodes);
     }
     EXCEPTION(ex) {
-	objectFree((Object *) byfqn, FALSE);
-	convertDependencies(nodes);
+	freeDeps(nodes);
 	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) byfqn, FALSE);
 	objectFree((Object *) bypqn, TRUE);
     }
     END;
 
-    convertDependencies(nodes);
     objectFree((Object *) bypqn, TRUE);
     objectFree((Object *) byfqn, FALSE);
     return nodes;

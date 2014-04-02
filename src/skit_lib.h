@@ -273,13 +273,16 @@ typedef struct DagNode {
 } DagNode;
 
 
+struct Dependency;
+
 typedef struct DependencySet {
-    ObjType          type;
-    int              chosen_dep;  // We use -1 to indicate not chosen
-    boolean          is_temporary;
-    boolean          degrade_if_missing;
-    DagNode         *fallback;
-    Vector          *deps;
+    ObjType             type;
+    boolean             is_temporary;
+    boolean             degrade_if_missing;
+    int                 explored_deps;
+    struct Dependency  *chosen_dep;
+    DagNode            *fallback;
+    Vector             *deps;
 } DependencySet;
 
 

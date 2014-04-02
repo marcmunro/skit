@@ -179,6 +179,7 @@ requireDep(char *testid, Hash *hash, char *from, char *to)
     }
 }
 
+#ifdef wibble
 static void
 requireNoDep(char *testid, Hash *hash, char *from, char *to)
 {
@@ -186,7 +187,7 @@ requireNoDep(char *testid, Hash *hash, char *from, char *to)
         fail("Test %s: unwanted dep exists from %s to %s", testid, from, to);
     }
 }
-
+#endif
 
 static void
 requireDeps(char *testid, Hash *hash, char *from, ...)
@@ -219,6 +220,7 @@ requireDeps(char *testid, Hash *hash, char *from, ...)
     }
 }
 
+#ifdef wibble
 static boolean
 chkDep(Hash *hash, char *from, char *to)
 {
@@ -347,6 +349,7 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
     fail("Test %s: no optional dependents found in %s", 
 	 testid, tonode->fqn->value);
 }
+#endif
 
 /* Simpleset possible dependendcy test.  All objects being built,
    no obtional dependencies, no special cases. */
@@ -607,7 +610,7 @@ START_TEST(deps_simple_rebuild)
 }
 END_TEST
 
-#ifdef wibble
+
 /* Like deps_simple_build but the source file contains dependency sets.
  */
 START_TEST(depset_simple_build)
@@ -619,7 +622,7 @@ START_TEST(depset_simple_build)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(839);
+	//showMalloc(1393);
 	//showFree(724);
 
 	eval("(setq build t)");
@@ -631,36 +634,42 @@ START_TEST(depset_simple_build)
 	//showVectorDeps(nodes);
 
 	requireDeps("DSSB_1", nodes_by_fqn, 
-		    "dbincluster.regressdb", "cluster", NULL);
+		    "dbincluster.regressdb", "cluster", 
+		    "role.regress", NULL);
 	requireDeps("DSSB_2", nodes_by_fqn, 
 		    "database.regressdb", "dbincluster.regressdb", NULL);
 	requireDeps("DSSB_3", nodes_by_fqn, 
-		    "schema.regressdb.public", "database.regressdb", NULL);
+		    "schema.regressdb.public", "database.regressdb", 
+		    "role.regress", NULL);
 	requireDeps("DSSB_4", nodes_by_fqn, 
-		    "language.regressdb.plpgsql", "database.regressdb", NULL);
+		    "language.regressdb.plpgsql", "database.regressdb", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 	requireDeps("DSSB_5", nodes_by_fqn, 
 		    "type.regressdb.public.seg",
 		    "schema.regressdb.public", 
 		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
-		    "function.regressdb.public.seg_out(public.seg)", NULL);
+		    "function.regressdb.public.seg_out(public.seg)", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 	requireDeps("DSSB_6", nodes_by_fqn, 
 		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
-		    "type.regressdb.public.seg",
-		    "schema.regressdb.public", NULL);
+		    "type.regressdb.public.seg", "schema.regressdb.public", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 	requireDeps("DSSB_7", nodes_by_fqn, 
 		    "function.regressdb.public.seg2int(public.seg)",
-		    "type.regressdb.public.seg",
-		    "schema.regressdb.public", 
-		    "language.regressdb.plpgsql", NULL);
+		    "type.regressdb.public.seg", "schema.regressdb.public", 
+		    "language.regressdb.plpgsql", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 	requireDeps("DSSB_8", nodes_by_fqn, 
 		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
-		    "schema.regressdb.public", NULL);
+		    "schema.regressdb.public", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 	requireDeps("DSSB_9", nodes_by_fqn, 
 		    "function.regressdb.public.seg_out(public.seg)",
 		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
-		    "schema.regressdb.public", NULL);
+		    "schema.regressdb.public", 
+		    "role.bark", "privilege.role.bark.superuser", NULL);
 
-	// TODO: Add tests for the roles.
+	// TODO: Add tests for the roles: regress
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -683,7 +692,80 @@ START_TEST(depset_simple_build)
     }
 }
 END_TEST
-#endif
+
+START_TEST(depset_simple_drop)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq drop t)");
+	doc = getDoc("test/data/depset_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("DSSD_1", nodes_by_fqn, 
+		    "cluster", "dbincluster.regressdb", "role.regress", NULL);
+	requireDeps("DSSD_2", nodes_by_fqn, 
+		    "dbincluster.regressdb", "database.regressdb", NULL);
+	requireDeps("DSSD_3", nodes_by_fqn, 
+		    "database.regressdb", 
+		    "schema.regressdb.public", "role.bark", 
+		    "language.regressdb.plpgsql", NULL);
+	requireDeps("DSSD_4", nodes_by_fqn, 
+		    "schema.regressdb.public", 
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "function.regressdb.public.seg2int(public.seg)",
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSSD_5", nodes_by_fqn, 
+		    "function.regressdb.public.seg_in(pg_catalog.cstring)",
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_out(public.seg)", NULL);
+	requireDeps("DSSD_6", nodes_by_fqn, 
+		    "function.regressdb.public.seg_out(public.seg)", 
+		    "type.regressdb.public.seg", NULL);
+	requireDeps("DSSD_7", nodes_by_fqn, 
+		    "type.regressdb.public.seg",
+		    "function.regressdb.public.seg_cmp(public.seg,public.seg)",
+		    "function.regressdb.public.seg2int(public.seg)", NULL);
+	requireDeps("DSSD_8", nodes_by_fqn, 
+		    "language.regressdb.plpgsql",
+		    "function.regressdb.public.seg2int(public.seg)", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_simple_drop fails with exception");
+    }
+}
+END_TEST
+
+
 
 
 #ifdef wibble2
@@ -1685,6 +1767,8 @@ deps_suite(void)
     ADD_TEST(tc_core, deps_simple_build);
     ADD_TEST(tc_core, deps_simple_drop);
     ADD_TEST(tc_core, deps_simple_rebuild);
+    ADD_TEST(tc_core, depset_simple_build);
+    ADD_TEST(tc_core, depset_simple_drop);
     //ADD_TEST(tc_core, depset_dag1_build);
     //ADD_TEST(tc_core, depset_dag1_drop);
     //ADD_TEST(tc_core, depset_dag1_both);
