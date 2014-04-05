@@ -290,6 +290,7 @@ typedef struct Dependency {
     ObjType                type;
     DagNode               *dep;
     DependencySet         *depset;
+    boolean                immutable;
     DependencyApplication  direction;
 } Dependency;
 

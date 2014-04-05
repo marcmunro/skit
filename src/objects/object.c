@@ -512,6 +512,7 @@ dependencyNew(DagNode *dep)
     new->type = OBJ_DEPENDENCY;
     new->dep = dep;
     new->depset = NULL;
+    new->immutable = FALSE;
     new->direction = UNKNOWN_DIRECTION;
     return new;
 }
@@ -562,33 +563,17 @@ dependencySetFree(DependencySet *depset, boolean free_contents)
     Vector *deps = depset->deps;
     /* The following condition is intended to prevent infinite mutual
      * recursion between this function and DependencyFree(). */
-    if (deps) {
-	depset->deps = NULL;  /* Now, if we are called recursively, we
-			       * won't attempt to double free depset. */
-	objectFree((Object *) deps, free_contents);
-	skfree(depset);
+    if (deps && free_contents) {
+	objectFree((Object *) deps, FALSE);
     }
+    skfree(depset);
 }
 
 static void
 dependencyFree(Dependency *dep, boolean free_contents)
 {
-    DependencySet *depset;
-    if (free_contents) {
-	if (dep->depset) {
-	    /* If this is part of a depset, we must also free the depset. */
-	    depset = dep->depset;
-	    dep->depset = NULL;  /* Ensure that when we get called from 
-				  * dependencySetFree, that we can then
-				  * free dep. */
-	    dependencySetFree(depset, TRUE);
-	    return; /* dep will be freed by the dependencySetFree(), so
-                     * we must return without explicitly freeing dep . */
-	}
-    }
     skfree((Object *) dep);
 }
-
 
 /* Free a dynamically allocated object. */
 void
