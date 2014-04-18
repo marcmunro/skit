@@ -220,6 +220,7 @@ requireDeps(char *testid, Hash *hash, char *from, ...)
     }
 }
 
+
 #ifdef wibble
 static boolean
 chkDep(Hash *hash, char *from, char *to)
@@ -272,7 +273,6 @@ hasDeps(char *testid, Hash *hash, char *from, ...)
     return TRUE;
 }
 #endif
-
 
 static void
 requireOptionalDependencies(char *testid, Hash *hash, char *from, ...)
@@ -918,7 +918,7 @@ START_TEST(depset_dag1_build)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(654);
+	//showMalloc(727);
 	//showFree(724);
 
 	eval("(setq build t)");
@@ -1028,7 +1028,7 @@ START_TEST(depset_dag1_both)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(901);
+	//showMalloc(727);
 	//showFree(415);
 
 	eval("(setq drop t)");
@@ -1104,6 +1104,7 @@ START_TEST(depset_dag1_both)
 END_TEST
 
 
+#ifdef wibble
 START_TEST(depset_dia_build)
 {
     Document *volatile doc = NULL;
@@ -1220,7 +1221,7 @@ START_TEST(depset_dia_drop)
     }
 }
 END_TEST
-#ifdef wibble2
+
 
 START_TEST(depset_dia_both)
 {
@@ -1298,6 +1299,7 @@ START_TEST(depset_dia_both)
 }
 END_TEST
 
+
 START_TEST(depset_diff)
 {
     Document *volatile doc = NULL;
@@ -1371,6 +1373,7 @@ START_TEST(cyclic_build)
 	//showFree(1504);
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
+	//dbgSexp(doc);
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
@@ -1455,7 +1458,6 @@ START_TEST(cyclic_build)
     }
 }
 END_TEST
-
 
 START_TEST(cyclic_drop)
 {
@@ -1919,8 +1921,8 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);
-    ADD_TEST(tc_core, depset_dia_build);
-    ADD_TEST(tc_core, depset_dia_drop);
+    //ADD_TEST(tc_core, depset_dia_build);
+    //ADD_TEST(tc_core, depset_dia_drop);
     //ADD_TEST(tc_core, depset_dia_both);
     //ADD_TEST(tc_core, depset_diff);
     //ADD_TEST(tc_core, cyclic_build);

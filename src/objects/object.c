@@ -432,33 +432,6 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
-#ifdef wibble
-static DagNode *
-basicDagNodeOld()
-{
-    DagNode *new = skalloc(sizeof(DagNode));
-    new->type = OBJ_DAGNODE;
-    new->fqn = NULL;
-    new->dbobject = NULL;
-    new->build_type = UNSPECIFIED_NODE;
-    new->status = UNVISITED;
-    new->dep_idx = -1;
-    new->forward_deps = NULL;
-    new->backward_deps = NULL;
-    new->tmp_fdeps = NULL;
-    new->mirror_node = NULL;
-    new->parent = NULL;
-    new->breaker = NULL;
-    new->breaker_for = NULL;
-    new->supernode = NULL;
-    new->forward_subnodes = NULL;
-    new->backward_subnodes = NULL;
-    new->fallback_node = NULL;
-    
-    return new;
-}
-#endif
-
 static DagNode *
 basicDagNode()
 {
@@ -488,6 +461,7 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->tmp_deps = NULL;
     new->parent = NULL;
     new->mirror_node = NULL;
+    new->endfallback = NULL;
     return new;
 }
 
@@ -497,10 +471,10 @@ dependencySetNew()
     DependencySet *new = skalloc(sizeof(DependencySet));
     new->type = OBJ_DEPENDENCYSET;
     new->deps = vectorNew(10);
-    new->explored_deps = 0;
     new->is_temporary = FALSE;
     new->degrade_if_missing = FALSE;
     new->chosen_dep = NULL;
+    new->mirror = NULL;
     new->fallback = NULL;
     return new;
 }
@@ -512,6 +486,7 @@ dependencyNew(DagNode *dep)
     new->type = OBJ_DEPENDENCY;
     new->dep = dep;
     new->depset = NULL;
+    new->deactivated = FALSE;
     new->immutable = FALSE;
     new->direction = UNKNOWN_DIRECTION;
     return new;
@@ -705,7 +680,8 @@ objectSexp(Object *obj)
     case OBJ_DEPENDENCY:
 	tmp = objectSexp((Object *) ((Dependency *) obj)->dep);
 	tmp2 = newstr("<%s%s %s>", objTypeName(obj), 
-		      ((Dependency *) obj)->depset? "*": "", tmp);
+		      ((Dependency *) obj)->depset? 
+		      (((Dependency *) obj)->deactivated? "-": "*"): "", tmp);
 	skfree(tmp);
 	return tmp2;
     case OBJ_DEPENDENCYSET:

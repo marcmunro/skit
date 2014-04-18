@@ -260,29 +260,31 @@ typedef enum {
 
 
 typedef struct DagNode {
-    ObjType          type;
-    String          *fqn;
-    xmlNode         *dbobject;    // Reference only - not to be freed from here
-    DagNodeStatus    status;
-    DagNodeBuildType build_type;
-    boolean          is_degraded;
-    Vector          *deps;   	   // use objectFree(obj, FALSE);
-    Vector          *tmp_deps;     // use objectFree(obj, FALSE);
-    struct DagNode  *parent;   	   // Reference only
-    struct DagNode  *mirror_node;  // Reference only
+    ObjType             type;
+    String             *fqn;
+    xmlNode            *dbobject;  // Reference only - not to be freed from here
+    DagNodeStatus       status;
+    DagNodeBuildType    build_type;
+    boolean             is_degraded;
+    Vector             *deps;         // use objectFree(obj, FALSE);
+    Vector             *tmp_deps;     // use objectFree(obj, FALSE);
+    int                 cur_dep;
+    struct DagNode     *parent;       // Reference only
+    struct DagNode     *mirror_node;  // Reference only
+    struct DagNode     *endfallback;  // Reference only
 } DagNode;
 
 
 struct Dependency;
 
 typedef struct DependencySet {
-    ObjType             type;
-    boolean             is_temporary;
-    boolean             degrade_if_missing;
-    int                 explored_deps;
-    struct Dependency  *chosen_dep;
-    DagNode            *fallback;
-    Vector             *deps;
+    ObjType                type;
+    boolean                is_temporary;
+    boolean                degrade_if_missing;
+    struct Dependency     *chosen_dep;
+    struct DependencySet  *mirror;
+    DagNode               *fallback;
+    Vector                *deps;
 } DependencySet;
 
 
@@ -290,6 +292,7 @@ typedef struct Dependency {
     ObjType                type;
     DagNode               *dep;
     DependencySet         *depset;
+    boolean                deactivated;
     boolean                immutable;
     DependencyApplication  direction;
 } Dependency;
@@ -348,7 +351,7 @@ typedef struct TokenStr {
 #endif
 
 
-/* To suppress warnings aout unused parameters */
+/* To suppress warnings about unused parameters */
 #define UNUSED(x) (void)(x)
 
 /* Useful debugging macros. */

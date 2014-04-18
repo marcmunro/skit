@@ -12,10 +12,63 @@
  * dependencies specified in an xml stream.
  */
 
+/* Resolving dependencies:
+ *   Each dbobject in the source document may result in 2 DagNode
+ *   entries being created: one for the build side of the DAG and one
+ *   for the drop side.  
+ */
+
+/* Resolving the DAG:
+ *   The process of resolving the DAG removes any cylces, turning it
+ *   from a DG into a true DAG.  The process proceeds as follows:
+ *   Each dependency, including those on fallbacks, is traversed
+ *   regardless of whether it is optional or not.  When a cycle is
+ *   detected, the cycle is recorded in a list of cycles.
+ *   Once each node in the graph has been resolved, we set about
+ *   removing cycles, and then optimising the dependencies to remove any
+ *   that are unnecessary.
+ */
+
+/* Handling of fallbacks:
+ *   A fallback node gives temporary privilege to satisfy a transient
+ *   dependency.  Typically this gives superuser privilege to the owner
+ *   of an object so that the owner can then create the object or grant
+ *   other rights.  Associated with each fallback node is an endfallback
+ *   which removes the transient privilege.
+ *   As with other nodes, fallbacks and endfallbacks can have mirror
+ *   nodes.  In the case of a rebuild operation, the fallback privilege
+ *   will be needed on both the build side and the drop side of hte
+ *   dependency graph.  Not though that eithe the fallback or its mirror
+ *   can be used to satisfy a transient dependency.  Therefor
+ *   dependencies on fallbacks may often be satisfied by a dependency
+ *   set consisting of both the fallback node and its mirror.
+ *   A final wrinkle is that the privilege that the fallback is supposed
+ *   to satisfy may already exist on one side of the DAG.
+ *
+ *   Fallback nodes may be referenced directly from a dependency, or may
+ *   be created as the fallback of a dependency-set.  Fallback nodes are
+ *   created (with a mode of inactive) as soon as any declaration for
+ *   them is encountered (ie when the dependency-set is being parsed).
+ *
+ *   After the initial reolution pass, we check that each dependency set
+ *   has been satisfied.  For any that have not been satisfied,
+ *   fallbacks will be created and added to those dependency sets.
+ */
+
 
 #include <string.h>
 #include "skit_lib.h"
 #include "exceptions.h"
+
+
+typedef struct ResolverState {
+    Vector   *all_nodes;
+    Hash     *by_fqn;
+    Hash     *by_pqn;
+    Vector   *dependency_sets;
+    boolean   both_directions;
+    Vector   *cycles;
+} ResolverState;
 
 void
 showDeps(DagNode *node)
@@ -103,11 +156,7 @@ buildTypeForDagNode(Node *node)
     DagNodeBuildType build_type = UNSPECIFIED_NODE;
 
     if (nodeHasAttribute(node->node , "fallback")) {
-	/* By default, we don't want to do anything for a fallback
- 	 * node.  Marking it as an exists node achieves that.  The
- 	 * build_type will be modified if anything needs to actually
- 	 * reference the fallback node.  */
-	build_type = EXISTS_NODE;
+	build_type = INACTIVE_NODE;
     }
     else if (diff = nodeAttribute(node->node, "diff")) {
 	if (streq(diff->value, DIFFSAME)) {
@@ -310,16 +359,16 @@ nextDependency(xmlNode *start, xmlNode *prev)
 
 
 static Object *
-findNodeDep(xmlNode *node, Hash *byfqn, Hash *bypqn, DagNode *dagnode)
+findNodeDep(xmlNode *node, DagNode *dagnode, volatile ResolverState *res_state)
 {
     Object *result = NULL;
     String *qn;
     if (qn = nodeAttribute(node, "fqn")) {
-	result = hashGet(byfqn, (Object *) qn);
+	result = hashGet(res_state->by_fqn, (Object *) qn);
 	objectFree((Object *) qn, TRUE);
     }
     else if (qn = nodeAttribute(node, "pqn")) {
-	result = hashGet(bypqn, (Object *) qn);
+	result = hashGet(res_state->by_pqn, (Object *) qn);
 	objectFree((Object *) qn, TRUE);
     }
     else {
@@ -366,10 +415,13 @@ containsExistsNode(Object *deps)
     if (deps->type == OBJ_DAGNODE) {
 	return ((DagNode *) deps)->build_type == EXISTS_NODE;
     }
+    else if (deps->type == OBJ_CONS) {
+	RAISE(TSORT_ERROR, newstr("Not implemented: cons handling (in containsExistsNode)"));
+    }
     else {
 	RAISE(TSORT_ERROR, newstr("Not implemented: (in containsExistsNode)"));
-	return FALSE;
     }
+    return FALSE;
 }
 
 
@@ -424,6 +476,7 @@ getDependencyDirection(xmlNode *depnode)
     return BOTH_DIRECTIONS;
 }
 
+#ifdef wibble
 /* 
  * Create a simple fallback node, which we wil place into its own
  * document.  This will then be processed by the fallbacks.xsl script to
@@ -467,7 +520,9 @@ domakeFallbackNode(String *fqn)
     }
     return dbobject;
 }
+#endif
 
+#ifdef wibble
 static xmlNode *
 firstDbobject(xmlNode *node)
 {
@@ -548,7 +603,7 @@ parentNodeForFallback(xmlNode *dep_node, Hash *byfqn)
     objectFree((Object *) fqn, TRUE);
     return result;
 }
-    
+
 static void
 setParent(DagNode *node, DagNode *parent)
 {
@@ -557,14 +612,15 @@ setParent(DagNode *node, DagNode *parent)
     node->parent = parent;
     xmlAddChild(xmlparent, xmlnode);
 }
+#endif
 
 static void 
-recordNodeDeps(DagNode *node, Vector *all_nodes, 
-	       Hash *byfqn, Hash *bypqn, Vector *depsets);
+recordNodeDeps(DagNode *node, volatile ResolverState *res_state);
 
+#ifdef wibble
 static DagNode *
-makeFallbackNode(String *fqn, xmlNode *depnode, Hash *byfqn, 
-		 Hash *bypqn, Vector *all_nodes, Vector *depsets)
+makeFallbackNode(String *fqn, xmlNode *depnode, 
+		 volatile ResolverState *res_state)
 {
     xmlNode *dbobj;
     DagNode *fallback;
@@ -572,35 +628,16 @@ makeFallbackNode(String *fqn, xmlNode *depnode, Hash *byfqn,
 
     dbobj = domakeFallbackNode(fqn);
     fallback = dagNodeNew(dbobj, INACTIVE_NODE);
-    parent = parentNodeForFallback(depnode, byfqn);
+    parent = parentNodeForFallback(depnode, res_state->by_fqn);
     setParent(fallback, parent);
-    hashAdd(byfqn, (Object *) fqn, (Object *) fallback);
-    vectorPush(all_nodes, (Object *) fallback);
+    hashAdd(res_state->by_fqn, (Object *) fqn, (Object *) fallback);
+    vectorPush(res_state->all_nodes, (Object *) fallback);
     fallback->deps = vectorNew(10);
-    recordNodeDeps(fallback, all_nodes, byfqn, bypqn, depsets);
+    recordNodeDeps(fallback, res_state);
 
     return fallback;
 }
-
-static void
-getFallbackForDepset(DependencySet *depset, xmlNode *depnode, Hash *byfqn, 
-		     Hash *bypqn, Vector *all_nodes, Vector *depsets)
-{
-    String *fallback = NULL;
-    DagNode *fallback_node;
-
-    if (fallback = nodeAttribute(depnode, "fallback")) {
-	fallback_node = (DagNode *) hashGet(byfqn, (Object *) fallback);
-	if (!fallback_node) {
-	    fallback_node = makeFallbackNode(fallback, depnode, byfqn, 
-					     bypqn, all_nodes, depsets);
-	}
-	else {
-	    objectFree((Object *) fallback, TRUE);
-	}
-	depset->fallback = fallback_node;
-    }
-}
+#endif
 
 static Dependency *
 copyDependency(Dependency *dep)
@@ -616,39 +653,72 @@ copyDependency(Dependency *dep)
 }
 
 static DagNode *
-activateFallback(DependencySet *depset, Vector *nodes)
+makeFallbackCopy(DagNode *fallback, boolean endfallback, boolean mirror,
+		 volatile ResolverState *res_state)
+{
+    DagNode *new = dagNodeNew(fallback->dbobject, 
+			      endfallback? ENDFALLBACK_NODE: FALLBACK_NODE);
+    char *fqn;
+    Dependency *newdep;
+    int i;
+
+    fqn = newstr("%s%s%s", mirror? "ds": "", endfallback? "end": "",
+		 new->fqn->value);
+    skfree(new->fqn->value);
+    new->fqn->value = fqn;
+    new->deps = vectorNew(10);
+    new->parent = fallback->parent;
+
+    EACH(fallback->deps, i) {
+	newdep = copyDependency((Dependency *) ELEM(fallback->deps, i));
+	vectorPush(new->deps, (Object *) newdep);
+    }
+
+    if (endfallback) {
+	/* Add a dependency from endfallback to fallback. */
+	newdep = dependencyNew(fallback);
+	newdep->direction = BOTH_DIRECTIONS;
+	newdep->immutable = TRUE;
+	vectorPush(new->deps, (Object *) newdep);
+    }
+
+    vectorPush(res_state->all_nodes, (Object *) new);
+    return new;
+}
+
+/* Activate a fallback node.  If the fallback is inactive, we convert it
+ * into an active fallback, also creating the endfallback and (possibly)
+ * mirrors.
+ */
+static DagNode *
+activateFallback(DependencySet *depset, volatile ResolverState *res_state)
 {
     DagNode *fallback;
     DagNode *endfallback;
     Dependency *newdep;
-    int i;
-    char * endfqn;
+    DagNode *dsfallback;
+    DagNode *dsendfallback;
 
     if (fallback = depset->fallback) {
 	if (fallback->build_type == INACTIVE_NODE) {
-	    endfallback = dagNodeNew(fallback->dbobject, ENDFALLBACK_NODE);
-	    endfallback->deps = vectorNew(10);
-	    endfqn = newstr("end%s", endfallback->fqn->value);
-	    skfree(endfallback->fqn->value);
-	    endfallback->fqn->value = endfqn;
-	    endfallback->parent = fallback->parent;
-	    fallback->mirror_node = endfallback;
-	    endfallback->mirror_node = fallback;
-	    vectorPush(nodes, (Object *) endfallback);
+	    /* Make end fallback. */
+	    endfallback = makeFallbackCopy(fallback, TRUE, FALSE, res_state);
+	    fallback->endfallback = endfallback;
 
-	    EACH(fallback->deps, i) {
-		newdep = copyDependency((Dependency *) ELEM(fallback->deps, i));
-		vectorPush(endfallback->deps, (Object *) newdep);
+	    if (res_state->both_directions) {
+		/* Make mirrors. */
+		dsfallback = makeFallbackCopy(fallback, FALSE, TRUE, res_state);
+		dsendfallback = makeFallbackCopy(fallback, TRUE, TRUE, 
+						 res_state);
+		dsfallback->endfallback = dsendfallback;
+
+		fallback->mirror_node = dsfallback;
+		endfallback->mirror_node = dsendfallback;
+
+		newdep = dependencyNew(dsendfallback);
+		vectorPush(fallback->deps, (Object *) newdep);
 	    }
-
-
-	    /* Add dependencies from endfallback to fallback. */
-	    newdep = dependencyNew(fallback);
-	    newdep->direction = BOTH_DIRECTIONS;
-	    newdep->immutable = TRUE;
-	    vectorPush(endfallback->deps, (Object *) newdep);
 	    fallback->build_type = FALLBACK_NODE;
-	    endfallback->build_type = ENDFALLBACK_NODE;
 	}
 	return fallback;
     }
@@ -670,9 +740,29 @@ activateFallback(DependencySet *depset, Vector *nodes)
   - Promotion to rebuild node only happens to diff nodes and must be
     done as a separate pass.
  */
+static DagNode *
+getFallbackNode(xmlNode *depnode, volatile ResolverState *res_state)
+{
+    String *fallback = NULL;
+    DagNode *fallback_node = NULL;
+
+    if (fallback = nodeAttribute(depnode, "fallback")) {
+	fallback_node = (DagNode *) hashGet(res_state->by_fqn, 
+					    (Object *) fallback);
+	if (!fallback_node) {
+	    RAISE(NOT_IMPLEMENTED_ERROR, 
+		  newstr("getFallbackNode: not implemented - new fallback creation."));
+	}
+	else {
+	    objectFree((Object *) fallback, TRUE);
+	}
+    }
+    return fallback_node;
+}
+
 static void
-recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes, 
-		 Hash *byfqn, Hash *bypqn, Vector *depsets, Object *target, 
+recordDepElement(DagNode *node, xmlNode *depnode, 
+		 volatile ResolverState *res_state, Object *target, 
 		 boolean *p_contains_exists, boolean required)
 {
     xmlNode *this = NULL;
@@ -687,12 +777,11 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
 
     if (isDependencies(depnode)) {
         while (this = nextDependency(depnode->children, this)) {
-            recordDepElement(node, this, all_nodes, byfqn, bypqn, 
-			     depsets, target, NULL, TRUE);
+            recordDepElement(node, this, res_state, target, NULL, TRUE);
         }
     }
     else if (isDependency(depnode)) {
-        if (deps = findNodeDep(depnode, byfqn, bypqn, node)) {
+        if (deps = findNodeDep(depnode, node, res_state)) {
 	    if (containsExistsNode(deps)) {
 		deps = NULL;
 	    }
@@ -713,18 +802,18 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
 	}
     }
     else if (isDependencySet(depnode)) {
-	deps = (Object *) (depset = dependencySetNew());
-	vectorPush(depsets, deps);
+	depset = dependencySetNew();
+	deps = (Object *) depset;
+	vectorPush(res_state->dependency_sets, deps);
 
-	getFallbackForDepset(depset, depnode, byfqn, bypqn, 
-			     all_nodes, depsets);
+	depset->fallback = getFallbackNode(depnode, res_state);
 
         while (this = nextDependency(depnode->children, this)) {
-            recordDepElement(node, this, all_nodes, byfqn, bypqn, depsets,
-			     (Object *) depset, &contains_exists, FALSE);
+            recordDepElement(node, this, res_state, (Object *) depset, 
+			     &contains_exists, FALSE);
         }
 	if (depset->deps->elems == 0) {
-	    if (fallback = activateFallback(depset, all_nodes)) {
+	    if (fallback = activateFallback(depset, res_state)) {
 		dep = dependencyNew(fallback);
 		dep->direction = BOTH_DIRECTIONS;
 		/* Add fallback to current depset. */
@@ -738,7 +827,7 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
 		dep = dependencyNew(node);
 		dep->direction = BOTH_DIRECTIONS;
 		dep->immutable = TRUE;
-		addDepToTarget((Object *) fallback->mirror_node,
+		addDepToTarget((Object *) fallback->endfallback,
 			       (Object *) dep);
 	    }
 	    else {
@@ -777,19 +866,17 @@ recordDepElement(DagNode *node, xmlNode *depnode, Vector *all_nodes,
 
 
 static void 
-recordNodeDeps(DagNode *node, Vector *all_nodes, 
-	       Hash *byfqn, Hash *bypqn, Vector *depsets)
+recordNodeDeps(DagNode *node, volatile ResolverState *res_state)
 {
     xmlNode *depnode = NULL;
     while (depnode = nextDependency(node->dbobject->children, depnode)) {
-	recordDepElement(node, depnode, all_nodes, byfqn, bypqn, 
-			 depsets, (Object *) node, NULL, TRUE);
+	recordDepElement(node, depnode, res_state, (Object *) node, NULL, TRUE);
     }
 }
 
 
 static void
-identifyDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn, Vector *depsets)
+identifyDependencies(Vector *nodes, volatile ResolverState *res_state)
 {
     int i;
     DagNode *node;
@@ -797,7 +884,7 @@ identifyDependencies(Vector *nodes, Hash *byfqn, Hash *bypqn, Vector *depsets)
 	node = (DagNode *) ELEM(nodes, i);
 	if (!node->deps) {
 	    node->deps = vectorNew(10);
-	    recordNodeDeps(node, nodes, byfqn, bypqn, depsets);
+	    recordNodeDeps(node, res_state);
 	}
     }
 }
@@ -854,33 +941,40 @@ static DepTransform transform_for_build_types
  */
 
 static DepTransform
-transformForDep(DagNode *node, Object *depobj)
+transformForDep(DagNode *node, Dependency *dep)
 {
     DepTransform transform;
-    DagNode *dep;
+    DagNode *depnode;
 
-    assert(depobj->type == OBJ_DEPENDENCY,
-	  "transformForDep: unexpected depobj->type: %d.", depobj->type);
-    dep = ((Dependency *) depobj)->dep;
+    assert(dep->type == OBJ_DEPENDENCY,
+	  "transformForDep: unexpected dep->type: %d.", dep->type);
+    depnode = dep->dep;
 
     if ((node->build_type == EXISTS_NODE) ||
 	(node->build_type == INACTIVE_NODE) ||
-	(dep->build_type == INACTIVE_NODE) ||
-	(dep->build_type == EXISTS_NODE)) 
+	(depnode->build_type == INACTIVE_NODE) ||
+	(depnode->build_type == EXISTS_NODE)) 
     {
 	transform = DROP;
     }
     else {
 	transform = 
-	  transform_for_build_types[node->build_type][dep->build_type];
+	  transform_for_build_types[node->build_type][depnode->build_type];
 
 	if (transform == ERROR) {
 	    dbgSexp(node);
-	    dbgSexp(depobj);
+	    dbgSexp(depnode);
+	    showDeps(node);
+
+	    if (depnode->endfallback) {
+		showDeps(depnode);
+		showDeps(depnode->endfallback);
+	    }
+
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("transformForEndDep: no handler for deps "
+		  newstr("transformForDep: no handler for deps "
 			 "from build_type %d to build_type %d", 
-			 node->build_type, dep->build_type));
+			 node->build_type, depnode->build_type));
 	}
     }
     return transform;
@@ -897,55 +991,35 @@ myVectorPush(Vector **p_vector, Object *obj)
     vectorPush(*p_vector, obj);
 }
 
+/* Copy dep into node->tmp_deps or drop it if it is not needed.
+ */
 static void
-tmpifyNodeDep(DagNode *node, Object *depobj)
+tmpifyNodeDep(DagNode *node, Dependency *dep)
 {
-    Dependency *dep = (Dependency *) depobj;
-    DependencySet *depset;
-    int i;
-
-    if (dep->type == OBJ_DEPENDENCY) {
-	if ((dep->direction == FORWARDS) ||
-	    (dep->direction == BOTH_DIRECTIONS)) 
-	{
-	    myVectorPush(&(node->tmp_deps), (Object *) dep);
-	}
-	else {
-	    objectFree((Object *) dep, TRUE);
-	}
-    }
-    else if (dep->type == OBJ_DEPENDENCYSET) {
-	depset = (DependencySet *) depobj;
-	EACH(depset->deps, i) {
-	    tmpifyNodeDep(node, ELEM(depset->deps, i));
-	}
+    assert(dep->type == OBJ_DEPENDENCY,
+	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
+    if ((dep->direction == FORWARDS) ||
+	(dep->direction == BOTH_DIRECTIONS)) 
+    {
+	myVectorPush(&(node->tmp_deps), (Object *) dep);
     }
     else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("tmpifyNodeDep: no handler for deps of type %d",
-		     dep->type));
-    }
-}
-
-static void
-dropNodeDep(DagNode *node, Object *depobj)
-{
-    Dependency *dep = (Dependency *) depobj;
-
-    if (dep->type == OBJ_DEPENDENCY) {
 	objectFree((Object *) dep, TRUE);
     }
-    else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("dropNodeDep: no handler for deps of type %d",
-		     dep->type));
-    }
 }
 
 static void
-invertNodeDep(DagNode *node, Object *depobj)
+dropNodeDep(DagNode *node, Dependency *dep)
 {
-    Dependency *dep = (Dependency *) depobj;
+    assert(dep->type == OBJ_DEPENDENCY,
+	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
+
+    objectFree((Object *) dep, TRUE);
+}
+
+static void
+invertNodeDep(DagNode *node, Dependency *dep)
+{
     DagNode *depnode;
     if (dep->type == OBJ_DEPENDENCY) {
 	if ((dep->direction == BACKWARDS) ||
@@ -982,17 +1056,37 @@ mirrorOrThis(DagNode *this)
     return this;
 }
 
-static void
-dupAndInvertNodeDep(DagNode *node, Object *depobj)
+static Dependency *
+makeInvertedDep(Dependency *dep, volatile ResolverState *res_state)
 {
-    Dependency *dep = (Dependency *) depobj;
+    Dependency *dup = dependencyNew(mirrorOrThis(dep->dep));
+    DependencySet *dup_depset;
+    dup->direction = dep->direction;
+    if (dep->depset) {
+	if (!(dup_depset = dep->depset->mirror)) {
+	    dup_depset = dependencySetNew();
+	    dup_depset->is_temporary = dep->depset->is_temporary;
+	    dup_depset->degrade_if_missing = dep->depset->degrade_if_missing;
+	    dep->depset->mirror = dup_depset;
+	    vectorPush(res_state->dependency_sets, (Object *) dup_depset);
+	}
+	dup->depset = dup_depset;
+	vectorPush(dup_depset->deps, (Object *) dup);
+    }
+    return dup;
+}
+
+static void
+dupAndInvertNodeDep(
+    DagNode *node, Dependency *dep, volatile ResolverState *res_state)
+{
     Dependency *dup;
 
     if (dep->type == OBJ_DEPENDENCY) {
-	dup = dependencyNew(mirrorOrThis(dep->dep));
+	dup = makeInvertedDep(dep, res_state);
 	dup->direction = dep->direction;
-	tmpifyNodeDep(node, depobj);
-	invertNodeDep(node->mirror_node, (Object *) dup);
+	tmpifyNodeDep(node, dep);
+	invertNodeDep(node->mirror_node, dup);
     }
     else {
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -1002,31 +1096,31 @@ dupAndInvertNodeDep(DagNode *node, Object *depobj)
 }
 
 static void
-redirectNodeDeps(DagNode *node)
+redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
 {
-    Object *depobj;
+    Dependency *dep;
     int i;
     DepTransform transform;
 
     EACH(node->deps, i) {
-	depobj = ELEM(node->deps, i);
-	transform = transformForDep(node, depobj);
+	dep = (Dependency *) ELEM(node->deps, i);
+	transform = transformForDep(node, dep);
 	switch (transform) {
 	case RETAIN: 
-	    tmpifyNodeDep(node, depobj);
+	    tmpifyNodeDep(node, dep);
 	    break;
 	case INVERT:
-	    invertNodeDep(node, depobj);
+	    invertNodeDep(node, dep);
 	    break;
 	case DUPANDINVERT:
-	    dupAndInvertNodeDep(node, depobj);
+	    dupAndInvertNodeDep(node, dep, res_state);
 	    break;
 	case DROP:
-	    dropNodeDep(node, depobj);
+	    dropNodeDep(node, dep);
 	    break;
 	default: 
 	    dbgSexp(node);
-	    dbgSexp(depobj);
+	    dbgSexp(dep);
 	    RAISE(NOT_IMPLEMENTED_ERROR, 
 		  newstr("redirectNodeDeps: unhandled transform %d",
 			 transform));
@@ -1038,16 +1132,16 @@ redirectNodeDeps(DagNode *node)
 }
 
 static void
-redirectDependencies(Vector *nodes)
+redirectDependencies(volatile ResolverState *res_state)
 {
     int i;
     DagNode *node;
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	redirectNodeDeps(node);
+    EACH(res_state->all_nodes, i) {
+	node = (DagNode *) ELEM(res_state->all_nodes, i);
+	redirectNodeDeps(node, res_state);
     }
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
+    EACH(res_state->all_nodes, i) {
+	node = (DagNode *) ELEM(res_state->all_nodes, i);
 	node->deps = node->tmp_deps;
 	node->tmp_deps = NULL;
     }
@@ -1071,16 +1165,7 @@ convertDependencies(Vector *nodes)
 		assert(dep->type == OBJ_DEPENDENCY,
 		       "Invalid_object type");
 
-		if (dep->depset) {
-		    if (dep == dep->depset->chosen_dep) {
-			/* For deps in depsets only add the dependency
-			 * if it was chosen by resolveNodes(). */
-			setPush(newvec, (Object *) dep->dep);
-		    }
-		}
-		else {
-		    setPush(newvec, (Object *) dep->dep);
-		}
+		setPush(newvec, (Object *) dep->dep);
 		objectFree((Object *) dep, TRUE);
 	    }
 	    objectFree((Object *) node->deps, FALSE);
@@ -1091,79 +1176,61 @@ convertDependencies(Vector *nodes)
 
 typedef enum {
     ALL_IS_WELL = 0,
-    CYCLIC_EXCEPTION
+    CYCLE_DETECTED
 } resolver_status;
 
-typedef struct resolver_info {
-    DagNode         *cycle_node;
-    char            *errmsg;
-} resolver_info;
+static void
+recordCycle(DagNode *cycle_node, volatile ResolverState *res_state)
+{
+    DagNode *this = cycle_node;
+    Dependency *dep;
+    Vector *cycle = vectorNew(10);
+
+    if (!res_state->cycles) {
+	res_state->cycles = vectorNew(10);
+    }
+    vectorPush(res_state->cycles, (Object *) cycle);
+    do {
+	dep = (Dependency *) ELEM(this->deps, this->cur_dep);
+	vectorPush(cycle, (Object *) dep);
+	this = dep->dep;
+    } while (this != cycle_node);
+}
 
 static resolver_status
-resolveNode(DagNode *node, Vector *all_nodes, resolver_info *info);
+resolveNode(DagNode *node, volatile ResolverState *res_state);
 
-static resolver_status
-resolveDeps(DagNode *node, Vector *all_nodes, resolver_info *info)
+static void 
+resolveDeps(DagNode *node, volatile ResolverState *res_state)
 {
     int i;
     Dependency *dep;
-    DependencySet *depset;
     resolver_status status;
 
     EACH (node->deps, i) {
 	dep = (Dependency *) ELEM(node->deps, i);
-	if (depset = dep->depset) {
-	    if (!depset->chosen_dep) {
-		/* Try this dep. */
-		status = resolveNode(dep->dep, all_nodes, info);
-		if (status == CYCLIC_EXCEPTION) {
-		    /* We will attempt to find other deps in this
-		     * depset, or maybe use the fallback to resolve the
-		     * cycle. */
-		    skfree(info->errmsg);
-		    info->errmsg = NULL;
-		    info->cycle_node = NULL;
-		    status = ALL_IS_WELL;
-		}
-		else if (status == ALL_IS_WELL) {
-		    depset->chosen_dep = dep;
-		}
-	    }
-	}
-	else {
-	    status = resolveNode(dep->dep, all_nodes, info);
-	}
-	if (status) {
-	    return status;
+	node->cur_dep = i;
+	status = resolveNode(dep->dep, res_state);
+	if (status == CYCLE_DETECTED) {
+	    recordCycle(dep->dep, res_state);
 	}
     }
-    return ALL_IS_WELL;
 }
 
 static resolver_status
-resolveNode(DagNode *node, Vector *all_nodes, resolver_info *info)
+resolveNode(DagNode *node, volatile ResolverState *res_state)
 {
-    resolver_status status;
-    char *tmp;
     switch (node->status) {
     case VISITED:
 	/* This node has already been resolved, so nohing more to do. */
 	return ALL_IS_WELL;
     case VISITING:
-	info->errmsg = newstr("%s", node->fqn->value);
-	info->cycle_node = node;
-	return CYCLIC_EXCEPTION;
+	return CYCLE_DETECTED;
     case UNVISITED:
 	node->status = VISITING;
-	status = resolveDeps(node, all_nodes, info);
-	if (status == CYCLIC_EXCEPTION) {
-	    /* Add more information to info->errmsg. */
-	    tmp = newstr("%s->%s", node->fqn->value, info->errmsg);
-	    skfree(info->errmsg);
-	    info->errmsg = tmp;
-	}
+	resolveDeps(node, res_state);
 	node->status = VISITED;
-	return status;
+	return ALL_IS_WELL;
     default: 
 	RAISE(TSORT_ERROR, 
 	      newstr("Unexpected node status (%d) for node %s", 
@@ -1172,28 +1239,216 @@ resolveNode(DagNode *node, Vector *all_nodes, resolver_info *info)
     }
 }
 
+static
+void
+optimiseDepsets(volatile ResolverState *res_state)
+{
+    DependencySet *depset;
+    int i;
+    Dependency *dep;
+    int j;
+    boolean found = FALSE;
+
+    EACH(res_state->dependency_sets, i) {
+	depset = (DependencySet *) ELEM(res_state->dependency_sets, i);
+	if (depset->deps->elems > 1) {
+	    found = FALSE;
+	    EACH(depset->deps, j) {
+		dep = (Dependency *) ELEM(depset->deps, j);
+		if (!dep->deactivated) {
+		    if (found) {
+			dep->deactivated = TRUE;
+		    }
+		    else {
+			found = TRUE;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+static boolean
+isCycle(Vector *cycle)
+{
+    int i;
+    Dependency *dep;
+    EACH(cycle, i) {
+	dep = (Dependency *) ELEM(cycle, i);
+	if (dep->deactivated) {
+	    return FALSE;
+	}
+    }
+    return TRUE;
+}
+
+
+static void
+freeCycles(volatile ResolverState *res_state)
+{
+    int i;
+
+    EACH(res_state->cycles, i) {
+	objectFree(ELEM(res_state->cycles, i), FALSE);
+    }
+    objectFree((Object *) res_state->cycles, FALSE);
+    res_state->cycles = NULL;
+}
+
+static boolean
+canDeactivate(Dependency *dep)
+{
+    char *tmp;
+    char *errmsg;
+    if (dep->depset) {
+	if (dep->deactivated) {
+	    tmp = objectSexp((Object *) dep);
+	    errmsg = newstr("canDeactivate: dep is already deactivated - %s",
+			    tmp);
+	    skfree(tmp);
+	    RAISE(TSORT_ERROR, errmsg);
+	}
+	return dep->depset->chosen_dep == NULL;
+    }
+    return FALSE;
+}
+
+static void
+deactivateDep(Dependency *dep)
+{
+    char *tmp;
+    char *errmsg;
+    DependencySet *depset;
+    Dependency *dep2;
+    int i;
+    int active_count = 0;
+
+    if (!(depset = dep->depset)) {
+	tmp = objectSexp((Object *) dep);
+	errmsg = newstr("deactivateDep: dep is not in a depset %s", tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+    if (dep->deactivated) {
+	tmp = objectSexp((Object *) dep);
+	errmsg = newstr("deactivateDep: dep is already deactivated - %s",
+			tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+    dep->deactivated = TRUE;
+    EACH(depset->deps, i) {
+	dep2 = (Dependency *) ELEM(depset->deps, i);
+	if (!dep2->deactivated) {
+	    depset->chosen_dep = dep2;
+	    active_count++;
+	}
+    }
+    if (active_count != 1) {
+	depset->chosen_dep = NULL;
+    }
+}
+
+static void
+reactivateDep(Dependency *dep)
+{
+    char *tmp;
+    char *errmsg;
+    if (!dep->depset) {
+	tmp = objectSexp((Object *) dep);
+	errmsg = newstr("reactivateDep: dep is not in a depset %s", tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+    if (!dep->deactivated) {
+	tmp = objectSexp((Object *) dep);
+	errmsg = newstr("reactivateDep: dep is not deactivated - %s",
+			tmp);
+	skfree(tmp);
+	RAISE(TSORT_ERROR, errmsg);
+    }
+    dep->depset->chosen_dep = NULL;
+    dep->deactivated = FALSE;
+}
+
+static boolean
+resolveCycles(volatile ResolverState *res_state, int cycle)
+{
+    int i;
+    Dependency *dep;
+    Vector *this_cycle;
+
+    if (cycle >= res_state->cycles->elems) {
+//	fprintf(stderr, "No cycle %d\n", cycle);
+	return TRUE;
+    }
+
+    while (!isCycle((Vector *) ELEM(res_state->cycles, cycle))) {
+	cycle++;
+    }
+    this_cycle = (Vector *) ELEM(res_state->cycles, cycle);
+//    fprintf(stderr, "\nCycle %d: ", cycle);
+//    dbgSexp(this_cycle);
+    EACH(this_cycle, i) {
+	dep = (Dependency *) ELEM(this_cycle, i);
+	if (canDeactivate(dep)) {
+//	    fprintf(stderr, "\nIn cycle %d, trying dep %d (%s)\n", 
+//		    cycle, i, dep->dep->fqn->value);
+	    deactivateDep(dep);
+	    if (resolveCycles(res_state, cycle + 1)) {
+//		fprintf(stderr, "Success for cycle %d\n", cycle);
+		return TRUE;
+	    }
+	    reactivateDep(dep);
+//	    fprintf(stderr, "No joy at %d.%d\n", cycle, i);
+	}
+//	else {
+//	    fprintf(stderr, "\nIn cycle %d, skipping dep %d (%s)\n", 
+//		    cycle, i, dep->dep->fqn->value);
+//	}
+    }
+
+    return FALSE;
+}
+
+#ifdef wibble
+static char *
+describeCycles(volatile ResolverState *res_state)
+{
+    Vector *cycle;
+    int i;
+    
+    EACH(res_state->cycles, i) {
+	cycle = (Vector *) ELEM(res_state->cycles, i);
+//	dbgSexp(cycle);
+    }
+    return NULL;
+}
+#endif
+
 /* This traverses the DAG, picking one dep from each depset (
  * optionally creating fallbacks), and adding cycle breakers when
  * necessary.
  */
 static void
-resolveNodes(Vector *nodes)
+resolveNodes(volatile ResolverState *res_state)
 {
     int i;
     DagNode *node;
-    resolver_info info = {NULL, NULL};
-    resolver_status status;
 
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	if (status = resolveNode(node, nodes, &info)) {
-	    fprintf(stderr, "ERROR: %s\n", info.errmsg);
-	    RAISE(NOT_IMPLEMENTED_ERROR,
-		  newstr("resolveNodes: handling of errors."));
-	}
+    EACH(res_state->all_nodes, i) {
+	node = (DagNode *) ELEM(res_state->all_nodes, i);
+	(void) resolveNode(node, res_state);
     }
- 
-    convertDependencies(nodes);
+    if (res_state->cycles) {
+//	dbgSexp(res_state->cycles);
+	if (!resolveCycles(res_state, 0)) {
+//	    describeCycles(res_state);
+	    RAISE(TSORT_ERROR,
+		  newstr("resolveNodes: unable to resolve cycles"));
+	}
+	freeCycles(res_state);
+    }
 }
 
 static void
@@ -1221,6 +1476,36 @@ freeDeps(Vector *nodes)
     }
 }
 
+static void
+initResolverState(volatile ResolverState *res_state, Document *doc)
+{
+    xmlXPathObject *obj;
+    xmlNodeSet *nodeset;
+
+    res_state->all_nodes = NULL;
+    res_state->by_fqn= NULL;
+    res_state->by_pqn = NULL;
+    res_state->dependency_sets = NULL;
+    res_state->both_directions = FALSE;
+
+    if (dereference(symbolGetValue("build")) &&
+	dereference(symbolGetValue("drop"))) {
+	res_state->both_directions = TRUE;
+    }
+    else {
+	if (obj = xpathEval(doc, xmlDocGetRootElement(doc->doc), 
+			    "//dbobject[@diff]")) 
+	{
+	    nodeset = obj->nodesetval;
+	    if (nodeset && nodeset->nodeNr) {
+		res_state->both_directions = TRUE;
+	    }
+	    xmlXPathFreeObject(obj);
+	}
+    }
+    res_state->cycles = NULL;
+}
+
 /*
  * Create a Dag from the supplied doc, returning it as a vector of DocNodes.
  * See the file header comment for a more detailed description of what
@@ -1229,35 +1514,39 @@ freeDeps(Vector *nodes)
 Vector *
 dagFromDoc(Document *doc)
 {
-    Vector *volatile nodes = dagNodesFromDoc(doc);
-    Hash *volatile byfqn = NULL;
-    Hash *volatile bypqn = NULL;
-    Vector *volatile depsets = vectorNew(nodes->elems * 2);
+    ResolverState volatile resolver_state;
+    initResolverState(&resolver_state, doc);
+    resolver_state.all_nodes = dagNodesFromDoc(doc);
+    resolver_state.dependency_sets = 
+	vectorNew(resolver_state.all_nodes->elems * 2);
 
     BEGIN {
-	byfqn = hashByFqn(nodes);
-	bypqn = hashByPqn(nodes);
-	identifyDependencies(nodes, byfqn, bypqn, depsets);
-	makeMirrors(nodes);
+	resolver_state.by_fqn = hashByFqn(resolver_state.all_nodes);
+	resolver_state.by_pqn = hashByPqn(resolver_state.all_nodes);
+	identifyDependencies(resolver_state.all_nodes, &resolver_state);
+	makeMirrors(resolver_state.all_nodes);
 
 	//showVectorDeps(nodes);
 	//fprintf(stderr, "---------------------\n\n");
 
 	// TODO: promote rebuilds; remove deps involving an EXISTS_NODE
-	redirectDependencies(nodes);
-	resolveNodes(nodes);
+	redirectDependencies(&resolver_state);
+	resolveNodes(&resolver_state);
+	optimiseDepsets(&resolver_state);
+	convertDependencies(resolver_state.all_nodes);
     }
     EXCEPTION(ex) {
-	freeDeps(nodes);
-	objectFree((Object *) depsets, TRUE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) byfqn, FALSE);
-	objectFree((Object *) bypqn, TRUE);
+	freeDeps(resolver_state.all_nodes);
+	freeCycles(&resolver_state);
+	objectFree((Object *) resolver_state.dependency_sets, TRUE);
+	objectFree((Object *) resolver_state.all_nodes, TRUE);
+	objectFree((Object *) resolver_state.by_fqn, FALSE);
+	objectFree((Object *) resolver_state.by_pqn, TRUE);
     }
     END;
 
-    objectFree((Object *) depsets, TRUE);
-    objectFree((Object *) bypqn, TRUE);
-    objectFree((Object *) byfqn, FALSE);
-    return nodes;
+    objectFree((Object *) resolver_state.dependency_sets, TRUE);
+    objectFree((Object *) resolver_state.by_fqn, FALSE);
+    objectFree((Object *) resolver_state.by_pqn, TRUE);
+    return resolver_state.all_nodes;
 }
