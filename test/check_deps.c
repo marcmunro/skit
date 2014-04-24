@@ -175,11 +175,11 @@ static void
 requireDep(char *testid, Hash *hash, char *from, char *to)
 {
     if (!hasDep(hash, from, to)) {
-	fail("Test %s: no dep exists from %s to %s", testid, from, to);
+	
+fail("Test %s: no dep exists from %s to %s", testid, from, to);
     }
 }
 
-#ifdef wibble
 static void
 requireNoDep(char *testid, Hash *hash, char *from, char *to)
 {
@@ -187,7 +187,6 @@ requireNoDep(char *testid, Hash *hash, char *from, char *to)
         fail("Test %s: unwanted dep exists from %s to %s", testid, from, to);
     }
 }
-#endif
 
 static void
 requireDeps(char *testid, Hash *hash, char *from, ...)
@@ -623,7 +622,7 @@ START_TEST(depset_simple_build)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(1393);
+	//showMalloc(1167);
 	//showFree(724);
 
 	eval("(setq build t)");
@@ -1104,7 +1103,6 @@ START_TEST(depset_dag1_both)
 END_TEST
 
 
-#ifdef wibble
 START_TEST(depset_dia_build)
 {
     Document *volatile doc = NULL;
@@ -1132,7 +1130,7 @@ START_TEST(depset_dia_build)
 		    "privilege.role.x.superuser", NULL);  // 5, 7
 
 	requireDeps("DDB_3", nodes_by_fqn, "privilege.role.x.superuser", 
-		    "role.x", NULL); // 3
+		    "role.x", "dsendprivilege.role.x.superuser", NULL); // 3
 
 	requireDeps("DDB_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
 		    "privilege.role.x.superuser",  
@@ -1181,22 +1179,26 @@ START_TEST(depset_dia_drop)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
+	//dbgSexp(nodes_by_fqn);
+	//fprintf(stderr, "\n---------------------\n");
 	//showVectorDeps(nodes);	
 	//fprintf(stderr, "---------------------\n\n");
 
 	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
 		    "privilege.role.x.superuser",
-		    "endprivilege.role.x.superuser", NULL);  // 6, 4, 2
+		    "endprivilege.role.x.superuser",
+	            "dsprivilege.role.x.superuser",
+	            "dsendprivilege.role.x.superuser", NULL);  // 6, 4, 2
 
 	requireDeps("DDD_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "privilege.role.x.superuser", NULL);  // 8
+		    "dsprivilege.role.x.superuser", NULL);  // 8
 
-	requireDeps("DDD_3", nodes_by_fqn, "privilege.role.x.superuser", 
+	requireDeps("DDD_3", nodes_by_fqn, "dsprivilege.role.x.superuser", 
 		    NULL); // 
 
-	requireDeps("DDD_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
-		    "privilege.role.x.superuser",  
+	requireDeps("DDD_4", nodes_by_fqn, "dsendprivilege.role.x.superuser", 
+		    "dsprivilege.role.x.superuser",  
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -1242,7 +1244,12 @@ START_TEST(depset_dia_both)
 	doc = getDoc("test/data/gensource_fromdia.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
+	//dbgSexp(nodes_by_fqn);
 	//showVectorDeps(nodes);
+ 
+	requireNoDep("DD2_X", nodes_by_fqn, "privilege.role.x.superuser",
+		     "drop.role.x");
+
 	requireDeps("DD2_1", nodes_by_fqn, "role.x", 
 		    "cluster", "drop.role.x", NULL);  // 15
 
@@ -1252,7 +1259,7 @@ START_TEST(depset_dia_both)
 
 	requireDeps("DD2_3", nodes_by_fqn, "privilege.role.x.superuser", 
 		    "role.x", 
-		    "enddsprivilege.role.x.superuser", 
+		    "dsendprivilege.role.x.superuser", 
 		    NULL); // 3, 14
 
 	requireDeps("DD2_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
@@ -1263,7 +1270,7 @@ START_TEST(depset_dia_both)
 
 	requireDeps("DD2_5", nodes_by_fqn, "drop.role.x", 
 		    "drop.table.cluster.ownedbyx", 
-		    "enddsprivilege.role.x.superuser", 
+		    "dsendprivilege.role.x.superuser", 
 		    "dsprivilege.role.x.superuser", 
 		    NULL); // 6, 2, 4
 
@@ -1272,7 +1279,7 @@ START_TEST(depset_dia_both)
 		    NULL); // 8
 
 	requireDeps("DD2_7", nodes_by_fqn, 
-		    "enddsprivilege.role.x.superuser", 
+		    "dsendprivilege.role.x.superuser", 
 		    "drop.table.cluster.ownedbyx", 
 		    "dsprivilege.role.x.superuser", 
 		    NULL); // 10, 12
@@ -1300,6 +1307,7 @@ START_TEST(depset_dia_both)
 END_TEST
 
 
+#ifdef wibble
 START_TEST(depset_diff)
 {
     Document *volatile doc = NULL;
@@ -1921,9 +1929,9 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dag1_build);
     ADD_TEST(tc_core, depset_dag1_drop);
     ADD_TEST(tc_core, depset_dag1_both);
-    //ADD_TEST(tc_core, depset_dia_build);
-    //ADD_TEST(tc_core, depset_dia_drop);
-    //ADD_TEST(tc_core, depset_dia_both);
+    ADD_TEST(tc_core, depset_dia_build);
+    ADD_TEST(tc_core, depset_dia_drop);
+    ADD_TEST(tc_core, depset_dia_both);
     //ADD_TEST(tc_core, depset_diff);
     //ADD_TEST(tc_core, cyclic_build);
     //ADD_TEST(tc_core, cyclic_drop);

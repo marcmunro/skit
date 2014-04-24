@@ -66,8 +66,8 @@ typedef struct ResolverState {
     Hash     *by_fqn;
     Hash     *by_pqn;
     Vector   *dependency_sets;
-    boolean   both_directions;
     Vector   *cycles;
+    Vector   *activated_fallbacks;
 } ResolverState;
 
 void
@@ -102,19 +102,6 @@ mirroredBuildType(DagNodeBuildType type)
     }
     return type;
 }
-
-
-#ifdef wibble
-static DagNodeBuildType
-unmirroredBuildType(DagNodeBuildType type)
-{
-    switch(type) {
-    case REBUILD_NODE: return BUILD_NODE;
-    default: break;
-    }
-    return type;
-}
-#endif
 
 
 static boolean
@@ -155,10 +142,7 @@ buildTypeForDagNode(Node *node)
     char *errmsg = NULL;
     DagNodeBuildType build_type = UNSPECIFIED_NODE;
 
-    if (nodeHasAttribute(node->node , "fallback")) {
-	build_type = INACTIVE_NODE;
-    }
-    else if (diff = nodeAttribute(node->node, "diff")) {
+    if (diff = nodeAttribute(node->node, "diff")) {
 	if (streq(diff->value, DIFFSAME)) {
 	    build_type = EXISTS_NODE;
 	}
@@ -379,70 +363,6 @@ findNodeDep(xmlNode *node, DagNode *dagnode, volatile ResolverState *res_state)
     return result;
 }
 
-static void
-addDepToTarget(Object *target, Object *dep) 
-{
-    DependencySet *depset;
-    if (target->type == OBJ_DAGNODE) {
-	vectorPush(((DagNode *) target)->deps, dep);
-    }
-    else if (target->type == OBJ_DEPENDENCYSET) {
-	assert(dep->type == OBJ_DEPENDENCY, 
-	       "Cannot add a non-dependency object to a DependencySet.");
-	depset = (DependencySet *) target;
-	vectorPush(depset->deps, dep);
-	((Dependency *) dep)->depset = depset;
-    }
-    else {
-	RAISE(TSORT_ERROR, 
-	      newstr("addDepToTarget: no implementation for target->type %d",
-		     (int) target->type));
-    }
-}
-
-static void
-addDepSetToTarget(Object *target, DependencySet *depset) 
-{
-    int i;
-    EACH(depset->deps, i) {
-	addDepToTarget(target, ELEM(depset->deps, i));
-    }
-}
-
-static boolean
-containsExistsNode(Object *deps)
-{
-    if (deps->type == OBJ_DAGNODE) {
-	return ((DagNode *) deps)->build_type == EXISTS_NODE;
-    }
-    else if (deps->type == OBJ_CONS) {
-	RAISE(TSORT_ERROR, newstr("Not implemented: cons handling (in containsExistsNode)"));
-    }
-    else {
-	RAISE(TSORT_ERROR, newstr("Not implemented: (in containsExistsNode)"));
-    }
-    return FALSE;
-}
-
-
-/* Convert DagNodes and lists of DagNodes into Dependencies and
- * DependencySets. 
- */
-static Object *
-convertToDepType(Object *deps, DependencyApplication direction)
-{
-    Dependency *dep;
-    if (deps->type == OBJ_DAGNODE) {
-	dep = dependencyNew((DagNode *) deps);
-	dep->direction = direction;
-	return (Object *) dep;
-    }
-    else {
-	RAISE(TSORT_ERROR, newstr("Not implemented: (in convertToDepType)"));
-	return NULL;
-    }
-}
-
 String *
 directionForDep(xmlNode *node)
 {
@@ -462,21 +382,24 @@ static DependencyApplication
 getDependencyDirection(xmlNode *depnode)
 {
     String *direction_str = directionForDep(depnode);
+    DependencyApplication result;
+
     if (direction_str) {
 	if (streq(direction_str->value, "forwards")) {
-	    return FORWARDS;
+	    result = FORWARDS;
 	}
 	else if (streq(direction_str->value, "backwards")) {
-	    return BACKWARDS;
+	    result = BACKWARDS;
 	}
 	else {
-	    return UNKNOWN_DIRECTION;
+	    result = UNKNOWN_DIRECTION;
 	}
+	objectFree((Object *) direction_str, TRUE);
+	return result;
     }
     return BOTH_DIRECTIONS;
 }
 
-#ifdef wibble
 /* 
  * Create a simple fallback node, which we wil place into its own
  * document.  This will then be processed by the fallbacks.xsl script to
@@ -484,7 +407,7 @@ getDependencyDirection(xmlNode *depnode)
  * document and to various hashes and vectors.
  */
 static xmlNode *
-domakeFallbackNode(String *fqn)
+makeXMLFallbackNode(String *fqn)
 {
     xmlNode *fallback;
     xmlNode *root;
@@ -520,9 +443,7 @@ domakeFallbackNode(String *fqn)
     }
     return dbobject;
 }
-#endif
 
-#ifdef wibble
 static xmlNode *
 firstDbobject(xmlNode *node)
 {
@@ -612,120 +533,83 @@ setParent(DagNode *node, DagNode *parent)
     node->parent = parent;
     xmlAddChild(xmlparent, xmlnode);
 }
-#endif
 
 static void 
 recordNodeDeps(DagNode *node, volatile ResolverState *res_state);
 
-#ifdef wibble
+
 static DagNode *
-makeFallbackNode(String *fqn, xmlNode *depnode, 
-		 volatile ResolverState *res_state)
+newFallbackNode(xmlNode *dbobj, DagNode *parent,
+		DagNodeBuildType build_type, char *fqn_prefix,
+		volatile ResolverState *res_state)
 {
-    xmlNode *dbobj;
-    DagNode *fallback;
-    DagNode *parent;
+    DagNode *result = dagNodeNew(dbobj, build_type);
+    char *newfqn;
+    String *key;
 
-    dbobj = domakeFallbackNode(fqn);
-    fallback = dagNodeNew(dbobj, INACTIVE_NODE);
-    parent = parentNodeForFallback(depnode, res_state->by_fqn);
-    setParent(fallback, parent);
-    hashAdd(res_state->by_fqn, (Object *) fqn, (Object *) fallback);
-    vectorPush(res_state->all_nodes, (Object *) fallback);
-    fallback->deps = vectorNew(10);
-    recordNodeDeps(fallback, res_state);
+    setParent(result, parent);
+    result->deps = vectorNew(10);
 
-    return fallback;
-}
-#endif
-
-static Dependency *
-copyDependency(Dependency *dep)
-{
-    Dependency *result = dependencyNew(dep->dep);
-    if (dep->depset) {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("copyDependency: copy of deps in depsets not "
-		     "implemented"));
+    if (fqn_prefix) {
+	newfqn = newstr("%s%s", fqn_prefix, result->fqn->value);
+	skfree(result->fqn->value);
+	result->fqn->value = newfqn;
     }
-    result->direction = dep->direction;
+
+    vectorPush(res_state->all_nodes, (Object *) result);
+    recordNodeDeps(result, res_state);
+    key = stringNew(result->fqn->value);
+    hashAdd(res_state->by_fqn, (Object *) key, (Object *) result);
+
     return result;
 }
 
-static DagNode *
-makeFallbackCopy(DagNode *fallback, boolean endfallback, boolean mirror,
-		 volatile ResolverState *res_state)
+static void 
+addSimpleDep(DagNode *from, DagNode *to)
 {
-    DagNode *new = dagNodeNew(fallback->dbobject, 
-			      endfallback? ENDFALLBACK_NODE: FALLBACK_NODE);
-    char *fqn;
-    Dependency *newdep;
-    int i;
-
-    fqn = newstr("%s%s%s", mirror? "ds": "", endfallback? "end": "",
-		 new->fqn->value);
-    skfree(new->fqn->value);
-    new->fqn->value = fqn;
-    new->deps = vectorNew(10);
-    new->parent = fallback->parent;
-
-    EACH(fallback->deps, i) {
-	newdep = copyDependency((Dependency *) ELEM(fallback->deps, i));
-	vectorPush(new->deps, (Object *) newdep);
-    }
-
-    if (endfallback) {
-	/* Add a dependency from endfallback to fallback. */
-	newdep = dependencyNew(fallback);
-	newdep->direction = BOTH_DIRECTIONS;
-	newdep->immutable = TRUE;
-	vectorPush(new->deps, (Object *) newdep);
-    }
-
-    vectorPush(res_state->all_nodes, (Object *) new);
-    return new;
+    Dependency *dep = dependencyNew(to);
+    dep->direction = FORWARDS;
+    vectorPush(from->deps, (Object *) dep);
 }
 
-/* Activate a fallback node.  If the fallback is inactive, we convert it
- * into an active fallback, also creating the endfallback and (possibly)
- * mirrors.
+/* Create all 4 of the set of possibly needed fallback nodes (for build
+ * side and drop sides of the DAG, and for creating the fallback
+ * privilege and dropping it).
+ * Return the build-side fallback node.
  */
 static DagNode *
-activateFallback(DependencySet *depset, volatile ResolverState *res_state)
+makeFallbackNodes(String *fqn, xmlNode *depnode, 
+		  volatile ResolverState *res_state)
 {
+    xmlNode *dbobj;
     DagNode *fallback;
     DagNode *endfallback;
-    Dependency *newdep;
     DagNode *dsfallback;
     DagNode *dsendfallback;
+    DagNode *parent;
+    dbobj = makeXMLFallbackNode(fqn);
+    parent = parentNodeForFallback(depnode, res_state->by_fqn);
+    fallback = newFallbackNode(dbobj, parent, FALLBACK_NODE, NULL, res_state);
+    endfallback = newFallbackNode(dbobj, parent, ENDFALLBACK_NODE, 
+				  "end", res_state);
+    dsfallback = newFallbackNode(dbobj, parent, FALLBACK_NODE, "ds", res_state);
+    dsendfallback = newFallbackNode(dbobj, parent, ENDFALLBACK_NODE, 
+				    "dsend", res_state);
 
-    if (fallback = depset->fallback) {
-	if (fallback->build_type == INACTIVE_NODE) {
-	    /* Make end fallback. */
-	    endfallback = makeFallbackCopy(fallback, TRUE, FALSE, res_state);
-	    fallback->endfallback = endfallback;
+    addSimpleDep(endfallback, fallback);
+    addSimpleDep(fallback, dsendfallback);
+    addSimpleDep(dsendfallback, dsfallback);
 
-	    if (res_state->both_directions) {
-		/* Make mirrors. */
-		dsfallback = makeFallbackCopy(fallback, FALSE, TRUE, res_state);
-		dsendfallback = makeFallbackCopy(fallback, TRUE, TRUE, 
-						 res_state);
-		dsfallback->endfallback = dsendfallback;
+    fallback->mirror_node = dsfallback;
+    dsfallback->mirror_node = fallback;
+    endfallback->mirror_node = dsendfallback;
+    dsendfallback->mirror_node = endfallback;
 
-		fallback->mirror_node = dsfallback;
-		endfallback->mirror_node = dsendfallback;
+    fallback->endfallback = endfallback;
+    dsfallback->endfallback = dsendfallback;
 
-		newdep = dependencyNew(dsendfallback);
-		vectorPush(fallback->deps, (Object *) newdep);
-	    }
-	    fallback->build_type = FALLBACK_NODE;
-	}
-	return fallback;
-    }
-
-    return NULL;
+    return fallback;
 }
-
 
 /* Rules for adding dependencies
   Each item in deps is either a dependency-set or a dependency
@@ -750,97 +634,64 @@ getFallbackNode(xmlNode *depnode, volatile ResolverState *res_state)
 	fallback_node = (DagNode *) hashGet(res_state->by_fqn, 
 					    (Object *) fallback);
 	if (!fallback_node) {
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("getFallbackNode: not implemented - new fallback creation."));
+	    fallback_node = makeFallbackNodes(fallback, depnode, res_state);
 	}
-	else {
-	    objectFree((Object *) fallback, TRUE);
-	}
+	objectFree((Object *) fallback, TRUE);
     }
     return fallback_node;
 }
 
 static void
-recordDepElement(DagNode *node, xmlNode *depnode, 
-		 volatile ResolverState *res_state, Object *target, 
-		 boolean *p_contains_exists, boolean required)
+addDepsToVector(Vector *vec, Object *obj, DependencyApplication direction)
+{
+    Dependency *dep;
+    if (obj) {
+	if (obj->type == OBJ_DAGNODE) {
+	    dep = dependencyNew((DagNode *) obj);
+	    dep->direction = direction;
+	    vectorPush(vec, (Object *) dep);
+	}
+	else {
+	    RAISE(TSORT_ERROR, newstr("addDepsToVector - not implemented."));
+	}
+    }
+    else {
+	/* Record the absence of an object - depending on the context,
+	 * this may be an error. */
+	vectorPush(vec, NULL);
+    }
+}
+
+static void
+recordDepElementNew(DagNode *node, xmlNode *depnode, Vector *vec,
+		    volatile ResolverState *res_state)
 {
     xmlNode *this = NULL;
-    Object *deps = NULL;
     char *tmp;
     char *errmsg;
-    DagNode *fallback;
+    Object *deps;
     DependencySet *depset;
-    Dependency *dep;
     DependencyApplication direction;
-    boolean contains_exists = FALSE;
 
-    if (isDependencies(depnode)) {
+    if (isDependencies(depnode)) {   
         while (this = nextDependency(depnode->children, this)) {
-            recordDepElement(node, this, res_state, target, NULL, TRUE);
+            recordDepElementNew(node, this, vec, res_state);
         }
     }
     else if (isDependency(depnode)) {
-        if (deps = findNodeDep(depnode, node, res_state)) {
-	    if (containsExistsNode(deps)) {
-		deps = NULL;
-	    }
-	    else {
-		direction = getDependencyDirection(depnode);
-		deps = convertToDepType(deps, direction);
-	    }
-	}
-	else {
-	    /* No node found for dependency entry. */
-	    if (required) {
-		tmp = nodestr(depnode);
-		errmsg = newstr("recordDepElement: required "
-				"dependency not found for: %s", tmp);
-		skfree(tmp);
-		RAISE(TSORT_ERROR, errmsg);
-	    }
-	}
+        deps = findNodeDep(depnode, node, res_state);
+	direction = getDependencyDirection(depnode);
+	addDepsToVector(vec, deps, direction);
     }
     else if (isDependencySet(depnode)) {
 	depset = dependencySetNew();
-	deps = (Object *) depset;
-	vectorPush(res_state->dependency_sets, deps);
-
 	depset->fallback = getFallbackNode(depnode, res_state);
+	depset->direction = getDependencyDirection(depnode);
 
         while (this = nextDependency(depnode->children, this)) {
-            recordDepElement(node, this, res_state, (Object *) depset, 
-			     &contains_exists, FALSE);
+            recordDepElementNew(node, this, depset->deps, res_state);
         }
-	if (depset->deps->elems == 0) {
-	    if (fallback = activateFallback(depset, res_state)) {
-		dep = dependencyNew(fallback);
-		dep->direction = BOTH_DIRECTIONS;
-		/* Add fallback to current depset. */
-		addDepToTarget((Object *) depset, (Object *) dep);
-		/* Add fallback to current node. */
-		dep = dependencyNew(fallback);
-		dep->direction = BOTH_DIRECTIONS;
-		dep->immutable = TRUE;
-		addDepToTarget((Object *) node, (Object *) dep);
-		/* Add node to endfallback's deps. */
-		dep = dependencyNew(node);
-		dep->direction = BOTH_DIRECTIONS;
-		dep->immutable = TRUE;
-		addDepToTarget((Object *) fallback->endfallback,
-			       (Object *) dep);
-	    }
-	    else {
-		RAISE(TSORT_ERROR, 
-		      newstr("No dependency found and no fallback specified "
-			     "for dependency-set in %s.", node->fqn->value));
-	    }
-	}
-	if (contains_exists) {
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("recordDepElement: depset containing EXISTS_NODE"
-		     "not implemented."));
-	}
+	vectorPush(vec, (Object *) depset);
     }
     else {
 	tmp = nodestr(depnode);
@@ -848,30 +699,94 @@ recordDepElement(DagNode *node, xmlNode *depnode,
 	skfree(tmp);
 	RAISE(TSORT_ERROR, errmsg);
     }
-    if (deps) {
-	if (deps->type == OBJ_DEPENDENCY) {
-	    addDepToTarget(target, deps);
+}
+
+static void
+removeEmptyDeps(DependencySet *depset)
+{
+    int from;
+    int to = 0;
+    Object *obj;
+    EACH(depset->deps, from) {
+	if (obj = ELEM(depset->deps, from)) {
+	    ELEM(depset->deps, to) = obj;
+	    to++;
 	}
-	else if (deps->type == OBJ_DEPENDENCYSET) {
-	    addDepSetToTarget(target, (DependencySet *) deps);
+    }
+    depset->deps->elems = to;
+}
+
+
+static void
+processDepsetForNode(DagNode *node, DependencySet *depset)
+{
+    Dependency *dep;
+    int i;
+    
+    if (depset->deps->elems) {
+	EACH(depset->deps, i) {
+	    if (dep = (Dependency *) ELEM(depset->deps, i)) {
+		dep->depset = depset;
+		vectorPush(node->deps, (Object *) dep);
+	    }
+	}
+    }
+    else {
+	if (depset->fallback) {
+	    dep = dependencyNew(depset->fallback);
+	    dep->direction = depset->direction;
+	    vectorPush(node->deps, (Object *) dep);
 	}
 	else {
-	    dbgSexp(deps);
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("recordDepElement: no implementation "
-			 "for deps->type %d", (int) deps->type));
+	    RAISE(TSORT_ERROR, 
+		  newstr("Empty Dependency set found in %s", node->fqn->value));
 	}
     }
 }
-
 
 static void 
 recordNodeDeps(DagNode *node, volatile ResolverState *res_state)
 {
     xmlNode *depnode = NULL;
-    while (depnode = nextDependency(node->dbobject->children, depnode)) {
-	recordDepElement(node, depnode, res_state, (Object *) node, NULL, TRUE);
+    Vector *volatile vec = vectorNew(20);
+    int i;
+    Object *obj;
+
+    BEGIN {
+	while (depnode = nextDependency(node->dbobject->children, depnode)) {
+	    recordDepElementNew(node, depnode, vec, res_state);
+	    EACH(vec, i) {
+		obj = ELEM(vec, i);
+		if (obj) {
+		    if (obj->type == OBJ_DEPENDENCY) {
+			vectorPush(node->deps, obj);
+		    }
+		    else if (obj->type == OBJ_DEPENDENCYSET) {
+			removeEmptyDeps((DependencySet *) obj);
+			vectorPush(res_state->dependency_sets, obj);
+			processDepsetForNode(node, (DependencySet *) obj);
+		    }
+		    else {
+			dbgSexp(obj);
+			RAISE(TSORT_ERROR, 
+			      newstr("unhandled dependency type in "
+				     "recordNodeDeps()"));
+		    }
+		}
+		else {
+		    RAISE(TSORT_ERROR, 
+			  newstr("No dependency found for dependency item %d "
+				 "in %s", i, node->fqn->value));
+		}
+	    }
+	    vec->elems = 0;
+	}
     }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) vec, FALSE);
+    }
+    END;
 }
 
 
@@ -908,30 +823,30 @@ makeMirrors(Vector *nodes)
 
 typedef enum {
     RETAIN, INVERT, DUPANDINVERT, 
-    DROP, ERROR
+    DSFALLBACK, BOTHFALLBACK, DROP, FB2REBUILD, ERROR
 } DepTransform;
 
 static DepTransform transform_for_build_types
     [EXISTS_NODE][EXISTS_NODE] = 
 {
     /* BUILD */ 
-    {RETAIN, ERROR, ERROR,       /* BUILD, DROP  REBUILD, */
+    {RETAIN, ERROR, ERROR,         /* BUILD, DROP  REBUILD, */
      ERROR, RETAIN, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {ERROR, INVERT, ERROR,       /* BUILD, DROP  REBUILD, */
-     ERROR, RETAIN, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
+    {ERROR, INVERT, ERROR,         /* BUILD, DROP  REBUILD, */
+     ERROR, DSFALLBACK, ERROR},    /* DIFF, FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
-    {ERROR, RETAIN, DUPANDINVERT,   /* BUILD, DROP  REBUILD, */
-     ERROR, ERROR, ERROR},         /* DIFF, FALLBACK, ENDFALLBACK */
+    {ERROR, RETAIN, DUPANDINVERT,  /* BUILD, DROP  REBUILD, */
+     ERROR, BOTHFALLBACK, ERROR},  /* DIFF, FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {ERROR, ERROR, ERROR,       /* BUILD, DROP  REBUILD, */
-     ERROR, ERROR, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
+    {ERROR, ERROR, ERROR,          /* BUILD, DROP  REBUILD, */
+     ERROR, ERROR, ERROR},         /* DIFF, FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
-    {RETAIN, INVERT, ERROR,       /* BUILD, DROP  REBUILD, */
-     ERROR, ERROR, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
+     ERROR, ERROR, RETAIN},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
-    {RETAIN, INVERT, ERROR,       /* BUILD, DROP  REBUILD, */
-     ERROR, RETAIN, ERROR}       /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
+     ERROR, RETAIN, ERROR}         /* DIFF, FALLBACK, ENDFALLBACK */
 };
 
 /* Notes:
@@ -951,8 +866,6 @@ transformForDep(DagNode *node, Dependency *dep)
     depnode = dep->dep;
 
     if ((node->build_type == EXISTS_NODE) ||
-	(node->build_type == INACTIVE_NODE) ||
-	(depnode->build_type == INACTIVE_NODE) ||
 	(depnode->build_type == EXISTS_NODE)) 
     {
 	transform = DROP;
@@ -962,6 +875,7 @@ transformForDep(DagNode *node, Dependency *dep)
 	  transform_for_build_types[node->build_type][depnode->build_type];
 
 	if (transform == ERROR) {
+	    fprintf(stderr, "\n--error--\n");
 	    dbgSexp(node);
 	    dbgSexp(depnode);
 	    showDeps(node);
@@ -994,7 +908,7 @@ myVectorPush(Vector **p_vector, Object *obj)
 /* Copy dep into node->tmp_deps or drop it if it is not needed.
  */
 static void
-tmpifyNodeDep(DagNode *node, Dependency *dep)
+retainNodeDep(DagNode *node, Dependency *dep)
 {
     assert(dep->type == OBJ_DEPENDENCY,
 	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
@@ -1009,42 +923,12 @@ tmpifyNodeDep(DagNode *node, Dependency *dep)
 }
 
 static void
-dropNodeDep(DagNode *node, Dependency *dep)
+dropNodeDep(Dependency *dep)
 {
     assert(dep->type == OBJ_DEPENDENCY,
 	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
 
     objectFree((Object *) dep, TRUE);
-}
-
-static void
-invertNodeDep(DagNode *node, Dependency *dep)
-{
-    DagNode *depnode;
-    if (dep->type == OBJ_DEPENDENCY) {
-	if ((dep->direction == BACKWARDS) ||
-	    (dep->direction == BOTH_DIRECTIONS)) 
-	{
-	    depnode = dep->dep;
-	    if (dep->immutable) {
-		/* For immutable dependencies, we do not invert the
-		 * dependency direction. */
-		myVectorPush(&(node->tmp_deps), (Object *) dep);
-	    }
-	    else {
-		dep->dep = node;
-		myVectorPush(&(depnode->tmp_deps), (Object *) dep);
-	    }
-	}
-	else {
-	    objectFree((Object *) dep, TRUE);
-	}
-    }
-    else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("invertNodeDep: no handler for deps of type %d",
-		     dep->type));
-    }
 }
 
 static DagNode *
@@ -1065,7 +949,6 @@ makeInvertedDep(Dependency *dep, volatile ResolverState *res_state)
     if (dep->depset) {
 	if (!(dup_depset = dep->depset->mirror)) {
 	    dup_depset = dependencySetNew();
-	    dup_depset->is_temporary = dep->depset->is_temporary;
 	    dup_depset->degrade_if_missing = dep->depset->degrade_if_missing;
 	    dep->depset->mirror = dup_depset;
 	    vectorPush(res_state->dependency_sets, (Object *) dup_depset);
@@ -1077,24 +960,77 @@ makeInvertedDep(Dependency *dep, volatile ResolverState *res_state)
 }
 
 static void
-dupAndInvertNodeDep(
-    DagNode *node, Dependency *dep, volatile ResolverState *res_state)
+invertNodeDep(DagNode *node, Dependency *dep)
 {
-    Dependency *dup;
-
+    DagNode *depnode;
     if (dep->type == OBJ_DEPENDENCY) {
-	dup = makeInvertedDep(dep, res_state);
-	dup->direction = dep->direction;
-	tmpifyNodeDep(node, dep);
-	invertNodeDep(node->mirror_node, dup);
+	if ((dep->direction == BACKWARDS) ||
+	    (dep->direction == BOTH_DIRECTIONS)) 
+	{
+	    depnode = dep->dep;
+	    dep->dep = node;
+	    myVectorPush(&(depnode->tmp_deps), (Object *) dep);
+	}
+	else {
+	    objectFree((Object *) dep, TRUE);
+	}
     }
     else {
 	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("dupAndInvertNodeDep: no handler for deps of type %d",
+	      newstr("invertNodeDep: no handler for deps of type %d",
 		     dep->type));
     }
 }
 
+static void
+mirrorNodeDep(DagNode *node, Dependency *dep, 
+	      volatile ResolverState *res_state)
+{
+    Dependency *dup;
+    if (dep->type == OBJ_DEPENDENCY) {
+	dup = makeInvertedDep(dep, res_state);
+	invertNodeDep(node->mirror_node, dup);
+	objectFree((Object *) dep, TRUE);
+    }
+    else {
+	RAISE(NOT_IMPLEMENTED_ERROR, 
+	      newstr("mirrorNodeDep: no handler for deps of type %d",
+		     dep->type));
+    }
+}
+
+static boolean
+isDropsideFallbackNode(DagNode *node)
+{
+    if ((node->build_type == FALLBACK_NODE) ||
+	(node->build_type == ENDFALLBACK_NODE))
+    {
+	/* This is a crap way of testing whether this is the drop
+	 * side fallback node but it's all I have right now.
+	 */
+	if (strncmp(node->fqn->value, "ds", 2) == 0) {
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+static Dependency *
+dupDependency(Dependency *dep)
+{
+    Dependency *result = dependencyNew(dep->dep);
+    result->direction = dep->direction;
+    result->depset = dep->depset;
+    return result;
+}
+
+
+/* This takes deps defined for build-side DagNodes and redirects and
+ * duplicates them as needed for the specific circumstances applying to
+ * the node, and the dependency.  The resulting deps are recorded in the
+ * tmp_deps vector from where they will be later moved.  Mirror nodes
+ * have already been created at this point.
+ */
 static void
 redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
 {
@@ -1105,18 +1041,40 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
     EACH(node->deps, i) {
 	dep = (Dependency *) ELEM(node->deps, i);
 	transform = transformForDep(node, dep);
+
 	switch (transform) {
+	case BOTHFALLBACK:
+	    retainNodeDep(node, dupDependency(dep));
+	    dep->dep = dep->dep->mirror_node;
+	    retainNodeDep(node->mirror_node, dep);
+	    break;
+	case DSFALLBACK:
+	    dep->dep = dep->dep->mirror_node;
+	    retainNodeDep(node, dep);
+	    break;
 	case RETAIN: 
-	    tmpifyNodeDep(node, dep);
+	    retainNodeDep(node, dep);
 	    break;
 	case INVERT:
 	    invertNodeDep(node, dep);
 	    break;
 	case DUPANDINVERT:
-	    dupAndInvertNodeDep(node, dep, res_state);
+	    retainNodeDep(node, dupDependency(dep));
+	    mirrorNodeDep(node, dep, res_state);
 	    break;
 	case DROP:
-	    dropNodeDep(node, dep);
+	    dropNodeDep(dep);
+	    break;
+	case FB2REBUILD:
+	    if (isDropsideFallbackNode(node)) {
+		//printSexp(stderr, "DROPSIDE: ", (Object *) node);
+		dep->dep = dep->dep->mirror_node;
+		invertNodeDep(node, dep);
+	    }
+	    else {
+		//printSexp(stderr, "BUILDSIDE: ", (Object *) node);
+		retainNodeDep(node, dep);
+	    }
 	    break;
 	default: 
 	    dbgSexp(node);
@@ -1411,7 +1369,6 @@ resolveCycles(volatile ResolverState *res_state, int cycle)
     return FALSE;
 }
 
-#ifdef wibble
 static char *
 describeCycles(volatile ResolverState *res_state)
 {
@@ -1420,14 +1377,82 @@ describeCycles(volatile ResolverState *res_state)
     
     EACH(res_state->cycles, i) {
 	cycle = (Vector *) ELEM(res_state->cycles, i);
-//	dbgSexp(cycle);
+	dbgSexp(cycle);
     }
     return NULL;
 }
-#endif
 
-/* This traverses the DAG, picking one dep from each depset (
- * optionally creating fallbacks), and adding cycle breakers when
+static boolean
+nodeHasDep(DagNode *node, DagNode *depnode)
+{
+    int i;
+    Dependency *this;
+    EACH(node->deps, i) {
+	this = (Dependency *) ELEM(node->deps, i);
+	if (this->dep == depnode) {
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+/* After resolving dependencies so that there are no cycles, we will
+ * have determined which fallbacks are in play.  For those fallbacks
+ * on which we are dependent, set up the necessary endfallback
+ * dependencies.  
+ */
+static void
+activateEndFallbacks(volatile ResolverState *res_state)
+{
+    int i;
+    DagNode *node;
+    int j;
+    Dependency *dep;
+    DagNode *endfallback;
+    Dependency *newdep;
+    EACH(res_state->all_nodes, i) {
+	node = (DagNode *) ELEM(res_state->all_nodes, i);
+	if (IS_BUILDABLE(node)) {
+	    EACH(node->deps, j) {
+		dep = (Dependency *) ELEM(node->deps, j);
+		assert(dep->dep && (dep->dep->type == OBJ_DAGNODE),
+		       "Dependency must be to a DagNode");
+		if (dep->dep->build_type == FALLBACK_NODE) {
+		    endfallback = dep->dep->endfallback;
+		    assert(endfallback && (endfallback->type == OBJ_DAGNODE),
+			   "endfallback node must be to a DagNode");
+		    if (!IS_FORWARD_BUILDABLE(node)) {
+			/* Backward deps on fallbacks will exist for 2
+			 * reasons: 1 - they are the nodes that require
+			 * a fallback; 2 - they are a dependency of the
+			 * fallback but the dependency direction has
+			 * been inverted for the drop side of the DAG.
+			 * We only want the endfallback to have a copy
+			 * in case 1, so we have to be able to
+			 * distinguish the 2 cases.  We have case 2
+			 * if the node also has a dependency on our
+			 * endfallback node.
+			 */
+			if (nodeHasDep(node, endfallback)) {
+			    /* Do not duplicate the dep. */
+			    continue;
+			}
+		    }
+		    newdep = dependencyNew(node);
+		    myVectorPush(&(endfallback->deps), (Object *) newdep);
+		    vectorPush(res_state->activated_fallbacks, 
+			       (Object *) dep->dep);
+		    vectorPush(res_state->activated_fallbacks, 
+			       (Object *) endfallback);
+		}
+	    }
+	}
+    }
+}
+
+
+/* This traverses the DAG, picking one dep from each depset 
+ * (optionally creating fallbacks) and adding cycle breakers when
  * necessary.
  */
 static void
@@ -1443,11 +1468,32 @@ resolveNodes(volatile ResolverState *res_state)
     if (res_state->cycles) {
 //	dbgSexp(res_state->cycles);
 	if (!resolveCycles(res_state, 0)) {
-//	    describeCycles(res_state);
+	    showVectorDeps(res_state->all_nodes);
+	    describeCycles(res_state);
 	    RAISE(TSORT_ERROR,
 		  newstr("resolveNodes: unable to resolve cycles"));
 	}
 	freeCycles(res_state);
+    }
+    activateEndFallbacks(res_state);
+}
+
+/* Remove any fallbacks that are inactive. */
+static void
+deactivateInactiveFallbacks(volatile ResolverState *res_state)
+{
+    int i;
+    DagNode *node;
+
+    EACH(res_state->all_nodes, i) {
+	node = (DagNode *) ELEM(res_state->all_nodes, i);
+	if ((node->build_type == FALLBACK_NODE) ||
+	    (node->build_type == ENDFALLBACK_NODE)) 
+	{
+	    if (!vectorFind(res_state->activated_fallbacks, (Object *) node)) {
+		node->build_type = DEACTIVATED_NODE;
+	    }
+	}
     }
 }
 
@@ -1479,31 +1525,12 @@ freeDeps(Vector *nodes)
 static void
 initResolverState(volatile ResolverState *res_state, Document *doc)
 {
-    xmlXPathObject *obj;
-    xmlNodeSet *nodeset;
-
     res_state->all_nodes = NULL;
     res_state->by_fqn= NULL;
     res_state->by_pqn = NULL;
     res_state->dependency_sets = NULL;
-    res_state->both_directions = FALSE;
-
-    if (dereference(symbolGetValue("build")) &&
-	dereference(symbolGetValue("drop"))) {
-	res_state->both_directions = TRUE;
-    }
-    else {
-	if (obj = xpathEval(doc, xmlDocGetRootElement(doc->doc), 
-			    "//dbobject[@diff]")) 
-	{
-	    nodeset = obj->nodesetval;
-	    if (nodeset && nodeset->nodeNr) {
-		res_state->both_directions = TRUE;
-	    }
-	    xmlXPathFreeObject(obj);
-	}
-    }
     res_state->cycles = NULL;
+    res_state->activated_fallbacks = vectorNew(10);
 }
 
 /*
@@ -1521,17 +1548,20 @@ dagFromDoc(Document *doc)
 	vectorNew(resolver_state.all_nodes->elems * 2);
 
     BEGIN {
+	//dbgSexp(doc);
 	resolver_state.by_fqn = hashByFqn(resolver_state.all_nodes);
 	resolver_state.by_pqn = hashByPqn(resolver_state.all_nodes);
 	identifyDependencies(resolver_state.all_nodes, &resolver_state);
-	makeMirrors(resolver_state.all_nodes);
 
-	//showVectorDeps(nodes);
+	//fprintf(stderr, "-------111--------------\n\n");
+	//showVectorDeps(resolver_state.all_nodes);
 	//fprintf(stderr, "---------------------\n\n");
 
+	makeMirrors(resolver_state.all_nodes);
 	// TODO: promote rebuilds; remove deps involving an EXISTS_NODE
 	redirectDependencies(&resolver_state);
 	resolveNodes(&resolver_state);
+	deactivateInactiveFallbacks(&resolver_state);
 	optimiseDepsets(&resolver_state);
 	convertDependencies(resolver_state.all_nodes);
     }
@@ -1542,11 +1572,13 @@ dagFromDoc(Document *doc)
 	objectFree((Object *) resolver_state.all_nodes, TRUE);
 	objectFree((Object *) resolver_state.by_fqn, FALSE);
 	objectFree((Object *) resolver_state.by_pqn, TRUE);
+	objectFree((Object *) resolver_state.activated_fallbacks, FALSE);
     }
     END;
 
     objectFree((Object *) resolver_state.dependency_sets, TRUE);
     objectFree((Object *) resolver_state.by_fqn, FALSE);
     objectFree((Object *) resolver_state.by_pqn, TRUE);
+    objectFree((Object *) resolver_state.activated_fallbacks, FALSE);
     return resolver_state.all_nodes;
 }

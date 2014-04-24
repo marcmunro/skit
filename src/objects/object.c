@@ -471,7 +471,6 @@ dependencySetNew()
     DependencySet *new = skalloc(sizeof(DependencySet));
     new->type = OBJ_DEPENDENCYSET;
     new->deps = vectorNew(10);
-    new->is_temporary = FALSE;
     new->degrade_if_missing = FALSE;
     new->chosen_dep = NULL;
     new->mirror = NULL;
@@ -487,7 +486,6 @@ dependencyNew(DagNode *dep)
     new->dep = dep;
     new->depset = NULL;
     new->deactivated = FALSE;
-    new->immutable = FALSE;
     new->direction = UNKNOWN_DIRECTION;
     return new;
 }
@@ -619,7 +617,6 @@ nameForBuildType(DagNodeBuildType build_type)
     case ARRIVE_NODE: return "arrive";
     case DEPART_NODE: return "depart";
     case EXISTS_NODE: return "exists";
-    case INACTIVE_NODE: return "inactive";
     case REBUILD_NODE: return "rebuild";
     case DIFFPREP_NODE: return "diffprep";
     case DIFFCOMPLETE_NODE: return "diffcomplete";
@@ -627,6 +624,7 @@ nameForBuildType(DagNodeBuildType build_type)
     case BUILD_AND_DROP_NODE: return "build and drop";
     case FALLBACK_NODE: return "fallback";
     case ENDFALLBACK_NODE: return "endfallback";
+    case DEACTIVATED_NODE: return "deactivated";
     default: return "UNKNOWNBUILDTYPE";
     }
 }

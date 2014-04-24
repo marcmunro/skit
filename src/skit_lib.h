@@ -232,15 +232,37 @@ typedef enum {
     FALLBACK_NODE,
     ENDFALLBACK_NODE,
     EXISTS_NODE,
-    INACTIVE_NODE,	/* Used for fallback nodes that are inactive. */
     BUILD_AND_DROP_NODE,
     DIFFPREP_NODE,
     DIFFCOMPLETE_NODE,
     OPTIONAL_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
+    DEACTIVATED_NODE,
     UNSPECIFIED_NODE
 } DagNodeBuildType;
+
+#define NODEBIT(n) (1 << n)
+
+#define BUILDABLE_BUILD_TYPES \
+    (NODEBIT(BUILD_NODE) + \
+     NODEBIT(DROP_NODE) + \
+     NODEBIT(REBUILD_NODE) + \
+     NODEBIT(DIFF_NODE) + \
+     NODEBIT(DIFFPREP_NODE) + \
+     NODEBIT(DIFFCOMPLETE_NODE))
+
+#define FORWARD_BUILDABLE_BUILD_TYPES \
+    (NODEBIT(BUILD_NODE) + \
+     NODEBIT(REBUILD_NODE) + \
+     NODEBIT(DIFF_NODE) + \
+     NODEBIT(DIFFCOMPLETE_NODE))
+
+#define IS_BUILDABLE(node) \
+    (NODEBIT(node->build_type) & BUILDABLE_BUILD_TYPES)
+
+#define IS_FORWARD_BUILDABLE(node) \
+    (NODEBIT(node->build_type) & FORWARD_BUILDABLE_BUILD_TYPES)
 
 typedef enum {
     UNVISITED = 27,
@@ -279,8 +301,8 @@ struct Dependency;
 
 typedef struct DependencySet {
     ObjType                type;
-    boolean                is_temporary;
     boolean                degrade_if_missing;
+    DependencyApplication  direction;
     struct Dependency     *chosen_dep;
     struct DependencySet  *mirror;
     DagNode               *fallback;
@@ -293,7 +315,6 @@ typedef struct Dependency {
     DagNode               *dep;
     DependencySet         *depset;
     boolean                deactivated;
-    boolean                immutable;
     DependencyApplication  direction;
 } Dependency;
 
