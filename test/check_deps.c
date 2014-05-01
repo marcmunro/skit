@@ -142,10 +142,6 @@ findDagNode(Hash *hash, char *name)
 	objectFree((Object *) fqn, TRUE);
 	fqn = stringNew(name + buildPrefixLen(type));
 	node = (DagNode *) hashGet(hash, (Object *) fqn);
-	if (!node) {
-	    dbgSexp(node);
-	    dbgSexp(hash);
-	}
     }
 
     objectFree((Object *) fqn, TRUE);
@@ -212,15 +208,14 @@ requireDeps(char *testid, Hash *hash, char *from, ...)
 	dep_elems = (fromnode->deps)? fromnode->deps->elems: 0;
 	
 	if (dep_elems != count) {
-	    fail("Test %s.  Not all dependencies of %s accounted for (expecting %d got %d)", 
-		 testid, from, count, 
+	    fail("Test %s.  Not all dependencies of %s accounted for "
+		 "(expecting %d got %d)", testid, from, count, 
 		 (fromnode->deps)? fromnode->deps->elems: 0);
 	}
     }
 }
 
 
-#ifdef wibble
 static boolean
 chkDep(Hash *hash, char *from, char *to)
 {
@@ -237,6 +232,7 @@ chkDep(Hash *hash, char *from, char *to)
     
     return hasDependency(fnode, tnode);
 }
+
 
 static boolean
 hasDeps(char *testid, Hash *hash, char *from, ...)
@@ -271,7 +267,7 @@ hasDeps(char *testid, Hash *hash, char *from, ...)
     }
     return TRUE;
 }
-#endif
+
 
 static void
 requireOptionalDependencies(char *testid, Hash *hash, char *from, ...)
@@ -1307,6 +1303,212 @@ START_TEST(depset_dia_both)
 END_TEST
 
 
+START_TEST(fallback)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(642);
+	//showFree(5641);
+	eval("(setq build t)");
+	eval("(setq drop t)");
+	doc = getDoc("test/data/gensource_fallback.xml");
+	//doc = getDoc("tmp.xml");
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	requireDeps("F_1", nodes_by_fqn, "fallback.grant.x.superuser", 
+		    "drop.fallback.grant.x.superuser",
+		    "role.cluster.x", NULL);
+	requireDeps("F_2", nodes_by_fqn, "table.x.public.x", 
+		    "role.cluster.x","schema.x.public", 
+		    "tablespace.cluster.pg_default", 
+		    "fallback.grant.x.superuser", 
+		    "drop.table.x.public.x", NULL);
+	requireDeps("F_3", nodes_by_fqn, "grant.x.public.x.trigger:x:x",
+		    "table.x.public.x", "role.cluster.x",
+		    "fallback.grant.x.superuser", 
+		    "drop.grant.x.public.x.trigger:x:x", NULL);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+/* Conditional dependencies tests. */
+START_TEST(cond)
+{
+    Document *doc;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    initTemplatePath(".");
+    //showFree(4247);
+    //showMalloc(1390);
+
+    eval("(setq build t)");
+    eval("(setq drop t)");
+    BEGIN {
+	doc = getDoc("test/data/cond_test_with_deps.xml");
+	nodes = dagFromDoc(doc);
+
+	//showVectorDeps(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
+	requireNoDep("C_2", nodes_by_fqn, "table.regressdb.public.thing", 
+		     "grant.regressdb.public.usage:public:regress");
+
+	requireDep("C_1", nodes_by_fqn, "table.regressdb.public.thing", 
+		   "grant.regressdb.public.create:public:regress");
+	requireNoDep("C_2", nodes_by_fqn, "table.regressdb.public.thing", 
+		     "grant.regressdb.public.usage:public:regress");
+
+	requireDep("C_3", nodes_by_fqn, 
+		   "drop.grant.regressdb.public.usage:public:regress",
+		   "drop.table.regressdb.public.thing");
+	requireNoDep("C_4", nodes_by_fqn, 
+		     "drop.grant.regressdb.public.create:public:regress",
+		     "drop.table.regressdb.public.thing");
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
+START_TEST(cyclic_build)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(1584);
+	//showFree(1504);
+	eval("(setq build t)");
+	doc = getDoc("test/data/gensource2.xml");
+	//dbgSexp(doc);
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+	
+	if (hasDeps("CB_0", nodes_by_fqn, "view.skittest.public.v3", 
+		    "viewbase.skittest.public.v1",
+		    "schema.skittest.public", "role.cluster.marc",
+		    "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    // V3 --> VIEWBASE 1
+	    requireDeps("CB_1", nodes_by_fqn, "view.skittest.public.v1", 
+			"build.view.skittest.public.v2",
+			"schema.skittest.public", "role.cluster.marc",
+			"privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_2", nodes_by_fqn, "view.skittest.public.v2", 
+			"build.view.skittest.public.v3",
+			"schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_3", nodes_by_fqn, 
+			"build.viewbase.skittest.public.v1", 
+			"schema.skittest.public", "role.cluster.marc", NULL);
+	}
+	else if (hasDeps("CB_4", nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.viewbase.skittest.public.v3",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL)) 
+	{
+	    // V2 --> VIEWBASE 3
+	    requireDeps("CB_5", nodes_by_fqn, "view.skittest.public.v3", 
+			"build.view.skittest.public.v1",
+			"schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_6", nodes_by_fqn, "view.skittest.public.v1", 
+			"build.view.skittest.public.v2",
+			"schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_7", nodes_by_fqn, 
+			"build.viewbase.skittest.public.v3", 
+			"schema.skittest.public", "role.cluster.marc", NULL);
+	}
+	else if (hasDeps("CB_8", nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.viewbase.skittest.public.v2",
+			 "schema.skittest.public", "role.cluster.marc",
+			 "privilege.cluster.marc.superuser", NULL))
+	{
+	    // V1 --> VIEWBASE 2
+	    requireDeps("CB_9", nodes_by_fqn, "view.skittest.public.v2", 
+			"build.view.skittest.public.v3",
+			"schema.skittest.public", "role.cluster.marc",
+			"privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_A", nodes_by_fqn, "view.skittest.public.v3", 
+			"build.view.skittest.public.v1",
+			"schema.skittest.public", "role.cluster.marc",
+			"privilege.cluster.marc.superuser", NULL);
+	    requireDeps("CB_B", nodes_by_fqn, 
+			"build.viewbase.skittest.public.v2", 
+			"schema.skittest.public", "role.cluster.marc",
+			"privilege.cluster.marc.superuser", NULL);
+	}
+	else {
+	    fail("No cycle breaker found");
+	}
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	//dbgSexp(nodes);
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
 #ifdef wibble
 START_TEST(depset_diff)
 {
@@ -1367,105 +1569,6 @@ START_TEST(depset_diff)
 }
 END_TEST
 
-
-START_TEST(cyclic_build)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    BEGIN {
-	initTemplatePath(".");
-	//showMalloc(1584);
-	//showFree(1504);
-	eval("(setq build t)");
-	doc = getDoc("test/data/gensource2.xml");
-	//dbgSexp(doc);
-	nodes = dagFromDoc(doc);
-	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
-	
-	if (hasDeps("CB_0", nodes_by_fqn, "view.skittest.public.v3", 
-		    "viewbase.skittest.public.v1",
-		    "schema.skittest.public", "role.cluster.marc",
-		    "privilege.cluster.marc.superuser", NULL)) 
-	{
-	    // V3 --> VIEWBASE 1
-	    requireDeps("CB_1", nodes_by_fqn, "view.skittest.public.v1", 
-			"build.view.skittest.public.v2",
-			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_2", nodes_by_fqn, "view.skittest.public.v2", 
-			"build.view.skittest.public.v3",
-			"schema.skittest.public", "role.cluster.marc",
-			 "privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_3", nodes_by_fqn, 
-			"build.viewbase.skittest.public.v1", 
-			"schema.skittest.public", "role.cluster.marc", NULL);
-	}
-	else if (hasDeps("CB_4", nodes_by_fqn, "view.skittest.public.v2", 
-			 "build.viewbase.skittest.public.v3",
-			 "schema.skittest.public", "role.cluster.marc",
-			 "privilege.cluster.marc.superuser", NULL)) 
-	{
-	    // V2 --> VIEWBASE 3
-	    requireDeps("CB_5", nodes_by_fqn, "view.skittest.public.v3", 
-			"build.view.skittest.public.v1",
-			"schema.skittest.public", "role.cluster.marc",
-			 "privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_6", nodes_by_fqn, "view.skittest.public.v1", 
-			"build.view.skittest.public.v2",
-			"schema.skittest.public", "role.cluster.marc",
-			 "privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_7", nodes_by_fqn, 
-			"build.viewbase.skittest.public.v3", 
-			"schema.skittest.public", "role.cluster.marc", NULL);
-	}
-	else if (hasDeps("CB_8", nodes_by_fqn, "view.skittest.public.v2", 
-			 "build.viewbase.skittest.public.v3",
-			 "schema.skittest.public", "role.cluster.marc",
-			 "privilege.cluster.marc.superuser", NULL))
-	{
-	    // V1 --> VIEWBASE 2
-	    requireDeps("CB_9", nodes_by_fqn, "view.skittest.public.v2", 
-			"build.view.skittest.public.v3",
-			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_A", nodes_by_fqn, "view.skittest.public.v3", 
-			"build.view.skittest.public.v1",
-			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", NULL);
-	    requireDeps("CB_B", nodes_by_fqn, 
-			"build.viewbase.skittest.public.v2", 
-			"schema.skittest.public", "role.cluster.marc", NULL);
-	}
-	else {
-	    fail("No cycle breaker found");
-	}
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	//dbgSexp(nodes);
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("gensort fails with exception");
-    }
-}
-END_TEST
 
 START_TEST(cyclic_drop)
 {
@@ -1719,107 +1822,6 @@ START_TEST(cyclic_both)
 END_TEST
 
 
-START_TEST(fallback)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    BEGIN {
-	initTemplatePath(".");
-	//showMalloc(642);
-	//showFree(5641);
-	eval("(setq build t)");
-	eval("(setq drop t)");
-	doc = getDoc("test/data/gensource_fallback.xml");
-	//doc = getDoc("tmp.xml");
-	nodes = dagFromDoc(doc);
-	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
-
-	requireDeps("F_1", nodes_by_fqn, "fallback.grant.x.superuser", 
-		    "drop.fallback.grant.x.superuser",
-		    "role.cluster.x", NULL);
-	requireDeps("F_2", nodes_by_fqn, "table.x.public.x", 
-		    "role.cluster.x","schema.x.public", 
-		    "tablespace.cluster.pg_default", 
-		    "fallback.grant.x.superuser", 
-		    "drop.table.x.public.x", NULL);
-	requireDeps("F_3", nodes_by_fqn, "grant.x.public.x.trigger:x:x",
-		    "table.x.public.x", "role.cluster.x",
-		    "fallback.grant.x.superuser", 
-		    "drop.grant.x.public.x.trigger:x:x", NULL);
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("gensort fails with exception");
-    }
-}
-END_TEST
-
-/* Conditional dependencies tests. */
-START_TEST(cond)
-{
-    Document *doc;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    initTemplatePath(".");
-    //showFree(4247);
-    //showMalloc(1390);
-
-    eval("(setq build t)");
-    eval("(setq drop t)");
-    BEGIN {
-	doc = getDoc("test/data/cond_test_with_deps.xml");
-	nodes = dagFromDoc(doc);
-
-	//showVectorDeps(nodes);
-	nodes_by_fqn = dagnodeHash(nodes);
-
-	requireDep("C_1", nodes_by_fqn, "table.regressdb.public.thing", 
-		   "grant.regressdb.public.create:public:regress");
-	requireNoDep("C_2", nodes_by_fqn, "table.regressdb.public.thing", 
-		     "grant.regressdb.public.usage:public:regress");
-
-	requireDep("C_3", nodes_by_fqn, 
-		   "drop.grant.regressdb.public.usage:public:regress",
-		   "drop.table.regressdb.public.thing");
-	requireNoDep("C_4", nodes_by_fqn, 
-		     "drop.grant.regressdb.public.create:public:regress",
-		     "drop.table.regressdb.public.thing");
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 #ifdef wibble
 static Document *
 depdiffs(char *path1, char *path2)
@@ -1932,14 +1934,14 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dia_build);
     ADD_TEST(tc_core, depset_dia_drop);
     ADD_TEST(tc_core, depset_dia_both);
-    //ADD_TEST(tc_core, depset_diff);
-    //ADD_TEST(tc_core, cyclic_build);
+    ADD_TEST(tc_core, fallback);
+    ADD_TEST(tc_core, cond);
+    ADD_TEST(tc_core, cyclic_build);
     //ADD_TEST(tc_core, cyclic_drop);
     //ADD_TEST(tc_core, cyclic_both);
-    //ADD_TEST(tc_core, cond);
+    //ADD_TEST(tc_core, depset_diff);
     //ADD_TEST(tc_core, depdiffs_1);
 
-    //ADD_TEST(tc_core, fallback);
 				
     suite_add_tcase(s, tc_core);
 

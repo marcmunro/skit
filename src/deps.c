@@ -38,8 +38,8 @@
  *   As with other nodes, fallbacks and endfallbacks can have mirror
  *   nodes.  In the case of a rebuild operation, the fallback privilege
  *   will be needed on both the build side and the drop side of hte
- *   dependency graph.  Not though that eithe the fallback or its mirror
- *   can be used to satisfy a transient dependency.  Therefor
+ *   dependency graph.  Not though that either the fallback or its mirror
+ *   can be used to satisfy a transient dependency.  Therefore
  *   dependencies on fallbacks may often be satisfied by a dependency
  *   set consisting of both the fallback node and its mirror.
  *   A final wrinkle is that the privilege that the fallback is supposed
@@ -55,6 +55,22 @@
  *   fallbacks will be created and added to those dependency sets.
  */
 
+
+/* Rules for adding dependencies
+  I THINK THIS IS OUTDATED
+
+  Each item in deps is either a dependency-set or a dependency
+
+  - If the node is a rebuild or diffnode, we must create a mirror
+  - If the node is a drop node, deps are added only to the mirror
+  - Nodes will be added to either the node or the mirror depending
+    on direction conditionality.
+  - Dependencies on EXISTS_NODES will be deemed to be always satisfied
+    and will be dropped
+  - Ditto for dependency sets containing a dependency on an exists node.
+  - Promotion to rebuild node only happens to diff nodes and must be
+    done as a separate pass.
+ */
 
 #include <string.h>
 #include "skit_lib.h"
@@ -371,7 +387,7 @@ directionForDep(xmlNode *node)
         stringLowerInPlace(direction_str);
     }
     else {
-        if (isDependencies(node->parent)) {
+        if (isDepNode(node->parent)) {
             return directionForDep(node->parent);
         }
     }
@@ -611,19 +627,6 @@ makeFallbackNodes(String *fqn, xmlNode *depnode,
     return fallback;
 }
 
-/* Rules for adding dependencies
-  Each item in deps is either a dependency-set or a dependency
-
-  - If the node is a rebuild or diffnode, we must create a mirror
-  - If the node is a drop node, deps are added only to the mirror
-  - Nodes will be added to either the node or the mirror depending
-    on direction conditionality.
-  - Dependencies on EXISTS_NODES will be deemed to be always satisfied
-    and will be dropped
-  - Ditto for dependency sets containing a dependency on an exists node.
-  - Promotion to rebuild node only happens to diff nodes and must be
-    done as a separate pass.
- */
 static DagNode *
 getFallbackNode(xmlNode *depnode, volatile ResolverState *res_state)
 {
@@ -645,13 +648,23 @@ static void
 addDepsToVector(Vector *vec, Object *obj, DependencyApplication direction)
 {
     Dependency *dep;
+    Object *obj2;
     if (obj) {
 	if (obj->type == OBJ_DAGNODE) {
 	    dep = dependencyNew((DagNode *) obj);
 	    dep->direction = direction;
 	    vectorPush(vec, (Object *) dep);
 	}
+	else if (obj->type == OBJ_CONS) {
+	    obj2 = dereference(((Cons *) obj)->car);
+	    addDepsToVector(vec, obj2, direction);
+
+	    if (obj2 = ((Cons *) obj)->cdr) {
+		addDepsToVector(vec, obj2, direction);
+	    }
+	}
 	else {
+	    dbgSexp(obj);
 	    RAISE(TSORT_ERROR, newstr("addDepsToVector - not implemented."));
 	}
     }
@@ -1120,8 +1133,13 @@ convertDependencies(Vector *nodes)
 	    newvec = vectorNew(node->deps->elems);
 	    EACH(node->deps, j) {
 		dep = (Dependency *) ELEM(node->deps, j);
+		if (dep->type != OBJ_DEPENDENCY) {
+		    dbgSexp(node);
+		    dbgSexp(node->deps);
+		    dbgSexp(dep);
+		}
 		assert(dep->type == OBJ_DEPENDENCY,
-		       "Invalid_object type");
+		       "Invalid object type");
 
 		setPush(newvec, (Object *) dep->dep);
 		objectFree((Object *) dep, TRUE);
@@ -1329,15 +1347,130 @@ reactivateDep(Dependency *dep)
     dep->deactivated = FALSE;
 }
 
+static String *
+fqnForBreaker(DagNode *node, String *breaker_name)
+{
+    xmlChar *old_fqn = xmlGetProp(node->dbobject, (xmlChar *) "fqn");
+    char *fqn_suffix = strstr((char *) old_fqn, ".");
+    char *new_fqn = newstr("%s%s", breaker_name->value, fqn_suffix);
+    String *result = stringNewByRef(new_fqn);
+    xmlFree(old_fqn);
+    return result;
+}
+
+static DagNode *
+makeBreaker(DagNode *node, String *breaker_name)
+{
+    String *breaker_fqn = fqnForBreaker(node, breaker_name);
+    xmlNode *breaker_dbobject = xmlCopyNode(node->dbobject, 1);
+    DagNode *breaker;
+
+    xmlSetProp(breaker_dbobject, (xmlChar *) "type", 
+	       (xmlChar *) breaker_name->value);
+    xmlUnsetProp(breaker_dbobject, (xmlChar *) "cycle_breaker");
+    xmlSetProp(breaker_dbobject, (xmlChar *) "fqn", 
+	       (xmlChar *) breaker_fqn->value);
+
+    objectFree((Object *) breaker_fqn, TRUE);
+
+    breaker = dagNodeNew(breaker_dbobject, node->build_type);
+    breaker->parent = node->parent;
+
+    /* Make the breaker node a child of dbobject so that it will be
+     * freed later. */
+    (void) xmlAddChild(node->dbobject, breaker_dbobject);
+
+    return breaker;
+}
+
+static DagNode *
+getBreakerFor(Dependency *dep, volatile ResolverState *res_state)
+{
+    DagNode *node;
+    String *breaker_name;
+    DagNode *breaker = NULL;
+    node = dep->dep;
+    if (breaker_name = nodeAttribute(node->dbobject, "cycle_breaker")) {
+	breaker = makeBreaker(node, breaker_name);
+	objectFree((Object *) breaker_name, TRUE);
+    }
+    return breaker;
+}
+
+static void
+copyDepsForBreaker(DagNode *node, DagNode *breaker, DagNode *refered)
+{
+    int i;
+    Dependency *dep;
+    EACH(node->deps, i) {
+	dep = (Dependency *) ELEM(node->deps, i);
+	if (dep->dep != refered) {
+	    if (!dep->deactivated) {
+		dep = dependencyNew(dep->dep);
+		myVectorPush(&(breaker->deps), (Object *) dep);
+	    }
+	}
+    }
+}
+
+/* Make the referer node in a cycle refer to the cycle breaker rather
+ * than the original node.
+ */
+static void
+modifyRefererDeps(DagNode *referer, DagNode *node, DagNode *breaker)
+{
+    int i;
+    Dependency *dep;
+    EACH(referer->deps, i) {
+	dep = (Dependency *) ELEM(referer->deps, i);
+	if (dep->dep == node) {
+	    dep->dep = breaker;
+	}
+    }
+}
+
+/* TODO: ensure cycle_breakers get re-used when possible (ie if there
+ * are multiple cycles involving the same node). 
+ */
+static boolean
+resolveCycleWithBreaker(DagNode *breaker, volatile ResolverState *res_state,
+			int cycle, int element)
+{
+    Vector *this_cycle = (Vector *) ELEM(res_state->cycles, cycle);
+    Dependency *dep;
+    DagNode *node;
+    int referer_idx;
+    DagNode *referer;
+    int refered_idx;
+    DagNode *refered;
+
+    dep = (Dependency *) ELEM(this_cycle, element);
+    node = dep->dep;
+
+    referer_idx = (element == 0)? this_cycle->elems - 1: element - 1;
+    dep = (Dependency *) ELEM(this_cycle, referer_idx);
+    referer = dep->dep;
+
+    refered_idx = (element >= (this_cycle->elems - 1))? 0: element + 1;
+    dep = (Dependency *) ELEM(this_cycle, refered_idx);
+    refered = dep->dep;
+
+    copyDepsForBreaker(node, breaker, refered);
+    modifyRefererDeps(referer, node, breaker);
+    
+    vectorPush(res_state->all_nodes, (Object *) breaker);
+    return TRUE;
+}
+
 static boolean
 resolveCycles(volatile ResolverState *res_state, int cycle)
 {
     int i;
     Dependency *dep;
     Vector *this_cycle;
+    DagNode *breaker;
 
     if (cycle >= res_state->cycles->elems) {
-//	fprintf(stderr, "No cycle %d\n", cycle);
 	return TRUE;
     }
 
@@ -1345,25 +1478,20 @@ resolveCycles(volatile ResolverState *res_state, int cycle)
 	cycle++;
     }
     this_cycle = (Vector *) ELEM(res_state->cycles, cycle);
-//    fprintf(stderr, "\nCycle %d: ", cycle);
-//    dbgSexp(this_cycle);
     EACH(this_cycle, i) {
 	dep = (Dependency *) ELEM(this_cycle, i);
 	if (canDeactivate(dep)) {
-//	    fprintf(stderr, "\nIn cycle %d, trying dep %d (%s)\n", 
-//		    cycle, i, dep->dep->fqn->value);
 	    deactivateDep(dep);
 	    if (resolveCycles(res_state, cycle + 1)) {
-//		fprintf(stderr, "Success for cycle %d\n", cycle);
 		return TRUE;
 	    }
 	    reactivateDep(dep);
-//	    fprintf(stderr, "No joy at %d.%d\n", cycle, i);
 	}
-//	else {
-//	    fprintf(stderr, "\nIn cycle %d, skipping dep %d (%s)\n", 
-//		    cycle, i, dep->dep->fqn->value);
-//	}
+	if (breaker = getBreakerFor(dep, res_state)) {
+	    if (resolveCycleWithBreaker(breaker, res_state, cycle, i)) {
+		return TRUE;
+	    }
+	}
     }
 
     return FALSE;
@@ -1468,6 +1596,7 @@ resolveNodes(volatile ResolverState *res_state)
     if (res_state->cycles) {
 //	dbgSexp(res_state->cycles);
 	if (!resolveCycles(res_state, 0)) {
+	    fprintf(stderr, "\n-------------------------\n");
 	    showVectorDeps(res_state->all_nodes);
 	    describeCycles(res_state);
 	    RAISE(TSORT_ERROR,
