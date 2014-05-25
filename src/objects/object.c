@@ -457,8 +457,11 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->fqn = fqn;
     new->dbobject = node;
     new->build_type = build_type;
+    new->is_degraded = FALSE;
     new->deps = NULL;
     new->tmp_deps = NULL;
+    new->cur_dep = -1;
+    new->connection_set = NULL;
     new->parent = NULL;
     new->mirror_node = NULL;
     new->endfallback = NULL;
@@ -473,7 +476,6 @@ dependencySetNew()
     new->deps = vectorNew(10);
     new->degrade_if_missing = FALSE;
     new->chosen_dep = NULL;
-    new->mirror = NULL;
     new->fallback = NULL;
     return new;
 }
@@ -486,6 +488,7 @@ dependencyNew(DagNode *dep)
     new->dep = dep;
     new->depset = NULL;
     new->deactivated = FALSE;
+    new->dup = NULL;
     new->direction = UNKNOWN_DIRECTION;
     return new;
 }
@@ -619,7 +622,6 @@ nameForBuildType(DagNodeBuildType build_type)
     case EXISTS_NODE: return "exists";
     case REBUILD_NODE: return "rebuild";
     case DIFFPREP_NODE: return "diffprep";
-    case DIFFCOMPLETE_NODE: return "diffcomplete";
     case OPTIONAL_NODE: return "optional";
     case BUILD_AND_DROP_NODE: return "build and drop";
     case FALLBACK_NODE: return "fallback";

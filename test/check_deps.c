@@ -85,24 +85,24 @@ buildTypeFromName(char *name)
     int prefix_len;
 
     if (dotpos = strchr(name, '.')) {
-	prefix_len = dotpos - name;
-	if (strncmp(name, "build", prefix_len) == 0) {
+	prefix_len = dotpos - name + 1;
+	if (strncmp(name, "build.", prefix_len) == 0) {
 	    return BUILD_NODE;
 	}
-	if (strncmp(name, "drop", prefix_len) == 0) {
+	if (strncmp(name, "drop.", prefix_len) == 0) {
 	    return DROP_NODE;
 	}
-	if (strncmp(name, "fallback", prefix_len) == 0) {
+	if (strncmp(name, "fallback.", prefix_len) == 0) {
 	    return FALLBACK_NODE;
 	}
-	if (strncmp(name, "endfallback", prefix_len) == 0) {
+	if (strncmp(name, "endfallback.", prefix_len) == 0) {
 	    return ENDFALLBACK_NODE;
 	}
-	if (strncmp(name, "diffprep", prefix_len) == 0) {
-	    return DIFFPREP_NODE;
+	if (strncmp(name, "diff.", prefix_len) == 0) {
+	    return DIFF_NODE;
 	}
-	if (strncmp(name, "diffcomplete", prefix_len) == 0) {
-	    return DIFFCOMPLETE_NODE;
+	if (strncmp(name, "diffprep.", prefix_len) == 0) {
+	    return DIFFPREP_NODE;
 	}
     }
     return UNSPECIFIED_NODE;
@@ -116,8 +116,8 @@ buildPrefixLen(DagNodeBuildType type)
     case DROP_NODE: return 5;
     case FALLBACK_NODE: return 9;
     case ENDFALLBACK_NODE: return 12;
+    case DIFF_NODE: return 5;
     case DIFFPREP_NODE: return 9;
-    case DIFFCOMPLETE_NODE: return 13;
     case UNSPECIFIED_NODE: return 0;
     default:
 	RAISE(NOT_IMPLEMENTED_ERROR, 
@@ -171,8 +171,7 @@ static void
 requireDep(char *testid, Hash *hash, char *from, char *to)
 {
     if (!hasDep(hash, from, to)) {
-	
-fail("Test %s: no dep exists from %s to %s", testid, from, to);
+	fail("Test %s: no dep exists from %s to %s", testid, from, to);
     }
 }
 
@@ -1228,7 +1227,8 @@ START_TEST(depset_dia_both)
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
 
-    BEGIN {
+    
+BEGIN {
 	initTemplatePath(".");
 	eval("(setq dbver (version '8.4'))");
 	//showMalloc(901);
@@ -1432,6 +1432,8 @@ START_TEST(cyclic_build)
 		    "privilege.cluster.marc.superuser", NULL)) 
 	{
 	    // V3 --> VIEWBASE 1
+	    fprintf(stderr, "cyclic_build: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	    requireDeps("CB_1", nodes_by_fqn, "view.skittest.public.v1", 
 			"build.view.skittest.public.v2",
 			"schema.skittest.public", "role.cluster.marc",
@@ -1450,6 +1452,8 @@ START_TEST(cyclic_build)
 			 "privilege.cluster.marc.superuser", NULL)) 
 	{
 	    // V2 --> VIEWBASE 3
+	    fprintf(stderr, "cyclic_build: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	    requireDeps("CB_5", nodes_by_fqn, "view.skittest.public.v3", 
 			"build.view.skittest.public.v1",
 			"schema.skittest.public", "role.cluster.marc",
@@ -1509,67 +1513,6 @@ START_TEST(cyclic_build)
 END_TEST
 
 
-#ifdef wibble
-START_TEST(depset_diff)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    BEGIN {
-	initTemplatePath(".");
-	//showMalloc(23);
-	//showFree(724);
-
-	eval("(setq drop t)");
-	eval("(setq build t)");
-	/* This xmlfile is created from the diff regression test:
-	 * ./skit --diff regress/scratch/regressdb_dump3a.xml \
-	 *      regress/scratch/regressdb_dump3b.xml \
-	 *        >test/data/diffstream1.xml
-	 * Run "make prep" to refresh this file.
-	 */
-	doc = getDoc("test/data/diffstream1.xml");
-	nodes = dagFromDoc(doc);
-
-	//deps for tbs2 should be different in prep and complete stages
-	//showVectorDeps(nodes);
-	nodes_by_fqn = dagnodeHash(nodes);
-
-	requireDep("DD1", nodes_by_fqn, "diffcomplete.tablespace.cluster.tbs2", 
-		   "diffcomplete.role.cluster.keep");
-	requireNoDep("DD2", nodes_by_fqn, 
-		     "diffcomplete.tablespace.cluster.tbs2", 
-		   "diffcomplete.role.cluster.regress");
-	requireDep("DD3", nodes_by_fqn, "diffprep.role.cluster.regress",
-	           "diffprep.tablespace.cluster.tbs2");
-	requireNoDep("DD4", nodes_by_fqn, "diffprep.role.cluster.keep",
-	           "diffprep.tablespace.cluster.tbs2");
-	
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("gensort fails with exception");
-    }
-}
-END_TEST
-
-
 START_TEST(cyclic_drop)
 {
     Document *volatile doc = NULL;
@@ -1587,7 +1530,6 @@ START_TEST(cyclic_drop)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 
-
 	/* Note that viewbase and view positions in the sorted output
 	 * will have been inverted when compared to the build direction.
 	 * This is due to the action of swapBackwardBreakers.  The
@@ -1599,6 +1541,8 @@ START_TEST(cyclic_drop)
 		     "drop.view.skittest.public.v3", NULL))
 	{
 	    // V3 <-- VIEWBASE 1
+	    fprintf(stderr, "cyclic_drop: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	    requireDeps("CD_2", nodes_by_fqn, "drop.view.skittest.public.v3",
 			"drop.view.skittest.public.v2", NULL);
 	    requireDeps("CD_3", nodes_by_fqn, "drop.view.skittest.public.v2",
@@ -1615,26 +1559,27 @@ START_TEST(cyclic_drop)
 	else if (hasDeps("CD_5", nodes_by_fqn, "drop.view.skittest.public.v2",
 			 "drop.view.skittest.public.v1", NULL))
 	{
-	    fprintf(stderr, "BBBBBBBBBBBBB\n");
 	    // V1 <-- VIEWBASE 2
 	    requireDeps("CD_6", nodes_by_fqn, "drop.view.skittest.public.v1",
-			"drop.view.skittest.public.v3", NULL);
+			"drop.viewbase.skittest.public.v3", NULL);
+
 	    requireDeps("CD_7", nodes_by_fqn, "drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", NULL);
+			"drop.view.skittest.public.v2", NULL);
 
 	    requireDeps("CD_8", nodes_by_fqn, "drop.schema.skittest.public", 
 			"drop.view.skittest.public.v1",
 			"drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", 
+			"drop.viewbase.skittest.public.v3", 
 			"drop.grant.skittest.public.usage:public:regress", 
 			NULL);
 	}
 	else if (hasDeps("CD_9", nodes_by_fqn, "drop.view.skittest.public.v3",
 			 "drop.view.skittest.public.v2", NULL))
 	{
-	    fprintf(stderr, "CCCCCCCCCCCCCCCCCCCC\n");
 	    // V2 <-- VIEWBASE 3
+	    fprintf(stderr, "cyclic_drop: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	    requireDeps("CD_A", nodes_by_fqn, "drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v1", NULL);
 	    requireDeps("CD_B", nodes_by_fqn, "drop.view.skittest.public.v1",
@@ -1692,87 +1637,90 @@ START_TEST(cyclic_both)
 	doc = getDoc("test/data/gensource2.xml");
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
 
-	if (hasDeps("C2_1", nodes_by_fqn, "view.skittest.public.v3", 
+	//fprintf(stderr, "\n\n");
+	//showVectorDeps(nodes);
+	//fprintf(stderr, "\n\n");
+
+	if (hasDeps("C2_0", nodes_by_fqn, "view.skittest.public.v3", 
 		    "viewbase.skittest.public.v1",
 		    "schema.skittest.public", "role.cluster.marc",
 		    "privilege.cluster.marc.superuser", NULL)) 
 	{
 	    // V3 --> VIEWBASE 1
-	    requireDeps("C2_2", nodes_by_fqn, "view.skittest.public.v1", 
-			"view.skittest.public.v2",
+	    fprintf(stderr, "cyclic_both: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
+	    requireDeps("C2_1", nodes_by_fqn, "view.skittest.public.v1", 
+			"build.view.skittest.public.v2",
 			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", 
-			"drop.viewbase.skittest.public.v1", NULL);
-	    requireDeps("C2_3", nodes_by_fqn, "view.skittest.public.v2", 
-			"view.skittest.public.v3",
+			"privilege.cluster.marc.superuser", NULL);
+	    requireDeps("C2_2", nodes_by_fqn, "view.skittest.public.v2", 
+			"build.view.skittest.public.v3",
 			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", 
-			"drop.view.skittest.public.v2", NULL);
-	    requireDeps("C2_4", nodes_by_fqn, 
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("C2_3", nodes_by_fqn, 
 			"build.viewbase.skittest.public.v1", 
-			"schema.skittest.public", "role.cluster.marc", 
-			"drop.view.skittest.public.v1", NULL);
+			"schema.skittest.public", "role.cluster.marc", NULL);
 	}
-	else if (hasDeps("C2_5", nodes_by_fqn, "view.skittest.public.v2", 
-			 "viewbase.skittest.public.v3",
+	else if (hasDeps("C2_4", nodes_by_fqn, "view.skittest.public.v2", 
+			 "build.viewbase.skittest.public.v3",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", NULL)) 
 	{
-	    fail("FAIL 2"); // Fix the following test if this fail happens
 	    // V2 --> VIEWBASE 3
-	    requireDeps("C2_6", nodes_by_fqn, "view.skittest.public.v3", 
-			"view.skittest.public.v1",
+	    fprintf(stderr, "cyclic_both: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
+	    requireDeps("C2_5", nodes_by_fqn, "view.skittest.public.v3", 
+			"build.view.skittest.public.v1",
 			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", 
-			"drop.view.skittest.public.v3", NULL);
-	    requireDeps("C2_7", nodes_by_fqn, "view.skittest.public.v1", 
-			"view.skittest.public.v2",
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("C2_6", nodes_by_fqn, "view.skittest.public.v1", 
+			"build.view.skittest.public.v2",
 			"schema.skittest.public", "role.cluster.marc",
-			"privilege.cluster.marc.superuser", 
-			"drop.view.skittest.public.v1", NULL);
-	    requireDeps("C2_8", nodes_by_fqn, 
+			 "privilege.cluster.marc.superuser", NULL);
+	    requireDeps("C2_7", nodes_by_fqn, 
 			"build.viewbase.skittest.public.v3", 
-			"schema.skittest.public", "role.cluster.marc", 
-			"drop.viewbase.skittest.public.v3", NULL);
+			"schema.skittest.public", "role.cluster.marc", NULL);
 	}
-	else if (hasDeps("C2_9", nodes_by_fqn, "view.skittest.public.v2", 
-			 "viewbase.skittest.public.v3",
+	else if (hasDeps("C2_8", nodes_by_fqn, "view.skittest.public.v1", 
+			 "build.viewbase.skittest.public.v2",
 			 "schema.skittest.public", "role.cluster.marc",
 			 "privilege.cluster.marc.superuser", NULL))
 	{
-	    fail("FAIL 3");// Fix the following test if this fail happens
 	    // V1 --> VIEWBASE 2
-	    requireDeps("C2_A", nodes_by_fqn, "view.skittest.public.v2", 
-			"view.skittest.public.v3",
+	    requireDeps("C2_9", nodes_by_fqn, "view.skittest.public.v2", 
+			"build.view.skittest.public.v3",
 			"schema.skittest.public", "role.cluster.marc",
 			"privilege.cluster.marc.superuser", 
 			"drop.view.skittest.public.v2", NULL);
-	    requireDeps("C2_B", nodes_by_fqn, "view.skittest.public.v3", 
-			"view.skittest.public.v1",
+	    requireDeps("C2_A", nodes_by_fqn, "view.skittest.public.v3", 
+			"build.view.skittest.public.v1",
 			"schema.skittest.public", "role.cluster.marc",
 			"privilege.cluster.marc.superuser", 
-			"drop.view.skittest.public.v3", NULL);
-	    requireDeps("C2_C", nodes_by_fqn, 
+			"drop.view.skittest.public.v3",
+			"drop.viewbase.skittest.public.v3", NULL);
+	    requireDeps("C2_B", nodes_by_fqn, 
 			"build.viewbase.skittest.public.v2", 
-			"schema.skittest.public", "role.cluster.marc", 
-			"drop.viewbase.skittest.public.v2", NULL);
+			"schema.skittest.public", "role.cluster.marc",
+			"privilege.cluster.marc.superuser", 
+			"drop.view.skittest.public.v2", NULL);
 	}
 	else {
-	    fail("No cycle breaker found in build side");
+	    fail("No build side cycle breaker found");
 	}
 
-	if (hasDeps("C2_D", nodes_by_fqn, "drop.view.skittest.public.v2",
-		    "drop.viewbase.skittest.public.v1", NULL))
+	if (hasDeps("C2_1", nodes_by_fqn, "drop.view.skittest.public.v1",
+		     "drop.view.skittest.public.v3", NULL))
 	{
-	    // V2 --> VIEWBASE 1
-	    requireDeps("C2_E", nodes_by_fqn, "drop.view.skittest.public.v3",
+	    // V3 <-- VIEWBASE 1
+	    fprintf(stderr, "cyclic_both: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
+	    requireDeps("C2_a", nodes_by_fqn, "drop.view.skittest.public.v3",
 			"drop.view.skittest.public.v2", NULL);
-	    requireDeps("C2_F", nodes_by_fqn, "drop.view.skittest.public.v1",
-			"drop.view.skittest.public.v3", NULL);
+	    requireDeps("C2_b", nodes_by_fqn, "drop.view.skittest.public.v2",
+			"drop.viewbase.skittest.public.v1", NULL);
 
-	    requireDeps("C2_G", nodes_by_fqn, "drop.schema.skittest.public", 
+	    requireDeps("C2_c", nodes_by_fqn, "drop.schema.skittest.public", 
 			"drop.view.skittest.public.v1",
 			"drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v3",
@@ -1780,21 +1728,45 @@ START_TEST(cyclic_both)
 			"drop.grant.skittest.public.usage:public:regress", 
 			NULL);
 	}
-	else if (hasDeps("C2_H", nodes_by_fqn, 
-			 "drop.viewbase.skittest.public.v2",
+	else if (hasDeps("C2_d", nodes_by_fqn, "drop.view.skittest.public.v2",
 			 "drop.view.skittest.public.v1", NULL))
 	{
-	    fail("FAIL 2A");// Fix the following test if this fail happens
+	    // V1 <-- VIEWBASE 2
+	    requireDeps("C2_e", nodes_by_fqn, "drop.view.skittest.public.v1",
+			"drop.viewbase.skittest.public.v3", NULL);
+
+	    requireDeps("C2_f", nodes_by_fqn, "drop.view.skittest.public.v3",
+			"drop.view.skittest.public.v2", NULL);
+
+	    requireDeps("C2_g", nodes_by_fqn, "drop.schema.skittest.public", 
+			"drop.view.skittest.public.v1",
+			"drop.view.skittest.public.v2",
+			"drop.view.skittest.public.v3",
+			"drop.viewbase.skittest.public.v3", 
+			"drop.grant.skittest.public.usage:public:regress", 
+			NULL);
 	}
-	else if (hasDeps("C2_J", nodes_by_fqn, 
-			 "drop.viewbase.skittest.public.v3",
+	else if (hasDeps("C2_h", nodes_by_fqn, "drop.view.skittest.public.v3",
 			 "drop.view.skittest.public.v2", NULL))
 	{
-	    fail("FAIL 3A");// Fix the following test if this fail happens
+	    // V2 <-- VIEWBASE 3
+	    fprintf(stderr, "cyclic_both: "
+		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
+	    requireDeps("C2_j", nodes_by_fqn, "drop.view.skittest.public.v2",
+			"drop.view.skittest.public.v1", NULL);
+	    requireDeps("C2_k", nodes_by_fqn, "drop.view.skittest.public.v1",
+			"drop.viewbase.skittest.public.v3", NULL);
+
+	    requireDeps("C2_m", nodes_by_fqn, "drop.schema.skittest.public", 
+			"drop.view.skittest.public.v1",
+			"drop.view.skittest.public.v2",
+			"drop.view.skittest.public.v3",
+			"drop.viewbase.skittest.public.v3", 
+			"drop.grant.skittest.public.usage:public:regress", 
+			NULL);
 	}
 	else {
-	    // Fix the else if clauses above if this fail is reached.
-	    fail("No cycle breaker found in drop side");
+	    fail("No drop side cycle breaker found");
 	}
 
 
@@ -1821,8 +1793,116 @@ START_TEST(cyclic_both)
 }
 END_TEST
 
+START_TEST(cyclic_exception)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
 
-#ifdef wibble
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(727);
+	//showFree(724);
+
+	eval("(setq build t)");
+	eval("(setq drop t)");
+	doc = getDoc("test/data/gensource3.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	//nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN(TSORT_CYCLIC_DEPENDENCY) {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+START_TEST(depset_diff)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(23);
+	//showFree(724);
+
+	eval("(setq drop t)");
+	eval("(setq build t)");
+	/* This xmlfile is created from the diff regression test:
+	 * ./skit --diff regress/scratch/regressdb_dump3a.xml \
+	 *      regress/scratch/regressdb_dump3b.xml \
+	 *        >test/data/diffstream1.xml
+	 * Run "make prep" to refresh this file.
+	 */
+	doc = getDoc("test/data/diffstream1.xml");
+	nodes = dagFromDoc(doc);
+
+	//showVectorDeps(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
+
+	/* This is hardly an exhaustive set of deps, but it should
+	   suffice for now. */
+	requireDep("DD1", nodes_by_fqn, "diff.role.cluster.regress", 
+		   "diffprep.role.cluster.regress");
+	requireDep("DD2", nodes_by_fqn, 
+		     "diff.tablespace.cluster.tbs2", 
+		     "diffprep.tablespace.cluster.tbs2");
+	requireNoDep("DD3", nodes_by_fqn, "diffprep.role.cluster.regress",
+	           "diffprep.tablespace.cluster.tbs2");
+	requireNoDep("DD4", nodes_by_fqn, "diffprep.role.cluster.keep",
+	           "diffprep.tablespace.cluster.tbs2");
+	
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
 static Document *
 depdiffs(char *path1, char *path2)
 {
@@ -1844,34 +1924,32 @@ depdiffs(char *path1, char *path2)
     result = documentNew(docnode, NULL);
     return result;
 }
-#endif
 
-#ifdef wibble
+
+/* See comments in test/data/depdiffs_1a.sql */
 static void
 check_testcase_1(Hash *nodes_by_fqn)
 {
     requireDeps("D1_TC1_1", nodes_by_fqn, 
-		"diffcomplete.sequence.test_data.n1.s1", 
-		"diffcomplete.schema.test_data.n1",
-		"diffprep.sequence.test_data.n1.s1", NULL);
+		"diff.sequence.regressdb.n1.s1", 
+		"diffprep.sequence.regressdb.n1.s1", NULL);
     requireDeps("D1_TC1_2", nodes_by_fqn, 
-		"drop.sequence.test_data.n1.s1a", 
-		"drop.grant.sequence.test_data.n1.s1a.usage", 
-		"drop.grant.sequence.test_data.n1.s1a.update", 
-		"drop.grant.sequence.test_data.n1.s1a.select", 
+		"drop.sequence.regressdb.n1.s1a", 
+		"drop.grant.sequence.regressdb.n1.s1a.usage", 
+		"drop.grant.sequence.regressdb.n1.s1a.update", 
+		"drop.grant.sequence.regressdb.n1.s1a.select", 
 		NULL);
     requireDeps("D1_TC1_3", nodes_by_fqn, 
-		"build.sequence.test_data.n1.s1b", 
-		"diffcomplete.schema.test_data.n1", NULL);
+		"build.sequence.regressdb.n1.s1b", NULL);
 }
 
+/* See comments in test/data/depdiffs_1a.sql */
 static void
 check_testcase_2(Hash *nodes_by_fqn)
 {
     requireDeps("D1_TC1_2", nodes_by_fqn, 
-		"diffcomplete.sequence.test_data.n1.s1", 
-		"diffcomplete.schema.test_data.n1",
-		"diffprep.sequence.test_data.n1.s1", NULL);
+		"diff.sequence.regressdb.n1.s1", 
+		"diffprep.sequence.regressdb.n1.s1", NULL);
 }
 
 /* Dependency diff tests. */
@@ -1913,8 +1991,52 @@ START_TEST(depdiffs_1)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
-#endif
+
+
+START_TEST(deps_x)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq drop t)");
+
+	doc = getDoc("x");
+	readDocDbver(doc);
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_x fails with exception");
+    }
+}
+END_TEST
+
 
 Suite *
 deps_suite(void)
@@ -1922,6 +2044,7 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
+    ADD_TEST(tc_core, deps_x);
     ADD_TEST(tc_core, deps_simple_build);
     ADD_TEST(tc_core, deps_simple_drop);
     ADD_TEST(tc_core, deps_simple_rebuild);
@@ -1937,12 +2060,24 @@ deps_suite(void)
     ADD_TEST(tc_core, fallback);
     ADD_TEST(tc_core, cond);
     ADD_TEST(tc_core, cyclic_build);
-    //ADD_TEST(tc_core, cyclic_drop);
-    //ADD_TEST(tc_core, cyclic_both);
-    //ADD_TEST(tc_core, depset_diff);
-    //ADD_TEST(tc_core, depdiffs_1);
-
-				
+    ADD_TEST(tc_core, cyclic_drop);
+    ADD_TEST(tc_core, cyclic_both);
+    ADD_TEST(tc_core, cyclic_exception);
+    ADD_TEST(tc_core, depset_diff);
+    ADD_TEST(tc_core, depdiffs_1);
+    /* Add tests for:
+     *   degrade_if_missing
+     *   multiple cycles through one node (ie breaker re-use)
+     *   exists node dependencies being eliminated
+     *   rebuild promotion
+     *   diff node deps optimisations
+     *   fallback node optimisations:
+     *     if multiple fallbacks exist eliminate the lesser priv
+     *     if fallbacks on both sides of the dag, eliminate superfluous
+     *       endfallback->fallback in the middle.
+     *   any new functionality added from TODO
+     */
+     
     suite_add_tcase(s, tc_core);
 
     return s;

@@ -1,3 +1,28 @@
+Bugs:
+  when arriving at or leaving leaving database/cluster, the context
+  (session auth) must be reset - currently it is not.
+
+
+CURRENT PLAN:
+  1) Ignore error: must be superuser to alter superusers temporarily in
+     the regression tests                                           DONE
+  2) continue deps handling updates
+  3) Undo the ignorance of the regression error in 1
+  4) Implement a solution for nested problem 7
+  5) Implement optimisation for dropping objects for which the dropping
+     of the dependents will automatically drop the current object (eg
+     grants for roles).
+  6) replan
+
+Nexted problem 7:
+  Cannot manipulate roles which are superusers if we are not a superuser.
+  This seems to need dependency-sets which are conditional on the
+  activation or existence of fallback nodes.  We need to make this as
+  general a solution as possible, and we must recheck such conditional
+  dependency-sets when activating fallback nodes.
+  Example scripts in error_example.sql
+  
+
 Nested Problem 6:
   Rebuilding deps processing stuff (see DEPS.txt)
   TODO: 

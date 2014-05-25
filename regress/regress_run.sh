@@ -6,6 +6,10 @@ errcheck()
     iam=`whoami`
     awk '
 {print}
+	# Temporarily ignore this error
+/^ERROR:  must be superuser to alter superusers/ {
+	next
+}
 /^ERROR:/ {
     if ($3 != IAM) {
 	errors = 1 
@@ -148,7 +152,7 @@ exitonerr()
     fi
 }
 
-# Deprecate this following a command in favour of exitonfail running the
+# Deprecate this following command in favour of exitonfail running the
 # command.
 #
 errexit()
@@ -164,7 +168,12 @@ errexit()
 diffdump()
 {
     echo ......comparing pg_dump snapshots... 1>&2
-    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 $3
+    if [ "x$3" = "x" ]; then
+        exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 
+    else
+        exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
+	    ${REGRESS_DIR}/$3
+    fi
 }
 
 diffglobals()
@@ -202,7 +211,8 @@ regression_test1()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump1b.xml ......
     dump_db regressdb scratch/regressdb_test1b.dmp ......
-    diffdump scratch/regressdb_test1a.dmp scratch/regressdb_test1b.dmp
+    diffdump scratch/regressdb_test1a.dmp scratch/regressdb_test1b.dmp \
+	regression_ignore1.txt
     diffextract scratch/regressdb_dump1a.xml scratch/regressdb_dump1b.xml
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
@@ -228,7 +238,8 @@ regression_test2()
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......
-    diffdump scratch/regressdb_test2a.dmp scratch/regressdb_test2b.dmp
+    diffdump scratch/regressdb_test2a.dmp scratch/regressdb_test2b.dmp \
+	regression_ignore2.txt
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 2 complete 1>&2

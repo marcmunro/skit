@@ -171,23 +171,37 @@ check_build_order_or(Vector *results, ...)
     }
 }
 
+static void
+setq_build()
+{
+    Object *ignore;
+    char *tmp;
+    ignore = evalSexp(tmp = newstr("(setq build t)"));
+    objectFree(ignore, TRUE);
+    skfree(tmp);
+}
+
+static void
+setq_drop()
+{
+    Object *ignore;
+    char *tmp;
+    ignore = evalSexp(tmp = newstr("(setq drop t)"));
+    objectFree(ignore, TRUE);
+    skfree(tmp);
+}
+
 START_TEST(check_tsort)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 	//showMalloc(1522);
 	//showFree(140);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource1.xml");
 	results = tsort(doc);
@@ -253,17 +267,11 @@ START_TEST(check_tsort2)
 
     Document *doc;
     Vector *results;
-    Object *ignore;
-    char *tmp;
 
     initTemplatePath(".");
-    ignore = evalSexp(tmp = newstr("(setq build t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
+    setq_build();
+    setq_drop();
     //showMalloc(1104);
-    ignore = evalSexp(tmp = newstr("(setq drop t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
 
     doc = getDoc("test/data/gensource1.xml");
     results = tsort(doc);
@@ -315,20 +323,14 @@ START_TEST(navigation)
     Document *src_doc;
     Document *result_doc;
     Vector *sorted;
-    Object *ignore;
-    char *tmp;
     xmlNode *root;
     xmlDocPtr xmldoc;
     //showMalloc(7040);
     //trackMalloc(7040);
 
     initTemplatePath(".");
-    ignore = evalSexp(tmp = newstr("(setq build t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
-    //ignore = evalSexp(tmp = newstr("(setq drop t)"));
-    //objectFree(ignore, TRUE);
-    //skfree(tmp);
+    setq_build();
+    //setq_drop();
 
     src_doc = getDoc("test/data/gensource1.xml");
     sorted = tsort(src_doc);
@@ -357,18 +359,12 @@ START_TEST(navigation2)
     Document *src_doc;
     Document *result_doc;
     Vector *sorted;
-    Object *ignore;
-    char *tmp;
     xmlNode *root;
     xmlDocPtr xmldoc;
 
     initTemplatePath(".");
-    ignore = evalSexp(tmp = newstr("(setq build t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
-    ignore = evalSexp(tmp = newstr("(setq drop t)"));
-    objectFree(ignore, TRUE);
-    skfree(tmp);
+    setq_build();
+    setq_drop();
 
     src_doc = getDoc("test/data/gensource1.xml");
     sorted = tsort(src_doc);
@@ -394,24 +390,18 @@ START_TEST(check_cyclic_tsort)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 	//showMalloc(6795);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
 	//simple_sort = symbolNew("simple-sort");    
 	results = tsort(doc);
+	//dbgSexp(results);
 	//dbgSexp(doc);
-	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 	check_build_order(results, "('drop.database.skittest' "
@@ -425,30 +415,60 @@ START_TEST(check_cyclic_tsort)
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'build.viewbase.skittest.public.v2')",
-			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.view.skittest.public.v1')",
+			     "('drop.view.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
-			     "('drop.viewbase.skittest.public.v2' "
-			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.view.skittest.public.v1' "
+			     "'build.view.skittest.public.v1')",
 			     NULL);
 	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.view.skittest.public.v2')",
+			     "('drop.view.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.view.skittest.public.v2' "
+			     "'build.view.skittest.public.v2')",
+			     NULL);
+	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'build.viewbase.skittest.public.v3')",
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'build.view.skittest.public.v3')",
+			     "('drop.view.skittest.public.v3' "
+			     "'build.viewbase.skittest.public.v3')",
+			     "('drop.view.skittest.public.v3' "
+			     "'build.view.skittest.public.v3')",
+			     NULL);
+	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'drop.view.skittest.public.v1'"
+			     "'drop.view.skittest.public.v2'"
+			     "'drop.view.skittest.public.v3')",
 			     "('drop.viewbase.skittest.public.v1' "
+			     "'drop.view.skittest.public.v2'"
+			     "'drop.view.skittest.public.v3'"
 			     "'drop.view.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
+			     "'drop.view.skittest.public.v3'"
+			     "'drop.view.skittest.public.v1'"
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
-			     "'view.skittest.public.v1')",
+			     "'build.view.skittest.public.v3'"
+			     "'build.view.skittest.public.v2'"
+			     "'build.view.skittest.public.v1')",
 			     "('build.viewbase.skittest.public.v2' "
-			      "'view.skittest.public.v2')",
+			     "'build.view.skittest.public.v1'"
+			     "'build.view.skittest.public.v3'"
+			     "'build.view.skittest.public.v2')",
+			     "('build.viewbase.skittest.public.v3' "
+			     "'build.view.skittest.public.v2'"
+			     "'build.view.skittest.public.v1'"
+			     "'build.view.skittest.public.v3')",
 			     NULL);
-	check_build_order_or(results, 
-			     "('build.viewbase.skittest.public.v1' "
-			     "'view.skittest.public.v2')",
-			     "('build.viewbase.skittest.public.v2' "
-			     "'view.skittest.public.v1')",
-			      NULL);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -475,18 +495,12 @@ START_TEST(check_cyclic_tsort2)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 	//showMalloc(6795);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource2.xml");
 	results = tsort(doc);
@@ -504,30 +518,60 @@ START_TEST(check_cyclic_tsort2)
 			     "('drop.viewbase.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v1' "
-			     "'build.viewbase.skittest.public.v2')",
-			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.view.skittest.public.v1')",
+			     "('drop.view.skittest.public.v1' "
 			     "'build.viewbase.skittest.public.v1')",
-			     "('drop.viewbase.skittest.public.v2' "
-			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.view.skittest.public.v1' "
+			     "'build.view.skittest.public.v1')",
 			     NULL);
 	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.viewbase.skittest.public.v2' "
+			     "'build.view.skittest.public.v2')",
+			     "('drop.view.skittest.public.v2' "
+			     "'build.viewbase.skittest.public.v2')",
+			     "('drop.view.skittest.public.v2' "
+			     "'build.view.skittest.public.v2')",
+			     NULL);
+	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'build.viewbase.skittest.public.v3')",
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'build.view.skittest.public.v3')",
+			     "('drop.view.skittest.public.v3' "
+			     "'build.viewbase.skittest.public.v3')",
+			     "('drop.view.skittest.public.v3' "
+			     "'build.view.skittest.public.v3')",
+			     NULL);
+	check_build_order_or(results, 
+			     "('drop.viewbase.skittest.public.v3' "
+			     "'drop.view.skittest.public.v1'"
+			     "'drop.view.skittest.public.v2'"
+			     "'drop.view.skittest.public.v3')",
 			     "('drop.viewbase.skittest.public.v1' "
+			     "'drop.view.skittest.public.v2'"
+			     "'drop.view.skittest.public.v3'"
 			     "'drop.view.skittest.public.v1')",
 			     "('drop.viewbase.skittest.public.v2' "
+			     "'drop.view.skittest.public.v3'"
+			     "'drop.view.skittest.public.v1'"
 			     "'drop.view.skittest.public.v2')",
 			     NULL);
 	check_build_order_or(results, 
 			     "('build.viewbase.skittest.public.v1' "
-			     "'view.skittest.public.v1')",
+			     "'build.view.skittest.public.v3'"
+			     "'build.view.skittest.public.v2'"
+			     "'build.view.skittest.public.v1')",
 			     "('build.viewbase.skittest.public.v2' "
-			      "'view.skittest.public.v2')",
+			     "'build.view.skittest.public.v1'"
+			     "'build.view.skittest.public.v3'"
+			     "'build.view.skittest.public.v2')",
+			     "('build.viewbase.skittest.public.v3' "
+			     "'build.view.skittest.public.v2'"
+			     "'build.view.skittest.public.v1'"
+			     "'build.view.skittest.public.v3')",
 			     NULL);
-	check_build_order_or(results, 
-			     "('build.viewbase.skittest.public.v1' "
-			     "'view.skittest.public.v2')",
-			     "('build.viewbase.skittest.public.v2' "
-			     "'view.skittest.public.v1')",
-			      NULL);
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -554,18 +598,12 @@ START_TEST(check_cyclic_exception)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 	//showMalloc(439);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
 	
 	doc = getDoc("test/data/gensource3.xml");
 	//dbgSexp(doc);
@@ -679,21 +717,15 @@ START_TEST(depset)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(859);
+	//showMalloc(789);
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	//setq_drop();
 
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
@@ -723,8 +755,6 @@ START_TEST(depset2)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -732,12 +762,8 @@ START_TEST(depset2)
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset.xml");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
@@ -768,8 +794,6 @@ START_TEST(depset_rebuild)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -777,12 +801,8 @@ START_TEST(depset_rebuild)
 	//showFree(724);
 
 	doc = getDoc("test/data/gensource_depset_rebuild.xml");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
-	ignore = evalSexp(tmp = newstr("(setq drop t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
+	setq_drop();
 
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
@@ -812,8 +832,6 @@ START_TEST(fallback)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -821,9 +839,7 @@ START_TEST(fallback)
 	//showFree(724);
 
 	doc = getDoc("test/data/fallback.xml");
-	ignore = evalSexp(tmp = newstr("(setq build t)"));
-	objectFree(ignore, TRUE);
-	skfree(tmp);
+	setq_build();
 
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);

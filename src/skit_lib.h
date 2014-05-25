@@ -234,7 +234,6 @@ typedef enum {
     EXISTS_NODE,
     BUILD_AND_DROP_NODE,
     DIFFPREP_NODE,
-    DIFFCOMPLETE_NODE,
     OPTIONAL_NODE,
     ARRIVE_NODE,
     DEPART_NODE,
@@ -249,14 +248,12 @@ typedef enum {
      NODEBIT(DROP_NODE) + \
      NODEBIT(REBUILD_NODE) + \
      NODEBIT(DIFF_NODE) + \
-     NODEBIT(DIFFPREP_NODE) + \
-     NODEBIT(DIFFCOMPLETE_NODE))
+     NODEBIT(DIFFPREP_NODE))
 
 #define FORWARD_BUILDABLE_BUILD_TYPES \
     (NODEBIT(BUILD_NODE) + \
      NODEBIT(REBUILD_NODE) + \
-     NODEBIT(DIFF_NODE) + \
-     NODEBIT(DIFFCOMPLETE_NODE))
+     NODEBIT(DIFF_NODE))
 
 #define IS_BUILDABLE(node) \
     (NODEBIT(node->build_type) & BUILDABLE_BUILD_TYPES)
@@ -287,10 +284,12 @@ typedef struct DagNode {
     xmlNode            *dbobject;  // Reference only - not to be freed from here
     DagNodeStatus       status;
     DagNodeBuildType    build_type;
+    boolean             checked;      // for cycle detection
     boolean             is_degraded;
     Vector             *deps;         // use objectFree(obj, FALSE);
     Vector             *tmp_deps;     // use objectFree(obj, FALSE);
     int                 cur_dep;
+    Vector             *connection_set;
     struct DagNode     *parent;       // Reference only
     struct DagNode     *mirror_node;  // Reference only
     struct DagNode     *endfallback;  // Reference only
@@ -304,7 +303,6 @@ typedef struct DependencySet {
     boolean                degrade_if_missing;
     DependencyApplication  direction;
     struct Dependency     *chosen_dep;
-    struct DependencySet  *mirror;
     DagNode               *fallback;
     Vector                *deps;
 } DependencySet;
@@ -315,6 +313,7 @@ typedef struct Dependency {
     DagNode               *dep;
     DependencySet         *depset;
     boolean                deactivated;
+    struct Dependency     *dup;
     DependencyApplication  direction;
 } Dependency;
 

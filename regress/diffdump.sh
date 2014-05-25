@@ -52,12 +52,18 @@ eliminate_redundant_grants()
 }
 
 # If there are allowed_diffs, we eliminate them from the source files.
+# Lines in the ignore file may begin with "< ",  ">  " or ". ".  Lines
+# beginning with an angle bracket will be matched against the first or
+# second file passed to the diff.  This allows very specific comparisons
+# to be made.  More usefully, lines beginning with dot, will be tested
+# against both files.
+#
 eliminate_allowed()
 {
     if [ "x$1" = "x2" ]; then
-	grep '^>' $2
+	grep -v '^<' $2
     else
-	grep '^<' $2
+	grep -v '^>' $2
     fi | cut -c 3- >fgrep.tmp
     grep -v -f fgrep.tmp - 
     rm -f fgrep.tmp

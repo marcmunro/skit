@@ -1,0 +1,6 @@
+# Ignore in which direction the v1->v2 cycle is handled.
+. CREATE RULE "_RETURN"
+. CREATE TABLE v[12] (
+. CREATE VIEW v[12]
+.     SELECT v1.a, v1.b FROM v1
+.     SELECT v2.a, v2.b FROM v2
