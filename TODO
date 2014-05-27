@@ -193,7 +193,7 @@ generate:
 
 allow non-superusers to run skit
 
-shout option for ddl
+shout option for ddl (ie upper case)
 
 elininate ddl for the "other case" in ddl/grants.xsl commented around line 44
 

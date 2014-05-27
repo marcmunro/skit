@@ -40,7 +40,7 @@
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}" parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>
-	<xsl:if test="@tablespace">
+	<xsl:if test="@tablespace!='pg_default'">
 	  <dependency fqn="{concat('tablespace.', @tablespace)}"/>
 	</xsl:if>
 	<xsl:if test="@owner != 'public'">

@@ -46,8 +46,9 @@ autom4te.cache/
 # The symlink to the good/hacked check header
 /test/check.h
 
-# XML test data files for diffdeps
+# XML test data files for diffdeps, etc
 test/data/depdiffs_*.xml
+test/data/gendiffs_*.xml
 
 # The contents of the testdb subdirectory
 /testdb
@@ -59,7 +60,7 @@ test/data/depdiffs_*.xml
 /regress/scratch/
 
 # The contents of the regress/tmp subdirectory
-/regress/tmp/
+/regress/tmp
 
 # Suppression files
 valgrind/*suppressions

@@ -149,18 +149,18 @@ findDagNode(Hash *hash, char *name)
 }
 
 static boolean
-hasDep(Hash *hash, char *from, char *to)
+hasDep(Hash *hash, char *from, char *to, char *id)
 {
     DagNode *fnode = (DagNode *) findDagNode(hash, from);
     DagNode *tnode = (DagNode *) findDagNode(hash, to);
 
     if (!fnode) {
-	fail("Cannot find source node %s ", from);
+	fail("Cannot find (in %s) source node %s ", id, from);
 	return FALSE;
     }
 
     if (!tnode) {
-	fail("Cannot find dependency %s ", to);
+	fail("Cannot find (in %s) dependency %s ", id, to);
 	return FALSE;
     }
     
@@ -170,7 +170,7 @@ hasDep(Hash *hash, char *from, char *to)
 static void
 requireDep(char *testid, Hash *hash, char *from, char *to)
 {
-    if (!hasDep(hash, from, to)) {
+    if (!hasDep(hash, from, to, testid)) {
 	fail("Test %s: no dep exists from %s to %s", testid, from, to);
     }
 }
@@ -178,7 +178,7 @@ requireDep(char *testid, Hash *hash, char *from, char *to)
 static void
 requireNoDep(char *testid, Hash *hash, char *from, char *to)
 {
-    if (hasDep(hash, from, to)) {
+    if (hasDep(hash, from, to, testid)) {
         fail("Test %s: unwanted dep exists from %s to %s", testid, from, to);
     }
 }
@@ -344,6 +344,51 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
     fail("Test %s: no optional dependents found in %s", 
 	 testid, tonode->fqn->value);
 }
+
+
+START_TEST(deps_x)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq drop t)");
+
+	doc = getDoc("x");
+	readDocDbver(doc);
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_x fails with exception");
+    }
+}
+END_TEST
 
 
 /* Simplest possible dependency test.  All objects being built,
@@ -1904,7 +1949,7 @@ END_TEST
 
 
 static Document *
-depdiffs(char *path1, char *path2)
+creatediffs(char *path1, char *path2)
 {
     Document *indoc;
     String *diffrules = stringNew("diffrules.xml");
@@ -1928,26 +1973,26 @@ depdiffs(char *path1, char *path2)
 
 /* See comments in test/data/depdiffs_1a.sql */
 static void
-check_testcase_1(Hash *nodes_by_fqn)
+dd1_testcase_1(Hash *nodes_by_fqn)
 {
-    requireDeps("D1_TC1_1", nodes_by_fqn, 
+    requireDeps("DD_TC1_1", nodes_by_fqn, 
 		"diff.sequence.regressdb.n1.s1", 
 		"diffprep.sequence.regressdb.n1.s1", NULL);
-    requireDeps("D1_TC1_2", nodes_by_fqn, 
+    requireDeps("DD_TC1_2", nodes_by_fqn, 
 		"drop.sequence.regressdb.n1.s1a", 
 		"drop.grant.sequence.regressdb.n1.s1a.usage", 
 		"drop.grant.sequence.regressdb.n1.s1a.update", 
 		"drop.grant.sequence.regressdb.n1.s1a.select", 
 		NULL);
-    requireDeps("D1_TC1_3", nodes_by_fqn, 
+    requireDeps("DD_TC1_3", nodes_by_fqn, 
 		"build.sequence.regressdb.n1.s1b", NULL);
 }
 
 /* See comments in test/data/depdiffs_1a.sql */
 static void
-check_testcase_2(Hash *nodes_by_fqn)
+dd1_testcase_2(Hash *nodes_by_fqn)
 {
-    requireDeps("D1_TC1_2", nodes_by_fqn, 
+    requireDeps("DD_TC1_2", nodes_by_fqn, 
 		"diff.sequence.regressdb.n1.s1", 
 		"diffprep.sequence.regressdb.n1.s1", NULL);
 }
@@ -1960,21 +2005,21 @@ START_TEST(depdiffs_1)
     Hash *volatile nodes_by_fqn = NULL;
 
     initTemplatePath(".");
-    diffs = depdiffs("test/data/depdiffs_1a.xml",
-		     "test/data/depdiffs_1b.xml");
+    diffs = creatediffs("test/data/depdiffs_1a.xml",
+			"test/data/depdiffs_1b.xml");
 
     //dbgSexp(diffs);
 
     BEGIN {
 	nodes = dagFromDoc(diffs);
 	nodes_by_fqn = dagnodeHash(nodes);
-	fprintf(stderr, "\n============FINAL==============\n");
-	showVectorDeps(nodes);
+	//fprintf(stderr, "\n============FINAL==============\n");
+	//showVectorDeps(nodes);
 
 	/* See comments in test/data/depdiffs_1a.sql for a description
 	   of each test case. */
-	check_testcase_1(nodes_by_fqn);
-	check_testcase_2(nodes_by_fqn);
+	dd1_testcase_1(nodes_by_fqn);
+	dd1_testcase_2(nodes_by_fqn);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -1993,47 +2038,48 @@ START_TEST(depdiffs_1)
 END_TEST
 
 
-START_TEST(deps_x)
+START_TEST(general_diffs)
 {
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
+    Document *volatile diffs = NULL;
     Vector *volatile nodes = NULL;
     Hash *volatile nodes_by_fqn = NULL;
 
+    initTemplatePath(".");
+    diffs = creatediffs("test/data/gendiffs_1a.xml",
+			"test/data/gendiffs_1b.xml");
+
+    //dbgSexp(diffs);
+
     BEGIN {
-	initTemplatePath(".");
-	//showMalloc(839);
-	//showFree(724);
-
-	eval("(setq drop t)");
-
-	doc = getDoc("x");
-	readDocDbver(doc);
-	nodes = dagFromDoc(doc);
-	//dbgSexp(nodes);
-
-	nodes_by_fqn = dagnodeHash(nodes);
+	nodes = dagFromDoc(diffs);
 	//showVectorDeps(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
+	requireDep("GD_1a", nodes_by_fqn, 
+		   "build.function.regressdb.mysum(pg_catalog.int4)",
+		   "drop.function.regressdb.mysum(pg_catalog.int4)");
+	requireDep("GD_1b", nodes_by_fqn, 
+		   "build.function.regressdb.mysum(pg_catalog.int4)",
+		    "build.function.regressdb.public"
+		   ".addnint4(pg_catalog.int4,pg_catalog.int4)");
+	requireDep("GD_2", nodes_by_fqn, 
+		   "drop.function.regressdb.public"
+		   ".addint4(pg_catalog.int4,pg_catalog.int4)",
+		   "drop.function.regressdb.mysum(pg_catalog.int4)");
 
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
 	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
 	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
+    }
+    FINALLY {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) diffs, TRUE);
     }
     END;
 
     FREEMEMWITHCHECK;
-    if (failed) {
-	fail("deps_x fails with exception");
-    }
 }
 END_TEST
 
@@ -2065,6 +2111,7 @@ deps_suite(void)
     ADD_TEST(tc_core, cyclic_exception);
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, depdiffs_1);
+    ADD_TEST(tc_core, general_diffs);
     /* Add tests for:
      *   degrade_if_missing
      *   multiple cycles through one node (ie breaker re-use)

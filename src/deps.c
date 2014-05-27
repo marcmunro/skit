@@ -839,31 +839,32 @@ makeMirrors(Vector *nodes)
 }
 
 typedef enum {
-    RETAIN, INVERT, DUPANDINVERT, 
-    DSFALLBACK, BOTHFALLBACK, IGNORE, FB2REBUILD, ERROR
+    RETAIN, INVERT, MIRROR, DUPANDMIRROR, 
+    DSFALLBACK, BOTHFALLBACK, IGNORE, FB2REBUILD,
+    REBUILD2DROP, ERROR
 } DepTransform;
 
 static DepTransform transform_for_build_types
     [EXISTS_NODE][EXISTS_NODE] = 
 {
     /* BUILD */ 
-    {RETAIN, INVERT, ERROR,         /* BUILD, DROP  REBUILD, */
+    {RETAIN, INVERT, RETAIN,         /* BUILD, DROP  REBUILD, */
      IGNORE, RETAIN, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
     /* DROP */ 
     {ERROR, INVERT, ERROR,         /* BUILD, DROP  REBUILD, */
      IGNORE, DSFALLBACK, ERROR},    /* DIFF, FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
-    {ERROR, RETAIN, DUPANDINVERT,  /* BUILD, DROP  REBUILD, */
-     ERROR, BOTHFALLBACK, ERROR},  /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, REBUILD2DROP, DUPANDMIRROR,  /* BUILD, DROP  REBUILD, */
+     IGNORE, BOTHFALLBACK, ERROR},  /* DIFF, FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {ERROR, IGNORE, ERROR,          /* BUILD, DROP  REBUILD, */
+    {RETAIN, MIRROR, DUPANDMIRROR,          /* BUILD, DROP  REBUILD, */
      IGNORE, BOTHFALLBACK, ERROR},         /* DIFF, FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
     {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
-     ERROR, ERROR, RETAIN},        /* DIFF, FALLBACK, ENDFALLBACK */
+     IGNORE, ERROR, RETAIN},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
     {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
-     ERROR, RETAIN, ERROR}         /* DIFF, FALLBACK, ENDFALLBACK */
+     IGNORE, RETAIN, ERROR}         /* DIFF, FALLBACK, ENDFALLBACK */
 };
 
 /* Notes:
@@ -896,6 +897,17 @@ transformForDep(DagNode *node, Dependency *dep)
 	transform = 
 	  transform_for_build_types[node->build_type][depnode->build_type];
 
+	if (transform == REBUILD2DROP) {
+	    if (dep->dep == node->mirror_node) {
+		/* This is a dep from the build element of a rebuild
+		 * node to the drop element of the same node.
+		 */
+		transform = RETAIN;
+	    }
+	    else {
+		transform = MIRROR;
+	    }
+	}
 	if (transform == ERROR) {
 	    fprintf(stderr, "\n--error--\n");
 	    dbgSexp(node);
@@ -1151,7 +1163,10 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
 	case INVERT:
 	    used = invertNodeDep(node, dep, FALSE, res_state);
 	    break;
-	case DUPANDINVERT:
+	case MIRROR:
+	    used = mirrorNodeDep(node, dep, FALSE, res_state);
+	    break;
+	case DUPANDMIRROR:
 	    used = retainNodeDep(node, dep);
 	    used = mirrorNodeDep(node, dep, used, res_state);
 	    break;
