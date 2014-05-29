@@ -2084,6 +2084,41 @@ START_TEST(general_diffs)
 END_TEST
 
 
+START_TEST(rt3)
+{
+    Document *volatile diffs = NULL;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    initTemplatePath(".");
+    diffs = creatediffs("regress/scratch/regressdb_dump3a.xml",
+			"regress/scratch/regressdb_dump3b.xml");
+
+    dbgSexp(diffs);
+
+    BEGIN {
+	nodes = dagFromDoc(diffs);
+	//showVectorDeps(nodes);
+	nodes_by_fqn = dagnodeHash(nodes);
+
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    FINALLY {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) diffs, TRUE);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+
+
 Suite *
 deps_suite(void)
 {
@@ -2112,6 +2147,8 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, depdiffs_1);
     ADD_TEST(tc_core, general_diffs);
+    ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */
+
     /* Add tests for:
      *   degrade_if_missing
      *   multiple cycles through one node (ie breaker re-use)

@@ -114,7 +114,7 @@
 
   <!-- We do not use the default dbobject handling as the commentdiff
        template needs to take a parameter in this case. -->
-  <xsl:template match="dbobject[@action='diffcomplete']/operator">
+  <xsl:template match="dbobject[@action='diff']/operator">
     <print conditional="yes">
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>

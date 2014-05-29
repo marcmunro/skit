@@ -88,7 +88,7 @@
     </xsl:if>
   </xsl:template>
 
-  <xsl:template match="operator_family" mode="diffcomplete">
+  <xsl:template match="operator_family" mode="diff">
     <xsl:if test="../element">
       <do-print/>
       <xsl:text>&#x0A;</xsl:text>

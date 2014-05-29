@@ -50,7 +50,7 @@
     </print>
   </xsl:template>
 
-  <xsl:template match="database" mode="diffcomplete">
+  <xsl:template match="database" mode="diff">
     <xsl:if test="../attribute">
       <xsl:text>&#x0A;</xsl:text>
     </xsl:if>

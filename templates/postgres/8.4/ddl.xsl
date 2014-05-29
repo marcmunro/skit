@@ -21,7 +21,7 @@
        apply-templates - text nodes must be copied explicitly as and
        when needed.  -->
   <xsl:template match="text()"/>
-  <xsl:template match="text()" mode="diffcomplete"/>
+  <xsl:template match="text()" mode="diff"/>
   <xsl:template match="text()" mode="diffprep"/>
   <xsl:template match="text()" mode="build"/>
   <xsl:template match="text()" mode="drop"/>
@@ -151,12 +151,12 @@
 
   <xsl:template name="dbobject">
     <xsl:element name="print">
-      <!-- diffprep and diffcomplete actions may not actually result in
+      <!-- diffprep and diff actions may not actually result in
            code being created.  Such printable sections are therefor
 	   made conditional.  To enable printing of such conditional
 	   print nodes, a <do-print/> element should be added.  This
 	   conditionality is handled by navigation.xsl -->
-      <xsl:if test="(../@action = 'diffcomplete') or 
+      <xsl:if test="(../@action = 'diff') or 
 		    (../@action = 'diffprep')">
 	<xsl:attribute name="conditional">yes</xsl:attribute>
       </xsl:if>
@@ -174,8 +174,8 @@
 	<xsl:when test="../@action='diffprep'">
 	  <xsl:apply-templates select="." mode="diffprep"/>
 	</xsl:when>
-	<xsl:when test="../@action='diffcomplete'">
-	  <xsl:apply-templates select="." mode="diffcomplete"/>
+	<xsl:when test="../@action='diff'">
+	  <xsl:apply-templates select="." mode="diff"/>
 	  <xsl:call-template name="commentdiff"/>
 	</xsl:when>
       </xsl:choose>

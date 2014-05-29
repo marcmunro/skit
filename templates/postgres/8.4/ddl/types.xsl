@@ -132,7 +132,7 @@
     </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="type" mode="diffcomplete">
+  <xsl:template match="type" mode="diff">
     <!-- The only possible diff is that of a column comment -->
     <xsl:for-each select="../element/element[@type='comment']">
       <do-print/>

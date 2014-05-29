@@ -112,7 +112,7 @@
     </xsl:if>
   </xsl:template>
 
-  <xsl:template match="function" mode="diffcomplete">
+  <xsl:template match="function" mode="diff">
     <do-print/>
     <xsl:variable name="action">
       <xsl:choose>

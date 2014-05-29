@@ -866,6 +866,72 @@ START_TEST(fallback)
 END_TEST
 
 
+static Document *
+creatediffs(char *path1, char *path2)
+{
+    Document *indoc;
+    String *diffrules = stringNew("diffrules.xml");
+    xmlNode *diffs_root;
+    xmlDocPtr docnode; 
+    Document *result;
+
+    indoc = getDoc(path1);
+    docStackPush(indoc);
+    indoc = getDoc(path2);
+    docStackPush(indoc);
+    diffs_root = doDiff(diffrules, FALSE);
+    objectFree((Object *) diffrules, TRUE);
+
+    docnode = xmlNewDoc((xmlChar *) "1.0");
+    xmlDocSetRootElement(docnode, diffs_root);
+    result = documentNew(docnode, NULL);
+    return result;
+}
+
+
+START_TEST(rt3)
+{
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
+    boolean failed = FALSE;
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(531);
+	//showFree(724);
+
+	doc = creatediffs("regress/scratch/regressdb_dump3a.xml",
+			  "regress/scratch/regressdb_dump3b.xml");
+
+	setq_build();
+	setq_drop();
+
+	results = tsort(doc);
+	printSexp(stderr, "RESULTS: ", (Object *) results);
+
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("tsort fails with exception");
+    }
+}
+END_TEST
+
+
+
+
 Suite *
 tsort_suite(void)
 {
@@ -889,6 +955,7 @@ tsort_suite(void)
     ADD_TEST(tc_core, depset2);
     ADD_TEST(tc_core, depset_rebuild);
     ADD_TEST(tc_core, fallback);
+    ADD_TEST(tc_core, rt3);
 				
     suite_add_tcase(s, tc_core);
 

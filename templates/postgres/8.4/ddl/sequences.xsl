@@ -36,7 +36,7 @@
     </xsl:if>
   </xsl:template>
 
-  <xsl:template match="sequence" mode="diffcomplete">
+  <xsl:template match="sequence" mode="diff">
     <xsl:if test="../attribute[@name!='owner'] or ../element">
       <do-print/>
       <xsl:text>&#x0A;</xsl:text>

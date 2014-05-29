@@ -56,7 +56,7 @@
       </xsl:if>
     </xsl:if>
 
-    <xsl:if test="../@action='diffcomplete'">
+    <xsl:if test="../@action='diff'">
       <print>
 	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="commentdiff"/>

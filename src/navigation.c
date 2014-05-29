@@ -342,6 +342,22 @@ navigationToNode(DagNode *start, DagNode *target)
     return results;
 }
 
+static boolean
+nodesMatch(Node *node1, Node *node2)
+{
+    String *node1_fqn;
+    String *node2_fqn;
+    boolean result = FALSE;
+    if (node1 && node2) {
+	node1_fqn = nodeAttribute(node1->node, "fqn"); 
+	node2_fqn = nodeAttribute(node2->node, "fqn");
+	result = streq(node1_fqn->value, node2_fqn->value);
+	objectFree((Object *) node1_fqn, TRUE);
+	objectFree((Object *) node2_fqn, TRUE);
+    }
+    return result;
+}
+
 /* Add departure navigation nodes to the departures vector. */
 static void
 departFrom(Node *nav_from, Node *ancestor, Vector *departures)
@@ -359,9 +375,7 @@ departFrom(Node *nav_from, Node *ancestor, Vector *departures)
     else {
 	this_node = nav_from;
     }
-    while (this_node != ancestor) {
-	assert(this_node, "departFrom: something wrong with ancestry!");
-
+    while (this_node && !nodesMatch(this_node, ancestor)) {
 	/* Add a departure from this into our departures vector. */
 	new = xmlCopyNode(this_node->node, 2);
 	nav_node = nodeNew(new);
@@ -381,9 +395,7 @@ arriveAt(Node *nav_to, Node *ancestor, Vector *arrivals)
     Node *nav_node;
 
     this_node = nav_to->parent;
-    while (this_node != ancestor) {
-	assert(this_node, "arriveAt: something wrong with ancestry!");
-
+    while (this_node && !nodesMatch(this_node, ancestor)) {
 	/* Add a departure from this into our departures vector. */
 	new = xmlCopyNode(this_node->node, 2);
 	nav_node = nodeNew(new);
@@ -404,8 +416,22 @@ ancestryStack(Node *node)
     return result;
 }
 
+static Node *
+findMatchingNodeInStack(Node *node, Vector *stack)
+{
+    Node *this;
+    int i;
+    for (i = stack->elems - 1; i >= 0; i--) {
+	this = (Node *) ELEM(stack, i);
+	if (nodesMatch(node, this)) {
+	    return this;
+	}
+    }
+    return NULL;
+}
+
 static Node*
-commonAncestorNew(Node *nav_from, Node *nav_to)
+commonAncestor(Node *nav_from, Node *nav_to)
 {
     Node *result = NULL;
     Vector *from_stack;
@@ -416,11 +442,10 @@ commonAncestorNew(Node *nav_from, Node *nav_to)
 	to_stack = ancestryStack(nav_to);
 	
 	while (ancestor = (Node *) vectorPop(from_stack)) {
-	    if (ancestor != (Node *) vectorPop(to_stack)) {
+	    if (findMatchingNodeInStack(ancestor, to_stack)) {
+		result = ancestor;
 		break;
 	    }
-	    /* This is a common ancestor, so it might be the result. */
-	    result = ancestor;
 	}
 
 	objectFree((Object *) from_stack, FALSE);
@@ -436,12 +461,12 @@ getNodeNavigation(
     Vector *arrivals,
     Vector *departures)
 {
-    Node *common_ancestor = commonAncestorNew(nav_from, nav_to);
-    if (nav_from && (nav_from != common_ancestor)) {
+    Node *common_ancestor = commonAncestor(nav_from, nav_to);
+    if (nav_from && !nodesMatch(nav_from, common_ancestor)) {
 	departFrom(nav_from, common_ancestor, departures);
     }
 
-    if (nav_to && (nav_to != common_ancestor)) {
+    if (nav_to && !nodesMatch(nav_to, common_ancestor)) {
 	arriveAt(nav_to, common_ancestor, arrivals);
     }
 }
@@ -621,6 +646,19 @@ addNavigationToDoc(xmlNode *parent_node)
 	     * navigation. */
 	    node_from = node_to;
 	    node_to = this;
+
+	    if (node_from) {
+		char *tmp = nodestr(node_from->node);
+		if (streq(tmp, "<dbobject type=\"role\" name=\"lose\" "
+			  "qname=\"lose\" fqn=\"role.lose\" "
+			  "parent=\"database.regressdb\" diff=\"gone\" "
+			  "action=\"drop\">")) 
+		{
+		    dbgSexp(node_from);
+		    dbgSexp(node_to);
+		}
+		skfree(tmp);
+	    }
 	    doAddNavigation(parent_node, node_from, node_to);
 	}
     }

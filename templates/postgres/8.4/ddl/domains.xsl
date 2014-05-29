@@ -38,7 +38,7 @@
     </xsl:for-each>
   </xsl:template>
 
-  <xsl:template match="domain" mode="diffcomplete">
+  <xsl:template match="domain" mode="diff">
     <xsl:if test="(../attribute[@name!='owner']) or
 		  (../element[@type='constraint'])">
       <do-print/>
