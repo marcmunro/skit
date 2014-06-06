@@ -1685,10 +1685,10 @@ gatherDirIntoNode(xmlNode *node, char *dirname)
 		    while (source) {
 			copyNodes(node, source);
 			/* Identify the new node created above */
-			node = getElement(node->next);  
+			node = getNextNode(node->next);  
 			/* RECURSE HERE! */
 			(void) processGatherNodes(node, path->value);
-			source = getElement(source->next);  
+			source = getNextNode(source->next);  
 		    }
 		}
 		EXCEPTION(ex2);
@@ -1838,14 +1838,14 @@ reIndentNode(xmlNode *node, int target_indent)
 	if (len > 0) {
 	    addIndent(len, node, TRUE);
 	}
-	if (last_child  = reIndentNode(getElement(node->children), 
+	if (last_child  = reIndentNode(getNextNode(node->children), 
 				       target_indent + 2)) {
 	    len = target_indent - getNodeIndent(last_child, FALSE);
 	    if (len > 0) {
 		addIndent(len, last_child, FALSE);
 	    }
 	}
-	node = getElement(node->next);
+	node = getNextNode(node->next);
     }
     return last_sibling;
 }
@@ -1856,7 +1856,7 @@ reIndentDoc(Document *doc)
     xmlNode *node = xmlDocGetRootElement(doc->doc);
     /* Assume the outermost element is properly indented, and that it is
        the only element at this level of indentation. */
-    reIndentNode(getElement(node->children), 2);
+    reIndentNode(getNextNode(node->children), 2);
 }
 
 void

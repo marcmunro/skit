@@ -48,6 +48,7 @@ typeName(ObjType type)
     case OBJ_DAGNODE: return "OBJ_DAGNODE";
     case OBJ_DEPENDENCY: return "OBJ_DEPENDENCY";
     case OBJ_DEPENDENCYSET: return "OBJ_DEPENDENCYSET";
+    case OBJ_CONTEXT: return "OBJ_CONTEXT";
     default: return "UNKNOWN_OBJECT_TYPE";
     }
 }
@@ -432,6 +433,17 @@ endFree(Object *obj)
 #define endFree(x)
 #endif
 
+Context *
+contextNew(String *context_type, String *value, String *dflt)
+{
+    Context *new = skalloc(sizeof(Context));
+    new->type = OBJ_CONTEXT;
+    new->context_type = context_type;
+    new->value = value;
+    new->dflt = dflt;
+    return new;
+}
+
 static DagNode *
 basicDagNode()
 {
@@ -534,6 +546,17 @@ dagNodeFree(DagNode *node)
 }
 
 static void
+contextFree(Context *ctx, boolean free_contents)
+{
+    if (free_contents) {
+	objectFree((Object *) ctx->context_type, TRUE);
+	objectFree((Object *) ctx->value, TRUE);
+	objectFree((Object *) ctx->dflt, TRUE);
+    }
+    skfree(ctx);
+}
+
+static void
 dependencySetFree(DependencySet *depset, boolean free_contents)
 {
     Vector *deps = depset->deps;
@@ -595,6 +618,8 @@ objectFree(Object *obj, boolean free_contents)
 	    dependencyFree((Dependency *) obj, free_contents); break;
 	case OBJ_DEPENDENCYSET:
 	    dependencySetFree((DependencySet *) obj, free_contents); break;
+	case OBJ_CONTEXT:
+	    contextFree((Context*) obj, free_contents); break;
 	case OBJ_TUPLE:
 	    if (((Tuple *) obj)->dynamic) {
 		skfree(obj);
@@ -640,6 +665,7 @@ objectSexp(Object *obj)
     char *fails;
     char *tmp;
     char *tmp2;
+    Context *context;
 
     if (!obj) {
 	return newstr("nil");
@@ -699,6 +725,12 @@ objectSexp(Object *obj)
 	return tupleStr((Tuple *) obj);
     case OBJ_REGEXP:
 	return newstr("/%s/", ((Regexp *) obj)->src_str);
+    case OBJ_CONTEXT:
+	context = (Context *) obj;
+
+	return newstr("<Context %s, %s, %s>", 
+		      context->context_type->value, context->value->value,
+		      context->dflt->value);
     default: 
 	// TODO: improve this string.
 	return newstr("{BROKEN OBJECT: %p}", obj);

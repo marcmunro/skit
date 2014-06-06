@@ -89,6 +89,7 @@ typedef enum {
     OBJ_DAGNODE,
     OBJ_DEPENDENCY,
     OBJ_DEPENDENCYSET,
+    OBJ_CONTEXT,
     OBJ_TRIPLE,
     OBJ_MISC,                   /* Eg, SqlFuncs structure */
     OBJ_DOT,       		/* This is not a real-object */
@@ -339,6 +340,14 @@ typedef struct DagNodeOld {
 } DagNodeOld;
 
 
+typedef struct Context {
+    ObjType                type;
+    String                *context_type;
+    String                *value;
+    String                *dflt;
+} Context;
+
+
 /* Used to conveniently pass around multiple nodes as parameters to
  * hashEach.  This type is only ever allocated statically. */
 typedef struct Triple {
@@ -347,6 +356,8 @@ typedef struct Triple {
     Object          *obj2;
     Object          *obj3;
 } Triple;
+
+
 
 /* Used by sexpTok as its parameter, to retain position information
  * while tokenising a string expression */
@@ -385,6 +396,7 @@ typedef struct TokenStr {
 typedef Object *(TraverserFn)(Object *, Object *);
 typedef Object *(HashEachFn)(Cons *, Object *);
 typedef int (ComparatorFn)(Object **, Object **);
+typedef boolean (MatchFn)(Object *, Object *);
 
 
 // cons.c
@@ -404,6 +416,7 @@ extern boolean consIsAlist(Cons *cons);
 extern int consCmp(Cons *cons1, Cons *cons2);
 extern boolean isCons(Cons *obj);
 extern Object *alistGet(Cons *alist, Object *key);
+extern Object *listExtract(Cons **p_list, Object *key, MatchFn *match);
 extern Cons *alistExtract(Cons **p_alist, Object *key);
 extern Object *consNth(Cons *list, int n);
 extern Object *consGet(Cons *list, Object *key);
@@ -448,6 +461,7 @@ extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
 extern DependencySet *dependencySetNew(void);
 extern Dependency *dependencyNew(DagNode *dep);
+extern Context *contextNew(String *context_type, String *value, String *dflt);
 
 #define isSubnode(node)       (node && node->supernode)
 
@@ -687,7 +701,6 @@ extern Object *xpathEach(Document *doc, String *xpath,
 extern String *nodeAttribute(xmlNodePtr node, char *name);
 extern boolean nodeHasAttribute(xmlNodePtr node, char *name);
 extern void readDocDbver(Document *doc);
-extern xmlNode *getElement(xmlNode *node);
 extern xmlNode *getText(xmlNode *node);
 extern void printNode(FILE *output, char *label, xmlNode *node);
 extern void pNode(xmlNode *node);
@@ -753,7 +766,6 @@ extern Vector *simple_tsort(Vector *nodes);
 extern Vector *tsort(Document *doc);
 
 // navigation.c
-extern Vector *navigationToNode(DagNode *current, DagNode *target);
 extern void addNavigationToDoc(xmlNode *parent);
 
 // libxslt.c

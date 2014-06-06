@@ -455,7 +455,7 @@ makeXMLFallbackNode(String *fqn)
     END;
     doc = docStackPop();
     root = xmlDocGetRootElement(doc->doc);
-    dbobject = xmlCopyNode(getElement(root->children), 1);
+    dbobject = xmlCopyNode(getNextNode(root->children), 1);
     objectFree((Object *) doc, TRUE);
     if (!dbobject) {
 	RAISE(TSORT_ERROR, newstr("Failed to create fallback for %s.",
@@ -467,7 +467,7 @@ makeXMLFallbackNode(String *fqn)
 static xmlNode *
 firstDbobject(xmlNode *node)
 {
-    xmlNode *this = getElement(node->children);
+    xmlNode *this = getNextNode(node->children);
     xmlNode *result;
 
     /* Search this level first. */
@@ -475,16 +475,16 @@ firstDbobject(xmlNode *node)
 	if (streq("dbobject", (char *) this->name)) {
 	    return this;
 	}
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
 
     /* Nothing found, try recursing */
-    this = getElement(node->children);
+    this = getNextNode(node->children);
     while (this) {
 	if (result = firstDbobject(this)) {
 	    return result;
 	}
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
     return NULL;
 }

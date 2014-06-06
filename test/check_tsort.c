@@ -906,7 +906,7 @@ START_TEST(rt3)
 	setq_drop();
 
 	results = tsort(doc);
-	printSexp(stderr, "RESULTS: ", (Object *) results);
+	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
 
 	objectFree((Object *) results, TRUE);

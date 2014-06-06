@@ -62,7 +62,7 @@ typedef void (NodeOp)(xmlNode *node, Object *obj);
 static void
 eachDbobject(xmlNode *node, Object *obj, NodeOp fn)
 {
-    xmlNode *this = getElement(node);
+    xmlNode *this = getNextNode(node);
 
     while (this) {
 	if (streq("dbobject", (char *) this->name)) {
@@ -71,7 +71,7 @@ eachDbobject(xmlNode *node, Object *obj, NodeOp fn)
 	if (this->children) {
 	    eachDbobject(this->children, obj, fn);
 	}
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
 }
 
@@ -283,14 +283,14 @@ static Hash *
 getNodeDeps(xmlNode *node)
 {
     Hash *deps = hashNew(TRUE);
-    xmlNode *this = getElement(node->children);
+    xmlNode *this = getNextNode(node->children);
     xmlNode *dep;
     // TODO: rewrite variable name, maybe simplify.
     String *condition;
 
     while (this) {
 	if (isDependencies(this)) {
-	    this = getElement(this->children);
+	    this = getNextNode(this->children);
 	}
 	else {
 	    if (isDepNode(this)) {
@@ -301,7 +301,7 @@ getNodeDeps(xmlNode *node)
 		(void) hashVectorAppend(deps, (Object *) condition, 
 					(Object *) nodeNew(dep));
 	    }
-	    this = getElement(this->next);
+	    this = getNextNode(this->next);
 	}
     }
     return deps;
@@ -310,7 +310,7 @@ getNodeDeps(xmlNode *node)
 static void
 addNodeDeps(xmlNode *result_parent, xmlNode *node)
 {
-    xmlNode *this = getElement(node->children);
+    xmlNode *this = getNextNode(node->children);
     xmlNode *dep = NULL;
 
     while (this) {
@@ -318,7 +318,7 @@ addNodeDeps(xmlNode *result_parent, xmlNode *node)
 	    dep = xmlCopyNode(this, 1);
 	    xmlAddChild(result_parent, dep);
 	}
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
 }
 
@@ -327,11 +327,11 @@ static xmlNode *
 copyContext(xmlNode *node, char *condition)
 {
     // TODO: change parameter name to direction
-    xmlNode *this = getElement(node->children);
+    xmlNode *this = getNextNode(node->children);
     xmlNode *result = NULL;
 
     while (this && !streq("context", (char *) this->name)) {
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
     if (this) {
 	result = xmlCopyNode(this, 1);
@@ -352,7 +352,7 @@ skipToContents(xmlNode *node)
     String *type = nodeAttribute(node, "type");
 
     if (node) {
-	this = getElement(node->children);
+	this = getNextNode(node->children);
 	while (this && !streq((char *) this->name, type->value)) {
 	    this = this->next;
 	}
@@ -500,7 +500,7 @@ check_text(xmlNode *content1, xmlNode *content2)
 static xmlNode *
 next_elem_of_type(xmlNode *node, String *elem_type)
 {
-    while (node = getElement(node)) {
+    while (node = getNextNode(node)) {
 	if (streq((char *) node->name, elem_type->value)) {
 	    return node;
 	}
@@ -809,7 +809,7 @@ evalDiffDep(xmlNode *depnode, xmlNode *content1, xmlNode *content2)
 	evalDiffDepProps(new, cur, content1, content2);
 
 	if (cur->children) {
-	    kids = evalDiffDep(getElement(cur->children), content1, content2);
+	    kids = evalDiffDep(getNextNode(cur->children), content1, content2);
 	    xmlAddChildList(new, kids);
 	}
 	if (result) {
@@ -819,7 +819,7 @@ evalDiffDep(xmlNode *depnode, xmlNode *content1, xmlNode *content2)
 	    result = new;
 	}
     }
-    while (cur = getElement(cur->next));
+    while (cur = getNextNode(cur->next));
     return result;
 }
 
@@ -834,7 +834,7 @@ diffDependency(
     xmlNode *content1, 
     xmlNode *content2)
 {
-    xmlNode *dep = getElement(rule->children);
+    xmlNode *dep = getNextNode(rule->children);
     xmlNode *result = NULL;
 
     if (dep && isDepNode(dep)) {
@@ -873,7 +873,7 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
     xmlNode *dep;
 
     if (ruleset) {
-	rule = getElement(ruleset->children);
+	rule = getNextNode(ruleset->children);
 
 	while (rule) {
 	    if (streq((char *) rule->name, "attribute")) {
@@ -910,7 +910,7 @@ elementDiffs(xmlNode *content1, xmlNode *content2,
 		    result = diff;
 		}
 	    }
-	    rule = getElement(rule->next);
+	    rule = getNextNode(rule->next);
 	}
     }
     return result;
@@ -925,13 +925,13 @@ copyContents(xmlNode *next)
     
     if (from) {
 	copy = xmlCopyNode(from, 2);
-	from = getElement(from->children);
+	from = getNextNode(from->children);
 	while (from) {
 	    if (!(streq("dbobject", (char *) from->name))) {
 		new = xmlCopyNode(from, 1);
 		xmlAddChild(copy, new);
 	    }
-	    from = getElement(from->next);
+	    from = getNextNode(from->next);
 	}
     }
     return copy;
@@ -1211,7 +1211,7 @@ processDiffs(
     boolean *has_diffs)
 {
     Hash *volatile node1objects = NULL;
-    xmlNode *dbobj2 = getElement(node2);
+    xmlNode *dbobj2 = getNextNode(node2);
     xmlNode *match;
     xmlNode *difflist = NULL;
     boolean diffs;
@@ -1245,8 +1245,8 @@ processDiffs(
 static xmlNode *
 processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
 {
-    xmlNode *dump1 = getElement(root1);
-    xmlNode *dump2 = getElement(root2);
+    xmlNode *dump1 = getNextNode(root1);
+    xmlNode *dump2 = getNextNode(root2);
     xmlNode *volatile result = xmlCopyNode(dump1, 2);
     String *dbname2 = nodeAttribute(dump2, "dbname");
     String *time2 = nodeAttribute(dump2, "time");

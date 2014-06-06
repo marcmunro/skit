@@ -316,6 +316,26 @@ alistGet(Cons *alist, Object *key)
     return NULL;
 }
 
+Object *
+listExtract(Cons **p_alist, Object *key, MatchFn *match)
+{
+    Cons **p_this = p_alist;
+    Cons *this;
+    Object *entry;
+
+    while (this = *p_this) {
+	entry = this->car;
+	if (match(entry, key)) {
+	    /* This entry matches key. */
+	    *p_this = (Cons *) this->cdr;
+	    objectFree((Object *) this, FALSE);
+	    return entry;
+	}
+	p_this = (Cons **) &(this->cdr);
+    }
+    return NULL;
+}
+
 Cons *
 alistExtract(Cons **p_alist, Object *key)
 {

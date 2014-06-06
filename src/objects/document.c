@@ -753,13 +753,10 @@ getFirstNode(Document *doc)
 xmlNode *
 getNextNode(xmlNode *node)
 {
-    while (node) {
-	if (node->type == XML_ELEMENT_NODE) {
-	    return node; 
-	}
+    while (node && (node->type != XML_ELEMENT_NODE)) {
 	node = node->next;
     }
-    return NULL;
+    return node;
 }
 
 static void 
@@ -1002,15 +999,15 @@ readDocDbver(Document *doc)
 Object *
 xmlTraverse(xmlNode *start, TraverserFn *traverser, Object *param)
 {
-    xmlNode *cur = getElement(start);
+    xmlNode *cur = getNextNode(start);
     Node node = {OBJ_XMLNODE, NULL};
     node.node = cur;
     Object *result;
     result = (*traverser)((Object *) &node, param);
-    cur = getElement(cur->children);
+    cur = getNextNode(cur->children);
     while (cur && (!result)) {
 	result = xmlTraverse(cur, traverser, param);
-	cur = getElement(cur->next);
+	cur = getNextNode(cur->next);
     }
     return result;
 }
@@ -1254,15 +1251,6 @@ documentFreeMem()
     prev_path = NULL;
     prev_templatename = NULL;
     scatter_template = NULL;
-}
-
-xmlNode *
-getElement(xmlNode *node)
-{
-    while (node && (node->type != XML_ELEMENT_NODE)) {
-	node = node->next;
-    }
-    return node;
 }
 
 xmlNode *

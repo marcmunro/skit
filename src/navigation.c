@@ -16,134 +16,29 @@
 #include "exceptions.h"
 
 
-/* Predicate identifying whether a node is of a specific type.
+/* If node is a dbobject node, find the first child node that is a
+ * context node, otherwise, find the next sibling that is a context
+ * node. 
  */
-static boolean
-xmlnodeMatch(xmlNode *node, char *name)
-{
-    return node && (node->type == XML_ELEMENT_NODE) && 
-	streq((char *) node->name, name);
-}
-
-
-/* Find the next (xml document) sibling of the given node type. */
 static xmlNode *
-findNextSibling(xmlNode *start, char *name)
+findContextNode(xmlNode *node)
 {
-    xmlNode *result = start;
-    if (result) {
-	while (result = (xmlNode *) result->next) {
-	    if (xmlnodeMatch(result, name)) {
-		return result;
-	    }
+    xmlNode *this;
+
+    if (streq((char *) node->name, "dbobject")) {
+	this = node->children;
+    }
+    else {
+	this = node->next;
+    }
+    while (this) {
+	this = getNextNode(this);
+	if (this && streq((char *) this->name, "context")) {
+	    break;
 	}
+	this = this->next;
     }
-    return NULL;
-}
-
-/* Find the first (xml document) child of the given node type. */
-static xmlNode *
-findFirstChild(xmlNode *parent, char *name)
-{
-    if (parent) {
-	if (xmlnodeMatch(parent->children, name)) {
-	    return parent->children;
-	}
-	return findNextSibling(parent->children, name);
-    }
-    return NULL;
-}
-
-
-static int
-generationCount(DagNode *node)
-{
-    int count = 0;
-    while (node) {
-	count++;
-	node = node->parent;
-    }
-    return count;
-}
-
-static boolean
-nodeEq(DagNode *node1, DagNode *node2)
-{
-    if (node1 && node2) {
-	return node1->dbobject == node2->dbobject;
-    }
-    if (node1 || node2) {
-	return FALSE;
-    }
-    return TRUE;
-}
-
-/* Identify whether it is necessary to navigate to/from node */
-static boolean
-requiresNavigation(xmlNode *node)
-{
-    return nodeHasAttribute(node, "visit");
-}
-
-static DagNode *
-getCommonRoot(DagNode *current, DagNode *target)
-{
-    int cur_depth = generationCount(current);
-    int target_depth = generationCount(target);
-
-    while (cur_depth > target_depth) {
-	current = current->parent;
-	cur_depth = generationCount(current);
-    }
-    while (target_depth > cur_depth) {
-	target = target->parent;
-	target_depth = generationCount(target);
-    }
-    while (!nodeEq(current, target)) {
-	current = current->parent;
-	target = target->parent;
-    }
-    return current;
-}
-
-static DagNode *
-departNode(DagNode *current)
-{
-    DagNode *navigation = NULL;
-    xmlNode *newnode;
-
-    if (requiresNavigation(current->dbobject)) {
-	newnode = copyObjectNode(current->dbobject);
-	navigation = dagNodeNew(newnode, DEPART_NODE);
-    }
-    return navigation;
-}
-
-static DagNode *
-arriveNode(DagNode *target)
-{
-    DagNode *navigation = NULL;
-    xmlNode *newnode;
-
-    if (requiresNavigation(target->dbobject)) {
-	newnode = copyObjectNode(target->dbobject);
-	navigation = dagNodeNew(newnode, ARRIVE_NODE);
-    }
-    return navigation;
-}
-
-/* Return the node in to's ancestry that is the direct descendant of
- * from */
-static DagNode *
-nextNodeFrom(DagNode *from, DagNode *to)
-{
-    DagNode *cur = to;
-    DagNode *prev = NULL;
-    while (!nodeEq(from, cur)) {
-	prev = cur;
-	cur = cur->parent;
-    }
-    return prev;
+    return this;
 }
 
 static Cons *
@@ -157,9 +52,8 @@ getContexts(xmlNode *node)
     String *dflt;
 
     if (node) {
-	for (context_node = findFirstChild(node, "context");
-	     context_node;
-	     context_node = findNextSibling(context_node, "context")) {
+	context_node = node;
+	while (context_node = findContextNode(context_node)) {
 	    type = nodeAttribute(context_node, "type");
 	    assert(type, "Missing type attribute for context");
 	    value = nodeAttribute(context_node, "value");
@@ -171,6 +65,26 @@ getContexts(xmlNode *node)
 	}
     }
     return contexts;
+}
+
+static Cons *
+getContexts2(xmlNode *node)
+{
+    xmlNode *context_node;
+    Context *context;
+    Cons *result = NULL;
+
+    if (node) {
+	context_node = node;
+	while (context_node = findContextNode(context_node)) {
+	    context = contextNew(nodeAttribute(context_node, "type"),
+				 nodeAttribute(context_node, "value"),
+				 nodeAttribute(context_node, "default"));
+	    assert(context->context_type, "Missing type attribute for context");
+	    result = consNew((Object *) context, (Object *) result);
+	}
+    }
+    return result;
 }
 
 static xmlNode *
@@ -204,6 +118,18 @@ addContext(Vector *vec, Cons *context)
     /* Do not close the context, if it is the default. */
     if (objectCmp(cell2->car, cell2->cdr) != 0) {
 	context_node = newContextNode(name, (String *) cell2->car);
+	vectorPush(vec, (Object *) context_node);
+    }
+}
+
+static void
+addContext2(Vector *vec, Context *context)
+{
+    Node *context_node;
+
+    /* Do not add the context if it is the default. */
+    if (!streq(context->context_type->value, context->dflt->value)) {
+	context_node = newContextNode(context->context_type, context->value);
 	vectorPush(vec, (Object *) context_node);
     }
 }
@@ -257,90 +183,59 @@ getContextNavigation(xmlNode *from, xmlNode *target)
 }
 
 
-/* Return a vector of DagNodes containing the navigation to get from
- * start to target.  All of the dbojects returned in the DagNode
- * Vectors must be orphans so that they can be safely added to the
- * appropriate parent node. */
-/* Return a vector of DagNodes containing the navigation to get from
- * start to target.  All of the dbojects returned in the DagNode
- * Vectors must be orphans so that they can be safely added to the
- * appropriate parent node. */
-Vector *
-navigationToNode(DagNode *start, DagNode *target)
+static boolean
+contextMatch(Object *ctx1, Object *ctx2)
 {
-    Cons *context_nav;
-    Vector *volatile results;
-    Vector *context_arrivals = NULL;
-    Object *elem;
-    DagNode *current = NULL;
-    DagNode *common_root = NULL;
-    DagNode *navigation = NULL;
-    Symbol *ignore_contexts = symbolGet("ignore-contexts");
-    boolean handling_context = (ignore_contexts == NULL);
-
-    BEGIN {
-	if (handling_context) {
-	    context_nav = getContextNavigation(start->dbobject, 
-					       target->dbobject);
-
-	    /* Context departures must happen before any other
-	     * departures and arrivals after */
-	    results = (Vector *) context_nav->car;
-	    context_arrivals = (Vector *) context_nav->cdr;
-	    objectFree((Object *) context_nav, FALSE);
-	}
-	else
-	{
-	    results = vectorNew(10);
-	}
-	if (start) {
-	    common_root = getCommonRoot(start, target);
-	    current = start;
-	    while (!nodeEq(current, common_root)) {
-		if ((current == start) &&
-		    (current->build_type == DROP_NODE)) {
-		    /* We don't need to depart from a drop node as
-		     * the drop must perform the departure for us. */ 
-		}
-		else {
-		    if (navigation = departNode(current)) {
-			vectorPush(results, (Object *) navigation);
-		    }
-		}
-		current = current->parent;
-	    }
-	}
-	/* Now navigate from common root towards target */
-	current = common_root;
-	while (!nodeEq(current, target)) {
-	    current = nextNodeFrom(current, target);
-	    if ((current == target) &&
-		(current->build_type == BUILD_NODE)) {
-		/* We don't need to arrive at a build node as the build
-		 * must perform the arrival for us. */
-	    }
-	    else {
-		if (navigation = arriveNode(current)) {
-		    vectorPush(results, (Object *) navigation);
-		}
-	    }
-	}
-	if (context_arrivals) {
-	    /* Although this reverses the order of context departures,
-	     * this should not be an issue as the order of contexts is
-	     * expected to be irrelevant. */
-	    while (elem = vectorPop(context_arrivals)) {
-		vectorPush(results, elem);
-	    }
-	    objectFree((Object *) context_arrivals, FALSE);
-	}
-    }
-    EXCEPTION(ex) {
-	objectFree((Object *) results, TRUE);
-    }
-    END;
-    return results;
+    return streq(((Context *) ctx1)->context_type->value, 
+		 ((Context *) ctx1)->context_type->value);
 }
+
+static Cons *
+getContextNavigation2(xmlNode *from, xmlNode *target)
+{
+    Cons *from_contexts;
+    Cons *target_contexts;
+    Context *target_context;
+    Context *from_context;
+    Vector *departures = vectorNew(10);
+    Vector *arrivals = vectorNew(10);
+    Cons *result = consNew((Object *) departures, (Object *) arrivals);
+
+    /* Contexts are lists of the form: (type value default) */
+    from_contexts = getContexts2(from);
+    target_contexts = getContexts2(target);
+    while (target_contexts) {
+	target_context = (Context *) consPop(&target_contexts);
+	from_context = (Context *) listExtract(&from_contexts, 
+					       (Object *) target_context,
+					       &contextMatch);
+	if (from_context &&
+	    !streq(target_context->value->value, from_context->value->value)) 
+	{
+	    /* We have the same context type for both nodes but with
+	     * different values, so we depart the old context and arrive
+	     * at the new one.  */
+	    addContext2(departures, from_context);
+	    addContext2(arrivals, target_context);
+	}
+	else {
+	    /* This is a new context. */
+	    addContext2(arrivals, target_context);
+	}
+	objectFree((Object *) from_context, TRUE);
+	objectFree((Object *) target_context, TRUE);
+    }
+
+    /* Close the final contexts.  */
+    while (from_contexts) {
+	from_context = (Context *) consPop(&from_contexts);
+	addContext2(departures, from_context);
+	objectFree((Object *) from_context, TRUE);
+    }
+
+    return result;
+}
+
 
 static boolean
 nodesMatch(Node *node1, Node *node2)
@@ -500,15 +395,11 @@ doAddNavigation(
     xmlNode *new;
     int i;
 
-    context_nav = getContextNavigation(nav_from? nav_from->node: NULL, 
-				       nav_to? nav_to->node: NULL);
+    context_nav = getContextNavigation2(nav_from? nav_from->node: NULL, 
+					 nav_to? nav_to->node: NULL);
     departures = (Vector *) context_nav->car;
     arrivals = (Vector *) context_nav->cdr;
     objectFree((Object *) context_nav, FALSE);
-
-    //fprintf(stderr, "\n\n");
-    //dbgSexp(nav_from);
-    //dbgSexp(nav_to);
 
     getNodeNavigation(nav_from, nav_to, arrivals, departures);
 
@@ -558,7 +449,7 @@ nodeHasPrintElement(xmlNode *node)
 static xmlNode *
 findDbobject(xmlNode *node)
 {
-    xmlNode *this = getElement(node);
+    xmlNode *this = getNextNode(node);
     xmlNode *kid;
 
     while (this) {
@@ -568,7 +459,7 @@ findDbobject(xmlNode *node)
 	if (kid = findDbobject(this->children)) {
 	    return kid;
 	}
-	this = getElement(this->next);
+	this = getNextNode(this->next);
     }
     return NULL;
 }
@@ -649,10 +540,10 @@ addNavigationToDoc(xmlNode *parent_node)
 
 	    if (node_from) {
 		char *tmp = nodestr(node_from->node);
-		if (streq(tmp, "<dbobject type=\"role\" name=\"lose\" "
-			  "qname=\"lose\" fqn=\"role.lose\" "
-			  "parent=\"database.regressdb\" diff=\"gone\" "
-			  "action=\"drop\">")) 
+		if (streq(tmp, "<dbobject type=\"database\" "
+			  "visit=\"true\" name=\"regressdb\" "
+			  "qname=\"regressdb\" fqn=\"database.regressdb\" "
+			  "diff=\"diff\" action=\"diff\">")) 
 		{
 		    dbgSexp(node_from);
 		    dbgSexp(node_to);
