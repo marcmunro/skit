@@ -73,9 +73,9 @@
   <!-- Create schema dependency entries for a dependency-set.  
        This creates dependency entries for public grants of $priv, 
        grants of $priv to $to, and automatic grants to $to if $to is the
-       same as $owner.  -->
+       same as the schema owner ($owner).  -->
   <xsl:template name="schema-deps">
-    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="owner" select="../@owner"/>
     <xsl:param name="priv" select="@priv"/>
     <xsl:param name="type" select="name(..)"/>
     <xsl:param name="root">

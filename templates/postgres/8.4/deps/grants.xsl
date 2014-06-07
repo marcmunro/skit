@@ -57,6 +57,15 @@
   </xsl:template>
 
 
+  <!-- These are grants of object privilege.  Note that the fqn may be
+       in two forms: 
+       1) For the owner of the object:
+          grant.<object>.<privilege>
+       2) For anyone else:
+          grant.<object>.<privilege>:<grantee>.<grantor>
+
+       TODO: explain why this is.
+  -->
   <xsl:template match="grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 

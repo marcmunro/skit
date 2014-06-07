@@ -273,7 +273,6 @@ regression_test3()
     gendiff scratch/regressdb_dump3a.xml scratch/regressdb_dump3b.xml \
 	scratch/regressdb_diff3a2b.sql  
     execdiff scratch/regressdb_diff3a2b.sql
-exit 2
     echo "...checking db equivalence to target..." 1>&2
     dump_db regressdb scratch/regressdb_test3b2.dmp ...
     dump_db_globals regressdb scratch/regressdb_test3b2.gdmp ...

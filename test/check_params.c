@@ -740,7 +740,7 @@ START_TEST(generate)
     //showMalloc(4283);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(8, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

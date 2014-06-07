@@ -398,26 +398,30 @@ directionForDep(xmlNode *node)
     return direction_str;
 }
 
-static DependencyApplication
-getDependencyDirection(xmlNode *depnode)
+DependencyApplication
+dependencyApplicationForString(String *direction)
 {
-    String *direction_str = directionForDep(depnode);
     DependencyApplication result;
-
-    if (direction_str) {
-	if (streq(direction_str->value, "forwards")) {
+    if (direction) {
+	if (streq(direction->value, "forwards")) {
 	    result = FORWARDS;
 	}
-	else if (streq(direction_str->value, "backwards")) {
+	else if (streq(direction->value, "backwards")) {
 	    result = BACKWARDS;
 	}
 	else {
 	    result = UNKNOWN_DIRECTION;
 	}
-	objectFree((Object *) direction_str, TRUE);
+	objectFree((Object *) direction, TRUE);
 	return result;
     }
     return BOTH_DIRECTIONS;
+}
+
+static DependencyApplication
+getDependencyDirection(xmlNode *depnode)
+{
+    return dependencyApplicationForString(directionForDep(depnode));
 }
 
 /* 
@@ -2097,6 +2101,7 @@ dagFromDoc(Document *doc)
 
 	convertDependencies(resolver_state.all_nodes);
 	cleanupDeps(resolver_state.all_nodes);
+	//showVectorDeps(resolver_state.all_nodes);
     }
     EXCEPTION(ex) {
 	freeDeps(resolver_state.all_nodes);

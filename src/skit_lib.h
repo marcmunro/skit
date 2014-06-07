@@ -758,6 +758,7 @@ extern void prepareDagForBuild(Vector **p_nodes);
 extern Vector *resolving_tsort(Vector *nodelist);
 
 extern Vector *dagFromDoc(Document *doc);
+extern DependencyApplication dependencyApplicationForString(String *direction);
 
 
 

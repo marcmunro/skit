@@ -19,6 +19,7 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>
+
     <xsl:for-each select="depends[@function]">
       <xsl:choose>
 	<xsl:when test="@cast">

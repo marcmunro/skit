@@ -41,47 +41,84 @@ findContextNode(xmlNode *node)
     return this;
 }
 
+/* This identifies which side of the DAG a particular dbobject node
+ * falls on, based on its action attribute.
+ */
+static DependencyApplication
+buildDirection(xmlNode *dbobject)
+{
+    String *action = nodeAttribute(dbobject, "action");
+    DependencyApplication result;
+
+    assert(action, "Expected action attribute for dbobject node");
+    if (streq(action->value, "diff") ||
+	streq(action->value, "build")) 
+    {
+	result = FORWARDS;
+    }
+    else if (streq(action->value, "drop") ||
+	     streq(action->value, "diffprep")) {
+	result = BACKWARDS;
+    }
+    else if (streq(action->value, "fallback") ||
+	     streq(action->value, "endfallback")) {
+	result = UNKNOWN_DIRECTION;
+    }
+    else {
+	RAISE(GENERAL_ERROR, newstr("Unknown action: %s", action->value));
+    }
+    objectFree((Object *) action, TRUE);
+    return result;
+}
+
+static boolean
+contextApplies(
+    DependencyApplication build_direction,
+    DependencyApplication context_direction)
+{
+    if (build_direction == FORWARDS) {
+	if ((context_direction == FORWARDS) ||
+	    (context_direction == BOTH_DIRECTIONS)) 
+	{
+	    return TRUE;
+	}
+    }
+    else if (build_direction == BACKWARDS) {
+	if ((context_direction == BACKWARDS) ||
+	    (context_direction == BOTH_DIRECTIONS)) 
+	{
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
 static Cons *
 getContexts(xmlNode *node)
 {
     xmlNode *context_node;
-    Cons *cell;
-    Cons *contexts = NULL;
-    String *type;
-    String *value;
-    String *dflt;
-
-    if (node) {
-	context_node = node;
-	while (context_node = findContextNode(context_node)) {
-	    type = nodeAttribute(context_node, "type");
-	    assert(type, "Missing type attribute for context");
-	    value = nodeAttribute(context_node, "value");
-	    dflt = nodeAttribute(context_node, "default");
-	    cell = consNew((Object *) type, 
-			   (Object *) consNew((Object *) value, 
-					      (Object *) dflt));
-	    contexts = consNew((Object *) cell, (Object *) contexts);
-	}
-    }
-    return contexts;
-}
-
-static Cons *
-getContexts2(xmlNode *node)
-{
-    xmlNode *context_node;
     Context *context;
     Cons *result = NULL;
+    DependencyApplication build_direction;
+    DependencyApplication context_direction;
 
     if (node) {
+	build_direction = buildDirection(node);
 	context_node = node;
 	while (context_node = findContextNode(context_node)) {
 	    context = contextNew(nodeAttribute(context_node, "type"),
 				 nodeAttribute(context_node, "value"),
 				 nodeAttribute(context_node, "default"));
 	    assert(context->context_type, "Missing type attribute for context");
-	    result = consNew((Object *) context, (Object *) result);
+
+	    context_direction = dependencyApplicationForString(
+		nodeAttribute(context_node, "direction"));
+	    if (contextApplies(build_direction, context_direction)) {
+		result = consNew((Object *) context, (Object *) result);
+	    }
+	    else {
+		objectFree((Object *) context, TRUE);
+	    }
 	}
     }
     return result;
@@ -109,21 +146,7 @@ newContextNode(String *name, String *value)
 }
 
 static void
-addContext(Vector *vec, Cons *context)
-{
-    String *name = (String *) context->car;
-    Cons *cell2 = (Cons *) context->cdr;
-    Node *context_node;
-
-    /* Do not close the context, if it is the default. */
-    if (objectCmp(cell2->car, cell2->cdr) != 0) {
-	context_node = newContextNode(name, (String *) cell2->car);
-	vectorPush(vec, (Object *) context_node);
-    }
-}
-
-static void
-addContext2(Vector *vec, Context *context)
+addContext(Vector *vec, Context *context)
 {
     Node *context_node;
 
@@ -134,55 +157,6 @@ addContext2(Vector *vec, Context *context)
     }
 }
 
-static Cons *
-getContextNavigation(xmlNode *from, xmlNode *target)
-{
-    Cons *from_contexts;
-    Cons *target_contexts;
-    Cons *this;
-    Cons *this2;
-    Cons *match;
-    Cons *match2;
-    String *type;
-    Vector *departures = vectorNew(10);
-    Vector *arrivals = vectorNew(10);
-    Cons *result = consNew((Object *) departures, (Object *) arrivals);
-
-    /* Contexts are lists of the form: (type value default) */
-    from_contexts = getContexts(from);
-    target_contexts = getContexts(target);
-
-    while (target_contexts && (this = (Cons *) consPop(&target_contexts))) {
-	type = (String *) this->car;
-	if (from_contexts &&
-	    (match = (Cons *) alistExtract(&from_contexts, 
-					   (Object *) type))) {
-	    /* We have the same context for both DagNodes. */
-	    this2 = (Cons *) this->cdr;
-	    match2 = (Cons *) match->cdr;
-	    if (objectCmp(this2->car, match2->car) != 0) {
-		/* Depart the old context, and arrive at the new. */
-		addContext(departures, match);
-		addContext(arrivals, this);
-	    }
-	    objectFree((Object *) match, TRUE);
-	}
-	else {
-	    /* This is a new context. */
-	    addContext(arrivals, this);
-	}
-	objectFree((Object *) this, TRUE);
-    }
-    while (from_contexts && (this = (Cons *) consPop(&from_contexts))) {
-	/* Close the final contexts.  Unless we are in a default
-	 * context. */ 
-	addContext(departures, this);
-	objectFree((Object *) this, TRUE);
-    }
-    return result;
-}
-
-
 static boolean
 contextMatch(Object *ctx1, Object *ctx2)
 {
@@ -191,7 +165,7 @@ contextMatch(Object *ctx1, Object *ctx2)
 }
 
 static Cons *
-getContextNavigation2(xmlNode *from, xmlNode *target)
+getContextNavigation(xmlNode *from, xmlNode *target)
 {
     Cons *from_contexts;
     Cons *target_contexts;
@@ -202,8 +176,8 @@ getContextNavigation2(xmlNode *from, xmlNode *target)
     Cons *result = consNew((Object *) departures, (Object *) arrivals);
 
     /* Contexts are lists of the form: (type value default) */
-    from_contexts = getContexts2(from);
-    target_contexts = getContexts2(target);
+    from_contexts = getContexts(from);
+    target_contexts = getContexts(target);
     while (target_contexts) {
 	target_context = (Context *) consPop(&target_contexts);
 	from_context = (Context *) listExtract(&from_contexts, 
@@ -215,12 +189,12 @@ getContextNavigation2(xmlNode *from, xmlNode *target)
 	    /* We have the same context type for both nodes but with
 	     * different values, so we depart the old context and arrive
 	     * at the new one.  */
-	    addContext2(departures, from_context);
-	    addContext2(arrivals, target_context);
+	    addContext(departures, from_context);
+	    addContext(arrivals, target_context);
 	}
 	else {
 	    /* This is a new context. */
-	    addContext2(arrivals, target_context);
+	    addContext(arrivals, target_context);
 	}
 	objectFree((Object *) from_context, TRUE);
 	objectFree((Object *) target_context, TRUE);
@@ -229,7 +203,7 @@ getContextNavigation2(xmlNode *from, xmlNode *target)
     /* Close the final contexts.  */
     while (from_contexts) {
 	from_context = (Context *) consPop(&from_contexts);
-	addContext2(departures, from_context);
+	addContext(departures, from_context);
 	objectFree((Object *) from_context, TRUE);
     }
 
@@ -395,8 +369,8 @@ doAddNavigation(
     xmlNode *new;
     int i;
 
-    context_nav = getContextNavigation2(nav_from? nav_from->node: NULL, 
-					 nav_to? nav_to->node: NULL);
+    context_nav = getContextNavigation(nav_from? nav_from->node: NULL, 
+				       nav_to? nav_to->node: NULL);
     departures = (Vector *) context_nav->car;
     arrivals = (Vector *) context_nav->cdr;
     objectFree((Object *) context_nav, FALSE);
@@ -538,18 +512,6 @@ addNavigationToDoc(xmlNode *parent_node)
 	    node_from = node_to;
 	    node_to = this;
 
-	    if (node_from) {
-		char *tmp = nodestr(node_from->node);
-		if (streq(tmp, "<dbobject type=\"database\" "
-			  "visit=\"true\" name=\"regressdb\" "
-			  "qname=\"regressdb\" fqn=\"database.regressdb\" "
-			  "diff=\"diff\" action=\"diff\">")) 
-		{
-		    dbgSexp(node_from);
-		    dbgSexp(node_to);
-		}
-		skfree(tmp);
-	    }
 	    doAddNavigation(parent_node, node_from, node_to);
 	}
     }
