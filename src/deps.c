@@ -825,6 +825,54 @@ identifyDependencies(Vector *nodes, volatile ResolverState *res_state)
     }
 }
 
+static boolean
+maybePromoteNode(DagNode *node)
+{
+    int i;
+    Dependency *dep;
+
+    if (node->status == UNVISITED) {
+	node->status = VISITED;
+	if ((node->build_type == EXISTS_NODE) ||
+	    (node->build_type == DIFF_NODE))
+	{
+	    EACH(node->deps, i) {
+		dep = (Dependency *) ELEM(node->deps, i);
+		if (maybePromoteNode(dep->dep)) {
+		    node->build_type = REBUILD_NODE;
+		    break;
+		}
+	    }
+	}
+    }
+    return node->build_type == REBUILD_NODE;
+}
+
+/* Reset each node status to unvisited.
+ */
+static void
+resetNodes(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	node->status = UNVISITED;
+    }
+}
+
+static void
+promoteRebuilds(Vector *nodes)
+{
+    int i;
+    DagNode *node;
+    EACH(nodes, i) {
+	node = (DagNode *) ELEM(nodes, i);
+	(void) maybePromoteNode(node);
+    }
+    resetNodes(nodes);
+}
+
 static void
 makeMirrors(Vector *nodes)
 {
@@ -835,8 +883,8 @@ makeMirrors(Vector *nodes)
 	if ((!node->mirror_node) && mirrorNeeded(node->build_type)) {
 	    /* Note that the unmirrored part of the mirrored pair
 	     * retains its original build_type.  This is so that
-	     * later we can more easily promote nodes that depend on
-	     * rebuild  nodes.  */
+	     * later we can continue to easily differentiate between
+	     * build and rebuild nodes.  */
 	    makeMirrorNode(node, nodes);
 	}
     }
@@ -852,23 +900,23 @@ static DepTransform transform_for_build_types
     [EXISTS_NODE][EXISTS_NODE] = 
 {
     /* BUILD */ 
-    {RETAIN, INVERT, RETAIN,         /* BUILD, DROP  REBUILD, */
-     IGNORE, RETAIN, ERROR},      /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, INVERT, RETAIN,         	  /* BUILD, DROP  REBUILD, */
+     IGNORE, RETAIN, ERROR},         	  /* DIFF, FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {ERROR, INVERT, ERROR,         /* BUILD, DROP  REBUILD, */
-     IGNORE, DSFALLBACK, ERROR},    /* DIFF, FALLBACK, ENDFALLBACK */
+    {ERROR, INVERT, INVERT,     	  /* BUILD, DROP  REBUILD, */
+     IGNORE, DSFALLBACK, ERROR},     	  /* DIFF, FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {RETAIN, REBUILD2DROP, DUPANDMIRROR,  /* BUILD, DROP  REBUILD, */
-     IGNORE, BOTHFALLBACK, ERROR},  /* DIFF, FALLBACK, ENDFALLBACK */
+     IGNORE, BOTHFALLBACK, ERROR},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {RETAIN, MIRROR, DUPANDMIRROR,          /* BUILD, DROP  REBUILD, */
-     IGNORE, BOTHFALLBACK, ERROR},         /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, MIRROR, DUPANDMIRROR,        /* BUILD, DROP  REBUILD, */
+     IGNORE, BOTHFALLBACK, ERROR},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
-    {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
-     IGNORE, ERROR, RETAIN},        /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, INVERT, FB2REBUILD,          /* BUILD, DROP  REBUILD, */
+     IGNORE, ERROR, RETAIN},              /* DIFF, FALLBACK, ENDFALLBACK */
     /* ENDFALLBACK */ 
-    {RETAIN, INVERT, FB2REBUILD,        /* BUILD, DROP  REBUILD, */
-     IGNORE, RETAIN, ERROR}         /* DIFF, FALLBACK, ENDFALLBACK */
+    {RETAIN, INVERT, FB2REBUILD,          /* BUILD, DROP  REBUILD, */
+     IGNORE, RETAIN, ERROR}               /* DIFF, FALLBACK, ENDFALLBACK */
 };
 
 /* Notes:
@@ -953,26 +1001,6 @@ mirrorOrThis(DagNode *this)
 }
 
 
-/*
-static Dependency *
-makeInvertedDep(Dependency *dep, volatile ResolverState *res_state)
-{
-    Dependency *dup = dependencyNew(mirrorOrThis(dep->dep));
-    DependencySet *dup_depset;
-    dup->direction = dep->direction;
-    if (dep->depset) {
-	if (!(dup_depset = dep->depset->mirror)) {
-	    dup_depset = dependencySetNew();
-	    dup_depset->degrade_if_missing = dep->depset->degrade_if_missing;
-	    dep->depset->mirror = dup_depset;
-	    vectorPush(res_state->dependency_sets, (Object *) dup_depset);
-	}
-	dup->depset = dup_depset;
-	vectorPush(dup_depset->deps, (Object *) dup);
-    }
-    return dup;
-}
-*/
 static boolean
 isDropsideFallbackNode(DagNode *node)
 {
@@ -1104,7 +1132,7 @@ mirrorNodeDep(DagNode *node, Dependency *dep, boolean used_already,
 	    dep = dupDependency(dep, res_state);
 	}
 	dep->dep = mirrorOrThis(dep->dep);
-        if (invertNodeDep(node->mirror_node, dep, FALSE, res_state)) {
+        if (invertNodeDep(mirrorOrThis(node), dep, FALSE, res_state)) {
 	    return TRUE;
 	}
 	else {
@@ -2037,20 +2065,6 @@ initResolverState(volatile ResolverState *res_state, Document *doc)
     res_state->activated_fallbacks = vectorNew(10);
 }
 
-/* Reset each node status to unvisited and remove any deactivated
- * dependencies.  This should be done in convertDependencies
- */
-static void
-cleanupDeps(Vector *nodes)
-{
-    int i;
-    DagNode *node;
-    EACH(nodes, i) {
-	node = (DagNode *) ELEM(nodes, i);
-	node->status = UNVISITED;
-    }
-}
-
 static void
 cleanupResolverState(volatile ResolverState *res_state)
 {
@@ -2086,12 +2100,12 @@ dagFromDoc(Document *doc)
 	resolver_state.by_pqn = hashByPqn(resolver_state.all_nodes);
 	identifyDependencies(resolver_state.all_nodes, &resolver_state);
 
+	promoteRebuilds(resolver_state.all_nodes);
 	makeMirrors(resolver_state.all_nodes);
 	//showVectorDeps(resolver_state.all_nodes);
 	//fprintf(stderr, "\n------------------------------\n\n");
 
 
-	// TODO: promote rebuilds; remove deps involving an EXISTS_NODE
 	redirectDependencies(&resolver_state);
 	resolveNodes(&resolver_state);
 	deactivateInactiveFallbacks(&resolver_state);
@@ -2100,7 +2114,7 @@ dagFromDoc(Document *doc)
 	optimiseDepsets(&resolver_state);
 
 	convertDependencies(resolver_state.all_nodes);
-	cleanupDeps(resolver_state.all_nodes);
+	resetNodes(resolver_state.all_nodes);
 	//showVectorDeps(resolver_state.all_nodes);
     }
     EXCEPTION(ex) {

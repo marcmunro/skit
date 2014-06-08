@@ -58,13 +58,16 @@
 
 
   <!-- These are grants of object privilege.  Note that the fqn may be
-       in two forms: 
+       in three forms: 
        1) For the owner of the object:
           grant.<object>.<privilege>
-       2) For anyone else:
+       2) For anyone else, granted by the owner
+          grant.<object>.<privilege>:<grantee>
+       3) For anyone else:
           grant.<object>.<privilege>:<grantee>.<grantor>
 
-       TODO: explain why this is.
+       This allows the fqns of grants from the owner to match when
+       comparing objects for diffs.
   -->
   <xsl:template match="grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
@@ -76,10 +79,21 @@
       <xsl:with-param name="fqn">
 	<xsl:value-of select="concat('grant.', name(..), '.', 
 			             $parent_core, '.', @priv)"/>
-	<xsl:if test="not(@automatic='yes' and @to = @from and 1 = 1)">
+
+<!-- New code -->
+	<xsl:if test="@to != @from">
+	  <xsl:value-of select="concat(':', @to)"/>
+	  <xsl:if test="@from != ../@owner">
+	    <xsl:value-of select="concat(':', @from)"/>
+	  </xsl:if>
+	</xsl:if>
+<!--
+    Previous version of the code from above
+	<xsl:if test="not(@automatic='yes' and @to = @from)">
 	  <xsl:value-of 
 	      select="concat(':', @to, ':', @from)"/>
 	</xsl:if>
+-->
       </xsl:with-param>
       <xsl:with-param name="others">
 	<param name="pqn" 
