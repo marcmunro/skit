@@ -1,0 +1,7 @@
+# Ignore superfluous revoke against sequences.
+> REVOKE ALL ON SEQUENCE s1b FROM PUBLIC;
+> REVOKE ALL ON SEQUENCE s2b FROM PUBLIC;
+> REVOKE ALL ON SEQUENCE s1a FROM PUBLIC;
+> REVOKE ALL ON SEQUENCE s2a FROM PUBLIC;
+# Ignore superfluous revoke against schemata.
+. REVOKE ALL ON SCHEMA n2 FROM PUBLIC;

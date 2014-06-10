@@ -334,7 +334,8 @@ regression_test4()
     dump_db_globals regressdb scratch/regressdb_test4b2.gdmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump4b2.xml ...
-    diffdump scratch/regressdb_test4b.dmp scratch/regressdb_test4b2.dmp
+    diffdump scratch/regressdb_test4b.dmp scratch/regressdb_test4b2.dmp \
+	regression_ignore4.txt
 
     diffglobals scratch/regressdb_test4b.gdmp  scratch/regressdb_test4b2.gdmp
     echo "...diff target->source..." 1>&2
@@ -348,7 +349,8 @@ regression_test4()
     dump_db_globals regressdb scratch/regressdb_test4a2.gdmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump4a2.xml ...
-    diffdump scratch/regressdb_test4a.dmp scratch/regressdb_test4a2.dmp
+    diffdump scratch/regressdb_test4a.dmp scratch/regressdb_test4a2.dmp \
+	regression_ignore4.txt
     diffglobals scratch/regressdb_test4a.gdmp  scratch/regressdb_test4a2.gdmp
 
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1

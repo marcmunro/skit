@@ -178,7 +178,7 @@ prep: regression_test_precond drop_regress_db
 	 $(REGRESS_RUN) prep
 
 regress: skit regress_cluster regression_test1 regression_test2 \
-		regression_test3 #regression_test4
+		regression_test3 regression_test4
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
 
@@ -198,4 +198,5 @@ regress_help:
 	@echo "regression_test1     - Regression test 1 (extract/generate)"
 	@echo "regression_test2     - Regression test 2 (scatter/gather)"
 	@echo "regression_test3     - Regression test 3 (diffs)"
+	@echo "regression_test4     - Regression test 3 (diffs)"
 	@echo "drop_regress_cluster - Drop regression test database cluster"

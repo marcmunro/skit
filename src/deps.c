@@ -903,7 +903,7 @@ static DepTransform transform_for_build_types
     {RETAIN, INVERT, RETAIN,         	  /* BUILD, DROP  REBUILD, */
      IGNORE, RETAIN, ERROR},         	  /* DIFF, FALLBACK, ENDFALLBACK */
     /* DROP */ 
-    {ERROR, INVERT, INVERT,     	  /* BUILD, DROP  REBUILD, */
+    {RETAIN, INVERT, MIRROR,     	  /* BUILD, DROP  REBUILD, */
      IGNORE, DSFALLBACK, ERROR},     	  /* DIFF, FALLBACK, ENDFALLBACK */
     /* REBUILD */ 
     {RETAIN, REBUILD2DROP, DUPANDMIRROR,  /* BUILD, DROP  REBUILD, */
@@ -926,6 +926,9 @@ static DepTransform transform_for_build_types
  *   BUILD->DROP 
  *    This happens when an object is being built abd the privs we need
  *    to build that object (eg usage on a schema) are being dropped.
+ *   DROP->BUILD
+ *    This happens when an object is being dropped but it optionally
+ *    depends on a transient dependency which is being created. 
  */
 
 static DepTransform
@@ -2109,7 +2112,6 @@ dagFromDoc(Document *doc)
 	redirectDependencies(&resolver_state);
 	resolveNodes(&resolver_state);
 	deactivateInactiveFallbacks(&resolver_state);
-	//showVectorDeps(resolver_state.all_nodes);
 	//fprintf(stderr, "\n------------------------------\n\n");
 	optimiseDepsets(&resolver_state);
 
