@@ -27,7 +27,7 @@ TEST_DEPS = $(TEST_OBJECTS:.o=.d)
 TEST_GARBAGE = $(garbage:%=$(TEST_DIR)/%)
 
 # Include dependency files for each test file
--include $(TEST_DEPS) #$(TEST_DIR)/alltests.dep
+-include $(TEST_DEPS) $(TEST_DIR)/alltests.dep
 
 LIBCHECK = /usr/lib/libcheck.a
 

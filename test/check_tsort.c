@@ -634,50 +634,11 @@ START_TEST(check_cyclic_exception)
 }
 END_TEST
 
-#ifdef unused
+
 START_TEST(diff)
 {
     Document *volatile doc = NULL;
     Vector *volatile results = NULL;
-    boolean failed = FALSE;
-    BEGIN {
-	initTemplatePath(".");
-	//showMalloc(981);
-	doc = getDoc("test/data/gensource_diff.xml");
-	results = tsort(doc);
-	printSexp(stderr, "RESULTS: ", (Object *) results);
-
-
-	objectFree((Object *) results, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) results, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("tsort fails with exception");
-    }
-}
-END_TEST
-#endif
-
-#ifdef wibble
-START_TEST(diff2)
-{
-    Document *volatile doc = NULL;
-    Vector *volatile results = NULL;
-    Object *ignore;
-    char *tmp;
-    int result;
-    Symbol *simple_sort;
     boolean failed = FALSE;
     BEGIN {
 	initTemplatePath(".");
@@ -686,11 +647,13 @@ START_TEST(diff2)
 	results = tsort(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
+	/* Currently there is no build order worth checking
 	check_build_order(results, "('diff.tablespace.cluster.tbs2'"
 			  "'diff.role.cluster.regress')");
 
 	check_build_order(results, "('drop.role.cluster.lose'"
 			  "'exists.cluster')");
+	*/
 
 	objectFree((Object *) results, TRUE);
 	objectFree((Object *) doc, TRUE);
@@ -711,7 +674,6 @@ START_TEST(diff2)
     }
 }
 END_TEST
-#endif
 
 START_TEST(depset)
 {
@@ -866,6 +828,7 @@ START_TEST(fallback)
 END_TEST
 
 
+#ifdef WIBBLE
 static Document *
 creatediffs(char *path1, char *path2)
 {
@@ -928,7 +891,42 @@ START_TEST(rt3)
     }
 }
 END_TEST
+#endif
 
+#ifdef WIBBLE
+START_TEST(diff2)
+{
+    Document *volatile doc = NULL;
+    Vector *volatile results = NULL;
+    boolean failed = FALSE;
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(981);
+	doc = getDoc("test/data/gensource_diff.xml");
+	results = tsort(doc);
+	printSexp(stderr, "RESULTS: ", (Object *) results);
+
+
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) results, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("tsort fails with exception");
+    }
+}
+END_TEST
+#endif
 
 
 
@@ -949,13 +947,15 @@ tsort_suite(void)
     ADD_TEST(tc_core, check_cyclic_tsort2);
     ADD_TEST(tc_core, check_cyclic_exception);
 
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, diff2);
+    ADD_TEST(tc_core, diff);
     ADD_TEST(tc_core, depset);
     ADD_TEST(tc_core, depset2);
     ADD_TEST(tc_core, depset_rebuild);
     ADD_TEST(tc_core, fallback);
-    ADD_TEST(tc_core, rt3);
+
+    // For debugging regression tests
+    //ADD_TEST(tc_core, rt3);
+    //ADD_TEST(tc_core, diff2);
 				
     suite_add_tcase(s, tc_core);
 

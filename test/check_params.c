@@ -728,6 +728,7 @@ START_TEST(extract)
 END_TEST
 #endif
 
+#ifdef WIBBLE
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", "--drop",
@@ -754,6 +755,7 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
 #ifdef NEW_DEPS
 START_TEST(deps1a)
@@ -812,7 +814,7 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
-#ifdef unused
+#ifdef WIBBLE
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -1029,13 +1031,6 @@ params_suite(void)
     ADD_TEST(tc_core, value_and_default);
     ADD_TEST(tc_core, option_usage);  
 
-    // When we start back on diff, these need to be re-instated
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
-
-    //ADD_TEST(tc_core, gather);
-
     // Various parameters that must work
     ADD_TEST(tc_core, list);
     //ADD_TEST(tc_core, list2);  // For debugging list without having 
@@ -1047,12 +1042,14 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-
-    // ??
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, difflist);
+    //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);
+    //ADD_TEST(tc_core, gather);
 
     suite_add_tcase(s, tc_core);
 

@@ -2084,6 +2084,7 @@ START_TEST(general_diffs)
 END_TEST
 
 
+#ifdef WIBBLE
 START_TEST(rt3)
 {
     Document *volatile diffs = NULL;
@@ -2117,7 +2118,7 @@ START_TEST(rt3)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
+#endif
 
 Suite *
 deps_suite(void)
@@ -2147,7 +2148,9 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, depdiffs_1);
     ADD_TEST(tc_core, general_diffs);
-    ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */
+
+    // For debugging regression tests
+    // ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */
 
     /* Add tests for:
      *   degrade_if_missing
