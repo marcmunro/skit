@@ -728,7 +728,6 @@ START_TEST(extract)
 END_TEST
 #endif
 
-#ifdef WIBBLE
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", "--drop",
@@ -755,9 +754,7 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
 
-#ifdef NEW_DEPS
 START_TEST(deps1a)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -786,6 +783,7 @@ START_TEST(deps1a)
 END_TEST
 
 
+#ifdef NEW_DEPS
 START_TEST(deps1b)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -1042,8 +1040,8 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
-    //ADD_TEST(tc_core, deps1a);
+    ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);

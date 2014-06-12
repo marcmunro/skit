@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Cannot use set seeion auth to change user in order to set the
+  <!-- Cannot use set session auth to change user in order to set the
        owner, so this template is explicit. -->
   <xsl:template match="dbobject[@action='build']/schema">
     <print>

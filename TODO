@@ -1,150 +1,36 @@
-Bugs:
+WORKING ON finsihing conversion of ddl to new consistency.  Working on tables.xsl
+
+Bugs and Issues:
+  We should optimise the dropping of dependent objects when their
+  dependency is dropped.  Eg grants on object when object is dropped.
+
   when arriving at or leaving leaving database/cluster, the context
   (session auth) must be reset - currently it is not.
 
-
-CURRENT PLAN:
-  1) Ignore error: must be superuser to alter superusers temporarily in
-     the regression tests                                           DONE
-  2) continue deps handling updates
-  3) Undo the ignorance of the regression error in 1
-  4) Implement a solution for nested problem 7
-  5) Implement optimisation for dropping objects for which the dropping
-     of the dependents will automatically drop the current object (eg
-     grants for roles).
-  6) replan
-
-Nexted problem 7:
   Cannot manipulate roles which are superusers if we are not a superuser.
   This seems to need dependency-sets which are conditional on the
   activation or existence of fallback nodes.  We need to make this as
   general a solution as possible, and we must recheck such conditional
   dependency-sets when activating fallback nodes.
   Example scripts in error_example.sql
+
+  We should not have the separation of diff and diffprep.  It is an
+  artifical distinction and the current diffprep handling is wrong
+  anyway as when switching owner, the new owner may not have been
+  created at the diffprep node.
+
+  Need to consider how to deal with automatically named constraints.
   
+  Identify any issues/new features raised in DEPS.txt
 
-Nested Problem 6:
-  Rebuilding deps processing stuff (see DEPS.txt)
-  TODO: 
-  - modify tablespaces to not contain the cluster element as part of the
-    name
-  - modify roles to not contain the cluster element as part of the name
-  - replace test deps depdiffs 1
-  - check params tests, replace or disable those that are commented out
-    LATEST CONDITIONAL IS ON NEW_DEPS
-  - reactivate regression tests 3 and 4 
+CHECK THIS:
+  It seems that the owner cannot modify the current value of the
+  sequence if they do not have update privilege on the sequence (and
+  possibly usage on the schema).  Note that this may be a postgresql bug
+  and should be checked, and reported if so.
 
 
-Current:
-  cyclic dep discovered by test case 2 in depdiffs_1
-
-  Problem arises from trying to enable backward deps from build node to
-  drop node (deps 8 and 9 in diagram).  This clashes with a backward dep
-  from a diff node to the drop node (dep 4).  
-
-  The last dep seems weak as there is no reason to require the drop to
-  be done before processing the diff.  Maybe a build-side drop node is
-  an option.  This would be a drop node that exists on the build side of
-  the DAG.  Hmmm, this might make sense for diffs.  The drop for a
-  rebuild would be on the drop side, but a normal drop could live on the
-  build side and would resolve many of these issues.
-
-  Having resolved dep 4, deps 8 and 9 can be handled as conditional
-  deps.  Adding conditional deps should be the last thing that is done,
-  after swap backward breakers.  If a cycle would arise, a fallback
-  would be used instead.
-
-
-WORKING ON:
-
- - BUILDING TEST CASES for NP3.  See test/data/depdiffs_1a.sql
-   test/check_deps.c
-
- - New deps handling implemented which delays processing the
-   conditional deps until after unconditional deps are fully resolved,
-   and rebuilds have been promoted.  This means that the type of each
-   node is known at the time of conditional deps resolution, and so it
-   should be possible to add proper conditionality.
-
- - Need to find a way to add some extra dbobject attributes to identify
-   what schema priviles are needed in order to build, drop or modify
-   the dbobject.
- 
-STATUS:
-  We have created a mechanism for identifying when non-default schema
-  privs are needed:
-
-<extra-schema-privs action="build" priv="usage"/>
-
-actions are diffprep, diffcomplete, drop and build
-
-This has been added to add_deps.xsl.  See it in action using tests:
-- params deps_1a; and
-- params deps_1b.
-
-This would activate conditional dependencies with an expression like this:
-
-<dependency-set 
-   direction="forwards" 
-   condition="(xpath (concat 'extra-schema-privs[@action=\'' 
-                             action '\' and @priv=\'usage\'']))">
-  <....
-
-Hmmm.  This will require deps to be handled in a different order so that
-the dbobjects are split before resolution.  This is because dependency
-resolution will now be conditional on the action being taken, and that
-can only be determined after the node has been split into its parts.
-
-This change may not be too intrusive: even before we split the nodes, we
-can know what we would be doing for the node as long as we have promoted
-rebuilds early on.
-
-PLAN:
-- refactor deps handling to make promotion to rebuildnodes happen before
-  resolution of the deps.  DONE.
-- Make the condition above work in skit babylisp.
-- continue with building the depdiffs tests
-
-
-Nested Problem 5:
-Major refactoring required to deal with conditional deps as described
-above.  The rewrite to dep handling part of this has been done.
-
-Nested Problem 4:
-dep tests fail.  This seems to be a consequence of the ongoing deps
-work.  Let's deal with this later.  We also need to add more deps tests
-for specific cases:
-  - for cyclic conditional deps, we need to force an error so that the
-    error message can be checked.
-  - tests for conditional deps
-
-Nested Problem 3:
-dependency-sets for owner diffs are incorrect.  See comments in
-diffs/functions.xml for details on what needs to happen.  Unit test
-cases should probably be constructed before tackling this stuff.
-
-Nested Problem 2:
-Trying to make the fqns of grants to the owner of an object simpler than
-other grants.  In this case it is enough to know what has been granted
-and we do not need to know to which or by which role it was granted.
-This will allow ownership of objects to be changed without needing to
-change any grants.  A unit test case should be constructed for this.
-
-Partial changes have been implemented in add_deps.xsl and deps.grants.xsl
-
-Nested Problem 1:
-Stymied on a sequence issue:
-
-It seems that the owner cannot modify the current value of the
-sequence if they do not have update privilege on the sequence (and
-possibly usage on the schema).  Note that this may be a postgresql bug
-and should be checked, and reported if so.
-
-
-
-Item: Think about what to do for automatically named constraints
-
-
+TODO:
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
 
