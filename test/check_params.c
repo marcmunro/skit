@@ -737,7 +737,7 @@ START_TEST(generate)
 
     initTemplatePath(".");
     //showFree(3549);
-    //showMalloc(4283);
+    showMalloc(55599);
 
     BEGIN {
 	process_args2(5, args);
@@ -844,7 +844,6 @@ START_TEST(diff)
 END_TEST
 #endif
 
-#ifdef NEW_DEPS
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -876,10 +875,8 @@ START_TEST(diffgen)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#endif
 
-
-#ifdef NEW_DEPS
+#ifdef wibble
 START_TEST(difflist)
 {
     char *args[] = {"./skit", "-t", "diff.xml", 
@@ -1043,9 +1040,9 @@ params_suite(void)
     ADD_TEST(tc_core, generate);   // during development of new db objects
     ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    //ADD_TEST(tc_core, diff);
+    ///ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);
-    //ADD_TEST(tc_core, diffgen);
+    ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);
     //ADD_TEST(tc_core, gather);
 

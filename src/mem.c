@@ -191,6 +191,38 @@ printObj(Object *obj)
     }
 }
 
+/* Show the currently allocated objects in as much detail as possible.
+ */
+static void
+findChunk(
+    gpointer key,
+    gpointer contents,
+    gpointer param)
+{
+    Cons *cons = (Cons *) param;
+    intptr_t chunk_no;
+    intptr_t looking_for;
+    void *chunk;
+
+    chunk_no = (intptr_t) contents;
+    looking_for = (intptr_t) cons->cdr;
+
+    if (chunk_no == looking_for) {
+	sscanf((char *) key, "%p", (void **)&chunk);
+	cons->car = (Object *) chunk;
+    }
+}
+
+
+void *
+getChunk(intptr_t chunk_id)
+{
+    Cons param = {OBJ_CONS, NULL, (Object *) chunk_id};
+    g_hash_table_foreach(chunkTable(), findChunk, (gpointer) &param);
+    return (void *) param.car;
+}
+
+
 /* Print to stderr whatever is known about the given memory chunk.
  */
 void

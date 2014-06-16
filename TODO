@@ -14,11 +14,6 @@ Bugs and Issues:
   dependency-sets when activating fallback nodes.
   Example scripts in error_example.sql
 
-  We should not have the separation of diff and diffprep.  It is an
-  artifical distinction and the current diffprep handling is wrong
-  anyway as when switching owner, the new owner may not have been
-  created at the diffprep node.
-
   Need to consider how to deal with automatically named constraints.
   
   Identify any issues/new features raised in DEPS.txt

@@ -11,6 +11,7 @@
  * Define the skitlib API.
  */
 
+#include <inttypes.h>
 #include <setjmp.h>
 #include <glib.h>
 #include <signal.h>
@@ -582,6 +583,7 @@ extern void showFree(int number_to_show);
 extern void showMalloc(int number_to_show);
 extern void trackMalloc(int number_to_show);
 extern void chunkInfo(void *chunk);
+extern void *getChunk(intptr_t chunk_id);
 
 #define newstr(...)  memchunks_incr(g_strdup_printf(__VA_ARGS__))
 

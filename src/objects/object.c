@@ -560,9 +560,14 @@ static void
 dependencySetFree(DependencySet *depset, boolean free_contents)
 {
     Vector *deps = depset->deps;
-    /* The following condition is intended to prevent infinite mutual
-     * recursion between this function and DependencyFree(). */
-    if (deps && free_contents) {
+    Dependency * dep;
+    int i;
+    if (free_contents) {
+	EACH(deps, i) {
+	    if (dep = (Dependency *) ELEM(deps, i)) {
+		//skfree((Object *) dep);
+	    }
+	}
 	objectFree((Object *) deps, FALSE);
     }
     skfree(depset);

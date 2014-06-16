@@ -893,7 +893,7 @@ makeMirrors(Vector *nodes)
 typedef enum {
     RETAIN, INVERT, MIRROR, DUPANDMIRROR, 
     DSFALLBACK, BOTHFALLBACK, IGNORE, FB2REBUILD,
-    REBUILD2DROP, ERROR
+    REBUILD2DROP, MRETAIN, ERROR
 } DepTransform;
 
 static DepTransform transform_for_build_types
@@ -909,7 +909,7 @@ static DepTransform transform_for_build_types
     {RETAIN, REBUILD2DROP, DUPANDMIRROR,  /* BUILD, DROP  REBUILD, */
      IGNORE, BOTHFALLBACK, ERROR},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* DIFF */ 
-    {RETAIN, MIRROR, DUPANDMIRROR,        /* BUILD, DROP  REBUILD, */
+    {MRETAIN, INVERT, DUPANDMIRROR,        /* BUILD, DROP  REBUILD, */
      IGNORE, BOTHFALLBACK, ERROR},        /* DIFF, FALLBACK, ENDFALLBACK */
     /* FALLBACK */ 
     {RETAIN, INVERT, FB2REBUILD,          /* BUILD, DROP  REBUILD, */
@@ -1020,54 +1020,6 @@ isDropsideFallbackNode(DagNode *node)
     return FALSE;
 }
 
-/* Copy dep into node->tmp_deps and return an indicator of whether the
- * node was used or not.
- */
-static boolean
-retainNodeDep(DagNode *node, Dependency *dep)
-{
-    assert(dep->type == OBJ_DEPENDENCY,
-	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
-    if ((dep->direction == FORWARDS) ||
-	(dep->direction == BOTH_DIRECTIONS)) 
-    {
-	myVectorPush(&(node->tmp_deps), (Object *) dep);
-	return TRUE;
-    }
-    return FALSE;
-}
-
-/* Invert the dependency dep, and return an indicator of whether we used
- * the dep. 
- */
-static boolean
-invertNodeDep(DagNode *node, Dependency *dep, boolean used,
-	      volatile ResolverState *res_state)
-{
-    DagNode *depnode;
-    if (dep->type == OBJ_DEPENDENCY) {
-	if ((dep->direction == BACKWARDS) ||
-	    (dep->direction == BOTH_DIRECTIONS)) 
-	{
-	    if (used) {
-		RAISE(NOT_IMPLEMENTED_ERROR, 
-		      newstr("invertNodeDep: HERE"));
-	    }
-	    depnode = dep->dep;
-	    dep->dep = node;
-	    myVectorPush(&(depnode->tmp_deps), (Object *) dep);
-	    return TRUE;
-	}
-    }
-    else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("invertNodeDep: no handler for deps of type %d",
-		     dep->type));
-    }
-    return FALSE;
-}
-
-
 static Dependency *
 makeDupDependency(Dependency *dep, boolean make_depset,
 		  volatile ResolverState *res_state);
@@ -1114,6 +1066,49 @@ dupDependency(Dependency *dep, volatile ResolverState *res_state)
     return makeDupDependency(dep, TRUE, res_state);
 }
 
+static boolean
+applyDep(
+    DagNode *node,
+    Dependency *dep,
+    boolean forwards,
+    boolean invert_direction,
+    boolean use_dep_mirror,
+    boolean dep_already_used,
+    volatile ResolverState *res_state)
+{
+    DagNode *depnode;
+    assert(dep->type == OBJ_DEPENDENCY,
+	   "dep must be of type OBJ_DEPENDENCY but is %d", dep->type);
+
+    if (forwards) {
+	if (dep->direction == BACKWARDS) {
+	    return dep_already_used;
+	}
+    }
+    else {
+	if (dep->direction == FORWARDS) {
+	    return dep_already_used;
+	}
+    }
+
+    if (dep_already_used) {
+	dep = dupDependency(dep, res_state);
+    }
+
+    if (use_dep_mirror) {
+	dep->dep = mirrorOrThis(dep->dep);
+    }
+
+    if (invert_direction) {
+	depnode = dep->dep;
+	dep->dep = node;
+	node = depnode;
+    }
+
+    myVectorPush(&(node->tmp_deps), (Object *) dep);
+    return TRUE;
+}
+
 static void
 dropDependency(Dependency *dep)
 {
@@ -1124,31 +1119,6 @@ dropDependency(Dependency *dep)
 	(void) vectorDel(dep->depset->deps, (Object *) dep);
     }
     objectFree((Object *) dep, TRUE);
-}
-
-static boolean
-mirrorNodeDep(DagNode *node, Dependency *dep, boolean used_already,
-	      volatile ResolverState *res_state)
-{
-    if (dep->type == OBJ_DEPENDENCY) {
-	if (used_already) {
-	    dep = dupDependency(dep, res_state);
-	}
-	dep->dep = mirrorOrThis(dep->dep);
-        if (invertNodeDep(mirrorOrThis(node), dep, FALSE, res_state)) {
-	    return TRUE;
-	}
-	else {
-	    dropDependency(dep);
-	    return used_already;
-	}
-    }
-    else {
-	RAISE(NOT_IMPLEMENTED_ERROR, 
-	      newstr("mirrorNodeDep: no handler for deps of type %d",
-		     dep->type));
-    }
-    return FALSE;
 }
 
 static void
@@ -1176,34 +1146,42 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
     DepTransform transform;
     boolean used;
 
+    if (streq("constraint.regressdb.public.thing.thing__pk", 
+	      node->fqn->value)) {
+	fprintf(stderr, "HERE\n");
+    }
     EACH(node->deps, i) {
 	dep = (Dependency *) ELEM(node->deps, i);
 	transform = transformForDep(node, dep);
 
 	switch (transform) {
 	case BOTHFALLBACK:
-	    if (retainNodeDep(node, dep)) {
-		dep = dupDependency(dep, res_state);
-	    }
-	    dep->dep = dep->dep->mirror_node;
-	    used = retainNodeDep(node->mirror_node, dep);
+	    used = applyDep(node, dep, TRUE, FALSE, FALSE, FALSE, res_state);
+	    used = applyDep(node->mirror_node, dep, 
+			    FALSE, FALSE, TRUE, used, res_state);
 	    break;
 	case DSFALLBACK:
-	    dep->dep = dep->dep->mirror_node;
-	    used = retainNodeDep(node, dep);
+	    used = applyDep(node, dep, TRUE, FALSE, TRUE, FALSE, res_state);
 	    break;
 	case RETAIN: 
-	    used = retainNodeDep(node, dep);
+	    used = applyDep(node, dep, TRUE, FALSE, FALSE, FALSE, res_state);
+	    break;
+	case MRETAIN: 
+	    used = applyDep(node->mirror_node, dep, 
+			    TRUE, FALSE, FALSE, FALSE, res_state);
 	    break;
 	case INVERT:
-	    used = invertNodeDep(node, dep, FALSE, res_state);
+	    used = applyDep(node, dep, FALSE, TRUE, FALSE, FALSE, res_state);
 	    break;
 	case MIRROR:
-	    used = mirrorNodeDep(node, dep, FALSE, res_state);
+	    //used = mirrorNodeDep(node, dep, FALSE, res_state);
+	    used = applyDep(mirrorOrThis(node), dep, 
+			    FALSE, TRUE, TRUE, FALSE, res_state);
 	    break;
 	case DUPANDMIRROR:
-	    used = retainNodeDep(node, dep);
-	    used = mirrorNodeDep(node, dep, used, res_state);
+	    used = applyDep(node, dep, TRUE, FALSE, FALSE, FALSE, res_state);
+	    used = applyDep(mirrorOrThis(node), dep, 
+	    		    FALSE, TRUE, TRUE, used, res_state);
 	    break;
 	case IGNORE:
 	    if (dep->depset) {
@@ -1211,8 +1189,6 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
 		 * dependency-set.  This means the whole dependency-set
 		 * can be ignored. */
 		if (!dep->deactivated) {
-		    /* Deactivate the depset only if this is the first
-		     * dep in that depset. */
 		    deactivateDepset(dep->depset);
 		}
 	    }
@@ -1221,10 +1197,12 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
 	case FB2REBUILD:
 	    if (isDropsideFallbackNode(node)) {
 		dep->dep = dep->dep->mirror_node;
-		used = invertNodeDep(node, dep, FALSE, res_state);
+		used = applyDep(node, dep, 
+				FALSE, TRUE, FALSE, FALSE, res_state);
 	    }
 	    else {
-		used = retainNodeDep(node, dep);
+		used = applyDep(node, dep, 
+				TRUE, FALSE, FALSE, FALSE, res_state);
 	    }
 	    break;
 	default: 
@@ -2127,6 +2105,7 @@ dagFromDoc(Document *doc)
     }
     END;
 
+    //fprintf(stderr, "CHUNK %p\n", getChunk(1000));
     cleanupResolverState(&resolver_state);
     return resolver_state.all_nodes;
 }
