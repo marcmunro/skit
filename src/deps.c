@@ -1146,10 +1146,6 @@ redirectNodeDeps(DagNode *node, volatile ResolverState *res_state)
     DepTransform transform;
     boolean used;
 
-    if (streq("constraint.regressdb.public.thing.thing__pk", 
-	      node->fqn->value)) {
-	fprintf(stderr, "HERE\n");
-    }
     EACH(node->deps, i) {
 	dep = (Dependency *) ELEM(node->deps, i);
 	transform = transformForDep(node, dep);

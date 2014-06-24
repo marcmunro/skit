@@ -4,9 +4,6 @@ Bugs and Issues:
   We should optimise the dropping of dependent objects when their
   dependency is dropped.  Eg grants on object when object is dropped.
 
-  when arriving at or leaving leaving database/cluster, the context
-  (session auth) must be reset - currently it is not.
-
   Cannot manipulate roles which are superusers if we are not a superuser.
   This seems to need dependency-sets which are conditional on the
   activation or existence of fallback nodes.  We need to make this as
@@ -15,7 +12,30 @@ Bugs and Issues:
   Example scripts in error_example.sql
 
   Need to consider how to deal with automatically named constraints.
+
+  Condider whether we can remove diffprep nodes and combine them with
+  diff.  This would require us to use the old ownership context and
+  provide access rights to that old context for both sides of the dag.
+  The ownership change would then be the last thing that was done in the
+  diff script.
+
+  When multiple fallbacks have been invoked see whether one can be used
+  to make others unnecessary.
   
+  Figure out how to give useful error messages when we do not have the
+  necessary priv for an operation.  To do this we may need the concept
+  of a temporary dependency (one that only needs to exist for the
+  duration of the build/drop/diff actions, and not subsequently. 
+
+  Allow handling of a lack of priv by commenting out the code.  This
+  probably also requires deps to be marked as temporary or transient or
+  some such.
+
+  Allow an as-user opton.
+
+  Allow nodes to be dependent on alternate parents (eg for cluster
+  objects such as roles, tablespaces, etc)?
+
   Identify any issues/new features raised in DEPS.txt
 
 CHECK THIS:
@@ -28,34 +48,6 @@ CHECK THIS:
 TODO:
 Check handling of all existing ownership diffs - are they being handled
 in a manner consistent with conversions?
-
-[ This may cease to be an issue after refactoring of the xsl? ]
-
-    conversions		yes
-    schemata		yes
-    cluster		n/a
-    database		yes
-    types		n/a
-    functions		yes
-    aggregates		yes
-    casts		n/a
-    operators		yes
-    operator_classes	yes
-    operator_families	yes
-    basetypes		yes
-    composite types	yes
-    domains		yes
-    sequences		TODO
-    tables		TODO
-    views		TODO
-    constraints		TODO
-    rules		TODO
-    triggers		TODO
-    indices		TODO
-
-
-Do the concat thing for objects below as is done in generate for
-schemata (in ddl)
 
 diffs:
     sequences (including the concat thing)

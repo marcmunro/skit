@@ -183,14 +183,17 @@ getContextNavigation(xmlNode *from, xmlNode *target)
 	from_context = (Context *) listExtract(&from_contexts, 
 					       (Object *) target_context,
 					       &contextMatch);
-	if (from_context &&
-	    !streq(target_context->value->value, from_context->value->value)) 
-	{
-	    /* We have the same context type for both nodes but with
-	     * different values, so we depart the old context and arrive
-	     * at the new one.  */
-	    addContext(departures, from_context);
-	    addContext(arrivals, target_context);
+
+	if (from_context) {
+	    if (!streq(target_context->value->value, 
+		       from_context->value->value))
+	    {
+		/* We have the same context type for both nodes but with
+		 * different values, so we depart the old context and
+		 * arrive at the new one.  */
+		addContext(departures, from_context);
+		addContext(arrivals, target_context);
+	    }
 	}
 	else {
 	    /* This is a new context. */

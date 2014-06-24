@@ -728,9 +728,10 @@ START_TEST(extract)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--build", "--drop",
+    char *args[] = {"./skit", "--generate", "--drop",
 		    "x",
 		    //"regress/scratch/dbdump/cluster.xml",
 		    "--debug", "--print", "--full"};
@@ -740,7 +741,7 @@ START_TEST(generate)
     showMalloc(55599);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(4, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -754,7 +755,9 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
+#ifdef wibble
 START_TEST(deps1a)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -781,7 +784,7 @@ START_TEST(deps1a)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
+#endif
 
 #ifdef NEW_DEPS
 START_TEST(deps1b)
@@ -844,6 +847,7 @@ START_TEST(diff)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(diffgen)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -875,6 +879,7 @@ START_TEST(diffgen)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#endif
 
 #ifdef wibble
 START_TEST(difflist)
@@ -1037,12 +1042,12 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
-    ADD_TEST(tc_core, deps1a);
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
     ///ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);
-    ADD_TEST(tc_core, diffgen);
+    //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);
     //ADD_TEST(tc_core, gather);
 

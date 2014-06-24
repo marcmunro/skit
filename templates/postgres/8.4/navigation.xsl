@@ -54,18 +54,54 @@
        navigation processing.  -->
   <xsl:template match="*" mode="add-nav"/>
 
+  <xsl:template name="context-arrive">
+    <xsl:param name="context" select="@name"/>
+    <xsl:value-of 
+	select="concat('&#x0A;set session authorization ', $apos, 
+		$context, $apos, ';&#x0A;')"/>
+  </xsl:template>
+
+  <xsl:template name="context-depart">
+    <xsl:text>reset session authorization;&#x0A;</xsl:text>
+  </xsl:template>
+
+  <xsl:template name="current-context">
+    <xsl:for-each select="(preceding-sibling::*[@type='context'])[last()]">
+      <xsl:if test="@action='arrive'">
+	<xsl:value-of select="@name"/>
+      </xsl:if>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template name="conditionally-depart-context">
+    <xsl:variable name="context">
+      <xsl:call-template name="current-context"/>
+    </xsl:variable>
+
+    <xsl:if test="$context!=''">
+      <xsl:call-template name="context-depart"/>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="conditionally-rejoin-context">
+    <xsl:variable name="context">
+      <xsl:call-template name="current-context"/>
+    </xsl:variable>
+    <xsl:if test="$context!=''">
+      <xsl:call-template name="context-arrive">
+	<xsl:with-param name="context" select="$context"/>
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:template match="dbobject[@type='context']" mode="add-nav">
     <print>
       <xsl:if test="@action='arrive'">
-	<xsl:value-of 
-	    select="concat('&#x0A;set session authorization ', $apos, 
-		            @name, $apos, ';&#x0A;')"/>
+	<xsl:call-template name="context-arrive"/>
       </xsl:if>	
 
       <xsl:if test="@action='depart'">
-	<print>
-	  <xsl:text>reset session authorization;&#x0A;</xsl:text>
-	</print>
+	<xsl:call-template name="context-depart"/>
       </xsl:if>	
     </print>
   </xsl:template>
@@ -78,9 +114,11 @@
 	<xsl:text>psql -d postgres &lt;&lt;&apos;CLUSTEREOF&apos;&#x0A;</xsl:text>
 	<xsl:text>set standard_conforming_strings = off;&#x0A;</xsl:text>
 	<xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
+	<xsl:call-template name="conditionally-rejoin-context"/>
       </xsl:if>	
 
       <xsl:if test="@action='depart'">
+	  <xsl:call-template name="conditionally-depart-context"/>
 	<xsl:text>&#x0A;CLUSTEREOF&#x0A;</xsl:text>
       </xsl:if>	
     </print>
@@ -95,10 +133,12 @@
 		           ' &lt;&lt;', $apos, 'DBEOF', $apos, '&#x0A;',
 			   'set standard_conforming_strings = off;&#x0A;',
 			   'set escape_string_warning = off;&#x0A;')"/>
+	<xsl:call-template name="conditionally-rejoin-context"/>
       </xsl:if>	
 
       <xsl:if test="@action='depart'">
 	<print>
+	  <xsl:call-template name="conditionally-depart-context"/>
 	  <xsl:value-of select="'&#x0A;DBEOF&#x0A;'"/>
 	</print>
       </xsl:if>	
