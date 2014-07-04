@@ -13,7 +13,7 @@
     <xsl:param name="table" select="@table"/>
     <xsl:param name="priv"/>
     <!-- Dependency on table usage grant to owner, public or self -->
-    <dependency-set
+    <dependency-set priority="1"
 	fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	parent="ancestor::dbobject[database]">
       <xsl:call-template name="schema-deps">

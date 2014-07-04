@@ -192,8 +192,8 @@ regression_test1()
 {
     echo "Running regression test 1 (build and drop, simple-sort)..." 1>&2
     mkdir regress/scratch 2>/dev/null
-    #build_db regression3b_`pguver`.sql
-    build_db regression1_`pguver`.sql
+    #build_db regression1_`pguver`.sql
+    build_db regression1_`pguver`_tmp.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump1a.xml ...
@@ -387,41 +387,47 @@ prep_for_unit_test()
 	     >test/data/diffstream1.xml
 }
 
-verfrompath()
+# Return a simplified (2-part) version string.
+#
+strip_version()
 {
-    sed -e 's!.*/\([0-9][0-9]*\.[0-9][0-9]*\)/.*!\1!' | grep '[0-9]\.[0-9]'
+    sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9][0-9]*.*/\1/'
 }
 
+# Get postgres server version by connecting to postgres using psql.
+#
 pgver()
 {
-   psql --version | head -1 | \
-       sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)\.[0-9][0-9]*.*/\1/'
+   psql --no-psqlrc --tuples-only --command="select version()" |
+       awk '{print $2}' | strip_version
 }
 
+# Get postgres version with underscores replacing periods.
+#
 pguver()
 {
     pgver | sed -e 's/\./_/g'
 }
 
+# Find the bin directory to be used for postgres executables, etc
+#
 pgbin()
 {
-    # Find pg_config
-    PGCONFIG=`which pgconfig`
-    if [ "x${PGCONFIG}" = "x" ]; then
-        # pg_config is not in $PATH.  It may still be elsewhere.  Let's
-        # see if we can find it. 
-        ver=`pgver`
-	if [ -f /usr/lib/postgresql/${ver}/bin/pg_config ]; then
-	    PGCONFIG=/usr/lib/postgresql/${ver}/bin/pg_config
+    if cver=`pg_config --version | strip_version`; then
+	if [ "x${cver}" = "x`pgver`" ]; then
+	    pg_config --bindir
+	    return
 	fi
     fi
-    if [ "x${PGCONFIG}" != "x" ]; then
-	# pg_config is runnable
-	config_bin=`${PGCONFIG} --bindir`
-	echo ${config_bin}
-    else
-	which psql
+    # Standard pg_config was not found, or did not match our database version.
+    ver=`pgver`
+    if [ -f /usr/lib/postgresql/${ver}/bin/pg_config ]; then
+	/usr/lib/postgresql/${ver}/bin/pg_config --bindir
+	return
     fi
+    # can't find pg_config, we'll just have to assume the bin is where
+    # psql lives
+    which psql | sed -e 's!/psql$!!'
 }
 
 export MYPID=$$

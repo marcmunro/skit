@@ -303,8 +303,10 @@ struct Dependency;
 typedef struct DependencySet {
     ObjType                type;
     boolean                degrade_if_missing;
+    int                    priority;
     DependencyApplication  direction;
     struct Dependency     *chosen_dep;
+    DagNode               *definition_node;
     DagNode               *fallback;
     Vector                *deps;
 } DependencySet;

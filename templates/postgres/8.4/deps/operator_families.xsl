@@ -58,8 +58,10 @@
 	<xsl:call-template name="SchemaGrant"/>
 
         <!-- Depend on someone being a superuser - either owner or
-	     the current user (or rather the one that ran the extract). --> 
-	<dependency-set
+	     the current user (or rather the one that ran the extract)
+	     We use priority 2 so that if the owner is going to become a
+	     superuser, maybe we don't have to. --> 
+	<dependency-set priority="2"
 	    fallback="{concat('privilege.role.', 
 		              //cluster/@username, '.superuser')}"
 	    parent="ancestor::dbobject[database]">

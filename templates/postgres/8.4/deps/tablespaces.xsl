@@ -52,7 +52,7 @@
 	     build or drop, so we allow a conditional dependency on the
 	     database. -->
 	<dependency-set>
-	  <dependency fqn="concat('database.', ../database/@name)"/>
+	  <dependency fqn="{concat('database.', ../../database/@name)}"/>
 	  <dependency fqn="cluster"/>
 	</dependency-set>
       </xsl:when>

@@ -936,8 +936,6 @@ tsort_suite(void)
     Suite *s = suite_create("tsort");
     TCase *tc_core = tcase_create("tsort");
 
-    /* The tests with a 2 suffix use smart_tsort rather than standard
-     * tsort */
     ADD_TEST(tc_core, check_tsort);
     ADD_TEST(tc_core, check_tsort2);
     ADD_TEST(tc_core, navigation);

@@ -26,15 +26,32 @@
     </xsl:choose>
   </xsl:template>
 
+  <!-- Ignore text nodes when in ignore mode.  -->
+  <xsl:template match="text()" mode="ignore"/>
+
   <!-- Eliminate dbincluster objects which are artificially created
     by add_deps.xsl -->
   <xsl:template match="dbincluster"/>
 
   <!-- Eliminate dependencies and their contents -->
-  <xsl:template match="dbobject/dependencies"/>
+  <xsl:template match="dbobject/dependencies">
+    <xsl:apply-templates mode="ignore"/>
+  </xsl:template>
+
+  <!-- Eliminate dependencies and their contents -->
+  <xsl:template match="dbobject/dependency-set">
+    <xsl:apply-templates mode="ignore"/>
+  </xsl:template>
+
+  <!-- Eliminate dependencies and their contents -->
+  <xsl:template match="dbobject/dependency">
+    <xsl:apply-templates mode="ignore"/>
+  </xsl:template>
 
   <!-- Eliminate context elements -->
-  <xsl:template match="dbobject/context"/>
+  <xsl:template match="dbobject/context">
+    <xsl:apply-templates mode="ignore"/>
+  </xsl:template>
 
   <!-- Ignore extra-schema-privs elements -->
   <xsl:template match="dbobject/extra-schema-privs"/>
@@ -43,6 +60,11 @@
   <xsl:template match="allroles"/>
   <xsl:template match="alltbs"/>
 
+  <!-- Ignore dbobjects for privileges (these are duplicated by add_deps). -->
+  <xsl:template match="dbobject[@type='privilege']">
+    <xsl:apply-templates mode="ignore"/>
+  </xsl:template>
+  
   <!-- Ignore dbobjects but not their contents -->
   <xsl:template match="dbobject">
     <xsl:for-each select="*">
@@ -61,7 +83,6 @@
     </xsl:for-each>	
   </xsl:template>
     
-
 
   <!-- Main template for database objects -->
   <xsl:template match="*">

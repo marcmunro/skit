@@ -487,7 +487,9 @@ dependencySetNew()
     new->type = OBJ_DEPENDENCYSET;
     new->deps = vectorNew(10);
     new->degrade_if_missing = FALSE;
+    new->priority = 100;
     new->chosen_dep = NULL;
+    new->definition_node = NULL;
     new->fallback = NULL;
     return new;
 }

@@ -124,7 +124,7 @@
     <xsl:param name="owner" select="@owner"/>
     <xsl:if test="$owner">
       <!-- Dependency on schema create grant to owner, public or self -->
-      <dependency-set 
+      <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  direction="forwards">
@@ -134,7 +134,7 @@
 	<dependency fqn="{concat('privilege.role.', $owner, '.superuser')}"/>
       </dependency-set>
       <!-- Dependency on schema create grant to owner, public or self -->
-      <dependency-set 
+      <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
 	  direction="backwards">

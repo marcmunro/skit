@@ -51,7 +51,12 @@
 	<!-- No dependency if the role is granted from a superuser -->
       </xsl:when>
       <xsl:otherwise>  
-	<dependency pqn="{concat('grant.role.', @from, '.', @priv)}"/>
+      <dependency-set priority="1"
+	  fallback="{concat('privilege.role.', @from, '.superuser')}"
+	  parent="ancestor::dbobject[cluster]">
+	  <dependency pqn="{concat('grant.role.', @from, '.', @priv)}"/>
+	  <dependency pqn="{concat('privilege.role.', @from, '.superuser')}"/>
+	</dependency-set>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -80,20 +85,12 @@
 	<xsl:value-of select="concat('grant.', name(..), '.', 
 			             $parent_core, '.', @priv)"/>
 
-<!-- New code -->
 	<xsl:if test="@to != @from">
 	  <xsl:value-of select="concat(':', @to)"/>
 	  <xsl:if test="@from != ../@owner">
 	    <xsl:value-of select="concat(':', @from)"/>
 	  </xsl:if>
 	</xsl:if>
-<!--
-    Previous version of the code from above
-	<xsl:if test="not(@automatic='yes' and @to = @from)">
-	  <xsl:value-of 
-	      select="concat(':', @to, ':', @from)"/>
-	</xsl:if>
--->
       </xsl:with-param>
       <xsl:with-param name="others">
 	<param name="pqn" 
@@ -146,7 +143,7 @@
 
     <!-- Dependencies on usage of schema. -->
     <xsl:if test="../@schema">
-      <dependency-set
+      <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', @from, '.superuser')}"
 	  parent="ancestor::dbobject[database]">
 	    

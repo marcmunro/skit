@@ -346,50 +346,6 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
 }
 
 
-START_TEST(deps_x)
-{
-    Document *volatile doc = NULL;
-    boolean failed = FALSE;
-    Vector *volatile nodes = NULL;
-    Hash *volatile nodes_by_fqn = NULL;
-
-    BEGIN {
-	initTemplatePath(".");
-	//showMalloc(839);
-	//showFree(724);
-
-	eval("(setq drop t)");
-
-	doc = getDoc("x");
-	readDocDbver(doc);
-	nodes = dagFromDoc(doc);
-	//dbgSexp(nodes);
-
-	nodes_by_fqn = dagnodeHash(nodes);
-	//showVectorDeps(nodes);
-
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) nodes_by_fqn, FALSE);
-	objectFree((Object *) nodes, TRUE);
-	objectFree((Object *) doc, TRUE);
-	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
-	fprintf(stderr, "%s\n", ex->backtrace);
-	failed = TRUE;
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-    if (failed) {
-	fail("deps_x fails with exception");
-    }
-}
-END_TEST
-
 
 /* Simplest possible dependency test.  All objects being built,
    no obtional dependencies, no special cases. */
@@ -2084,7 +2040,130 @@ START_TEST(general_diffs)
 END_TEST
 
 
+START_TEST(superuser_bug)
+{
+    Document *volatile doc = NULL;
+    boolean resolved;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(901);
+	//showFree(415);
+
+	eval("(setq drop t)");
+	eval("(setq dbver (version '8.4'))");
+
+	doc = getDoc("test/data/superuser_bug.xml");
+	nodes = dagFromDoc(doc);
+	nodes_by_fqn = dagnodeHash(nodes);
+
+	/* The superuser bug manifests in the following situation.  We
+	 * want to revoke role x from role y as role z.  However role x
+	 * has been given temporary superuser rights through a fallback
+	 * and role z has no such right.  What this means is that role z
+	 * is trying to modify a superuser role (y) without being one
+	 * itself.
+	 * 
+	 * There are three ways to resolve this.
+	 * 1) the revocation can depend on the endfallback for the
+	 *    superuser priv on x.
+	 * 2) the fallback on x can depend on the revocation
+	 * 3) z can be temporarily granted superuser privilege.
+	 * 
+	 * In our test data x -> keep,y -> keep2, z -> lose.
+	 */
+
+	//dbgSexp(nodes_by_fqn);
+	//fprintf(stderr, "\n---------------------\n");
+	//showVectorDeps(nodes);
+	//fprintf(stderr, "---------------------\n\n");
+
+	resolved = 
+	    hasDep(nodes_by_fqn, "grant.role.keep2.keep:lose", 
+		   "dsendprivilege.role.keep.superuser","SU_1") ||
+	    hasDep(nodes_by_fqn, "dsprivilege.role.keep.superuser",
+		   "grant.role.keep2.keep:lose", "SU_2") ||
+	    hasDep(nodes_by_fqn, "grant.role.keep2.keep:lose", 
+		   "dsprivilege.role.lose.superuser","SU_3");
+
+	if (!resolved) {
+	    /* See comment above for what this means. */
+	    fail("Test SU_4: Incorrect superuser deps for role revocation.");
+	}
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("gensort fails with exception");
+    }
+}
+END_TEST
+
+
+
 #ifdef WIBBLE
+START_TEST(deps_x)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+    Hash *volatile nodes_by_fqn = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(839);
+	//showFree(724);
+
+	eval("(setq drop t)");
+
+	doc = getDoc("x");
+	readDocDbver(doc);
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	nodes_by_fqn = dagnodeHash(nodes);
+	//showVectorDeps(nodes);
+
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes_by_fqn, FALSE);
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_x fails with exception");
+    }
+}
+END_TEST
+
+
 START_TEST(rt3)
 {
     Document *volatile diffs = NULL;
@@ -2126,7 +2205,6 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
-    ADD_TEST(tc_core, deps_x);
     ADD_TEST(tc_core, deps_simple_build);
     ADD_TEST(tc_core, deps_simple_drop);
     ADD_TEST(tc_core, deps_simple_rebuild);
@@ -2148,6 +2226,10 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, depdiffs_1);
     ADD_TEST(tc_core, general_diffs);
+
+
+    //ADD_TEST(tc_core, deps_x);
+    ADD_TEST(tc_core, superuser_bug);
 
     // For debugging regression tests
     // ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */

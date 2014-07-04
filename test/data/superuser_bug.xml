@@ -1,0 +1,1404 @@
+<?xml version="1.0"?>
+<dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20140630165808">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+    <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.21" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
+      <dbobject type="role" name="bark" qname="bark" fqn="role.bark" parent="database.regressdb">
+        <dependency fqn="database.regressdb"/>
+        <role name="bark" login="y" password="md56919480e8e8d34883f6681bfbf2d40ee" max_connections="-1">
+          <config type="client_min_messages" value="error"/>
+          <comment>'woof'</comment>
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.bark.superuser" qname="superuser" parent="role.bark" role_qname="bark">
+            <dependencies>
+              <dependency fqn="role.bark"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.bark.inherit" qname="inherit" parent="role.bark" role_qname="bark">
+            <dependencies>
+              <dependency fqn="role.bark"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.bark.createrole" qname="createrole" parent="role.bark" role_qname="bark">
+            <dependencies>
+              <dependency fqn="role.bark"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.bark.createdb" qname="createdb" parent="role.bark" role_qname="bark">
+            <dependencies>
+              <dependency fqn="role.bark"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
+          <privilege priv="superuser"/>
+          <privilege priv="inherit"/>
+          <privilege priv="createrole"/>
+          <privilege priv="createdb"/>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="keep" qname="keep" fqn="role.keep" parent="database.regressdb">
+        <dependency fqn="database.regressdb"/>
+        <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
+      </dbobject>
+      <dbobject type="role" name="keep2" qname="keep2" fqn="role.keep2" parent="database.regressdb">
+        <dependency fqn="database.regressdb"/>
+        <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1">
+          <dbobject type="grant" name="keep:keep2" fqn="grant.role.keep2.keep:lose" qname="" parent="role.keep2" subtype="role" pqn="grant.role.keep2.keep">
+            <context type="owner" value="lose" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.keep2"/>
+              <dependency fqn="role.keep"/>
+              <dependency fqn="role.lose"/>
+              <dependency-set priority="1" fallback="privilege.role.lose.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.lose.keep"/>
+                <dependency pqn="privilege.role.lose.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <grant priv="keep" from="lose" to="keep2" with_admin="yes"/>
+          </dbobject>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="lose" qname="lose" fqn="role.lose" parent="database.regressdb">
+        <dependency fqn="database.regressdb"/>
+        <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
+          <dbobject type="grant" name="keep:lose" fqn="grant.role.lose.keep:keep" qname="" parent="role.lose" subtype="role" pqn="grant.role.lose.keep">
+            <context type="owner" value="keep" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.lose"/>
+              <dependency fqn="role.keep"/>
+            </dependencies>
+            <grant priv="keep" from="keep" to="lose" with_admin="yes"/>
+          </dbobject>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="marc" qname="marc" fqn="role.marc" parent="database.regressdb">
+        <dependency fqn="database.regressdb"/>
+        <role name="marc" login="y" max_connections="-1">
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.marc.superuser" qname="superuser" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.marc.inherit" qname="inherit" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.marc.createrole" qname="createrole" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.marc.createdb" qname="createdb" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
+          <privilege priv="superuser"/>
+          <privilege priv="inherit"/>
+          <privilege priv="createrole"/>
+          <privilege priv="createdb"/>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="regress" qname="regress" fqn="role.regress" parent="cluster">
+        <dependency-set>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="cluster"/>
+        </dependency-set>
+        <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+          <config type="client_min_messages" value="warning"/>
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.regress.superuser" qname="superuser" parent="role.regress" role_qname="regress">
+            <dependencies>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <privilege priv="superuser"/>
+        </role>
+      </dbobject>
+      <dbobject type="tablespace" name="pg_default" fqn="tablespace.pg_default" qname="pg_default" parent="cluster">
+        <dependencies>
+          <dependency-set>
+            <dependency fqn="database.regressdb"/>
+            <dependency fqn="cluster"/>
+          </dependency-set>
+          <dependency fqn="role.marc"/>
+        </dependencies>
+        <tablespace name="pg_default" owner="marc" location="">
+          <dbobject type="grant" name="create:marc" fqn="grant.tablespace.pg_default.create" qname="" parent="tablespace.pg_default" pqn="grant.tablespace.pg_default.create:marc" subtype="tablespace" on="pg_default">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="tablespace.pg_default"/>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <grant from="marc" to="marc" with_grant="no" priv="create" automatic="yes"/>
+          </dbobject>
+        </tablespace>
+      </dbobject>
+    </cluster>
+  </dbobject>
+  <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.regressdb" parent="cluster">
+    <dependencies>
+      <dependency fqn="cluster"/>
+      <dependency fqn="role.regress"/>
+    </dependencies>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="-1">
+      <comment>'old comment'</comment>
+    </database>
+  </dbobject>
+  <dbobject type="database" visit="true" name="regressdb" qname="regressdb" fqn="database.regressdb">
+    <dependencies>
+      <dependency fqn="dbincluster.regressdb"/>
+    </dependencies>
+    <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="-1">
+      <comment>'old comment'</comment>
+      <dbobject type="grant" name="connect:regress" fqn="grant.database.regressdb.connect" qname="" parent="database.regressdb" pqn="grant.database.regressdb.connect:regress" subtype="database" on="regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.regress"/>
+        </dependencies>
+        <grant from="regress" to="regress" with-grant="no" priv="connect" automatic="yes"/>
+      </dbobject>
+      <dbobject type="grant" name="temporary:regress" fqn="grant.database.regressdb.temporary" qname="" parent="database.regressdb" pqn="grant.database.regressdb.temporary:regress" subtype="database" on="regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.regress"/>
+        </dependencies>
+        <grant from="regress" to="regress" with-grant="no" priv="temporary" automatic="yes"/>
+      </dbobject>
+      <dbobject type="grant" name="create:public" fqn="grant.database.regressdb.create:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.create:public" subtype="database" on="regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.regress"/>
+        </dependencies>
+        <grant from="regress" to="public" with-grant="no" priv="create" automatic="yes"/>
+      </dbobject>
+      <dbobject type="grant" name="connect:public" fqn="grant.database.regressdb.connect:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.connect:public" subtype="database" on="regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.regress"/>
+        </dependencies>
+        <grant from="regress" to="public" with-grant="no" priv="connect" automatic="yes"/>
+      </dbobject>
+      <dbobject type="grant" name="temporary:public" fqn="grant.database.regressdb.temporary:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.temporary:public" subtype="database" on="regressdb">
+        <context type="owner" value="regress" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.regress"/>
+        </dependencies>
+        <grant from="regress" to="public" with-grant="no" priv="temporary" automatic="yes"/>
+      </dbobject>
+      <dbobject type="schema" name="public" fqn="schema.regressdb.public" qname="public" parent="database.regressdb">
+        <context type="owner" value="marc" default="marc"/>
+        <dependencies>
+          <dependency fqn="database.regressdb"/>
+          <dependency fqn="role.marc"/>
+        </dependencies>
+        <schema name="public" owner="marc" privs="{marc=UC/marc,=UC/marc}">
+          <comment>'standard public schema'</comment>
+          <dbobject type="grant" name="usage:marc" fqn="grant.schema.regressdb.public.usage" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.usage:marc" subtype="schema" on="public">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <grant from="marc" to="marc" with_grant="no" priv="usage" automatic="yes"/>
+          </dbobject>
+          <dbobject type="grant" name="create:marc" fqn="grant.schema.regressdb.public.create" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.create:marc" subtype="schema" on="public">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <grant from="marc" to="marc" with_grant="no" priv="create" automatic="yes"/>
+          </dbobject>
+          <dbobject type="grant" name="usage:public" fqn="grant.schema.regressdb.public.usage:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.usage:public" subtype="schema" on="public">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <grant from="marc" to="public" with_grant="no" priv="usage" automatic="yes"/>
+          </dbobject>
+          <dbobject type="grant" name="create:public" fqn="grant.schema.regressdb.public.create:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.create:public" subtype="schema" on="public">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <grant from="marc" to="public" with_grant="no" priv="create" automatic="yes"/>
+          </dbobject>
+          <dbobject type="type" name="seg" fqn="type.regressdb.public.seg" qname="public.seg" parent="schema.regressdb.public">
+            <extra-schema-privs action="build" priv="usage"/>
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+              <dependency fqn="function.regressdb.public.seg_out(public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <type name="seg" schema="public" owner="bark" subtype="basetype" delimiter="," typelen="12" alignment="int4" storage="plain" is_defined="t">
+              <handler-function type="input" name="seg_in" schema="public" signature="public.seg_in(pg_catalog.cstring)"/>
+              <handler-function type="output" name="seg_out" schema="public" signature="public.seg_out(public.seg)"/>
+              <comment>'floating point interval ''FLOAT .. FLOAT'', ''.. FLOAT'', ''FLOAT ..'' or ''FLOAT'''</comment>
+            </type>
+          </dbobject>
+          <dbobject type="function" name="seg_cmp" fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)" qname="public.seg_cmp(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_cmp" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_cmp(public.seg,public.seg)">
+              <result type="int4" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_cmp</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_cmp(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_cmp(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_cmp(public.seg,public.seg).execute:public" subtype="function" on="public.seg_cmp(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_cmp(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_cmp(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_cmp(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_cmp(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_different" fqn="function.regressdb.public.seg_different(public.seg,public.seg)" qname="public.seg_different(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_different" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_different(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_different</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_different(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_different(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_different(public.seg,public.seg).execute:public" subtype="function" on="public.seg_different(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_different(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_different(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_different(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_different(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_different(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_different(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_ge" fqn="function.regressdb.public.seg_ge(public.seg,public.seg)" qname="public.seg_ge(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_ge" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_ge(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_ge</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_ge(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_ge(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_ge(public.seg,public.seg).execute:public" subtype="function" on="public.seg_ge(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_ge(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_ge(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_ge(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_ge(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_ge(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_ge(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_gt" fqn="function.regressdb.public.seg_gt(public.seg,public.seg)" qname="public.seg_gt(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_gt" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_gt(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_gt</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_gt(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_gt(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_gt(public.seg,public.seg).execute:public" subtype="function" on="public.seg_gt(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_gt(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_gt(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_gt(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_gt(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_gt(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_gt(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_in" fqn="function.regressdb.public.seg_in(pg_catalog.cstring)" qname="public.seg_in(pg_catalog.cstring)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_in" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_in(pg_catalog.cstring)">
+              <handler-for-type name="seg" schema="public"/>
+              <result type="seg" schema="public"/>
+              <params>
+                <param type="cstring" schema="pg_catalog" mode="i" position="1"/>
+              </params>
+              <source>seg_in</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_in(pg_catalog.cstring).execute:public" qname="" parent="function.regressdb.public.seg_in(pg_catalog.cstring)" pqn="grant.function.regressdb.public.seg_in(pg_catalog.cstring).execute:public" subtype="function" on="public.seg_in(pg_catalog.cstring)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                  <dependency fqn="type.regressdb.public.seg"/>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_in(pg_catalog.cstring).execute" qname="" parent="function.regressdb.public.seg_in(pg_catalog.cstring)" pqn="grant.function.regressdb.public.seg_in(pg_catalog.cstring).execute:bark" subtype="function" on="public.seg_in(pg_catalog.cstring)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                  <dependency fqn="type.regressdb.public.seg"/>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_le" fqn="function.regressdb.public.seg_le(public.seg,public.seg)" qname="public.seg_le(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_le" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_le(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_le</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_le(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_le(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_le(public.seg,public.seg).execute:public" subtype="function" on="public.seg_le(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_le(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_le(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_le(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_le(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_le(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_le(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_left" fqn="function.regressdb.public.seg_left(public.seg,public.seg)" qname="public.seg_left(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_left" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_left(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_left</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_left(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_left(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_left(public.seg,public.seg).execute:public" subtype="function" on="public.seg_left(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_left(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_left(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_left(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_left(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_left(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_left(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_lt" fqn="function.regressdb.public.seg_lt(public.seg,public.seg)" qname="public.seg_lt(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_lt" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_lt(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_lt</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_lt(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_lt(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_lt(public.seg,public.seg).execute:public" subtype="function" on="public.seg_lt(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_lt(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_lt(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_lt(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_lt(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_lt(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_lt(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_out" fqn="function.regressdb.public.seg_out(public.seg)" qname="public.seg_out(public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_out" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_out(public.seg)">
+              <handler-for-type name="seg" schema="public" type_input_signature="public.seg_in(pg_catalog.cstring)"/>
+              <result type="cstring" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+              </params>
+              <source>seg_out</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_out(public.seg).execute:public" qname="" parent="function.regressdb.public.seg_out(public.seg)" pqn="grant.function.regressdb.public.seg_out(public.seg).execute:public" subtype="function" on="public.seg_out(public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_out(public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                  <dependency fqn="type.regressdb.public.seg"/>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_out(public.seg).execute" qname="" parent="function.regressdb.public.seg_out(public.seg)" pqn="grant.function.regressdb.public.seg_out(public.seg).execute:bark" subtype="function" on="public.seg_out(public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_out(public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                  <dependency fqn="type.regressdb.public.seg"/>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_right" fqn="function.regressdb.public.seg_right(public.seg,public.seg)" qname="public.seg_right(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_right" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_right(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_right</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_right(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_right(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_right(public.seg,public.seg).execute:public" subtype="function" on="public.seg_right(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_right(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_right(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_right(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_right(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_right(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_right(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="function" name="seg_same" fqn="function.regressdb.public.seg_same(public.seg,public.seg)" qname="public.seg_same(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <function name="seg_same" schema="public" owner="bark" language="c" is_strict="yes" volatility="immutable" bin="$libdir/seg" cost="1" signature="public.seg_same(public.seg,public.seg)">
+              <result type="bool" schema="pg_catalog"/>
+              <params>
+                <param type="seg" schema="public" mode="i" position="1"/>
+                <param type="seg" schema="public" mode="i" position="2"/>
+              </params>
+              <source>seg_same</source>
+              <dbobject type="grant" name="execute:public" fqn="grant.function.regressdb.public.seg_same(public.seg,public.seg).execute:public" qname="" parent="function.regressdb.public.seg_same(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_same(public.seg,public.seg).execute:public" subtype="function" on="public.seg_same(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_same(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="public" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+              <dbobject type="grant" name="execute:bark" fqn="grant.function.regressdb.public.seg_same(public.seg,public.seg).execute" qname="" parent="function.regressdb.public.seg_same(public.seg,public.seg)" pqn="grant.function.regressdb.public.seg_same(public.seg,public.seg).execute:bark" subtype="function" on="public.seg_same(public.seg,public.seg)">
+                <context type="owner" value="bark" default="marc"/>
+                <dependencies>
+                  <dependency fqn="function.regressdb.public.seg_same(public.seg,public.seg)"/>
+                  <dependency fqn="role.bark"/>
+                  <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.regressdb.public.usage"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                    <dependency fqn="grant.schema.regressdb.public.create"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                    <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                    <dependency fqn="privilege.role.bark.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <grant from="bark" to="bark" with-grant="no" priv="execute" automatic="yes"/>
+              </dbobject>
+            </function>
+          </dbobject>
+          <dbobject type="operator" name="&lt;" fqn="operator.regressdb.public.&lt;(public.seg,public.seg)" qname="public.&lt;(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_lt(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&gt;(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&lt;" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_lt" schema="public" signature="public.seg_lt(public.seg,public.seg)"/>
+              <commutator name="&gt;" schema="public"/>
+              <negator name="&gt;=" schema="public"/>
+              <restrict name="scalarltsel" schema="pg_catalog" signature="pg_catalog.scalarltsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="scalarltjoinsel" schema="pg_catalog" signature="pg_catalog.scalarltjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&lt;&lt;" fqn="operator.regressdb.public.&lt;&lt;(public.seg,public.seg)" qname="public.&lt;&lt;(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_left(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&gt;&gt;(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&lt;&lt;" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_left" schema="public" signature="public.seg_left(public.seg,public.seg)"/>
+              <commutator name="&gt;&gt;" schema="public"/>
+              <restrict name="positionsel" schema="pg_catalog" signature="pg_catalog.positionsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="positionjoinsel" schema="pg_catalog" signature="pg_catalog.positionjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&lt;=" fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)" qname="public.&lt;=(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_le(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&gt;(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&lt;=" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_le" schema="public" signature="public.seg_le(public.seg,public.seg)"/>
+              <commutator name="&gt;=" schema="public"/>
+              <negator name="&gt;" schema="public"/>
+              <restrict name="scalarltsel" schema="pg_catalog" signature="pg_catalog.scalarltsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="scalarltjoinsel" schema="pg_catalog" signature="pg_catalog.scalarltjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&lt;&gt;" fqn="operator.regressdb.public.&lt;&gt;(public.seg,public.seg)" qname="public.&lt;&gt;(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_different(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;&gt;(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&lt;&gt;" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_different" schema="public" signature="public.seg_different(public.seg,public.seg)"/>
+              <commutator name="&lt;&gt;" schema="public"/>
+              <negator name="=" schema="public"/>
+              <restrict name="neqsel" schema="pg_catalog" signature="pg_catalog.neqsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="neqjoinsel" schema="pg_catalog" signature="pg_catalog.neqjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="=" fqn="operator.regressdb.public.=(public.seg,public.seg)" qname="public.=(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_same(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;&gt;(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="=" schema="public" owner="bark" merges="yes">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_same" schema="public" signature="public.seg_same(public.seg,public.seg)"/>
+              <commutator name="=" schema="public"/>
+              <negator name="&lt;&gt;" schema="public"/>
+              <restrict name="eqsel" schema="pg_catalog" signature="pg_catalog.eqsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="eqjoinsel" schema="pg_catalog" signature="pg_catalog.eqjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&gt;" fqn="operator.regressdb.public.&gt;(public.seg,public.seg)" qname="public.&gt;(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_gt(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&gt;" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_gt" schema="public" signature="public.seg_gt(public.seg,public.seg)"/>
+              <commutator name="&lt;" schema="public"/>
+              <negator name="&lt;=" schema="public"/>
+              <restrict name="scalargtsel" schema="pg_catalog" signature="pg_catalog.scalargtsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="scalargtjoinsel" schema="pg_catalog" signature="pg_catalog.scalargtjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&gt;=" fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)" qname="public.&gt;=(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_ge(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&gt;=" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_ge" schema="public" signature="public.seg_ge(public.seg,public.seg)"/>
+              <commutator name="&lt;=" schema="public"/>
+              <negator name="&lt;" schema="public"/>
+              <restrict name="scalargtsel" schema="pg_catalog" signature="pg_catalog.scalargtsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="scalargtjoinsel" schema="pg_catalog" signature="pg_catalog.scalargtjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator" name="&gt;&gt;" fqn="operator.regressdb.public.&gt;&gt;(public.seg,public.seg)" qname="public.&gt;&gt;(public.seg,public.seg)" parent="schema.regressdb.public">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="type.regressdb.public.seg"/>
+              <dependency fqn="function.regressdb.public.seg_right(public.seg,public.seg)"/>
+              <related_to fqn="operator.regressdb.public.&lt;&lt;(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator name="&gt;&gt;" schema="public" owner="bark">
+              <arg position="left" name="seg" schema="public"/>
+              <arg position="right" name="seg" schema="public"/>
+              <result name="bool" schema="pg_catalog"/>
+              <procedure name="seg_right" schema="public" signature="public.seg_right(public.seg,public.seg)"/>
+              <commutator name="&lt;&lt;" schema="public"/>
+              <restrict name="positionsel" schema="pg_catalog" signature="pg_catalog.positionsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.integer)"/>
+              <join name="positionjoinsel" schema="pg_catalog" signature="pg_catalog.positionjoinsel(pg_catalog.internal,pg_catalog.oid,pg_catalog.internal,pg_catalog.smallint)"/>
+            </operator>
+          </dbobject>
+          <dbobject type="operator_class" name="seg_ops" fqn="operator_class.regressdb.public.seg_ops(btree)" qname="public.seg_ops" parent="schema.regressdb.public">
+            <extra-schema-privs action="build" priv="usage"/>
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="operator_family.regressdb.public.seg_ops(btree)"/>
+              <dependency fqn="operator.regressdb.public.&gt;(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
+              <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator_class name="seg_ops" schema="public" owner="bark" is_default="t" intype_name="seg" intype_schema="public" family="seg_ops" family_schema="public" method="btree" generates_opfamily="t">
+              <comment>'operator class for seg_ops'</comment>
+              <opclass_operator name="&gt;" schema="public" strategy="5">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opclass_operator>
+              <opclass_operator name="&lt;" schema="public" strategy="1">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opclass_operator>
+              <opclass_operator name="&gt;=" schema="public" strategy="4">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opclass_operator>
+              <opclass_operator name="&lt;=" schema="public" strategy="2">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opclass_operator>
+              <opclass_operator name="=" schema="public" strategy="3">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opclass_operator>
+              <opclass_function name="seg_cmp" schema="public" proc_num="1" function="public.seg_cmp(public.seg,public.seg)">
+                <params>
+                  <param type="seg" schema="public" position="1"/>
+                  <param type="seg" schema="public" position="2"/>
+                </params>
+              </opclass_function>
+            </operator_class>
+          </dbobject>
+          <dbobject type="operator_family" fqn="operator_family.regressdb.public.seg_ops(btree)" name="seg_ops" qname="public.seg_ops" parent="schema.regressdb.public" owner_is_superuser="superuser">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.bark"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="2" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]">
+                <dependency fqn="privilege.role.marc.superuser"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator_family name="seg_ops" schema="public" owner="bark" method="btree" auto_generated="t">
+              <comment>'operator family for seg_ops'</comment>
+            </operator_family>
+          </dbobject>
+          <dbobject type="comment" fqn="comment.regressdb.public.seg_ops(btree)" name="seg_ops" qname="public.seg_ops" nolist="true" method="btree" parent="schema.regressdb.public">
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="operator_class.regressdb.public.seg_ops(btree)"/>
+            </dependencies>
+            <comment>'operator family for seg_ops'</comment>
+          </dbobject>
+          <comment>'operator family for seg_ops'</comment>
+          <dbobject type="operator_family" fqn="operator_family.regressdb.public.seg_ops3(btree)" name="seg_ops3" qname="public.seg_ops3" parent="schema.regressdb.public" owner_is_superuser="superuser">
+            <context type="owner" value="bark" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.bark"/>
+              <dependency fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
+              <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+              <dependency-set priority="2" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]">
+                <dependency fqn="privilege.role.marc.superuser"/>
+                <dependency fqn="privilege.role.bark.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator_family name="seg_ops3" schema="public" owner="bark" method="btree" auto_generated="f">
+              <opfamily_operator name="&lt;" schema="public" strategy="1">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opfamily_operator>
+              <opfamily_operator name="&lt;=" schema="public" strategy="2">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opfamily_operator>
+              <opfamily_function name="seg_cmp" schema="public" proc_num="1" function="public.seg_cmp(public.seg,public.seg)">
+                <params>
+                  <param type="seg" schema="public" position="1"/>
+                  <param type="seg" schema="public" position="2"/>
+                </params>
+              </opfamily_function>
+            </operator_family>
+          </dbobject>
+          <dbobject type="operator_family" fqn="operator_family.regressdb.public.seg_ops4(btree)" name="seg_ops4" qname="public.seg_ops4" parent="schema.regressdb.public" owner_is_superuser="">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="schema.regressdb.public"/>
+              <dependency fqn="role.keep"/>
+              <dependency fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
+              <dependency fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
+              <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
+              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.regressdb.public.create:keep"/>
+                <dependency pqn="grant.schema.regressdb.public.create:public"/>
+                <dependency fqn="privilege.role.keep.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.regressdb.public.usage:keep"/>
+                <dependency pqn="grant.schema.regressdb.public.usage:public"/>
+                <dependency fqn="privilege.role.keep.superuser"/>
+              </dependency-set>
+              <dependency-set priority="2" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]">
+                <dependency fqn="privilege.role.marc.superuser"/>
+                <dependency fqn="privilege.role.keep.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <operator_family name="seg_ops4" schema="public" owner="keep" method="btree" auto_generated="f">
+              <comment>'operator family seg_ops4'</comment>
+              <opfamily_operator name="&lt;" schema="public" strategy="1">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opfamily_operator>
+              <opfamily_operator name="&lt;=" schema="public" strategy="2">
+                <arg position="left" name="seg" schema="public"/>
+                <arg position="right" name="seg" schema="public"/>
+              </opfamily_operator>
+              <opfamily_function name="seg_cmp" schema="public" proc_num="1" function="public.seg_cmp(public.seg,public.seg)">
+                <params>
+                  <param type="seg" schema="public" position="1"/>
+                  <param type="seg" schema="public" position="2"/>
+                </params>
+              </opfamily_function>
+            </operator_family>
+          </dbobject>
+        </schema>
+      </dbobject>
+    </database>
+  </dbobject>
+</dump>

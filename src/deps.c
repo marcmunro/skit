@@ -424,6 +424,20 @@ getDependencyDirection(xmlNode *depnode)
     return dependencyApplicationForString(directionForDep(depnode));
 }
 
+static int
+getPriority(xmlNode *node)
+{
+    String *priority = nodeAttribute(node, "priority");
+    int result = 100;   /* 100 is the default priority */
+
+    if (priority) {
+	result = atoi(priority->value);
+    }
+    objectFree((Object *) priority, TRUE);
+    return result;
+}
+
+
 /* 
  * Create a simple fallback node, which we wil place into its own
  * document.  This will then be processed by the fallbacks.xsl script to
@@ -708,6 +722,7 @@ recordDepElementNew(DagNode *node, xmlNode *depnode, Vector *vec,
 	depset = dependencySetNew();
 	depset->fallback = getFallbackNode(depnode, res_state);
 	depset->direction = getDependencyDirection(depnode);
+	depset->priority = getPriority(depnode);
 
         while (this = nextDependency(depnode->children, this)) {
             recordDepElementNew(node, this, depset->deps, res_state);
@@ -739,7 +754,7 @@ removeEmptyDeps(DependencySet *depset)
 
 
 static void
-processDepsetForNode(DagNode *node, DependencySet *depset)
+processDepset(DependencySet *depset)
 {
     Dependency *dep;
     int i;
@@ -748,7 +763,7 @@ processDepsetForNode(DagNode *node, DependencySet *depset)
 	EACH(depset->deps, i) {
 	    if (dep = (Dependency *) ELEM(depset->deps, i)) {
 		dep->depset = depset;
-		vectorPush(node->deps, (Object *) dep);
+		vectorPush(depset->definition_node->deps, (Object *) dep);
 	    }
 	}
     }
@@ -756,11 +771,12 @@ processDepsetForNode(DagNode *node, DependencySet *depset)
 	if (depset->fallback) {
 	    dep = dependencyNew(depset->fallback);
 	    dep->direction = depset->direction;
-	    vectorPush(node->deps, (Object *) dep);
+	    vectorPush(depset->definition_node->deps, (Object *) dep);
 	}
 	else {
 	    RAISE(TSORT_ERROR, 
-		  newstr("Empty Dependency set found in %s", node->fqn->value));
+		  newstr("Empty Dependency set found in %s", 
+			 depset->definition_node->fqn->value));
 	}
     }
 }
@@ -785,18 +801,18 @@ recordNodeDeps(DagNode *node, volatile ResolverState *res_state)
 		    else if (obj->type == OBJ_DEPENDENCYSET) {
 			removeEmptyDeps((DependencySet *) obj);
 			vectorPush(res_state->dependency_sets, obj);
-			processDepsetForNode(node, (DependencySet *) obj);
+			((DependencySet *) obj)->definition_node = node;
 		    }
 		    else {
 			dbgSexp(obj);
 			RAISE(TSORT_ERROR, 
-			      newstr("unhandled dependency type in "
-				     "recordNodeDeps()"));
+			      newstr("unhandled dependency type (%d) in "
+				     "recordNodeDeps()", obj->type));
 		    }
 		}
 		else {
 		    RAISE(TSORT_ERROR, 
-			  newstr("No dependency found for dependency item %d "
+			  newstr("No dependency found for dependency %d "
 				 "in %s", i, node->fqn->value));
 		}
 	    }
@@ -810,12 +826,39 @@ recordNodeDeps(DagNode *node, volatile ResolverState *res_state)
     END;
 }
 
+static int
+cmpDepset(const void *p1, const void *p2)
+{
+    DependencySet **p_ds1 = (DependencySet **) p1;
+    DependencySet **p_ds2 = (DependencySet **) p2;
+    return (*p_ds1)->priority - (*p_ds2)->priority;
+}
+
+/* This processes depsets (ie identfies their dependencies) in priority
+ * order.  dependency-sets should be prioritised so that some fallbacks
+ * will prove to be unnecessary as other fallbacks are activated.
+ */
+static void
+processAllDepsets(Vector *nodes, volatile ResolverState *res_state)
+{
+    int i;
+    DependencySet *depset;
+    qsort(res_state->dependency_sets->contents->vector, 
+	  res_state->dependency_sets->elems, 
+	  sizeof(Vector *), cmpDepset);
+
+    EACH(res_state->dependency_sets, i) {
+	depset = (DependencySet *) ELEM(res_state->dependency_sets, i);
+	processDepset(depset);
+    }	
+}
 
 static void
 identifyDependencies(Vector *nodes, volatile ResolverState *res_state)
 {
     int i;
     DagNode *node;
+
     EACH(nodes, i) {
 	node = (DagNode *) ELEM(nodes, i);
 	if (!node->deps) {
@@ -823,6 +866,8 @@ identifyDependencies(Vector *nodes, volatile ResolverState *res_state)
 	    recordNodeDeps(node, res_state);
 	}
     }
+
+    processAllDepsets(nodes, res_state);
 }
 
 static boolean
