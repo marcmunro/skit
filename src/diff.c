@@ -279,6 +279,21 @@ setDiff(xmlNode *node, DiffType difftype)
 }
 
 
+String *
+directionForDep(xmlNode *node)
+{
+    String *direction_str = nodeAttribute(node, "direction");
+    if (direction_str) {
+        stringLowerInPlace(direction_str);
+    }
+    else {
+        if (isDepNode(node->parent)) {
+            return directionForDep(node->parent);
+        }
+    }
+    return direction_str;
+}
+
 static Hash *
 getNodeDeps(xmlNode *node)
 {

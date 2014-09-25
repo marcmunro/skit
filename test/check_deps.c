@@ -68,7 +68,7 @@ hasDependency(DagNode *node, DagNode *dep)
     if (vector) {
 	for (i = 0; i < vector->elems; i++) {
 	    depobj = vector->contents->vector[i];
-	    if (depobj->type == OBJ_DAGNODE) {
+	    if (depobj && depobj->type == OBJ_DAGNODE) {
 		if (dep == (DagNode *) depobj) {
 		    return TRUE;
 		}
@@ -347,8 +347,49 @@ requireOptionalDependents(char *testid, Hash *hash, char *from, ...)
 
 
 
-/* Simplest possible dependency test.  All objects being built,
-   no obtional dependencies, no special cases. */
+/* Just check for memory leaks. */
+START_TEST(deps_basic)
+{
+    Document *volatile doc = NULL;
+    boolean failed = FALSE;
+    Vector *volatile nodes = NULL;
+
+    BEGIN {
+	initTemplatePath(".");
+	//showMalloc(2613);
+	//trackMalloc(1589);
+	//showFree(1627);
+
+	eval("(setq build t)");
+	doc = getDoc("test/data/depset_simple.xml");
+	//doc = getDoc("test/data/deps_simple.xml");
+	nodes = dagFromDoc(doc);
+	//dbgSexp(nodes);
+
+	//showVectorDeps(nodes);
+
+
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	objectFree((Object *) nodes, TRUE);
+	objectFree((Object *) doc, TRUE);
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	failed = TRUE;
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+    if (failed) {
+	fail("deps_basic fails with exception");
+    }
+}
+END_TEST
+
+
 START_TEST(deps_simple_build)
 {
     Document *volatile doc = NULL;
@@ -722,7 +763,7 @@ START_TEST(depset_simple_drop)
 		    "dbincluster.regressdb", "database.regressdb", NULL);
 	requireDeps("DSSD_3", nodes_by_fqn, 
 		    "database.regressdb", 
-		    "schema.regressdb.public", "role.bark", 
+		    "schema.regressdb.public", "role.bark",
 		    "language.regressdb.plpgsql", NULL);
 	requireDeps("DSSD_4", nodes_by_fqn, 
 		    "schema.regressdb.public", 
@@ -854,7 +895,8 @@ START_TEST(depset_simple_rebuild)
 		    "drop.database.regressdb", NULL);
 	requireDeps("DSSR_12", nodes_by_fqn, 
 		    "drop.database.regressdb", "drop.schema.regressdb.public", 
-		    "drop.language.regressdb.plpgsql", "drop.role.bark", NULL);
+		    "drop.language.regressdb.plpgsql", "drop.role.bark", 
+		    NULL);
 	requireDeps("DSSR_13", nodes_by_fqn, 
 		    "drop.schema.regressdb.public", 
 		    "drop.type.regressdb.public.seg",
@@ -900,7 +942,6 @@ START_TEST(depset_simple_rebuild)
     }
 }
 END_TEST
-
 
 
 /* Test basic build dependencies, using dependency sets */ 
@@ -1109,8 +1150,8 @@ START_TEST(depset_dia_build)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(548);
-	//showFree(415);
+	//showMalloc(823);
+	//showFree(509);
 
 	eval("(setq build t)");
 
@@ -1123,13 +1164,10 @@ START_TEST(depset_dia_build)
 	requireDeps("DDB_1", nodes_by_fqn, "role.x", "cluster", NULL);
 	requireDeps("DDB_2", nodes_by_fqn, "table.cluster.ownedbyx", 
 		    "cluster", "role.x", 
-		    "privilege.role.x.superuser", NULL);  // 5, 7
+		    "privilege.role.x.superuser.1", NULL);  // 5, 7
 
-	requireDeps("DDB_3", nodes_by_fqn, "privilege.role.x.superuser", 
-		    "role.x", "dsendprivilege.role.x.superuser", NULL); // 3
-
-	requireDeps("DDB_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
-		    "privilege.role.x.superuser",  
+	requireDeps("DDB_3", nodes_by_fqn, 
+		    "endfallback.privilege.role.x.superuser.1", 
                     "table.cluster.ownedbyx", 
 		    "role.x", 
 		    NULL); // 11, 9, 1
@@ -1182,19 +1220,18 @@ START_TEST(depset_dia_drop)
 
 	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
-		    "privilege.role.x.superuser",
-		    "endprivilege.role.x.superuser",
-	            "dsprivilege.role.x.superuser",
-	            "dsendprivilege.role.x.superuser", NULL);  // 6, 4, 2
+		    "privilege.role.x.superuser.1",
+		    "endfallback.privilege.role.x.superuser.1",
+		    NULL);  // 6, 4, 2
 
 	requireDeps("DDD_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "dsprivilege.role.x.superuser", NULL);  // 8
+		    "privilege.role.x.superuser.1", NULL);  // 8
 
-	requireDeps("DDD_3", nodes_by_fqn, "dsprivilege.role.x.superuser", 
+	requireDeps("DDD_3", nodes_by_fqn, "privilege.role.x.superuser.1", 
 		    NULL); // 
 
-	requireDeps("DDD_4", nodes_by_fqn, "dsendprivilege.role.x.superuser", 
-		    "dsprivilege.role.x.superuser",  
+	requireDeps("DDD_4", nodes_by_fqn, 
+		    "endfallback.privilege.role.x.superuser.1", 
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -1232,9 +1269,8 @@ START_TEST(depset_dia_both)
 BEGIN {
 	initTemplatePath(".");
 	eval("(setq dbver (version '8.4'))");
-	//showMalloc(901);
-	//showFree(415);
-
+	//showMalloc(987);
+	//showFree(694);
 	eval("(setq drop t)");
 	eval("(setq build t)");
 
@@ -1242,44 +1278,42 @@ BEGIN {
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//dbgSexp(nodes_by_fqn);
-	//showVectorDeps(nodes);
+	showVectorDeps(nodes);
  
-	requireNoDep("DD2_X", nodes_by_fqn, "privilege.role.x.superuser",
-		     "drop.role.x");
-
-	requireDeps("DD2_1", nodes_by_fqn, "role.x", 
-		    "cluster", "drop.role.x", NULL);  // 15
-
-	requireDeps("DD2_2", nodes_by_fqn, "table.cluster.ownedbyx", 
-		    "cluster", "role.x", "drop.table.cluster.ownedbyx", 
-		    "privilege.role.x.superuser", NULL);  // 5, 13, 7
-
-	requireDeps("DD2_3", nodes_by_fqn, "privilege.role.x.superuser", 
-		    "role.x", 
-		    "dsendprivilege.role.x.superuser", 
-		    NULL); // 3, 14
-
-	requireDeps("DD2_4", nodes_by_fqn, "endprivilege.role.x.superuser", 
-		    "privilege.role.x.superuser",  
-                    "table.cluster.ownedbyx", 
-		    "role.x", 
-		    NULL); // 11, 9, 1
-
-	requireDeps("DD2_5", nodes_by_fqn, "drop.role.x", 
+	/* Comments below refer to numbered dependencies in 
+	 * file: dependency_resolution.dia
+	 * Note that deps 11 and 12 have been deemed superfluous.
+	 */
+	requireDeps("DD2_1", nodes_by_fqn, "cluster", "drop.cluster", NULL);
+	requireDeps("DD2_2", nodes_by_fqn,         // 15 
+		    "role.x", "cluster", "drop.role.x", NULL);
+	requireDeps("DD2_3", nodes_by_fqn,         // 13, 5, 7
+		    "table.cluster.ownedbyx", 
 		    "drop.table.cluster.ownedbyx", 
-		    "dsendprivilege.role.x.superuser", 
-		    "dsprivilege.role.x.superuser", 
-		    NULL); // 6, 2, 4
-
-	requireDeps("DD2_6", nodes_by_fqn, "drop.table.cluster.ownedbyx", 
-		    "dsprivilege.role.x.superuser", 
-		    NULL); // 8
-
-	requireDeps("DD2_7", nodes_by_fqn, 
-		    "dsendprivilege.role.x.superuser", 
+		    "cluster", "role.x", 
+		    "privilege.role.x.superuser.1", NULL);
+	requireDeps("DD2_4", nodes_by_fqn,
+		    "drop.cluster", "drop.table.cluster.ownedbyx", 
+		    "drop.role.x", NULL);
+	requireDeps("DD2_5", nodes_by_fqn,         // 2, 4, 6
+		    "drop.role.x", "drop.table.cluster.ownedbyx", 
+		    "privilege.role.x.superuser.2",
+		    "endfallback.privilege.role.x.superuser.2", NULL);
+	requireDeps("DD2_6", nodes_by_fqn,         // 8
 		    "drop.table.cluster.ownedbyx", 
-		    "dsprivilege.role.x.superuser", 
-		    NULL); // 10, 12
+		    "privilege.role.x.superuser.2", NULL);
+	requireDeps("DD2_7", nodes_by_fqn,         // 3, 14
+		    "privilege.role.x.superuser.1",
+		    "role.x", "endfallback.privilege.role.x.superuser.2", 
+		    NULL);
+	requireDeps("DD2_8", nodes_by_fqn,         // 1, 9
+		    "endfallback.privilege.role.x.superuser.1",
+		    "role.x", "table.cluster.ownedbyx", NULL);
+	requireDeps("DD2_9", nodes_by_fqn,         // 
+		    "privilege.role.x.superuser.2", NULL);
+	requireDeps("DD2_10", nodes_by_fqn,         // 10
+		    "endfallback.privilege.role.x.superuser.2", 
+		    "drop.table.cluster.ownedbyx", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
 	objectFree((Object *) nodes, TRUE);
@@ -1304,6 +1338,7 @@ BEGIN {
 END_TEST
 
 
+#ifdef WIBBLE
 START_TEST(fallback)
 {
     Document *volatile doc = NULL;
@@ -2118,7 +2153,6 @@ END_TEST
 
 
 
-#ifdef WIBBLE
 START_TEST(deps_x)
 {
     Document *volatile doc = NULL;
@@ -2205,6 +2239,7 @@ deps_suite(void)
     Suite *s = suite_create("deps");
     TCase *tc_core = tcase_create("deps");
 
+    ADD_TEST(tc_core, deps_basic);
     ADD_TEST(tc_core, deps_simple_build);
     ADD_TEST(tc_core, deps_simple_drop);
     ADD_TEST(tc_core, deps_simple_rebuild);
@@ -2217,6 +2252,7 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_dia_build);
     ADD_TEST(tc_core, depset_dia_drop);
     ADD_TEST(tc_core, depset_dia_both);
+#ifdef wibble
     ADD_TEST(tc_core, fallback);
     ADD_TEST(tc_core, cond);
     ADD_TEST(tc_core, cyclic_build);
@@ -2227,9 +2263,9 @@ deps_suite(void)
     ADD_TEST(tc_core, depdiffs_1);
     ADD_TEST(tc_core, general_diffs);
 
-
     //ADD_TEST(tc_core, deps_x);
     ADD_TEST(tc_core, superuser_bug);
+#endif
 
     // For debugging regression tests
     // ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */

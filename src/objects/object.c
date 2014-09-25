@@ -468,82 +468,54 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     fqn = nodeAttribute(node, "fqn");
     new->fqn = fqn;
     new->dbobject = node;
+    new->status = UNVISITED;
     new->build_type = build_type;
-    new->is_degraded = FALSE;
     new->deps = NULL;
-    new->tmp_deps = NULL;
+    new->unidentified_deps = NULL;
     new->cur_dep = -1;
-    new->connection_set = NULL;
+    new->is_fallback = FALSE;
     new->parent = NULL;
     new->mirror_node = NULL;
-    new->endfallback = NULL;
     return new;
 }
 
 DependencySet *
-dependencySetNew()
+dependencySetNew(DagNode *definition_node)
 {
     DependencySet *new = skalloc(sizeof(DependencySet));
     new->type = OBJ_DEPENDENCYSET;
-    new->deps = vectorNew(10);
-    new->degrade_if_missing = FALSE;
     new->priority = 100;
-    new->chosen_dep = NULL;
-    new->definition_node = NULL;
-    new->fallback = NULL;
+    new->chosen_dep = 0;
+    new->definition_node = definition_node;
+    new->fallback_expr = NULL;
+    new->fallback_parent = NULL;
+    new->deactivated = FALSE;
+    new->deps = vectorNew(10);
+    new->entangled_deps = NULL;
     return new;
 }
 
 Dependency *
-dependencyNew(DagNode *dep)
+dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
 {
     Dependency *new = skalloc(sizeof(Dependency));
     new->type = OBJ_DEPENDENCY;
-    new->dep = dep;
+    new->qn = qn;
+    new->qn_is_full = qn_is_full;
+    new->is_forwards = is_forwards;
+    new->dep = NULL;
     new->depset = NULL;
-    new->deactivated = FALSE;
-    new->dup = NULL;
-    new->direction = UNKNOWN_DIRECTION;
+    new->from = NULL;
     return new;
 }
 
-
-#ifdef wibble
-static void
-dagNodeFreeOld(DagNode *node)
-{
-    DagNode *sub;
-    DagNode *tmp;
-    if (node->supernode) {
-	/* This is a subnode.  Do not free it, as it will be dealt with
-	 * when the supernode is freed. */
-	return;
-    }
-
-    sub = node->forward_subnodes;
-    while (sub) {
-	tmp = sub->forward_subnodes;
-	doDagNodeFree(sub);
-	sub = tmp;
-    }
-
-    sub = node->backward_subnodes;
-    while (sub) {
-	tmp = sub->backward_subnodes;
-	doDagNodeFree(sub);
-	sub = tmp;
-    }
-
-    doDagNodeFree(node);
-}
-#endif
 
 static void
 dagNodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->deps, FALSE);
-    objectFree((Object *) node->tmp_deps, FALSE);
+    objectFree((Object *) node->unidentified_deps, FALSE);
     skfree(node);
 }
 
@@ -561,16 +533,11 @@ contextFree(Context *ctx, boolean free_contents)
 static void
 dependencySetFree(DependencySet *depset, boolean free_contents)
 {
-    Vector *deps = depset->deps;
-    Dependency * dep;
-    int i;
     if (free_contents) {
-	EACH(deps, i) {
-	    if (dep = (Dependency *) ELEM(deps, i)) {
-		//skfree((Object *) dep);
-	    }
-	}
-	objectFree((Object *) deps, FALSE);
+	objectFree((Object *) depset->deps, TRUE);
+	objectFree((Object *) depset->entangled_deps, TRUE);
+	objectFree((Object *) depset->fallback_expr, TRUE);
+	objectFree((Object *) depset->fallback_parent, TRUE);
     }
     skfree(depset);
 }
@@ -578,6 +545,9 @@ dependencySetFree(DependencySet *depset, boolean free_contents)
 static void
 dependencyFree(Dependency *dep, boolean free_contents)
 {
+    if (free_contents) {
+	objectFree((Object *) dep->qn, TRUE);
+    }
     skfree((Object *) dep);
 }
 
@@ -663,6 +633,94 @@ nameForBuildType(DagNodeBuildType build_type)
     }
 }
 
+boolean
+depIsActive(Dependency *dep)
+{
+    /* DO NOT ATTEMPT TO DEBUG THIS USING dbgSexp, printSexp, or
+     * objectSexp, directly or indirectly, as it is called from
+     * dependencySexp and will recurse uncontrollbaly. */
+
+    Dependency *cur_dep;
+    if (dep->depset) {
+	if (dep->depset->deactivated) {
+	    return FALSE;
+	}
+
+	cur_dep = (Dependency *) dereference(
+	    ELEM(dep->depset->deps, dep->depset->chosen_dep));
+	if (cur_dep == dep) {
+	    return TRUE;
+	}
+	if (dep->depset->entangled_deps) {
+	    cur_dep = (Dependency *) dereference(
+		ELEM(dep->depset->entangled_deps, dep->depset->chosen_dep));
+	}
+	return cur_dep == dep;
+    }
+    return TRUE;
+}
+
+static char *
+dependencySexp(Dependency *dep)
+{
+    char *depset_indicator = dep->depset? 
+	(depIsActive(dep)? "*": "-"): "";
+    char *direction = dep->is_forwards? "-->": "<--";
+    char *tmp;
+    char *name;
+    char *result;
+
+    if (dep->dep) {
+	tmp = objectSexp((Object *) dep->dep);
+	name = newstr("dep: %s", tmp);
+	skfree(tmp);
+    }
+    else if (dep->qn_is_full) {
+	name = newstr("fqn: \"%s\"", dep->qn->value);
+    }
+    else {
+	name = newstr("pqn: \"%s\"", dep->qn->value);
+    }
+    
+    result = newstr("<%s%s %s%s>", objTypeName((Object *) dep), 
+		    depset_indicator, direction, name);
+    skfree(name);
+    return result;
+}
+
+static char *
+dependencySetSexp(DependencySet *depset)
+{
+    char *fqn;
+    char *tmp;
+    char *tmp2;
+    char *tmp3;
+
+    if (depset->definition_node) {
+	fqn = depset->definition_node->fqn->value;
+    }
+    else {
+	fqn = "??";
+    }
+    tmp = objectSexp((Object *) depset->deps);
+    if (depset->entangled_deps) {
+	tmp3 = objectSexp((Object *) depset->entangled_deps);
+	tmp2 = newstr("<%s for (%s) %s %s E[%s]>", 
+		      objTypeName((Object *) depset), 
+		      nameForBuildType(depset->definition_node->build_type),
+		      fqn, tmp, tmp3);
+	skfree(tmp3);
+    }
+    else {
+	tmp2 = newstr("<%s for (%s) %s %s>", objTypeName((Object *) depset), 
+		      nameForBuildType(depset->definition_node->build_type),
+		      fqn, tmp);
+    }
+    skfree(tmp);
+    return tmp2;
+}
+
+
 /* Return dynamically-created string representation of object. 
  * The full argument allows more information to be returned about the
  * object, for debugging purposes. */
@@ -711,17 +769,9 @@ objectSexp(Object *obj)
     case OBJ_MISC:
 	return newstr("<%s %p>", objTypeName(obj), obj);
     case OBJ_DEPENDENCY:
-	tmp = objectSexp((Object *) ((Dependency *) obj)->dep);
-	tmp2 = newstr("<%s%s %s>", objTypeName(obj), 
-		      ((Dependency *) obj)->depset? 
-		      (((Dependency *) obj)->deactivated? "-": "*"): "", tmp);
-	skfree(tmp);
-	return tmp2;
+	return dependencySexp((Dependency *) obj);
     case OBJ_DEPENDENCYSET:
-	tmp = objectSexp((Object *) ((DependencySet *) obj)->deps);
-	tmp2 = newstr("<%s %s>", objTypeName(obj), tmp);
-	skfree(tmp);
-	return tmp2;
+	return dependencySetSexp((DependencySet *) obj);
     case OBJ_DAGNODE:
 	return newstr("<%s (%s) %s>", objTypeName(obj), 
 		      nameForBuildType(((DagNode *) obj)->build_type), 

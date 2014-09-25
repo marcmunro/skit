@@ -27,7 +27,7 @@
 	  <xsl:variable name="priv" 
 			select="substring-after($names, '.')"/>
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
-		    role="{$role}" parent="cluster">
+		    role="{$role}">
 	    <dependencies>
 	      <dependency fqn="{concat('role.', $role)}"/>
 	    </dependencies>

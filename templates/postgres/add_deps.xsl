@@ -126,7 +126,7 @@
       <!-- Dependency on schema create grant to owner, public or self -->
       <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
-	  parent="ancestor::dbobject[database]"
+	  parent="ancestor::dbobject[type='database']"
 	  direction="forwards">
 	<xsl:call-template name="deps-schema-create">
 	  <xsl:with-param name="to" select="@owner"/>

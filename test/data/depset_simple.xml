@@ -4,7 +4,7 @@
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.17" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
       <dbobject type="role" name="regress" qname="regress" fqn="role.regress" parent="cluster">
         <dependency-set>
-          <dependency fqn="concat('database.', ../database/@name)"/>
+          <dependency fqn="database.regressdb"/>
           <dependency fqn="cluster"/>
         </dependency-set>
         <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">

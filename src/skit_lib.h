@@ -286,15 +286,12 @@ typedef struct DagNode {
     xmlNode            *dbobject;  // Reference only - not to be freed from here
     DagNodeStatus       status;
     DagNodeBuildType    build_type;
-    boolean             checked;      // for cycle detection
-    boolean             is_degraded;
     Vector             *deps;         // use objectFree(obj, FALSE);
-    Vector             *tmp_deps;     // use objectFree(obj, FALSE);
+    Vector             *unidentified_deps;     // use objectFree(obj, FALSE);
     int                 cur_dep;
-    Vector             *connection_set;
+    boolean             is_fallback;
     struct DagNode     *parent;       // Reference only
     struct DagNode     *mirror_node;  // Reference only
-    struct DagNode     *endfallback;  // Reference only
 } DagNode;
 
 
@@ -302,45 +299,26 @@ struct Dependency;
 
 typedef struct DependencySet {
     ObjType                type;
-    boolean                degrade_if_missing;
     int                    priority;
-    DependencyApplication  direction;
-    struct Dependency     *chosen_dep;
+    int                    chosen_dep;
     DagNode               *definition_node;
-    DagNode               *fallback;
+    String                *fallback_expr;
+    String                *fallback_parent;
+    boolean                deactivated;
     Vector                *deps;
+    Vector                *entangled_deps;
 } DependencySet;
 
 
 typedef struct Dependency {
     ObjType                type;
+    String                *qn;
+    boolean                qn_is_full;
+    boolean                is_forwards;
     DagNode               *dep;
     DependencySet         *depset;
-    boolean                deactivated;
-    struct Dependency     *dup;
-    DependencyApplication  direction;
+    DagNode               *from; 
 } Dependency;
-
-
-typedef struct DagNodeOld {
-    ObjType          type;
-    String          *fqn;
-    xmlNode         *dbobject;    // Reference only - not to be freed from here
-    DagNodeStatus    status;
-    DagNodeBuildType build_type;
-    int              dep_idx;
-    Vector          *forward_deps;   	// use objectFree(obj, FALSE);
-    Vector          *backward_deps;  	// use objectFree(obj, FALSE);
-    Vector          *tmp_fdeps;  	// use objectFree(obj, FALSE);
-    struct DagNode  *mirror_node;    	// Reference only
-    struct DagNode  *parent;   	     	// Reference only
-    struct DagNode  *breaker;           // The breaker for this node
-    struct DagNode  *breaker_for;       // The node for which this is a breaker
-    struct DagNode  *supernode;
-    struct DagNode  *forward_subnodes;       	// Linked list
-    struct DagNode  *backward_subnodes;       	// Linked list
-    struct DagNode  *fallback_node;  
-} DagNodeOld;
 
 
 typedef struct Context {
@@ -384,6 +362,25 @@ typedef struct TokenStr {
 #define assert(cond,...) 
 #endif
 
+/* Assert that an object variable is of the correct type.
+ */
+#define assertType(x,t)							\
+    assert(x && (x->type == t),						\
+	   x? "Variable " #x " is not of type " #t			\
+	   ".  Instead is %d at " __FILE__ ":%d"			\
+	   : "Variable " #x " is NULL (%d) at " __FILE__ ":%d",		\
+	   x? x->type: 0, __LINE__)
+
+#define assertDoc(x) assertType(x, OBJ_DOCUMENT)
+#define assertVector(x) assertType(x, OBJ_VECTOR)
+#define assertHash(x) assertType(x, OBJ_HASH)
+#define assertString(x) assertType(x, OBJ_STRING)
+#define assertNode(x) assertType(x, OBJ_XMLNODE)
+#define assertDagNode(x) assertType(x, OBJ_DAGNODE)
+#define assertDependency(x) assertType(x, OBJ_DEPENDENCY)
+#define assertDependencySet(x) assertType(x, OBJ_DEPENDENCYSET)
+#define assertCons(x) assertType(x, OBJ_CONS)
+#define assertInt4(x) assertType(x, OBJ_INT4)
 
 /* To suppress warnings about unused parameters */
 #define UNUSED(x) (void)(x)
@@ -462,9 +459,11 @@ extern Object *objectFromStr(char *instr);
 extern DagNode *dagNodeNew(xmlNode *node, DagNodeBuildType build_type);
 extern char *nameForBuildType(DagNodeBuildType build_type);
 extern boolean checkObj(Object *obj, void *chunk);
-extern DependencySet *dependencySetNew(void);
-extern Dependency *dependencyNew(DagNode *dep);
+extern DependencySet *dependencySetNew(DagNode *definition_node);
+extern Dependency *dependencyNew(
+    String *qn, boolean qn_is_full, boolean is_forwards);
 extern Context *contextNew(String *context_type, String *value, String *dflt);
+extern boolean depIsActive(Dependency *dep);
 
 #define isSubnode(node)       (node && node->supernode)
 
