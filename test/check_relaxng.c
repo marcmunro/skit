@@ -27,6 +27,7 @@ getDoc(char *name)
     Document *doc;
     BEGIN {
 	doc = findDoc(docname);
+	readDocDbver(doc);
     }
     EXCEPTION(ex);
     FINALLY {

@@ -728,20 +728,18 @@ START_TEST(extract)
 END_TEST
 #endif
 
-#ifdef wibble
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--drop",
-		    "x",
-		    //"regress/scratch/dbdump/cluster.xml",
-		    "--debug", "--print", "--full"};
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    "regress/scratch/dbdump/cluster.xml",
+		    "--list", "--all"};
 
     initTemplatePath(".");
     //showFree(3549);
-    showMalloc(55599);
+    //showMalloc(20374);
 
     BEGIN {
-	process_args2(4, args);
+	process_args2(6, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -755,6 +753,7 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -815,7 +814,6 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
-#ifdef WIBBLE
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -845,6 +843,7 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef WIBBLE
 #endif
 
 #ifdef wibble
@@ -1042,10 +1041,10 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    ///ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

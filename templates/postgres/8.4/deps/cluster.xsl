@@ -28,6 +28,7 @@
 	<xsl:apply-templates>
 	  <xsl:with-param name="parent_core" select="'cluster'"/>
 	</xsl:apply-templates>
+	<xsl:apply-templates select="//database" mode="database"/>
       </xsl:copy>
     </dbobject>
   </xsl:template>

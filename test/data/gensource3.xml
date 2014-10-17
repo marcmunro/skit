@@ -1,301 +1,348 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="skittest" time="20090611091918">
-  <!-- This is for checking unresolved cyclic dependencies.  The 
-       dbobject definitions for v1 and v2 are lacking cycle_breaker 
-       definitions -->
-       
   <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
-    <cluster type="postgres" version="8.3.7" username="marc">
-      <dbobject type="role" name="keep" qname="keep" fqn="role.cluster.keep">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+    <cluster type="postgres" version="8.4.7" username="marc">
+      <dbobject type="role" name="keep" qname="keep" fqn="role.keep" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
       </dbobject>
-      <dbobject type="role" name="keep2" qname="keep2" fqn="role.cluster.keep2">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="keep2" qname="keep2" fqn="role.keep2" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:keep2" pqn="grant.cluster.keep2.keep" fqn="grant.cluster.keep2.keep:lose">
-            <context name="owner" value="lose" default="marc"/>
+          <dbobject type="grant" name="keep:keep2" fqn="grant.role.keep2.keep:lose" qname="" parent="role.keep2" subtype="role" pqn="grant.role.keep2.keep">
+            <context type="owner" value="lose" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.lose"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency pqn="grant.cluster.lose.keep"/>
+              <dependency fqn="role.keep2"/>
+              <dependency fqn="role.keep"/>
+              <dependency fqn="role.lose"/>
+              <dependency-set priority="1" fallback="privilege.role.lose.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.lose.keep"/>
+                <dependency fqn="privilege.role.lose.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="keep" from="lose" to="keep2" with_admin="yes"/>
           </dbobject>
         </role>
       </dbobject>
-      <dbobject type="role" name="lose" qname="lose" fqn="role.cluster.lose">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="lose" qname="lose" fqn="role.lose" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:lose" pqn="grant.cluster.lose.keep" fqn="grant.cluster.lose.keep:keep">
-            <context name="owner" value="keep" default="marc"/>
+          <dbobject type="grant" name="keep:lose" fqn="grant.role.lose.keep:keep" qname="" parent="role.lose" subtype="role" pqn="grant.role.lose.keep">
+            <context type="owner" value="keep" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.lose"/>
+              <dependency fqn="role.lose"/>
+              <dependency fqn="role.keep"/>
             </dependencies>
             <grant priv="keep" from="keep" to="lose" with_admin="yes"/>
           </dbobject>
         </role>
       </dbobject>
-      <dbobject type="role" name="marc" qname="marc" fqn="role.cluster.marc">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="marc" qname="marc" fqn="role.marc" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="marc" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.marc.superuser" qname="superuser" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.marc.inherit" qname="inherit" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.marc.createrole" qname="createrole" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.marc.createdb" qname="createdb" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
           <privilege priv="superuser"/>
           <privilege priv="inherit"/>
           <privilege priv="createrole"/>
           <privilege priv="createdb"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="marco" qname="marco" fqn="role.cluster.marco">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="marco" qname="marco" fqn="role.marco" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="marco" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" max_connections="-1"/>
       </dbobject>
-      <dbobject type="role" name="postgres" qname="postgres" fqn="role.cluster.postgres">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="postgres" qname="postgres" fqn="role.postgres" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="postgres" login="y" max_connections="-1">
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.postgres.superuser" qname="superuser" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.postgres.inherit" qname="inherit" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.postgres.createrole" qname="createrole" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.postgres.createdb" qname="createdb" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
           <privilege priv="superuser"/>
           <privilege priv="inherit"/>
           <privilege priv="createrole"/>
           <privilege priv="createdb"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="regress" qname="regress" fqn="role.cluster.regress">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="regress" qname="regress" fqn="role.regress" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="regress" login="y" password="md5c2a101703f1e515ef9769f835d6fe78a" expires="infinity" max_connections="-1">
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.regress.superuser" qname="superuser" parent="role.regress" role_qname="regress">
+            <dependencies>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
           <privilege priv="superuser"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="wibble" qname="wibble" fqn="role.cluster.wibble">
-        <dependencies>
-          <dependency fqn="cluster"/>
-        </dependencies>
+      <dbobject type="role" name="wibble" qname="wibble" fqn="role.wibble" parent="database.skittest">
+        <dependency fqn="database.skittest"/>
         <role name="wibble" login="y" password="md54ea9ea89bc47825ea7b2fe7c2288b27a" expires="2007-03-01 00:00:00-08" max_connections="-1">
-          <dbobject type="grant" subtype="role" name="keep:wibble" pqn="grant.cluster.wibble.keep" fqn="grant.cluster.wibble.keep:keep">
-            <context name="owner" value="keep" default="marc"/>
+          <dbobject type="grant" name="keep:wibble" fqn="grant.role.wibble.keep:keep" qname="" parent="role.wibble" subtype="role" pqn="grant.role.wibble.keep">
+            <context type="owner" value="keep" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.wibble"/>
+              <dependency fqn="role.wibble"/>
+              <dependency fqn="role.keep"/>
             </dependencies>
             <grant priv="keep" from="keep" to="wibble" with_admin="yes"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="keep2:wibble" pqn="grant.cluster.wibble.keep2" fqn="grant.cluster.wibble.keep2:keep2">
-            <context name="owner" value="keep2" default="marc"/>
+          <dbobject type="grant" name="keep2:wibble" fqn="grant.role.wibble.keep2:keep2" qname="" parent="role.wibble" subtype="role" pqn="grant.role.wibble.keep2">
+            <context type="owner" value="keep2" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.wibble"/>
+              <dependency fqn="role.wibble"/>
+              <dependency fqn="role.keep2"/>
             </dependencies>
             <grant priv="keep2" from="keep2" to="wibble" with_admin="no"/>
           </dbobject>
         </role>
       </dbobject>
-      <dbobject type="tablespace" name="tbs2" qname="tbs2" fqn="tablespace.cluster.tbs2">
+      <dbobject type="tablespace" name="tbs2" fqn="tablespace.tbs2" qname="tbs2" parent="database.skittest">
         <dependencies>
-          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="database.skittest"/>
+          <dependency fqn="role.regress"/>
         </dependencies>
         <tablespace name="tbs2" owner="regress" location="/var/lib/postgresql/8.3/main/tbs/tbs2">
-          <dbobject type="grant" parent="tablespace.cluster.tbs2" name="create:regress" pqn="grant.cluster.tbs2.create:regress" fqn="grant.cluster.tbs2.create:regress:regress" owner="regress" subtype="tablespace" on="tbs2">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:regress" fqn="grant.tablespace.tbs2.create" qname="" parent="tablespace.tbs2" pqn="grant.tablespace.tbs2.create:regress" subtype="tablespace" on="tbs2">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.regress"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs2"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="regress" with_grant="yes"/>
           </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs2" name="create:keep2" pqn="grant.cluster.tbs2.create:keep2" fqn="grant.cluster.tbs2.create:keep2:regress" owner="regress" subtype="tablespace" on="tbs2">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:keep2" fqn="grant.tablespace.tbs2.create:keep2" qname="" parent="tablespace.tbs2" pqn="grant.tablespace.tbs2.create:keep2" subtype="tablespace" on="tbs2">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs2"/>
+              <dependency fqn="role.keep2"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="keep2" with_grant="no"/>
           </dbobject>
         </tablespace>
       </dbobject>
-      <dbobject type="tablespace" name="tbs3" qname="tbs3" fqn="tablespace.cluster.tbs3">
+      <dbobject type="tablespace" name="tbs3" fqn="tablespace.tbs3" qname="tbs3" parent="database.skittest">
         <dependencies>
-          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="database.skittest"/>
+          <dependency fqn="role.regress"/>
         </dependencies>
         <tablespace name="tbs3" owner="regress" location="/var/lib/postgresql/8.3/main/tbs/tbs3">
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:regress" pqn="grant.cluster.tbs3.create:regress" fqn="grant.cluster.tbs3.create:regress:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:regress" fqn="grant.tablespace.tbs3.create" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:regress" subtype="tablespace" on="tbs3">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.regress"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs3"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="regress" with_grant="yes"/>
           </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:wibble" pqn="grant.cluster.tbs3.create:wibble" fqn="grant.cluster.tbs3.create:wibble:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:wibble" fqn="grant.tablespace.tbs3.create:wibble" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:wibble" subtype="tablespace" on="tbs3">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs3"/>
+              <dependency fqn="role.wibble"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="wibble" with_grant="no"/>
           </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:marco" pqn="grant.cluster.tbs3.create:marco" fqn="grant.cluster.tbs3.create:marco:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:marco" fqn="grant.tablespace.tbs3.create:marco" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:marco" subtype="tablespace" on="tbs3">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.marco"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs3"/>
+              <dependency fqn="role.marco"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="marco" with_grant="yes"/>
           </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:keep2" pqn="grant.cluster.tbs3.create:keep2" fqn="grant.cluster.tbs3.create:keep2:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:keep2" fqn="grant.tablespace.tbs3.create:keep2" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:keep2" subtype="tablespace" on="tbs3">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep2"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs3"/>
+              <dependency fqn="role.keep2"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="keep2" with_grant="yes"/>
           </dbobject>
-          <dbobject type="grant" parent="tablespace.cluster.tbs3" name="create:keep" pqn="grant.cluster.tbs3.create:keep" fqn="grant.cluster.tbs3.create:keep:regress" owner="regress" subtype="tablespace" on="tbs3">
-            <context name="owner" value="regress" default="marc"/>
+          <dbobject type="grant" name="create:keep" fqn="grant.tablespace.tbs3.create:keep" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:keep" subtype="tablespace" on="tbs3">
+            <context type="owner" value="regress" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.keep"/>
-              <dependency fqn="role.cluster.regress"/>
+              <dependency fqn="tablespace.tbs3"/>
+              <dependency fqn="role.keep"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
             <grant priv="create" from="regress" to="keep" with_grant="yes"/>
           </dbobject>
         </tablespace>
       </dbobject>
-      <dbobject type="tablespace" name="tbs4" qname="tbs4" fqn="tablespace.cluster.tbs4">
+      <dbobject type="tablespace" name="tbs4" fqn="tablespace.tbs4" qname="tbs4" parent="database.skittest">
         <dependencies>
-          <dependency fqn="role.cluster.wibble"/>
+          <dependency fqn="database.skittest"/>
+          <dependency fqn="role.wibble"/>
         </dependencies>
         <tablespace name="tbs4" owner="wibble" location="/var/lib/postgresql/8.3/main/tbs/tbs4">
-          <dbobject type="grant" parent="tablespace.cluster.tbs4" name="create:wibble" pqn="grant.cluster.tbs4.create:wibble" fqn="grant.cluster.tbs4.create:wibble:wibble" owner="wibble" subtype="tablespace" on="tbs4">
-            <context name="owner" value="wibble" default="marc"/>
+          <dbobject type="grant" name="create:wibble" fqn="grant.tablespace.tbs4.create" qname="" parent="tablespace.tbs4" pqn="grant.tablespace.tbs4.create:wibble" subtype="tablespace" on="tbs4">
+            <context type="owner" value="wibble" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.wibble"/>
-              <dependency fqn="role.cluster.wibble"/>
+              <dependency fqn="tablespace.tbs4"/>
+              <dependency fqn="role.wibble"/>
             </dependencies>
             <grant with_grant="yes" priv="create" from="wibble" to="wibble"/>
           </dbobject>
         </tablespace>
       </dbobject>
-      <dbobject type="dbincluster" name="skittest" qname="skittest" fqn="dbincluster.cluster.skittest">
+      <dbobject type="dbincluster" name="skittest" qname="skittest" fqn="dbincluster.skittest" parent="cluster">
         <dependencies>
-          <dependency fqn="tablespace.cluster.tbs3"/>
-          <dependency fqn="role.cluster.regress"/>
+          <dependency fqn="cluster"/>
         </dependencies>
-        <database name="skittest" owner="regress" encoding="UTF8" tablespace="tbs3" connections="-1"/>
+        <database name="skittest"/>
+      </dbobject>
+      <dbobject type="database" visit="true" name="skittest" qname="skittest" fqn="database.skittest">
+        <dependencies>
+          <dependency fqn="dbincluster.skittest"/>
+        </dependencies>
+        <database name="skittest">
+          <dbobject type="grant" name="temporary:public" fqn="grant.database.skittest.temporary:public" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:public" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="temporary" from="regress" to="public" with_grant="no"/>
+          </dbobject>
+          <dbobject type="grant" name="connect:public" fqn="grant.database.skittest.connect:public" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:public" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="connect" from="regress" to="public" with_grant="no"/>
+          </dbobject>
+          <dbobject type="grant" name="create:regress" fqn="grant.database.skittest.create" qname="" parent="database.skittest" pqn="grant.database.skittest.create:regress" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="create" from="regress" to="regress" with_grant="yes"/>
+          </dbobject>
+          <dbobject type="grant" name="temporary:regress" fqn="grant.database.skittest.temporary" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:regress" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="temporary" from="regress" to="regress" with_grant="yes"/>
+          </dbobject>
+          <dbobject type="grant" name="connect:regress" fqn="grant.database.skittest.connect" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:regress" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="connect" from="regress" to="regress" with_grant="yes"/>
+          </dbobject>
+          <dbobject type="schema" name="public" fqn="schema.skittest.public" qname="public" parent="database.skittest">
+            <context type="owner" value="postgres" default="marc"/>
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
+              <comment>'standard public schema'</comment>
+              <dbobject type="grant" name="usage:public" fqn="grant.schema.skittest.public.usage:public:regress" qname="" parent="schema.skittest.public" pqn="grant.schema.skittest.public.usage:public" subtype="schema" on="public">
+                <context type="owner" value="postgres" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="role.regress"/>
+                </dependencies>
+                <grant from="regress" to="public" with_grant="no" priv="usage"/>
+              </dbobject>
+              <dbobject type="view" name="v1" fqn="view.skittest.public.v1" qname="public.v1" parent="schema.skittest.public">
+                <context type="owner" value="marc" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="view.skittest.public.v2"/>
+                  <dependency fqn="role.marc"/>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                    <dependency pqn="grant.schema.skittest.public.create:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.create:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                    <dependency pqn="grant.schema.skittest.public.usage:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.usage:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <view name="v1" schema="public" owner="marc">
+                  <source>SELECT v2.mykey FROM v2;</source>
+                  <depends schema="public" view="v2"/>
+                </view>
+              </dbobject>
+              <dbobject type="view" name="v2" fqn="view.skittest.public.v2" qname="public.v2" parent="schema.skittest.public">
+                <context type="owner" value="marc" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="view.skittest.public.v1"/>
+                  <dependency fqn="role.marc"/>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                    <dependency pqn="grant.schema.skittest.public.create:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.create:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                    <dependency pqn="grant.schema.skittest.public.usage:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.usage:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <view name="v2" schema="public" owner="marc">
+                  <source>SELECT v1.mykey FROM v1;</source>
+                  <depends schema="public" view="v1"/>
+                </view>
+              </dbobject>
+            </schema>
+          </dbobject>
+        </database>
       </dbobject>
     </cluster>
-  </dbobject>
-  <dbobject type="database" visit="true" name="skittest" qname="skittest" fqn="database.cluster.skittest">
-    <dependencies>
-      <dependency fqn="dbincluster.cluster.skittest"/>
-    </dependencies>
-    <database name="skittest">
-      <dbobject type="grant" parent="database.skittest" name="temporary:public" pqn="grant.skittest.temporary:public" fqn="grant.skittest.temporary:public:regress" owner="" subtype="database" on="skittest">
-        <context name="owner" value="regress" default="marc"/>
-        <dependencies>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <grant priv="temporary" from="regress" to="public" with_grant="no"/>
-      </dbobject>
-      <dbobject type="grant" parent="database.skittest" name="connect:public" pqn="grant.skittest.connect:public" fqn="grant.skittest.connect:public:regress" owner="" subtype="database" on="skittest">
-        <context name="owner" value="regress" default="marc"/>
-        <dependencies>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <grant priv="connect" from="regress" to="public" with_grant="no"/>
-      </dbobject>
-      <dbobject type="grant" parent="database.skittest" name="create:regress" pqn="grant.skittest.create:regress" fqn="grant.skittest.create:regress:regress" owner="" subtype="database" on="skittest">
-        <context name="owner" value="regress" default="marc"/>
-        <dependencies>
-          <dependency fqn="role.cluster.regress"/>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <grant priv="create" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="grant" parent="database.skittest" name="temporary:regress" pqn="grant.skittest.temporary:regress" fqn="grant.skittest.temporary:regress:regress" owner="" subtype="database" on="skittest">
-        <context name="owner" value="regress" default="marc"/>
-        <dependencies>
-          <dependency fqn="role.cluster.regress"/>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <grant priv="temporary" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="grant" parent="database.skittest" name="connect:regress" pqn="grant.skittest.connect:regress" fqn="grant.skittest.connect:regress:regress" owner="" subtype="database" on="skittest">
-        <context name="owner" value="regress" default="marc"/>
-        <dependencies>
-          <dependency fqn="role.cluster.regress"/>
-          <dependency fqn="role.cluster.regress"/>
-        </dependencies>
-        <grant priv="connect" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="schema" name="public" qname="public" fqn="schema.skittest.public">
-        <dependencies>
-          <dependency fqn="role.cluster.postgres"/>
-        </dependencies>
-        <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
-          <comment>'standard public schema'</comment>
-          <dbobject type="grant" parent="schema.skittest.public" 
-		    name="usage:public" 
-		    pqn="grant.skittest.public.usage:public" 
-		    fqn="grant.skittest.public.usage:public:regress" 
-		    owner="regress" subtype="schema" on="public">
-            <context name="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="role.cluster.regress"/>
-            </dependencies>
-            <grant from="regress" to="public" with_grant="no" priv="usage"/>
-          </dbobject>
-          <dbobject type="view" fqn="view.skittest.public.v1" name="v1"
-		    qname="public.v1">
-            <context name="owner" value="marc" default="marc"/>
-            <dependencies>
-              <dependency fqn="view.skittest.public.v2"/>
-              <dependency fqn="role.cluster.marc"/>
-	      <dependency-set>
-		<dependency pqn="grant.skittest.public.usage:public"/>
-		<dependency pqn="grant.skittest.public.usage:marc"/>
-		<dependency pqn="grant.skittest.public.usage:marc"/>
-	      </dependency-set>
-            </dependencies>
-            <view name="v1" schema="public" owner="marc">
-              <source>SELECT v2.mykey FROM v2;</source>
-              <depends schema="public" view="v2"/>
-            </view>
-          </dbobject>
-          <dbobject type="view" fqn="view.skittest.public.v2" name="v2"
-              qname="public.v2">
-            <context name="owner" value="marc" default="marc"/>
-            <dependencies>
-              <dependency fqn="view.skittest.public.v1"/>
-              <dependency fqn="role.cluster.marc"/>
-	      <dependency-set>
-		<dependency pqn="grant.skittest.public.usage:public"/>
-		<dependency pqn="grant.skittest.public.usage:marc"/>
-		<dependency pqn="grant.skittest.public.usage:marc"/>
-	      </dependency-set>
-            </dependencies>
-            <view name="v2" schema="public" owner="marc">
-              <source>SELECT v1.mykey FROM v1;</source>
-              <depends schema="public" view="v1"/>
-            </view>
-          </dbobject>
-        </schema>
-      </dbobject>
-    </database>
   </dbobject>
 </dump>

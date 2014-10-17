@@ -472,7 +472,7 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->build_type = build_type;
     new->deps = NULL;
     new->unidentified_deps = NULL;
-    new->cur_dep = -1;
+    new->cur_dep = 0;
     new->is_fallback = FALSE;
     new->parent = NULL;
     new->mirror_node = NULL;
@@ -486,6 +486,8 @@ dependencySetNew(DagNode *definition_node)
     new->type = OBJ_DEPENDENCYSET;
     new->priority = 100;
     new->chosen_dep = 0;
+    new->cycles = 0;
+    new->fallbacks_added = 0;
     new->definition_node = definition_node;
     new->fallback_expr = NULL;
     new->fallback_parent = NULL;
@@ -503,6 +505,7 @@ dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
     new->qn = qn;
     new->qn_is_full = qn_is_full;
     new->is_forwards = is_forwards;
+    new->unusable = FALSE;
     new->dep = NULL;
     new->depset = NULL;
     new->from = NULL;
@@ -641,19 +644,35 @@ depIsActive(Dependency *dep)
      * dependencySexp and will recurse uncontrollbaly. */
 
     Dependency *cur_dep;
+
+    assertDependency(dep);
+    if (!dep->dep) {
+	return FALSE;
+    }
+
+    if (dep->unusable) {
+	return FALSE;
+    }
+
     if (dep->depset) {
+	assertDependencySet(dep->depset);
 	if (dep->depset->deactivated) {
 	    return FALSE;
 	}
 
+	if (dep->depset->chosen_dep >= dep->depset->deps->elems) {
+	    return FALSE;
+	}
 	cur_dep = (Dependency *) dereference(
 	    ELEM(dep->depset->deps, dep->depset->chosen_dep));
+	//assertDependency(cur_dep);
 	if (cur_dep == dep) {
 	    return TRUE;
 	}
 	if (dep->depset->entangled_deps) {
 	    cur_dep = (Dependency *) dereference(
 		ELEM(dep->depset->entangled_deps, dep->depset->chosen_dep));
+	    //assertDependency(cur_dep);
 	}
 	return cur_dep == dep;
     }

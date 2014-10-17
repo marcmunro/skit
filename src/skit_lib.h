@@ -289,6 +289,7 @@ typedef struct DagNode {
     Vector             *deps;         // use objectFree(obj, FALSE);
     Vector             *unidentified_deps;     // use objectFree(obj, FALSE);
     int                 cur_dep;
+    int                 resolver_depth;
     boolean             is_fallback;
     struct DagNode     *parent;       // Reference only
     struct DagNode     *mirror_node;  // Reference only
@@ -301,6 +302,8 @@ typedef struct DependencySet {
     ObjType                type;
     int                    priority;
     int                    chosen_dep;
+    int                    cycles;
+    int                    fallbacks_added;
     DagNode               *definition_node;
     String                *fallback_expr;
     String                *fallback_parent;
@@ -315,6 +318,7 @@ typedef struct Dependency {
     String                *qn;
     boolean                qn_is_full;
     boolean                is_forwards;
+    boolean                unusable;
     DagNode               *dep;
     DependencySet         *depset;
     DagNode               *from; 

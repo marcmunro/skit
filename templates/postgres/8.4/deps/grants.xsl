@@ -55,7 +55,7 @@
 	  fallback="{concat('privilege.role.', @from, '.superuser')}"
 	  parent="ancestor::dbobject[cluster]">
 	  <dependency pqn="{concat('grant.role.', @from, '.', @priv)}"/>
-	  <dependency pqn="{concat('privilege.role.', @from, '.superuser')}"/>
+	  <dependency fqn="{concat('privilege.role.', @from, '.superuser')}"/>
 	</dependency-set>
       </xsl:otherwise>
     </xsl:choose>
@@ -131,6 +131,7 @@
 
   <xsl:template match="grant" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="grantor" select="@from"/>
 
     <dependency fqn="{concat(name(..), '.', $parent_core)}"/>
     <!-- Roles -->
@@ -183,7 +184,7 @@
          the function is a handler.  This is because the function can
          only be dropped by dropping the type with cascade, so any
          revokation of grants to the function should be done before the
-         type is dropped. -->
+         type is dropped.  -->
     <xsl:if test="parent::function/handler-for-type">
       <dependency fqn="{concat('type.', ancestor::database/@name, '.',
 		               parent::function/handler-for-type/@schema, '.',

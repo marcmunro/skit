@@ -288,20 +288,6 @@ ancestryStack(Node *node)
     return result;
 }
 
-static Node *
-findMatchingNodeInStack(Node *node, Vector *stack)
-{
-    Node *this;
-    int i;
-    for (i = stack->elems - 1; i >= 0; i--) {
-	this = (Node *) ELEM(stack, i);
-	if (nodesMatch(node, this)) {
-	    return this;
-	}
-    }
-    return NULL;
-}
-
 static Node*
 commonAncestor(Node *nav_from, Node *nav_to)
 {
@@ -309,13 +295,18 @@ commonAncestor(Node *nav_from, Node *nav_to)
     Vector *from_stack;
     Vector *to_stack;
     Node *ancestor;
+    Node *this;
+
     if (nav_from && nav_to) {
 	from_stack = ancestryStack(nav_from);
 	to_stack = ancestryStack(nav_to);
 	
 	while (ancestor = (Node *) vectorPop(from_stack)) {
-	    if (findMatchingNodeInStack(ancestor, to_stack)) {
+	    this = (Node *) vectorPop(to_stack);
+	    if (nodesMatch(ancestor, this)) {
 		result = ancestor;
+	    }
+	    else {
 		break;
 	    }
 	}

@@ -835,6 +835,7 @@ evalDiffDep(xmlNode *depnode, xmlNode *content1, xmlNode *content2)
 	}
     }
     while (cur = getNextNode(cur->next));
+
     return result;
 }
 
@@ -1217,6 +1218,27 @@ processRemaining(Hash *remaining, Hash *rules, xmlNode *parent, boolean *diffs)
     objectFree((Object *) remaining, TRUE);
 }
 
+static xmlNode *
+contentsNodeForDbobject(xmlNode *dbobject)
+{
+    xmlNode *node = firstElement(dbobject->children);
+    String *type = nodeAttribute(dbobject, "type");
+    if (type) {
+	while (node) {
+	    if (streq((char *) node->name, type->value)) {
+		break;
+	    }
+	    node = firstElement(node->next);
+	}
+    }
+
+    objectFree((Object *) type, TRUE);
+    if (node) {
+	return node;
+    }
+    return dbobject;
+}
+
 static void
 processDiffs(
     xmlNode *node1, 
@@ -1229,8 +1251,10 @@ processDiffs(
     xmlNode *dbobj2 = getNextNode(node2);
     xmlNode *match;
     xmlNode *difflist = NULL;
+    xmlNode *content;
     boolean diffs;
 
+    content = contentsNodeForDbobject(result_parent);
     BEGIN {
 	node1objects = allDbobjects(node1, rules);
 
@@ -1239,14 +1263,14 @@ processDiffs(
 	    match = getMatch(dbobj2, node1objects, rules);
 
 	    if (difflist = dbobjectDiff(match, dbobj2, rules, &diffs)) {
-		xmlAddChildList(result_parent, difflist);
+		xmlAddChildList(content, difflist);
 	    }
 	    if (diffs) {
 		*has_diffs = TRUE;
 	    }
 	    dbobj2 = dbobj2->next;
 	}
-	processRemaining(node1objects, rules, result_parent, &diffs);
+	processRemaining(node1objects, rules, content, &diffs);
     }
     EXCEPTION(ex) {
 	objectFree((Object *) node1objects, TRUE);

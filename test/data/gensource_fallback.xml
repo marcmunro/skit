@@ -1,410 +1,617 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="x" time="20111229144231">
-  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster"
-	    action="none">
-    <cluster type="postgres" version="8.3.14" skit_xml_version="0.1" username="marc">
-      <dbobject type="role" name="createuser" qname="createuser" fqn="role.cluster.createuser">
+  <dbobject type="cluster" visit="true" name="cluster" fqn="cluster">
+    <cluster type="postgres" version="8.4.17" skit_xml_version="0.1" username="marc">
+      <dbobject type="role" name="createuser" qname="createuser" fqn="role.createuser" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="createuser" login="y" password="md5b432a92373348eff3f8e22830ed85ff3" max_connections="-1">
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.createuser.inherit"/>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.createuser.inherit" qname="inherit" parent="role.createuser" role_qname="createuser">
+            <dependencies>
+              <dependency fqn="role.createuser"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="marc" qname="marc" fqn="role.cluster.marc">
+      <dbobject type="role" name="marc" qname="marc" fqn="role.marc" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="marc" login="y" password="md519e801183d8159029b83ac2b547beabd" max_connections="-1">
           <config type="client_min_messages" value="error"/>
-          <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.marc.superuser"/>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.marc.inherit"/>
-          <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.marc.createrole"/>
-          <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.marc.createdb"/>
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.marc.superuser" qname="superuser" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.marc.inherit" qname="inherit" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.marc.createrole" qname="createrole" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.marc.createdb" qname="createdb" parent="role.marc" role_qname="marc">
+            <dependencies>
+              <dependency fqn="role.marc"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
           <privilege priv="superuser"/>
           <privilege priv="inherit"/>
           <privilege priv="createrole"/>
           <privilege priv="createdb"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeyapp" qname="monkeyapp" fqn="role.cluster.monkeyapp">
+      <dbobject type="role" name="monkeyapp" qname="monkeyapp" fqn="role.monkeyapp" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeyapp" login="n" max_connections="-1">
           <comment>'This role will be granted only to accounts that run the monkey
 application.  It is not for use by developers or administrators except
 for testing the connectivity and access rights granted to the
 application server.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeyapp.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeybase:monkeyapp" pqn="grant.cluster.monkeyapp.monkeybase" fqn="grant.cluster.monkeyapp.monkeybase:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeybase:monkeyapp" fqn="grant.role.monkeyapp.monkeybase:marc" qname="" parent="role.monkeyapp" subtype="role" pqn="grant.role.monkeyapp.monkeybase">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeybase"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeyapp"/>
+              <dependency fqn="role.monkeyapp"/>
+              <dependency fqn="role.monkeybase"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeybase"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeybase" from="marc" to="monkeyapp" with_admin="no"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeyapp.inherit" qname="inherit" parent="role.monkeyapp" role_qname="monkeyapp">
+            <dependencies>
+              <dependency fqn="role.monkeyapp"/>
+            </dependencies>
+            <privilege priv="inherit"/>
           </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeybase" qname="monkeybase" fqn="role.cluster.monkeybase">
+      <dbobject type="role" name="monkeybase" qname="monkeybase" fqn="role.monkeybase" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeybase" login="n" max_connections="-1">
           <comment>'This role provides the most basic functionality and access rights for all
 classes of monkey user.  Access which would normally be public should instead
 be granted to this role.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeybase.inherit"/>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeybase.inherit" qname="inherit" parent="role.monkeybase" role_qname="monkeybase">
+            <dependencies>
+              <dependency fqn="role.monkeybase"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeycron" qname="monkeycron" fqn="role.cluster.monkeycron">
+      <dbobject type="role" name="monkeycron" qname="monkeycron" fqn="role.monkeycron" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeycron" login="n" max_connections="-1">
           <comment>'This role has minimal and very specific access rights.  It is for
 accounts that will be used to run automated administration scripts.
 This role should not be granted access through other roles as this would
 conlict with the intent that this role has minimal access rights.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeycron.inherit"/>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeycron.inherit" qname="inherit" parent="role.monkeycron" role_qname="monkeycron">
+            <dependencies>
+              <dependency fqn="role.monkeycron"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeydba" qname="monkeydba" fqn="role.cluster.monkeydba">
+      <dbobject type="role" name="monkeydba" qname="monkeydba" fqn="role.monkeydba" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeydba" login="n" max_connections="-1">
           <comment>'This role will be granted to monkey database administrators for direct
 manipulation of the database.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeydba.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeybase:monkeydba" pqn="grant.cluster.monkeydba.monkeybase" fqn="grant.cluster.monkeydba.monkeybase:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeybase:monkeydba" fqn="grant.role.monkeydba.monkeybase:marc" qname="" parent="role.monkeydba" subtype="role" pqn="grant.role.monkeydba.monkeybase">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeybase"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydba"/>
+              <dependency fqn="role.monkeydba"/>
+              <dependency fqn="role.monkeybase"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeybase"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeybase" from="marc" to="monkeydba" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeycron:monkeydba" pqn="grant.cluster.monkeydba.monkeycron" fqn="grant.cluster.monkeydba.monkeycron:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeycron:monkeydba" fqn="grant.role.monkeydba.monkeycron:marc" qname="" parent="role.monkeydba" subtype="role" pqn="grant.role.monkeydba.monkeycron">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeycron"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydba"/>
+              <dependency fqn="role.monkeydba"/>
+              <dependency fqn="role.monkeycron"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeycron"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeycron" from="marc" to="monkeydba" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeydev:monkeydba" pqn="grant.cluster.monkeydba.monkeydev" fqn="grant.cluster.monkeydba.monkeydev:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeydev:monkeydba" fqn="grant.role.monkeydba.monkeydev:marc" qname="" parent="role.monkeydba" subtype="role" pqn="grant.role.monkeydba.monkeydev">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeydev"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydba"/>
+              <dependency fqn="role.monkeydba"/>
+              <dependency fqn="role.monkeydev"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeydev"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeydev" from="marc" to="monkeydba" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeydo:monkeydba" pqn="grant.cluster.monkeydba.monkeydo" fqn="grant.cluster.monkeydba.monkeydo:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeydo:monkeydba" fqn="grant.role.monkeydba.monkeydo:marc" qname="" parent="role.monkeydba" subtype="role" pqn="grant.role.monkeydba.monkeydo">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeydo"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydba"/>
+              <dependency fqn="role.monkeydba"/>
+              <dependency fqn="role.monkeydo"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeydo"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeydo" from="marc" to="monkeydba" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeyspy:monkeydba" pqn="grant.cluster.monkeydba.monkeyspy" fqn="grant.cluster.monkeydba.monkeyspy:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeyspy:monkeydba" fqn="grant.role.monkeydba.monkeyspy:marc" qname="" parent="role.monkeydba" subtype="role" pqn="grant.role.monkeydba.monkeyspy">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeyspy"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydba"/>
+              <dependency fqn="role.monkeydba"/>
+              <dependency fqn="role.monkeyspy"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeyspy"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeyspy" from="marc" to="monkeydba" with_admin="no"/>
           </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeydba.inherit" qname="inherit" parent="role.monkeydba" role_qname="monkeydba">
+            <dependencies>
+              <dependency fqn="role.monkeydba"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeydev" qname="monkeydev" fqn="role.cluster.monkeydev">
+      <dbobject type="role" name="monkeydev" qname="monkeydev" fqn="role.monkeydev" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeydev" login="n" max_connections="-1">
           <comment>'This role gives access rights to the developer views.  Only monkey developers
 will be given this role.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeydev.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeybase:monkeydev" pqn="grant.cluster.monkeydev.monkeybase" fqn="grant.cluster.monkeydev.monkeybase:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeybase:monkeydev" fqn="grant.role.monkeydev.monkeybase:marc" qname="" parent="role.monkeydev" subtype="role" pqn="grant.role.monkeydev.monkeybase">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeybase"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydev"/>
+              <dependency fqn="role.monkeydev"/>
+              <dependency fqn="role.monkeybase"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeybase"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeybase" from="marc" to="monkeydev" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeydo:monkeydev" pqn="grant.cluster.monkeydev.monkeydo" fqn="grant.cluster.monkeydev.monkeydo:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeydo:monkeydev" fqn="grant.role.monkeydev.monkeydo:marc" qname="" parent="role.monkeydev" subtype="role" pqn="grant.role.monkeydev.monkeydo">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeydo"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydev"/>
+              <dependency fqn="role.monkeydev"/>
+              <dependency fqn="role.monkeydo"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeydo"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeydo" from="marc" to="monkeydev" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeysee:monkeydev" pqn="grant.cluster.monkeydev.monkeysee" fqn="grant.cluster.monkeydev.monkeysee:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeysee:monkeydev" fqn="grant.role.monkeydev.monkeysee:marc" qname="" parent="role.monkeydev" subtype="role" pqn="grant.role.monkeydev.monkeysee">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeysee"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydev"/>
+              <dependency fqn="role.monkeydev"/>
+              <dependency fqn="role.monkeysee"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeysee"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeysee" from="marc" to="monkeydev" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeyspy:monkeydev" pqn="grant.cluster.monkeydev.monkeyspy" fqn="grant.cluster.monkeydev.monkeyspy:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeyspy:monkeydev" fqn="grant.role.monkeydev.monkeyspy:marc" qname="" parent="role.monkeydev" subtype="role" pqn="grant.role.monkeydev.monkeyspy">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeyspy"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydev"/>
+              <dependency fqn="role.monkeydev"/>
+              <dependency fqn="role.monkeyspy"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeyspy"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeyspy" from="marc" to="monkeydev" with_admin="no"/>
           </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeydev.inherit" qname="inherit" parent="role.monkeydev" role_qname="monkeydev">
+            <dependencies>
+              <dependency fqn="role.monkeydev"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeydo" qname="monkeydo" fqn="role.cluster.monkeydo">
+      <dbobject type="role" name="monkeydo" qname="monkeydo" fqn="role.monkeydo" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeydo" login="n" max_connections="-1">
           <comment>'This role exists to provide the means to modify any non-audit data.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeydo.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeyapp:monkeydo" pqn="grant.cluster.monkeydo.monkeyapp" fqn="grant.cluster.monkeydo.monkeyapp:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeyapp:monkeydo" fqn="grant.role.monkeydo.monkeyapp:marc" qname="" parent="role.monkeydo" subtype="role" pqn="grant.role.monkeydo.monkeyapp">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeyapp"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydo"/>
+              <dependency fqn="role.monkeydo"/>
+              <dependency fqn="role.monkeyapp"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeyapp"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeyapp" from="marc" to="monkeydo" with_admin="no"/>
           </dbobject>
-          <dbobject type="grant" subtype="role" name="monkeysee:monkeydo" pqn="grant.cluster.monkeydo.monkeysee" fqn="grant.cluster.monkeydo.monkeysee:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeysee:monkeydo" fqn="grant.role.monkeydo.monkeysee:marc" qname="" parent="role.monkeydo" subtype="role" pqn="grant.role.monkeydo.monkeysee">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeysee"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeydo"/>
+              <dependency fqn="role.monkeydo"/>
+              <dependency fqn="role.monkeysee"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeysee"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeysee" from="marc" to="monkeydo" with_admin="no"/>
           </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeydo.inherit" qname="inherit" parent="role.monkeydo" role_qname="monkeydo">
+            <dependencies>
+              <dependency fqn="role.monkeydo"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="monkeysee" qname="monkeysee" fqn="role.cluster.monkeysee">
+      <dbobject type="role" name="monkeysee" qname="monkeysee" fqn="role.monkeysee" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="monkeysee" login="n" max_connections="-1">
           <comment>'This role exists to provide read-only access to all non-audit data.'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeysee.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeybase:monkeysee" pqn="grant.cluster.monkeysee.monkeybase" fqn="grant.cluster.monkeysee.monkeybase:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="monkeybase:monkeysee" fqn="grant.role.monkeysee.monkeybase:marc" qname="" parent="role.monkeysee" subtype="role" pqn="grant.role.monkeysee.monkeybase">
+            <context type="owner" value="marc" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.monkeybase"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeysee"/>
+              <dependency fqn="role.monkeysee"/>
+              <dependency fqn="role.monkeybase"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeybase"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
             </dependencies>
             <grant priv="monkeybase" from="marc" to="monkeysee" with_admin="no"/>
           </dbobject>
-          <privilege priv="inherit"/>
-        </role>
-      </dbobject>
-      <dbobject type="role" name="monkeyspy" qname="monkeyspy" fqn="role.cluster.monkeyspy">
-        <role name="monkeyspy" login="n" max_connections="-1">
-          <comment>'This role exists to provide the means to examine all data, including
-audit data'</comment>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.monkeyspy.inherit"/>
-          <dbobject type="grant" subtype="role" name="monkeysee:monkeyspy" pqn="grant.cluster.monkeyspy.monkeysee" fqn="grant.cluster.monkeyspy.monkeysee:marc">
-            <context name="owner" value="marc" default="marc"/>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeysee.inherit" qname="inherit" parent="role.monkeysee" role_qname="monkeysee">
             <dependencies>
-              <dependency fqn="role.cluster.monkeysee"/>
-              <dependency fqn="role.cluster.marc"/>
-              <dependency fqn="role.cluster.monkeyspy"/>
+              <dependency fqn="role.monkeysee"/>
             </dependencies>
-            <grant priv="monkeysee" from="marc" to="monkeyspy" with_admin="no"/>
+            <privilege priv="inherit"/>
           </dbobject>
           <privilege priv="inherit"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="postgres" qname="postgres" fqn="role.cluster.postgres">
+      <dbobject type="role" name="monkeyspy" qname="monkeyspy" fqn="role.monkeyspy" parent="database.x">
+        <dependency fqn="database.x"/>
+        <role name="monkeyspy" login="n" max_connections="-1">
+          <comment>'This role exists to provide the means to examine all data, including
+audit data'</comment>
+          <dbobject type="grant" name="monkeysee:monkeyspy" fqn="grant.role.monkeyspy.monkeysee:marc" qname="" parent="role.monkeyspy" subtype="role" pqn="grant.role.monkeyspy.monkeysee">
+            <context type="owner" value="marc" default="marc"/>
+            <dependencies>
+              <dependency fqn="role.monkeyspy"/>
+              <dependency fqn="role.monkeysee"/>
+              <dependency fqn="role.marc"/>
+              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[cluster]">
+                <dependency pqn="grant.role.marc.monkeysee"/>
+                <dependency fqn="privilege.role.marc.superuser"/>
+              </dependency-set>
+            </dependencies>
+            <grant priv="monkeysee" from="marc" to="monkeyspy" with_admin="no"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.monkeyspy.inherit" qname="inherit" parent="role.monkeyspy" role_qname="monkeyspy">
+            <dependencies>
+              <dependency fqn="role.monkeyspy"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <privilege priv="inherit"/>
+        </role>
+      </dbobject>
+      <dbobject type="role" name="postgres" qname="postgres" fqn="role.postgres" parent="database.x">
+        <dependency fqn="database.x"/>
         <role name="postgres" login="y" max_connections="-1">
-          <dbobject type="privilege" name="superuser" qname="" fqn="privilege.cluster.postgres.superuser"/>
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.postgres.inherit"/>
-          <dbobject type="privilege" name="createrole" qname="" fqn="privilege.cluster.postgres.createrole"/>
-          <dbobject type="privilege" name="createdb" qname="" fqn="privilege.cluster.postgres.createdb"/>
+          <dbobject type="privilege" name="superuser" fqn="privilege.role.postgres.superuser" qname="superuser" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="superuser"/>
+          </dbobject>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.postgres.inherit" qname="inherit" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
+          <dbobject type="privilege" name="createrole" fqn="privilege.role.postgres.createrole" qname="createrole" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="createrole"/>
+          </dbobject>
+          <dbobject type="privilege" name="createdb" fqn="privilege.role.postgres.createdb" qname="createdb" parent="role.postgres" role_qname="postgres">
+            <dependencies>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <privilege priv="createdb"/>
+          </dbobject>
           <privilege priv="superuser"/>
           <privilege priv="inherit"/>
           <privilege priv="createrole"/>
           <privilege priv="createdb"/>
         </role>
       </dbobject>
-      <dbobject type="role" name="x" qname="x" fqn="role.cluster.x">
+      <dbobject type="role" name="x" qname="x" fqn="role.x" parent="cluster">
+        <dependency-set>
+          <dependency fqn="database."/>
+          <dependency fqn="cluster"/>
+        </dependency-set>
         <role name="x" login="y" password="md59336ebf25087d91c818ee6e9ec29f8c1" max_connections="-1">
-          <dbobject type="privilege" name="inherit" qname="" fqn="privilege.cluster.x.inherit"/>
+          <dbobject type="privilege" name="inherit" fqn="privilege.role.x.inherit" qname="inherit" parent="role.x" role_qname="x">
+            <dependencies>
+              <dependency fqn="role.x"/>
+            </dependencies>
+            <privilege priv="inherit"/>
+          </dbobject>
           <privilege priv="inherit"/>
         </role>
-	<dbobject type="fallback" subtype="grant" fallback="yes" 
-		  fqn="fallback.grant.x.superuser">
-	  <dependencies>
-	    <dependency fqn="role.cluster.x"/>
-	  </dependencies>
-	</dbobject>
       </dbobject>
-      <dbobject type="tablespace" name="pg_default" qname="pg_default" fqn="tablespace.cluster.pg_default">
+      <dbobject type="tablespace" name="pg_default" fqn="tablespace.pg_default" qname="pg_default" parent="cluster">
         <dependencies>
-          <dependency fqn="role.cluster.postgres"/>
+          <dependency-set>
+            <dependency fqn="database."/>
+            <dependency fqn="cluster"/>
+          </dependency-set>
+          <dependency fqn="role.postgres"/>
         </dependencies>
         <tablespace name="pg_default" owner="postgres" location=""/>
       </dbobject>
-      <dbobject type="dbincluster" name="x" qname="x" fqn="dbincluster.cluster.x">
+      <dbobject type="dbincluster" name="x" qname="x" fqn="dbincluster.x" parent="cluster">
         <dependencies>
-          <dependency fqn="tablespace.cluster.pg_default"/>
-          <dependency fqn="role.cluster.x"/>
+          <dependency fqn="cluster"/>
+          <dependency fqn="role.x"/>
         </dependencies>
         <database name="x" owner="x" encoding="UTF8" tablespace="pg_default" connections="-1"/>
       </dbobject>
     </cluster>
   </dbobject>
-  <dbobject type="database" visit="true" name="x" qname="x" fqn="database.cluster.x">
+  <dbobject type="database" visit="true" name="x" qname="x" fqn="database.x">
     <dependencies>
-      <dependency fqn="dbincluster.cluster.x"/>
+      <dependency fqn="dbincluster.x"/>
     </dependencies>
     <database name="x" owner="x" encoding="UTF8" tablespace="pg_default" connections="-1">
-      <dbobject type="grant" parent="database.x" name="temporary:public" pqn="grant.x.temporary:public" fqn="grant.x.temporary:public:x" owner="x" subtype="database" on="x">
-        <context name="owner" value="x" default="marc"/>
+      <dbobject type="grant" name="temporary:public" fqn="grant.database.x.temporary:public" qname="" parent="database.x" pqn="grant.database.x.temporary:public" subtype="database" on="x">
+        <context type="owner" value="x" default="marc"/>
         <dependencies>
-          <dependency fqn="role.cluster.x"/>
+          <dependency fqn="database.x"/>
+          <dependency fqn="role.x"/>
         </dependencies>
         <grant with_grant="no" priv="temporary" to="public" from="x"/>
       </dbobject>
-      <dbobject type="grant" parent="database.x" name="connect:public" pqn="grant.x.connect:public" fqn="grant.x.connect:public:x" owner="x" subtype="database" on="x">
-        <context name="owner" value="x" default="marc"/>
+      <dbobject type="grant" name="connect:public" fqn="grant.database.x.connect:public" qname="" parent="database.x" pqn="grant.database.x.connect:public" subtype="database" on="x">
+        <context type="owner" value="x" default="marc"/>
         <dependencies>
-          <dependency fqn="role.cluster.x"/>
+          <dependency fqn="database.x"/>
+          <dependency fqn="role.x"/>
         </dependencies>
         <grant with_grant="no" priv="connect" to="public" from="x"/>
       </dbobject>
-      <dbobject type="schema" name="public" qname="public" fqn="schema.x.public">
+      <dbobject type="schema" name="public" fqn="schema.x.public" qname="public" parent="database.x">
+        <context type="owner" value="postgres" default="marc"/>
         <dependencies>
-          <dependency fqn="role.cluster.postgres"/>
+          <dependency fqn="database.x"/>
+          <dependency fqn="role.postgres"/>
         </dependencies>
         <schema name="public" owner="postgres" privs="{postgres=UC/postgres}">
           <comment>'standard public schema'</comment>
-          <dbobject type="grant" parent="schema.x.public" name="usage:postgres" pqn="grant.x.public.usage:postgres" fqn="grant.x.public.usage:postgres:postgres" owner="postgres" subtype="schema" on="public">
-            <context name="owner" value="postgres" default="marc"/>
+          <dbobject type="grant" name="usage:postgres" fqn="grant.schema.x.public.usage" qname="" parent="schema.x.public" pqn="grant.schema.x.public.usage:postgres" subtype="schema" on="public">
+            <context type="owner" value="postgres" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.postgres"/>
-              <dependency fqn="role.cluster.postgres"/>
+              <dependency fqn="schema.x.public"/>
+              <dependency fqn="role.postgres"/>
             </dependencies>
             <grant from="postgres" to="postgres" with_grant="no" priv="usage"/>
           </dbobject>
-          <dbobject type="grant" parent="schema.x.public" name="create:postgres" pqn="grant.x.public.create:postgres" fqn="grant.x.public.create:postgres:postgres" owner="postgres" subtype="schema" on="public">
-            <context name="owner" value="postgres" default="marc"/>
+          <dbobject type="grant" name="create:postgres" fqn="grant.schema.x.public.create" qname="" parent="schema.x.public" pqn="grant.schema.x.public.create:postgres" subtype="schema" on="public">
+            <context type="owner" value="postgres" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.postgres"/>
-              <dependency fqn="role.cluster.postgres"/>
+              <dependency fqn="schema.x.public"/>
+              <dependency fqn="role.postgres"/>
             </dependencies>
             <grant from="postgres" to="postgres" with_grant="no" priv="create"/>
           </dbobject>
-          <dbobject type="table" fqn="table.x.public.x" name="x" qname="public.x">
-            <context name="owner" value="x" default="marc"/>
+          <dbobject type="table" name="x" fqn="table.x.public.x" qname="public.x" parent="schema.x.public">
+            <context type="owner" value="x" default="marc"/>
             <dependencies>
-              <dependency fqn="role.cluster.x"/>
               <dependency fqn="schema.x.public"/>
-              <dependency fqn="tablespace.cluster.pg_default"/>
-	      <dependency-set fallback="fallback.grant.x.superuser"> 
-                <dependency pqn="grant.x.public.create:public"/>
-                <dependency pqn="grant.x.public.create:marc"/>
-                <dependency pqn="grant.x.public.create:x"/>
-                <dependency fqn="privilege.cluster.x.superuser"/>
+              <dependency fqn="tablespace.pg_default"/>
+              <dependency fqn="column.x.public.x.x"/>
+              <dependency fqn="role.x"/>
+              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                <dependency pqn="grant.schema.x.public.create:x"/>
+                <dependency pqn="grant.schema.x.public.create:public"/>
+                <dependency fqn="privilege.role.x.superuser"/>
+              </dependency-set>
+              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                <dependency pqn="grant.schema.x.public.usage:x"/>
+                <dependency pqn="grant.schema.x.public.usage:public"/>
+                <dependency fqn="privilege.role.x.superuser"/>
               </dependency-set>
             </dependencies>
             <table name="x" schema="public" owner="x" tablespace="pg_default">
+              <dbobject type="column" name="x" fqn="column.x.public.x.x" qname="x" parent="table.x.public.x">
+                <dependencies>
+                  <dependency fqn="schema.x.public"/>
+                </dependencies>
+                <column colnum="1" name="x" type="int4" type_schema="pg_catalog" nullable="yes" is_local="t"/>
+              </dbobject>
               <column colnum="1" name="x" type="int4" type_schema="pg_catalog" nullable="yes" is_local="t"/>
-              <dbobject type="grant" parent="table.x.public.x" name="trigger:x" pqn="grant.x.public.x.trigger:x" fqn="grant.x.public.x.trigger:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="trigger:x" fqn="grant.table.x.public.x.trigger" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.trigger:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
                   <dependency fqn="table.x.public.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="trigger" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="references:x" pqn="grant.x.public.x.references:x" fqn="grant.x.public.x.references:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="references:x" fqn="grant.table.x.public.x.references" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.references:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="references" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="rule:x" pqn="grant.x.public.x.rule:x" fqn="grant.x.public.x.rule:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="rule:x" fqn="grant.table.x.public.x.rule" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.rule:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="rule" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="select:x" pqn="grant.x.public.x.select:x" fqn="grant.x.public.x.select:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="select:x" fqn="grant.table.x.public.x.select" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.select:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="select" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="insert:x" pqn="grant.x.public.x.insert:x" fqn="grant.x.public.x.insert:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="insert:x" fqn="grant.table.x.public.x.insert" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.insert:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="insert" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="update:x" pqn="grant.x.public.x.update:x" fqn="grant.x.public.x.update:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="update:x" fqn="grant.table.x.public.x.update" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.update:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="update" default="yes" from="x" to="x"/>
               </dbobject>
-              <dbobject type="grant" parent="table.x.public.x" name="delete:x" pqn="grant.x.public.x.delete:x" fqn="grant.x.public.x.delete:x:x" owner="x" subtype="table" on="public.x">
-                <context name="owner" value="x" default="marc"/>
+              <dbobject type="grant" name="delete:x" fqn="grant.table.x.public.x.delete" qname="" parent="table.x.public.x" pqn="grant.table.x.public.x.delete:x" subtype="table" on="public.x">
+                <context type="owner" value="x" default="marc"/>
                 <dependencies>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency fqn="role.cluster.x"/>
-                  <dependency-set fallback="fallback.grant.x.superuser">
-                    <dependency pqn="grant.x.public.usage:x"/>
-                    <dependency pqn="grant.x.public.usage:public"/>
-                    <dependency pqn="grant.x.public.create:x"/>
-                    <dependency fqn="privilege.cluster.x.superuser"/>
+                  <dependency fqn="table.x.public.x"/>
+                  <dependency fqn="role.x"/>
+                  <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]">
+                    <dependency fqn="grant.schema.x.public.usage"/>
+                    <dependency pqn="grant.schema.x.public.usage:x"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency pqn="grant.schema.x.public.usage:public"/>
+                    <dependency fqn="grant.schema.x.public.create"/>
+                    <dependency pqn="grant.schema.x.public.create:x"/>
+                    <dependency pqn="grant.schema.x.public.create:public"/>
+                    <dependency fqn="privilege.role.x.superuser"/>
                   </dependency-set>
                 </dependencies>
                 <grant with_grant="yes" priv="delete" default="yes" from="x" to="x"/>

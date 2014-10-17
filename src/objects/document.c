@@ -902,6 +902,10 @@ findDoc(String *filename)
     String *doc_path = findFile(filename);
     Document *doc;
     if (!doc_path) {
+	Vector *roots = (Vector *) symbolGetValue("template-paths");
+	Object *ver = symbolGetValue("dbver");
+	dbgSexp(roots);
+	dbgSexp(ver);
 	RAISE(FILEPATH_ERROR, 
 	      newstr("findDoc: cannot find \"%s\"", filename->value));
     }
