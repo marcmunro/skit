@@ -200,7 +200,7 @@ START_TEST(check_tsort)
 	initTemplatePath(".");
 	setq_build();
 	setq_drop();
-	//showMalloc(1522);
+	//showMalloc(1857);
 	//showFree(140);
 	
 	doc = getDoc("test/data/gensource1.xml");
@@ -404,12 +404,14 @@ START_TEST(check_cyclic_tsort)
 	//dbgSexp(doc);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order(results, "('drop.database.skittest' "
-		      "'drop.dbincluster.cluster.skittest' "
-		      "'dbincluster.cluster.skittest' "
-		      "'database.skittest')");
-	check_build_order(results, "('drop.role.cluster.marc' "
-		      "'role.cluster.marc')");
+	check_build_order(results, 
+			  "('drop.database.skittest' "
+			  "'drop.dbincluster.skittest' "
+			  "'dbincluster.skittest' "
+			  "'database.skittest')");
+	check_build_order(results, 
+			  "('drop.role.marc' "
+			  "'role.marc')");
 
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "
@@ -507,12 +509,14 @@ START_TEST(check_cyclic_tsort2)
 	//showVectorDeps(results);
 	//printSexp(stderr, "RESULTS: ", (Object *) results);
 
-	check_build_order(results, "('drop.database.skittest' "
-		      "'drop.dbincluster.cluster.skittest' "
-		      "'dbincluster.cluster.skittest' "
-		      "'database.skittest')");
-	check_build_order(results, "('drop.role.cluster.marc' "
-		      "'role.cluster.marc')");
+	check_build_order(results, 
+			  "('drop.database.skittest' "
+			  "'drop.dbincluster.skittest' "
+			  "'dbincluster.skittest' "
+			  "'database.skittest')");
+	check_build_order(results, 
+			  "('drop.role.marc' "
+			  "'role.marc')");
 
 	check_build_order_or(results, 
 			     "('drop.viewbase.skittest.public.v1' "

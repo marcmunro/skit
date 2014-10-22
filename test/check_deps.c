@@ -356,12 +356,12 @@ START_TEST(deps_basic)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(1337);
+	//showMalloc(3044);
 	//trackMalloc(1589);
 	//showFree(1627);
 
 	eval("(setq build t)");
-	doc = getDoc("test/data/depset_simple.xml");
+	doc = getDoc("test/data/diffstream1.xml");
 	//doc = getDoc("test/data/deps_simple.xml");
 	nodes = dagFromDoc(doc);
 	//dbgSexp(nodes);
@@ -1220,7 +1220,7 @@ START_TEST(depset_dia_drop)
 	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
 		    "privilege.role.x.superuser.1",
-		    "endfallback.privilege.role.x.superuser.1",
+		    "dsendfallback.privilege.role.x.superuser.1",
 		    NULL);  // 6, 4, 2
 
 	requireDeps("DDD_2", nodes_by_fqn, "table.cluster.ownedbyx", 
@@ -1230,7 +1230,7 @@ START_TEST(depset_dia_drop)
 		    NULL); // 
 
 	requireDeps("DDD_4", nodes_by_fqn, 
-		    "endfallback.privilege.role.x.superuser.1", 
+		    "dsendfallback.privilege.role.x.superuser.1", 
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -1290,28 +1290,28 @@ BEGIN {
 		    "table.cluster.ownedbyx", 
 		    "drop.table.cluster.ownedbyx", 
 		    "cluster", "role.x", 
-		    "privilege.role.x.superuser.2", NULL);
+		    "privilege.role.x.superuser.1", NULL);
 	requireDeps("DD2_4", nodes_by_fqn,
 		    "drop.cluster", "drop.table.cluster.ownedbyx", 
 		    "drop.role.x", NULL);
 	requireDeps("DD2_5", nodes_by_fqn,         // 2, 4, 6
 		    "drop.role.x", "drop.table.cluster.ownedbyx", 
-		    "privilege.role.x.superuser.1",
-		    "endfallback.privilege.role.x.superuser.1", NULL);
+		    "privilege.role.x.superuser.2",
+		    "endfallback.privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_6", nodes_by_fqn,         // 8
 		    "drop.table.cluster.ownedbyx", 
-		    "privilege.role.x.superuser.1", NULL);
+		    "privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_7", nodes_by_fqn,         // 3, 14
-		    "privilege.role.x.superuser.2",
-		    "role.x", "endfallback.privilege.role.x.superuser.1", 
+		    "privilege.role.x.superuser.1",
+		    "role.x", "dsendfallback.privilege.role.x.superuser.2", 
 		    NULL);
 	requireDeps("DD2_8", nodes_by_fqn,         // 1, 9
-		    "endfallback.privilege.role.x.superuser.2",
+		    "endfallback.privilege.role.x.superuser.1",
 		    "role.x", "table.cluster.ownedbyx", NULL);
 	requireDeps("DD2_9", nodes_by_fqn,         // 
-		    "privilege.role.x.superuser.1", NULL);
+		    "privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_10", nodes_by_fqn,         // 10
-		    "endfallback.privilege.role.x.superuser.1", 
+		    "dsendfallback.privilege.role.x.superuser.2", 
 		    "drop.table.cluster.ownedbyx", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -1356,13 +1356,13 @@ START_TEST(fallback)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 
-	requireDeps("F_1", nodes_by_fqn, "privilege.role.x.superuser.2", 
-		    "endfallback.privilege.role.x.superuser.1",
+	requireDeps("F_1", nodes_by_fqn, "privilege.role.x.superuser.1", 
+		    "dsendfallback.privilege.role.x.superuser.2",
 		    "role.x", NULL);
 	requireDeps("F_2", nodes_by_fqn, "table.x.public.x", 
 		    "drop.table.x.public.x", "schema.x.public", 
 		    "tablespace.pg_default", "column.x.public.x.x", 
-		    "role.x", "privilege.role.x.superuser.2", NULL);
+		    "role.x", "privilege.role.x.superuser.1", NULL);
 	requireDeps("F_3", nodes_by_fqn, "grant.table.x.public.x.trigger",
 		    "drop.grant.table.x.public.x.trigger", 
 		    "table.x.public.x", "role.x",
@@ -1421,7 +1421,7 @@ START_TEST(cond)
 
 	/* Require superuser to drop the table but not to create it. */
 	requireDep("C_3", nodes_by_fqn, 
-		   "endfallback.privilege.role.wibble.superuser.1",
+		   "dsendfallback.privilege.role.wibble.superuser.1",
 		   "drop.table.regressdb.public.thing");
 
 	requireNoDep("C_4", nodes_by_fqn, 
@@ -1459,6 +1459,7 @@ START_TEST(cyclic_build)
 	eval("(setq build t)");
 	doc = getDoc("test/data/gensource2.xml");
 	//dbgSexp(doc);
+
 	nodes = dagFromDoc(doc);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
@@ -1563,30 +1564,35 @@ START_TEST(cyclic_drop)
 	nodes_by_fqn = dagnodeHash(nodes);
 	//showVectorDeps(nodes);
 
-	if (hasDeps("CD_1", nodes_by_fqn, "drop.view.skittest.public.v3",
-		     "drop.viewbase.skittest.public.v2", NULL))
+	if (hasDeps("CD_1", nodes_by_fqn, "drop.view.skittest.public.v1",
+		     "drop.viewbase.skittest.public.v3", NULL))
 	{
-	    requireDeps("CD_2", nodes_by_fqn, "drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", NULL);
+	    requireDeps("CD_2", nodes_by_fqn, 
+			"drop.view.skittest.public.v1",
+			"drop.viewbase.skittest.public.v3", NULL);
 	    requireDeps("CD_3", nodes_by_fqn, "drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v1", NULL);
+	    requireDeps("CD_4", nodes_by_fqn, "drop.view.skittest.public.v3",
+			"drop.view.skittest.public.v2", NULL);
 
-	    requireDeps("CD_4", nodes_by_fqn, "drop.schema.skittest.public", 
+	    requireDeps("CD_5", nodes_by_fqn, "drop.schema.skittest.public", 
 			"drop.view.skittest.public.v1",
 			"drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", 
+			"drop.viewbase.skittest.public.v3", 
 			"drop.grant.schema.skittest.public.usage:public:regress", 
 			NULL);
 	}
-	else if (hasDeps("CD_5", nodes_by_fqn, "drop.view.skittest.public.v2",
-		     "drop.viewbase.skittest.public.v1", NULL))
+	else if (hasDeps("CD_6", nodes_by_fqn, 
+			 "drop.viewbase.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL))
 	{
 	    fprintf(stderr, "cyclic_drop: "
 		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	}
-	else if (hasDeps("CD_9", nodes_by_fqn, "drop.view.skittest.public.v1",
-			 "drop.viewbase.skittest.public.v3", NULL))
+	else if (hasDeps("CD_B", nodes_by_fqn, 
+			 "drop.viewbase.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL))
 	{
 	    fprintf(stderr, "cyclic_drop: "
 		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
@@ -1675,14 +1681,13 @@ START_TEST(cyclic_both)
 			"viewbase.skittest.public.v3", 
 			"schema.skittest.public", "role.marc", 
 			"privilege.role.marc.superuser", 
-			"drop.view.skittest.public.v3", NULL);
+			"drop.viewbase.skittest.public.v3", NULL);
 	    requireDeps("C2_9", nodes_by_fqn, 
 			"view.skittest.public.v2", 
 			"drop.view.skittest.public.v2",
 			"schema.skittest.public", "role.marc", 
 			"privilege.role.marc.superuser", 
-			"viewbase.skittest.public.v3", 
-			"drop.viewbase.skittest.public.v3", NULL);
+			"viewbase.skittest.public.v3", NULL);
 	}
 	else if (hasDeps("C2_A", nodes_by_fqn, "view.skittest.public.v1", 
 			 "viewbase.skittest.public.v2", NULL))
@@ -1707,32 +1712,35 @@ START_TEST(cyclic_both)
 	    fail("No build-side cycle breaker found");
 	}
 
-	if (hasDeps("C2_G", nodes_by_fqn, "drop.view.skittest.public.v3",
-		     "drop.viewbase.skittest.public.v2", NULL))
+	if (hasDeps("C2_G", nodes_by_fqn, "drop.view.skittest.public.v1",
+		     "drop.viewbase.skittest.public.v3", NULL))
 	{
-	    requireDeps("C2_H", nodes_by_fqn, "drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", NULL);
+	    requireDeps("C2_H", nodes_by_fqn, 
+			"drop.view.skittest.public.v1",
+			"drop.viewbase.skittest.public.v3", NULL);
 	    requireDeps("C2_J", nodes_by_fqn, "drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v1", NULL);
-	    requireDeps("C2_K", nodes_by_fqn, "drop.view.skittest.public.v1",
-			"drop.view.skittest.public.v3", NULL);
+	    requireDeps("C2_K", nodes_by_fqn, "drop.view.skittest.public.v3",
+			"drop.view.skittest.public.v2", NULL);
 
 	    requireDeps("C2_L", nodes_by_fqn, "drop.schema.skittest.public", 
 			"drop.view.skittest.public.v1",
 			"drop.view.skittest.public.v2",
 			"drop.view.skittest.public.v3",
-			"drop.viewbase.skittest.public.v2", 
+			"drop.viewbase.skittest.public.v3", 
 			"drop.grant.schema.skittest.public.usage:public:regress", 
 			NULL);
 	}
-	else if (hasDeps("C2_M", nodes_by_fqn, "drop.view.skittest.public.v2",
-		     "drop.viewbase.skittest.public.v1", NULL))
+	else if (hasDeps("C2_M", nodes_by_fqn, 
+			 "drop.viewbase.skittest.public.v2",
+			 "drop.view.skittest.public.v1", NULL))
 	{
 	    fprintf(stderr, "cyclic_drop: "
 		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
 	}
-	else if (hasDeps("CD_S", nodes_by_fqn, "drop.view.skittest.public.v1",
-			 "drop.viewbase.skittest.public.v3", NULL))
+	else if (hasDeps("C2_S", nodes_by_fqn, 
+			 "drop.viewbase.skittest.public.v1",
+			 "drop.view.skittest.public.v3", NULL))
 	{
 	    fprintf(stderr, "cyclic_drop: "
 		    "THIS TESTSET HAS NOT BEEN VERIFIED\n");
@@ -2045,7 +2053,6 @@ deps_suite(void)
     ADD_TEST(tc_core, depset_diff);
     ADD_TEST(tc_core, depdiffs_1);
     ADD_TEST(tc_core, general_diffs);
-
     // For debugging regression tests
     // ADD_TEST(tc_core, rt3);  /* Diff from regression_test_3 */
 

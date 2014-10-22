@@ -293,9 +293,7 @@ symbolStr(Symbol *sym)
 }
 
 /* This is used to make a dynamically allocated copy of a symbol 
- * that would have been allocated statically.  There is no harm in
- * copying a symbol that has already been dynamically allocated but
- * neither is there any benefit.
+ * that would have been allocated statically.  
  */
 Symbol *
 symbolCopy(Symbol *old)

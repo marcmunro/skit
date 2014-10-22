@@ -232,7 +232,9 @@ typedef enum {
     REBUILD_NODE,
     DIFF_NODE,
     FALLBACK_NODE,
+    DSFALLBACK_NODE,
     ENDFALLBACK_NODE,
+    DSENDFALLBACK_NODE,
     EXISTS_NODE,
     BUILD_AND_DROP_NODE,
     DIFFPREP_NODE,
@@ -287,7 +289,7 @@ typedef struct DagNode {
     DagNodeStatus       status;
     DagNodeBuildType    build_type;
     Vector             *deps;         // use objectFree(obj, FALSE);
-    Vector             *unidentified_deps;     // use objectFree(obj, FALSE);
+    Vector             *tmp_deps;
     int                 cur_dep;
     int                 resolver_depth;
     boolean             is_fallback;
@@ -303,18 +305,18 @@ typedef struct DependencySet {
     int                    priority;
     int                    chosen_dep;
     int                    cycles;
-    int                    fallbacks_added;
+    boolean                has_fallback;
     DagNode               *definition_node;
     String                *fallback_expr;
     String                *fallback_parent;
     boolean                deactivated;
     Vector                *deps;
-    Vector                *entangled_deps;
 } DependencySet;
 
 
 typedef struct Dependency {
     ObjType                type;
+    int                    id;
     String                *qn;
     boolean                qn_is_full;
     boolean                is_forwards;
@@ -322,6 +324,7 @@ typedef struct Dependency {
     DagNode               *dep;
     DependencySet         *depset;
     DagNode               *from; 
+    struct Dependency     *endfallback;
 } Dependency;
 
 

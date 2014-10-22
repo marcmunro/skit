@@ -86,132 +86,132 @@
         </dependencies>
         <database name="skittest"/>
       </dbobject>
-    </cluster>
-  </dbobject>
-  <dbobject type="database" visit="true" name="skittest" qname="skittest" fqn="database.skittest">
-    <dependencies>
-      <dependency fqn="dbincluster.skittest"/>
-    </dependencies>
-    <database name="skittest">
-      <dbobject type="grant" name="temporary:public" fqn="grant.database.skittest.temporary:public" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:public" subtype="database" on="skittest">
+      <dbobject type="database" visit="true" name="skittest" qname="skittest" fqn="database.skittest">
         <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.regress"/>
+          <dependency fqn="dbincluster.skittest"/>
         </dependencies>
-        <grant priv="temporary" from="regress" to="public" with_grant="no"/>
-      </dbobject>
-      <dbobject type="grant" name="connect:public" fqn="grant.database.skittest.connect:public" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:public" subtype="database" on="skittest">
-        <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.regress"/>
-        </dependencies>
-        <grant priv="connect" from="regress" to="public" with_grant="no"/>
-      </dbobject>
-      <dbobject type="grant" name="create:regress" fqn="grant.database.skittest.create" qname="" parent="database.skittest" pqn="grant.database.skittest.create:regress" subtype="database" on="skittest">
-        <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.regress"/>
-        </dependencies>
-        <grant priv="create" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="grant" name="temporary:regress" fqn="grant.database.skittest.temporary" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:regress" subtype="database" on="skittest">
-        <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.regress"/>
-        </dependencies>
-        <grant priv="temporary" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="grant" name="connect:regress" fqn="grant.database.skittest.connect" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:regress" subtype="database" on="skittest">
-        <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.regress"/>
-        </dependencies>
-        <grant priv="connect" from="regress" to="regress" with_grant="yes"/>
-      </dbobject>
-      <dbobject type="schema" name="public" fqn="schema.skittest.public" qname="public" parent="database.skittest">
-        <context type="owner" value="postgres" default="marc"/>
-        <dependencies>
-          <dependency fqn="database.skittest"/>
-          <dependency fqn="role.postgres"/>
-        </dependencies>
-        <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
-          <comment>'standard public schema'</comment>
-          <dbobject type="grant" name="usage:public" fqn="grant.schema.skittest.public.usage:public:regress" qname="" parent="schema.skittest.public" pqn="grant.schema.skittest.public.usage:public" subtype="schema" on="public">
-            <context type="owner" value="postgres" default="marc"/>
+        <database name="skittest">
+          <dbobject type="grant" name="temporary:public" fqn="grant.database.skittest.temporary:public" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:public" subtype="database" on="skittest">
             <dependencies>
-              <dependency fqn="schema.skittest.public"/>
+              <dependency fqn="database.skittest"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <grant from="regress" to="public" with_grant="no" priv="usage"/>
+            <grant priv="temporary" from="regress" to="public" with_grant="no"/>
           </dbobject>
-          <dbobject type="view" name="v1" fqn="view.skittest.public.v1" qname="public.v1" parent="schema.skittest.public" cycle_breaker="viewbase">
-            <context type="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="connect:public" fqn="grant.database.skittest.connect:public" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:public" subtype="database" on="skittest">
             <dependencies>
-              <dependency fqn="schema.skittest.public"/>
-              <dependency fqn="view.skittest.public.v2"/>
-              <dependency fqn="role.marc"/>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
-                <dependency pqn="grant.schema.skittest.public.create:marc"/>
-                <dependency pqn="grant.schema.skittest.public.create:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
-                <dependency pqn="grant.schema.skittest.public.usage:marc"/>
-                <dependency pqn="grant.schema.skittest.public.usage:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
-            <view name="v1" schema="public" owner="marc">
-              <source>SELECT v2.mykey FROM v2;</source>
-              <depends schema="public" view="v2"/>
-            </view>
+            <grant priv="connect" from="regress" to="public" with_grant="no"/>
           </dbobject>
-          <dbobject type="view" name="v2" fqn="view.skittest.public.v2" qname="public.v2" parent="schema.skittest.public" cycle_breaker="viewbase">
-            <context type="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="create:regress" fqn="grant.database.skittest.create" qname="" parent="database.skittest" pqn="grant.database.skittest.create:regress" subtype="database" on="skittest">
             <dependencies>
-              <dependency fqn="schema.skittest.public"/>
-              <dependency fqn="view.skittest.public.v3"/>
-              <dependency fqn="role.marc"/>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
-                <dependency pqn="grant.schema.skittest.public.create:marc"/>
-                <dependency pqn="grant.schema.skittest.public.create:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
-                <dependency pqn="grant.schema.skittest.public.usage:marc"/>
-                <dependency pqn="grant.schema.skittest.public.usage:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
-            <view name="v2" schema="public" owner="marc">
-              <source>SELECT v3.mykey FROM v1;</source>
-              <depends schema="public" view="v3"/>
-            </view>
+            <grant priv="create" from="regress" to="regress" with_grant="yes"/>
           </dbobject>
-          <dbobject type="view" name="v3" fqn="view.skittest.public.v3" qname="public.v3" parent="schema.skittest.public" cycle_breaker="viewbase">
-            <context type="owner" value="marc" default="marc"/>
+          <dbobject type="grant" name="temporary:regress" fqn="grant.database.skittest.temporary" qname="" parent="database.skittest" pqn="grant.database.skittest.temporary:regress" subtype="database" on="skittest">
             <dependencies>
-              <dependency fqn="schema.skittest.public"/>
-              <dependency fqn="view.skittest.public.v1"/>
-              <dependency fqn="role.marc"/>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
-                <dependency pqn="grant.schema.skittest.public.create:marc"/>
-                <dependency pqn="grant.schema.skittest.public.create:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
-                <dependency pqn="grant.schema.skittest.public.usage:marc"/>
-                <dependency pqn="grant.schema.skittest.public.usage:public"/>
-                <dependency fqn="privilege.role.marc.superuser"/>
-              </dependency-set>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
             </dependencies>
-            <view name="v3" schema="public" owner="marc">
-              <source>SELECT v1.mykey FROM v1;</source>
-              <depends schema="public" view="v1"/>
-            </view>
+            <grant priv="temporary" from="regress" to="regress" with_grant="yes"/>
           </dbobject>
-        </schema>
+          <dbobject type="grant" name="connect:regress" fqn="grant.database.skittest.connect" qname="" parent="database.skittest" pqn="grant.database.skittest.connect:regress" subtype="database" on="skittest">
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.regress"/>
+            </dependencies>
+            <grant priv="connect" from="regress" to="regress" with_grant="yes"/>
+          </dbobject>
+          <dbobject type="schema" name="public" fqn="schema.skittest.public" qname="public" parent="database.skittest">
+            <context type="owner" value="postgres" default="marc"/>
+            <dependencies>
+              <dependency fqn="database.skittest"/>
+              <dependency fqn="role.postgres"/>
+            </dependencies>
+            <schema name="public" owner="postgres" privs="{postgres=UC/postgres,=UC/postgres}">
+              <comment>'standard public schema'</comment>
+              <dbobject type="grant" name="usage:public" fqn="grant.schema.skittest.public.usage:public:regress" qname="" parent="schema.skittest.public" pqn="grant.schema.skittest.public.usage:public" subtype="schema" on="public">
+                <context type="owner" value="postgres" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="role.regress"/>
+                </dependencies>
+                <grant from="regress" to="public" with_grant="no" priv="usage"/>
+              </dbobject>
+              <dbobject type="view" name="v1" fqn="view.skittest.public.v1" qname="public.v1" parent="schema.skittest.public" cycle_breaker="viewbase">
+                <context type="owner" value="marc" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="view.skittest.public.v2"/>
+                  <dependency fqn="role.marc"/>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                    <dependency pqn="grant.schema.skittest.public.create:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.create:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                    <dependency pqn="grant.schema.skittest.public.usage:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.usage:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <view name="v1" schema="public" owner="marc">
+                  <source>SELECT v2.mykey FROM v2;</source>
+                  <depends schema="public" view="v2"/>
+                </view>
+              </dbobject>
+              <dbobject type="view" name="v2" fqn="view.skittest.public.v2" qname="public.v2" parent="schema.skittest.public" cycle_breaker="viewbase">
+                <context type="owner" value="marc" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="view.skittest.public.v3"/>
+                  <dependency fqn="role.marc"/>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                    <dependency pqn="grant.schema.skittest.public.create:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.create:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                    <dependency pqn="grant.schema.skittest.public.usage:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.usage:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <view name="v2" schema="public" owner="marc">
+                  <source>SELECT v3.mykey FROM v1;</source>
+                  <depends schema="public" view="v3"/>
+                </view>
+              </dbobject>
+              <dbobject type="view" name="v3" fqn="view.skittest.public.v3" qname="public.v3" parent="schema.skittest.public" cycle_breaker="viewbase">
+                <context type="owner" value="marc" default="marc"/>
+                <dependencies>
+                  <dependency fqn="schema.skittest.public"/>
+                  <dependency fqn="view.skittest.public.v1"/>
+                  <dependency fqn="role.marc"/>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                    <dependency pqn="grant.schema.skittest.public.create:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.create:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                    <dependency pqn="grant.schema.skittest.public.usage:marc"/>
+                    <dependency pqn="grant.schema.skittest.public.usage:public"/>
+                    <dependency fqn="privilege.role.marc.superuser"/>
+                  </dependency-set>
+                </dependencies>
+                <view name="v3" schema="public" owner="marc">
+                  <source>SELECT v1.mykey FROM v1;</source>
+                  <depends schema="public" view="v1"/>
+                </view>
+              </dbobject>
+            </schema>
+          </dbobject>
+        </database>
       </dbobject>
-    </database>
+    </cluster>
   </dbobject>
 </dump>

@@ -471,7 +471,7 @@ dagNodeNew(xmlNode *node, DagNodeBuildType build_type)
     new->status = UNVISITED;
     new->build_type = build_type;
     new->deps = NULL;
-    new->unidentified_deps = NULL;
+    new->tmp_deps = NULL;
     new->cur_dep = 0;
     new->is_fallback = FALSE;
     new->parent = NULL;
@@ -487,13 +487,12 @@ dependencySetNew(DagNode *definition_node)
     new->priority = 100;
     new->chosen_dep = 0;
     new->cycles = 0;
-    new->fallbacks_added = 0;
+    new->has_fallback = FALSE;
     new->definition_node = definition_node;
     new->fallback_expr = NULL;
     new->fallback_parent = NULL;
     new->deactivated = FALSE;
     new->deps = vectorNew(10);
-    new->entangled_deps = NULL;
     return new;
 }
 
@@ -501,7 +500,9 @@ Dependency *
 dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
 {
     Dependency *new = skalloc(sizeof(Dependency));
+    static int id = 1;
     new->type = OBJ_DEPENDENCY;
+    new->id = id++;
     new->qn = qn;
     new->qn_is_full = qn_is_full;
     new->is_forwards = is_forwards;
@@ -509,6 +510,7 @@ dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
     new->dep = NULL;
     new->depset = NULL;
     new->from = NULL;
+    new->endfallback = NULL;
     return new;
 }
 
@@ -518,7 +520,6 @@ dagNodeFree(DagNode *node)
 {
     objectFree((Object *) node->fqn, TRUE);
     objectFree((Object *) node->deps, FALSE);
-    objectFree((Object *) node->unidentified_deps, FALSE);
     skfree(node);
 }
 
@@ -538,7 +539,6 @@ dependencySetFree(DependencySet *depset, boolean free_contents)
 {
     if (free_contents) {
 	objectFree((Object *) depset->deps, TRUE);
-	objectFree((Object *) depset->entangled_deps, TRUE);
 	objectFree((Object *) depset->fallback_expr, TRUE);
 	objectFree((Object *) depset->fallback_parent, TRUE);
     }
@@ -630,7 +630,9 @@ nameForBuildType(DagNodeBuildType build_type)
     case OPTIONAL_NODE: return "optional";
     case BUILD_AND_DROP_NODE: return "build and drop";
     case FALLBACK_NODE: return "fallback";
+    case DSFALLBACK_NODE: return "dsfallback";
     case ENDFALLBACK_NODE: return "endfallback";
+    case DSENDFALLBACK_NODE: return "dsendfallback";
     case DEACTIVATED_NODE: return "deactivated";
     default: return "UNKNOWNBUILDTYPE";
     }
@@ -656,6 +658,7 @@ depIsActive(Dependency *dep)
 
     if (dep->depset) {
 	assertDependencySet(dep->depset);
+	assertDagNode(dep->dep);
 	if (dep->depset->deactivated) {
 	    return FALSE;
 	}
@@ -666,15 +669,11 @@ depIsActive(Dependency *dep)
 	cur_dep = (Dependency *) dereference(
 	    ELEM(dep->depset->deps, dep->depset->chosen_dep));
 	//assertDependency(cur_dep);
-	if (cur_dep == dep) {
+	if (cur_dep->endfallback == dep) {
 	    return TRUE;
 	}
-	if (dep->depset->entangled_deps) {
-	    cur_dep = (Dependency *) dereference(
-		ELEM(dep->depset->entangled_deps, dep->depset->chosen_dep));
-	    //assertDependency(cur_dep);
-	}
-	return cur_dep == dep;
+
+	return (cur_dep == dep);
     }
     return TRUE;
 }
@@ -701,8 +700,8 @@ dependencySexp(Dependency *dep)
 	name = newstr("pqn: \"%s\"", dep->qn->value);
     }
     
-    result = newstr("<%s%s %s%s>", objTypeName((Object *) dep), 
-		    depset_indicator, direction, name);
+    result = newstr("<%s(%d)%s %s%s>", objTypeName((Object *) dep), 
+		    dep->id, depset_indicator, direction, name);
     skfree(name);
     return result;
 }
@@ -713,7 +712,6 @@ dependencySetSexp(DependencySet *depset)
     char *fqn;
     char *tmp;
     char *tmp2;
-    char *tmp3;
 
     if (depset->definition_node) {
 	fqn = depset->definition_node->fqn->value;
@@ -722,19 +720,9 @@ dependencySetSexp(DependencySet *depset)
 	fqn = "??";
     }
     tmp = objectSexp((Object *) depset->deps);
-    if (depset->entangled_deps) {
-	tmp3 = objectSexp((Object *) depset->entangled_deps);
-	tmp2 = newstr("<%s for (%s) %s %s E[%s]>", 
-		      objTypeName((Object *) depset), 
-		      nameForBuildType(depset->definition_node->build_type),
-		      fqn, tmp, tmp3);
-	skfree(tmp3);
-    }
-    else {
-	tmp2 = newstr("<%s for (%s) %s %s>", objTypeName((Object *) depset), 
-		      nameForBuildType(depset->definition_node->build_type),
-		      fqn, tmp);
-    }
+    tmp2 = newstr("<%s for (%s) %s %s>", objTypeName((Object *) depset), 
+		  nameForBuildType(depset->definition_node->build_type),
+		  fqn, tmp);
     skfree(tmp);
     return tmp2;
 }

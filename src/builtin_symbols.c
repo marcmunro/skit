@@ -870,7 +870,7 @@ defineVar(char *name, Object *obj)
 static void 
 initBaseSymbols()
 {
-    Symbol symbol_t = {OBJ_SYMBOL, "t", NULL, (Object *) &symbol_t};
+    static Symbol symbol_t = {OBJ_SYMBOL, "t", NULL, (Object *) &symbol_t};
     Hash *dbhash = hashNew(TRUE);
     String *xml_version = stringNew(SKIT_XML_VERSION);
 

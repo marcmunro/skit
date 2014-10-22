@@ -731,7 +731,8 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
-		    "regress/scratch/dbdump/cluster.xml",
+		    //"regress/scratch/dbdump/cluster.xml",
+		    "x",
 		    "--list", "--all"};
 
     initTemplatePath(".");
@@ -1044,7 +1045,7 @@ params_suite(void)
     ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

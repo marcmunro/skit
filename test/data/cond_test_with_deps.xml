@@ -146,14 +146,6 @@
             </dependencies>
             <grant from="regress" to="regress" with_grant="no" priv="create"/>
           </dbobject>
-          <dbobject type="grant" name="usage:public" fqn="grant.schema.regressdb.public.usage:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.usage:public" subtype="schema" on="public">
-            <context type="owner" value="regress" default="marc"/>
-            <dependencies>
-              <dependency fqn="schema.regressdb.public"/>
-              <dependency fqn="role.regress"/>
-            </dependencies>
-            <grant from="regress" to="public" with_grant="no" priv="usage"/>
-          </dbobject>
           <dbobject type="grant" name="create:public" fqn="grant.schema.regressdb.public.create:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.create:public" subtype="schema" on="public">
             <context type="owner" value="regress" default="marc"/>
             <dependencies>
