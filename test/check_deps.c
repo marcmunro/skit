@@ -1220,7 +1220,7 @@ START_TEST(depset_dia_drop)
 	requireDeps("DDD_1", nodes_by_fqn, "role.x", 
 		    "table.cluster.ownedbyx", 
 		    "privilege.role.x.superuser.1",
-		    "dsendfallback.privilege.role.x.superuser.1",
+		    "endfallback.privilege.role.x.superuser.1",
 		    NULL);  // 6, 4, 2
 
 	requireDeps("DDD_2", nodes_by_fqn, "table.cluster.ownedbyx", 
@@ -1230,7 +1230,7 @@ START_TEST(depset_dia_drop)
 		    NULL); // 
 
 	requireDeps("DDD_4", nodes_by_fqn, 
-		    "dsendfallback.privilege.role.x.superuser.1", 
+		    "endfallback.privilege.role.x.superuser.1", 
                     "table.cluster.ownedbyx", 
 		    NULL); // 10, 12
 
@@ -1303,7 +1303,7 @@ BEGIN {
 		    "privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_7", nodes_by_fqn,         // 3, 14
 		    "privilege.role.x.superuser.1",
-		    "role.x", "dsendfallback.privilege.role.x.superuser.2", 
+		    "role.x", "endfallback.privilege.role.x.superuser.2", 
 		    NULL);
 	requireDeps("DD2_8", nodes_by_fqn,         // 1, 9
 		    "endfallback.privilege.role.x.superuser.1",
@@ -1311,7 +1311,7 @@ BEGIN {
 	requireDeps("DD2_9", nodes_by_fqn,         // 
 		    "privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_10", nodes_by_fqn,         // 10
-		    "dsendfallback.privilege.role.x.superuser.2", 
+		    "endfallback.privilege.role.x.superuser.2", 
 		    "drop.table.cluster.ownedbyx", NULL);
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -1357,7 +1357,7 @@ START_TEST(fallback)
 	//showVectorDeps(nodes);
 
 	requireDeps("F_1", nodes_by_fqn, "privilege.role.x.superuser.1", 
-		    "dsendfallback.privilege.role.x.superuser.2",
+		    "endfallback.privilege.role.x.superuser.2",
 		    "role.x", NULL);
 	requireDeps("F_2", nodes_by_fqn, "table.x.public.x", 
 		    "drop.table.x.public.x", "schema.x.public", 
@@ -1421,7 +1421,7 @@ START_TEST(cond)
 
 	/* Require superuser to drop the table but not to create it. */
 	requireDep("C_3", nodes_by_fqn, 
-		   "dsendfallback.privilege.role.wibble.superuser.1",
+		   "endfallback.privilege.role.wibble.superuser.1",
 		   "drop.table.regressdb.public.thing");
 
 	requireNoDep("C_4", nodes_by_fqn, 

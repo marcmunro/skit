@@ -838,6 +838,15 @@ addFoundDeps(
 		  newstr("Bad dependency from build side to drop, "
 			 "or vice versa."));
 	}
+	if (dep->dep->is_fallback && !dep->is_forwards) {
+	    /* This is a backwards dep on a dsfallback node, which should
+	     * not happen.  Instead we will make it a backwards dep
+	     * on the dsendfallback node.  When we later find this in
+	     * redirectDependencies(), we will add the correct
+	     * dependency to the dsfallback node. */
+
+	    dep->dep = dep->dep->mirror_node;
+	}
 	myVectorPush(&depset->definition_node->deps, (Object *) dep);
 	return TRUE;
     }
@@ -903,7 +912,7 @@ depsetSelectableOptions(DependencySet *depset)
     assertDependencySet(depset);
     EACH(depset->deps, i) {
 	dep = (Dependency *) dereference(ELEM(depset->deps, i));
-	if (dep->dep && !(dep->unusable)) {
+	if (dep && dep->dep) {
 	    result++;
 	}
     }
@@ -936,7 +945,7 @@ depsetNextDep(DependencySet *depset)
 	    return;
 	}
 	dep = chosenDep(depset);
-	if (dep && dep->dep && !dep->unusable) {
+	if (dep && dep->dep) {
 	    return;
 	}
     }
@@ -1116,6 +1125,11 @@ checkFallbackDeps(DagNode *fallback)
 {
     int i;
     Dependency *dep;
+/*
+    String *qn;
+    Dependency *new_dep;
+    DagNode *drop_node;
+*/
     if (fallback->deps) {
 	EACH(fallback->deps, i) {
 	    dep = (Dependency *) ELEM(fallback->deps, i);
@@ -1125,6 +1139,25 @@ checkFallbackDeps(DagNode *fallback)
 			"CONSIDER: Fallback %s depends on "
 			"deactivated node %s\n\n",
 			fallback->fqn->value, dep->dep->fqn->value);
+		/* Create new deps for the drop node to depend on the
+		 * fallback and endfallback. */
+/*
+		drop_node = dep->dep->mirror_node;
+		dbgSexp(dep);
+		dbgSexp(drop_node);
+		qn = stringNew(fallback->fqn->value);
+		new_dep = dependencyNew(qn, TRUE, TRUE);
+		new_dep->dep = fallback;
+		new_dep->from = drop_node;
+		dbgSexp(new_dep);
+		myVectorPush(&drop_node->deps, (Object *) new_dep);
+		qn = stringNew(fallback->fqn->value);
+		new_dep = dependencyNew(qn, TRUE, TRUE);
+		new_dep->dep = fallback->mirror_node;
+		new_dep->from = drop_node;
+		dbgSexp(new_dep);
+		myVectorPush(&drop_node->deps, (Object *) new_dep);
+*/
 	    }
 	}
     }
@@ -1163,7 +1196,6 @@ newFallbackPair(DependencySet *depset, volatile ResolverState *res_state)
     identifyNodeDeps(fallback, res_state);
     recordNodeDeps(endfallback, res_state);
     identifyNodeDeps(endfallback, res_state);
-
     if (isBuildSideNode(depset->definition_node)) {
 	checkFallbackDeps(fallback);
     }
@@ -1521,6 +1553,13 @@ depMustBeDeactivated(DagNode *node, Dependency *dep)
     if (!nodeIsActive(node) || !nodeIsActive(dep->dep)) {
 	return TRUE;
     }
+
+    if ((dep->dep->build_type == DIFFPREP_NODE) &&
+	(node->build_type == DROP_NODE))
+    {
+	return TRUE;
+    }
+
     if (dep->depset) {
 	return dep->depset->deactivated;
     }
@@ -1731,49 +1770,6 @@ dupDependency(Dependency *dep) {
     assertDependency(dep);
     result->dep = dep->dep;
     return result;
-}
-
-
-static void
-copyNodeBackwardDepsToBreaker(DagNode *this, DagNode *orig, DagNode *breaker)
-{
-    int i;
-    Dependency *dep;
-    Dependency *new;
-    if (this->deps) {
-	EACH(this->deps, i) {
-	    if (dep = (Dependency *) ELEM(this->deps, i)) {
-		if (dep->dep == orig) {
-		    new = dupDependency(dep);
-		    new->dep = breaker;
-		    new->from = this;
-		    vectorPush(this->deps, (Object *) new);
-		    break;
-		}
-	    }
-	}
-    }
-}
-
-static void
-copyAllBackwardDepsToBreaker(
-    DagNode *node, 
-    DagNode *breaker, 
-    volatile ResolverState *res_state)
-{
-    int i;
-    DagNode *this;
-    EACH(res_state->all_nodes, i) {
-	this = (DagNode *) ELEM(res_state->all_nodes, i);
-	if (isPureDropSideNode(this)) {
-	    copyNodeBackwardDepsToBreaker(this, node, breaker);
-	}
-    }
-    if (node->mirror_node && 
-	(node->mirror_node->build_type != DEACTIVATED_NODE))
-    {
-	copyNodeBackwardDepsToBreaker(node->mirror_node, node, breaker);
-    }
 }
 
 
@@ -2106,19 +2102,35 @@ redirectNodeDeps(DagNode *node)
 {
     int i;
     Dependency *dep;
+    Dependency *fb_dep;
+    String *qn;
     DagNode *new_from;
 
     EACH(node->deps, i) {
 	if (dep = (Dependency *) ELEM(node->deps, i)) {
 	    assertDependency(dep);
 	    if (!dep->is_forwards) {
+		if (!node->tmp_deps) {
+		    node->tmp_deps = vectorNew(10);
+		}
+
+		if (dep->dep->build_type == DSENDFALLBACK_NODE) {
+		    /* We must ensure that there is a matching
+		     * dependency on the fallback node.  See
+		     * addFoundDeps() for more notes on this. */ 
+
+		    qn = stringNew(dep->dep->fqn->value);
+		    fb_dep = dependencyNew(qn, TRUE, TRUE);
+		    fb_dep->dep = dep->dep->mirror_node;
+		    fb_dep->from = node;
+		    myVectorPush(&(node->tmp_deps), (Object *) fb_dep);    
+		}
+
 		new_from = dep->dep;
 		dep->dep = dep->from;
 		dep->from = new_from;
 		myVectorPush(&(new_from->tmp_deps), (Object *) dep);
-		if (!node->tmp_deps) {
-		    node->tmp_deps = vectorNew(10);
-		}
+
 	    }
 	}
     }
@@ -2146,6 +2158,25 @@ redirectDependencies(Vector *nodes)
 	    node->tmp_deps = NULL;
 	}
     }
+}
+
+/* Re-type any drop side fallback nodes.
+ * TODO: remove redundant fallback nodes - see TODO file
+ */
+static void
+finaliseFallbacks(Vector *nodes)
+{
+    DagNode *node;
+    int i;
+    EACH(nodes, i) {
+        node = (DagNode *) ELEM(nodes, i);
+	if (node->build_type == DSFALLBACK_NODE) {
+	    node->build_type = FALLBACK_NODE;
+	}
+	else if (node->build_type == DSENDFALLBACK_NODE) {
+	    node->build_type = ENDFALLBACK_NODE;
+	}
+    }    
 }
 
 /* This converts the node->deps vector of dependencies into a vector of
@@ -2286,6 +2317,7 @@ dagFromDoc(Document *doc)
 
 	redirectDependencies(resolver_state.all_nodes);
 
+	finaliseFallbacks(resolver_state.all_nodes);
 	convertDependencies(resolver_state.all_nodes);
 	addDepsForMirrors(resolver_state.all_nodes);
 

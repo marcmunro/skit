@@ -506,7 +506,6 @@ dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
     new->qn = qn;
     new->qn_is_full = qn_is_full;
     new->is_forwards = is_forwards;
-    new->unusable = FALSE;
     new->dep = NULL;
     new->depset = NULL;
     new->from = NULL;
@@ -649,10 +648,6 @@ depIsActive(Dependency *dep)
 
     assertDependency(dep);
     if (!dep->dep) {
-	return FALSE;
-    }
-
-    if (dep->unusable) {
 	return FALSE;
     }
 

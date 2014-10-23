@@ -732,12 +732,12 @@ START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
 		    //"regress/scratch/dbdump/cluster.xml",
-		    "y",
-		    "--print", "--full"};
+		    "x",
+		    "--print", "--all"};
 
     initTemplatePath(".");
+    showMalloc(6510);
     //showFree(3549);
-    //showMalloc(20374);
 
     BEGIN {
 	process_args2(5, args);

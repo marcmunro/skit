@@ -67,7 +67,7 @@
   <!-- If neither build or drop are specified, then we do a build -->
   <skit:exec expr="(setq build (or build (not (or build drop))))"/>
 
-  <skit:xslproc stylesheet="navigation.xsl">
+  <skit:xslproc stylesheet="navigation.xsl" debug="nil">
     <dump>
       <skit:attr name="dbtype" expr="dbtype"/>
       <skit:attr name="dbname" expr="dbname"/>
