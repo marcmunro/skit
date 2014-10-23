@@ -4,25 +4,12 @@ WORKING ON finsihing conversion of ddl to new consistency.  Working on tables.xs
 
 
 DEPS HANDLING PLAN
-  - Confirm that fallback handling pretty much works - as an expedient
-    after N retries, set the flag to allow fallbacks to be created.
-  - Get other tests passing
-  - Handle cycle breakers
-  - Get all unit tests passing
   - Get regression tests to pass
-  - Replace retries count in resolveNode with a mechanism that allows
-    retries for each combination of options available for the node (eg
-    if there are 2 depsets, each containing three options at the node,
-    9 retries will be allowed.
-  - Make retries at the root level more sophisticated, checking for all
-    options having been retried before setting the flag to allow for
-    fallbacks to be created, and then allowing another set of retries,
-    again based on the number of options available through dependency
-    sets. 
-  - When fallbacks are added, check other dependency sets to add them as
-    options if appropriate.
+  - When there are fallbacks on both sides but there do not need to be,
+    deactivate the fallback and dsendfallback leaving only the
+    dsfallback and endfallback.
   - Figure out how to handle auto-dropping of dependent objects (eg
-    grant od select on a table when the role or table is dropped).
+    grant of select on a table when the role or table is dropped).
 
 
 Bugs and Issues:

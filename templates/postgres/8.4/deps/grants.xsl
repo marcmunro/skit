@@ -76,22 +76,25 @@
   -->
   <xsl:template match="grant">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
+    <xsl:variable name="partial">
+      <xsl:value-of select="concat(name(..), '.', $parent_core)"/>
+      
+      <xsl:if test="@to != @from">
+	<xsl:value-of select="concat(':', @to)"/>
+	<xsl:if test="@from != ../@owner">
+	  <xsl:value-of select="concat(':', @from)"/>
+	</xsl:if>
+      </xsl:if>
+    </xsl:variable>
 
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
       <xsl:with-param name="name" select="concat(@priv, ':', @to)"/>
       <xsl:with-param name="owner" select="../@owner"/>
-      <xsl:with-param name="fqn">
-	<xsl:value-of select="concat('grant.', name(..), '.', 
-			             $parent_core, '.', @priv)"/>
-
-	<xsl:if test="@to != @from">
-	  <xsl:value-of select="concat(':', @to)"/>
-	  <xsl:if test="@from != ../@owner">
-	    <xsl:value-of select="concat(':', @from)"/>
-	  </xsl:if>
-	</xsl:if>
-      </xsl:with-param>
+      <!-- Set qname solely for feedback from ddl.xsl -->
+      <xsl:with-param name="qname" select="concat(@priv, ' ', $partial)"/>
+      <xsl:with-param name="fqn" 
+		      select="concat('grant.', $partial, '.', @priv)"/>
       <xsl:with-param name="others">
 	<param name="pqn" 
 	       value="{concat('grant.', name(..), '.', 

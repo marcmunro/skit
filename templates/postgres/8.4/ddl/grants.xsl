@@ -60,7 +60,8 @@
 	<xsl:if test="../@diff or not (@automatic='yes')">
 	  <!-- In the other case we should do no ddl.  Not sure how best
 	       to handle this, maybe a <noprint> element would be
-	       useful. --> 
+	       useful (currently, we end up with just the comments and
+	       feedback). --> 
 
 	  <xsl:value-of 
 	      select="concat('&#x0A;revoke ', @priv, ' on ')"/>
