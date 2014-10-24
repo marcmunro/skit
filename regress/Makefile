@@ -18,7 +18,7 @@
 
 .PHONY: regress regress_cluster cluster_is_up rdbstart wait_for_rdb \
 	wait_while_proc rdbstop drop_regress_cluster regression_test1 \
-	regression_test2 regression_test3 prep
+	regression_test2 regression_test3 prep regress_rmlog
 
 
 REGRESS_DIR = regress
@@ -120,7 +120,7 @@ regression_env:
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP=\"$(PG_DUMP)\"; "
 
-regression_test_precond:
+regression_test_precond: regress_rmlog
 	@if [ ! -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    $(MAKE) --no-print-directory regress_cluster; \
 	fi
@@ -181,6 +181,9 @@ regress: skit regress_cluster regression_test1 regression_test2 \
 		regression_test3 regression_test4
 	@$(MAKE) --no-print-directory drop_regress_cluster
 	@echo Regression tests completed successfully
+
+regress_rmlog:
+	@rm -f $(REGRESS_DIR)/*.log
 
 regress_clean: drop_regress_cluster
 	@echo Cleaning regress...

@@ -7,6 +7,11 @@
   version="1.0">
 
   <xsl:include href="skitfile:common_defs.xsl"/>
+  <xsl:variable name="quoted-username"
+		select="skit:eval('(username)')"/>
+  <xsl:variable name="username"
+		select="substring($quoted-username, 2,
+			string-length($quoted-username) - 2)"/>
 
   <!-- Anything not matched explicitly will match this and be copied 
        This handles dbobject, dependencies, etc -->

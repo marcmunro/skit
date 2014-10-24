@@ -1,7 +1,7 @@
 /**
  * @file   skit_lib.h
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -785,3 +785,5 @@ extern void xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs);
 //diff.c
 extern xmlNode *doDiff(String *diffrules, boolean swap);
 
+// system.c
+extern String *username();

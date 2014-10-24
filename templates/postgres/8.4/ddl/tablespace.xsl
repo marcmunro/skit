@@ -46,8 +46,19 @@
       </print>
     </xsl:if>
 
+    <xsl:if test="../@action='diffprep'">
+      <xsl:if test="../attribute[@name='owner']">
+	<print>
+	  <xsl:value-of 
+	      select="concat('alter tablespace ', ../@qname,
+		      ' owner to ', $username,
+		      ';&#x0A;')"/>
+	</print>
+      </xsl:if>
+    </xsl:if>
+
     <xsl:if test="../@action='diff'">
-      <print>
+      <print>	
 	<xsl:call-template name="feedback"/>
 	<xsl:text>&#x0A;</xsl:text>
 	<xsl:for-each select="../attribute">

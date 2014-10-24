@@ -1,11 +1,11 @@
 /**
  * @file   builtin_symbols.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ *
  * \endcode
  * @brief  
  * Defines built-in symbols.  These are symbols for built-in functions, 
@@ -860,6 +860,13 @@ fnHashAdd(Object *obj)
     return ref;
 }
 
+static Object *
+fnUsername(Object *obj)
+{
+    UNUSED(obj);
+    return (Object *) username();
+}
+
 static void
 defineVar(char *name, Object *obj)
 {
@@ -911,6 +918,7 @@ initBaseSymbols()
     symbolCreate("re", &fnRegexp, NULL);                        /*XX*/
     symbolCreate("length", &fnLength, NULL);
     symbolCreate("hashadd", &fnHashAdd, NULL);
+    symbolCreate("username", &fnUsername, NULL);
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
     symbolCreate("skit_xml_version", NULL, (Object *) xml_version);
 
@@ -924,7 +932,7 @@ initBaseSymbols()
     //evalStr("(setq dbver nil)");
     //evalStr("(setq templates-dir 'templates')");
 
-    registerPGSQL();	// TODO: Move this call to somewhere more sensible
+    registerPGSQL();	// TODO: Move this call to somewhere more appropriate
 }
 
 

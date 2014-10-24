@@ -1,7 +1,7 @@
 /**
  * @file   diff.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -727,65 +727,97 @@ check_element(
     return diffs;
 }
 
+static void
+getBracedTokens(char *expr, char **brace, char **contents, char **end)
+{
+    if (*brace = strchr(expr, '{')) {
+	if (*contents = strchr(*brace, '.')) {
+	    *contents += 1;
+	    *end = strchr(*contents, '}');
+	    if (!*end) {
+		RAISE(XML_PROCESSING_ERROR,
+		      newstr("Unbalanced braces in \"%s\"\n", expr));
+	    }
+	}
+	else {
+	    RAISE(XML_PROCESSING_ERROR,
+		  newstr("Unable to find contents of brace expression "
+			 "in \"%s\"", *brace));
+	}
+    }
+}
+
+static char *
+appendSubstr(char *prefix, char *from, char *to)
+{
+    char orig = *to;
+    char *result;
+    *to = '\0';
+    result = newstr("%s%s", prefix, from);
+    *to = orig;
+    skfree(prefix);
+    return result;
+}
+
+static char *
+concatStr(char *prefix, char *from)
+{
+    char *result;
+    result = newstr("%s%s", prefix, from);
+    skfree(prefix);
+    return result;
+}
+
 static char *
 evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
 {
-    char *result = newstr("");
-    char *tmp;
     char *remaining = (char *) expr;
     char *brace;
-    char *name;
     xmlChar *attr;
-    boolean new;
-    
-    while (brace = strchr(remaining, '{')) {
-	new = FALSE;
-	*brace = '\0';
-	tmp = result;
-	result = newstr("%s%s", result, remaining);
-	skfree(tmp);
-	*brace = '{';
-	
-	remaining = strchr(brace, '}');
-	if (!remaining) {
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("Unbalanced braces in \"%s\"\n", expr));
-	}
-	*remaining = '\0';
-	if (strncmp(brace + 1, "new.", 4) == 0) {
-	    new = TRUE;
-	}
-	else if (strncmp(brace + 1, "old.", 4) != 0) {
-	    *remaining = '}';
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("Invalid braced expression: \"%s\"\n", expr));
-	}
-	name = brace + 5;
-	if (new) {
-	    attr = xmlGetProp(content2, (xmlChar *) name);
-	}
-	else {
-	    attr = xmlGetProp(content1, (xmlChar *) name);
-	}
-	if (!attr) {
-	    dbgNode(content1);
-	    dbgNode(content2);
-	    RAISE(XML_PROCESSING_ERROR,
-		  newstr("Unable to find attribute %s (for %s)\n", name,
-			 new? "new": "old"));
-	}
-	*remaining = '}';
+    char *contents;
+    char *end;
+    char *result = newstr("");
+    Object *obj;
+    char *tmp;
 
-	tmp = result;
-	result = newstr("%s%s", result, attr);
-	skfree(tmp);
-	xmlFree(attr);
-	remaining++;
-    }
+    do {
+	getBracedTokens(remaining, &brace, &contents, &end);
+	if (brace) {
+	    result = appendSubstr(result, remaining, brace);
 
-    tmp = result;
-    result = newstr("%s%s", result, remaining);
-    skfree(tmp);
+	    *end = '\0';
+	    if (strncmp(brace, "{eval.", 6) == 0) {
+		obj = evalSexp(contents);
+		if (obj->type == OBJ_STRING) {
+		    result = concatStr(result, ((String *) obj)->value);
+		}
+		else {
+		    tmp = objectSexp(obj);
+		    result = concatStr(result, tmp);
+		    skfree(tmp);
+		}
+		objectFree(obj, TRUE);
+	    }
+	    else {
+		if (strncmp(brace, "{old.", 5) == 0) {
+		    attr = xmlGetProp(content1, (xmlChar *) contents);
+		}
+		else if (strncmp(brace, "{new.", 5) == 0) {
+		    attr = xmlGetProp(content2, (xmlChar *) contents);
+		}
+		else {
+		    RAISE(XML_PROCESSING_ERROR,
+			  newstr("Invalid braced expression: \"%s\"\n", expr));
+		}
+		result = concatStr(result, (char *) attr);
+		xmlFree(attr);
+	    }
+	    *end = '}';
+	    remaining = end + 1;
+	}
+    } while (brace);
+
+    result = concatStr(result, remaining);
     xmlFree(expr);
     return result;
 }

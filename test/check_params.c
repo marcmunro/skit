@@ -1,7 +1,7 @@
 /**
  * @file   check_params.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -728,6 +728,7 @@ START_TEST(extract)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
@@ -736,7 +737,7 @@ START_TEST(generate)
 		    "--print", "--all"};
 
     initTemplatePath(".");
-    showMalloc(6510);
+    //showMalloc(6510);
     //showFree(3549);
 
     BEGIN {
@@ -754,7 +755,6 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -1042,7 +1042,7 @@ params_suite(void)
 
     // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
     //ADD_TEST(tc_core, diff);

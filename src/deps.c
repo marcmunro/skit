@@ -1121,15 +1121,14 @@ makeFallbackDagNode(
  * testing. 
  */
 static void
-checkFallbackDeps(DagNode *fallback) 
+checkDeactivatedNodeDeps(
+    DagNode *defn_node,
+    DagNode *fallback, 
+    volatile ResolverState *res_state) 
 {
     int i;
     Dependency *dep;
-/*
-    String *qn;
-    Dependency *new_dep;
-    DagNode *drop_node;
-*/
+
     if (fallback->deps) {
 	EACH(fallback->deps, i) {
 	    dep = (Dependency *) ELEM(fallback->deps, i);
@@ -1139,25 +1138,6 @@ checkFallbackDeps(DagNode *fallback)
 			"CONSIDER: Fallback %s depends on "
 			"deactivated node %s\n\n",
 			fallback->fqn->value, dep->dep->fqn->value);
-		/* Create new deps for the drop node to depend on the
-		 * fallback and endfallback. */
-/*
-		drop_node = dep->dep->mirror_node;
-		dbgSexp(dep);
-		dbgSexp(drop_node);
-		qn = stringNew(fallback->fqn->value);
-		new_dep = dependencyNew(qn, TRUE, TRUE);
-		new_dep->dep = fallback;
-		new_dep->from = drop_node;
-		dbgSexp(new_dep);
-		myVectorPush(&drop_node->deps, (Object *) new_dep);
-		qn = stringNew(fallback->fqn->value);
-		new_dep = dependencyNew(qn, TRUE, TRUE);
-		new_dep->dep = fallback->mirror_node;
-		new_dep->from = drop_node;
-		dbgSexp(new_dep);
-		myVectorPush(&drop_node->deps, (Object *) new_dep);
-*/
 	    }
 	}
     }
@@ -1196,9 +1176,8 @@ newFallbackPair(DependencySet *depset, volatile ResolverState *res_state)
     identifyNodeDeps(fallback, res_state);
     recordNodeDeps(endfallback, res_state);
     identifyNodeDeps(endfallback, res_state);
-    if (isBuildSideNode(depset->definition_node)) {
-	checkFallbackDeps(fallback);
-    }
+    checkDeactivatedNodeDeps(depset->definition_node, fallback, res_state);
+
     return fallback;
 }
 
@@ -1551,12 +1530,6 @@ depMustBeDeactivated(DagNode *node, Dependency *dep)
     assertDependency(dep);
 
     if (!nodeIsActive(node) || !nodeIsActive(dep->dep)) {
-	return TRUE;
-    }
-
-    if ((dep->dep->build_type == DIFFPREP_NODE) &&
-	(node->build_type == DROP_NODE))
-    {
 	return TRUE;
     }
 
