@@ -41,6 +41,10 @@
     <option name='d*rop' type='flag' default='false'/>
     <option name='b*uild' type='flag' default='false'/>
     <option name='ec*hoes' type='flag' default='true'/>
+    <!-- Debug is for generating debug output from the ddl generation
+         stage.  A value of "before" will print the input to the xsl
+	 transform, "after will print the output, "both will print
+	 both.  Any ther non-nil value is equivalent to before. -->
     <option name='de*bug' type='flag' default='false'/>
 
     <!-- This causes the context handling code that optimises context

@@ -6,12 +6,14 @@
 
   <dbobject type="sequence" key="fqn">
     <attribute name="owner">
+<!--
       <dependency-set 
 	  fallback="grant.role.{old.owner}.{new.owner}"
 	  parent="ancestor::dbobject[database]">
 	<dependency fqn="privilege.role.{old.owner}.superuser"/>
 	<dependency pqn="grant.role.{old.owner}.{new.owner}"/>
       </dependency-set>
+-->
     </attribute>
     <attribute name="start_with"/>
     <attribute name="increment_by"/>

@@ -815,6 +815,7 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
+#ifdef WIBBLE
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -844,7 +845,6 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef WIBBLE
 #endif
 
 #ifdef wibble

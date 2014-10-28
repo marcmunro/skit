@@ -21,7 +21,7 @@
 #include "skit_lib.h"
 
 String *
-username()
+username(void)
 {
     struct passwd *passwd;
     passwd = getpwuid(getuid()); 

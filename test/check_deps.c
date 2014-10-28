@@ -356,7 +356,7 @@ START_TEST(deps_basic)
 
     BEGIN {
 	initTemplatePath(".");
-	//showMalloc(3044);
+	//showMalloc(2697);
 	//trackMalloc(1589);
 	//showFree(1627);
 
@@ -1168,7 +1168,7 @@ START_TEST(depset_dia_build)
 	requireDeps("DDB_3", nodes_by_fqn, 
 		    "endfallback.privilege.role.x.superuser.1", 
                     "table.cluster.ownedbyx", 
-		    "role.x", 
+		    "cluster", "role.x", 
 		    NULL); // 11, 9, 1
 
 	objectFree((Object *) nodes_by_fqn, FALSE);
@@ -1293,7 +1293,8 @@ BEGIN {
 		    "privilege.role.x.superuser.1", NULL);
 	requireDeps("DD2_4", nodes_by_fqn,
 		    "drop.cluster", "drop.table.cluster.ownedbyx", 
-		    "drop.role.x", NULL);
+		    "drop.role.x", "privilege.role.x.superuser.2",
+		    "endfallback.privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_5", nodes_by_fqn,         // 2, 4, 6
 		    "drop.role.x", "drop.table.cluster.ownedbyx", 
 		    "privilege.role.x.superuser.2",
@@ -1304,10 +1305,10 @@ BEGIN {
 	requireDeps("DD2_7", nodes_by_fqn,         // 3, 14
 		    "privilege.role.x.superuser.1",
 		    "role.x", "endfallback.privilege.role.x.superuser.2", 
-		    NULL);
+		    "cluster", NULL);
 	requireDeps("DD2_8", nodes_by_fqn,         // 1, 9
 		    "endfallback.privilege.role.x.superuser.1",
-		    "role.x", "table.cluster.ownedbyx", NULL);
+		    "role.x", "table.cluster.ownedbyx", "cluster", NULL);
 	requireDeps("DD2_9", nodes_by_fqn,         // 
 		    "privilege.role.x.superuser.2", NULL);
 	requireDeps("DD2_10", nodes_by_fqn,         // 10
@@ -1358,7 +1359,7 @@ START_TEST(fallback)
 
 	requireDeps("F_1", nodes_by_fqn, "privilege.role.x.superuser.1", 
 		    "endfallback.privilege.role.x.superuser.2",
-		    "role.x", NULL);
+		    "role.x", "database.x", NULL);
 	requireDeps("F_2", nodes_by_fqn, "table.x.public.x", 
 		    "drop.table.x.public.x", "schema.x.public", 
 		    "tablespace.pg_default", "column.x.public.x.x", 
@@ -1917,9 +1918,9 @@ dd1_testcase_1(Hash *nodes_by_fqn)
 		"diff.schema.regressdb.n1", NULL);
     requireDeps("DD_TC1_2", nodes_by_fqn, 
 		"drop.sequence.regressdb.n1.s1a", 
-		"drop.grant.sequence.regressdb.n1.s1a.usage", 
-		"drop.grant.sequence.regressdb.n1.s1a.update", 
-		"drop.grant.sequence.regressdb.n1.s1a.select", 
+		"drop.grant.sequence.regressdb.n1.s1a.usage:r1", 
+		"drop.grant.sequence.regressdb.n1.s1a.update:r1", 
+		"drop.grant.sequence.regressdb.n1.s1a.select:r1", 
 		NULL);
     requireDeps("DD_TC1_3", nodes_by_fqn, 
 		"build.sequence.regressdb.n1.s1b",
@@ -1991,6 +1992,7 @@ START_TEST(general_diffs)
     //dbgSexp(diffs);
 
     BEGIN {
+	showMalloc(12452);
 	nodes = dagFromDoc(diffs);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = dagnodeHash(nodes);

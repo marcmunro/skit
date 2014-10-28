@@ -302,6 +302,7 @@ struct Dependency;
 
 typedef struct DependencySet {
     ObjType                type;
+    int                    id;
     int                    priority;
     int                    chosen_dep;
     int                    cycles;
@@ -309,6 +310,7 @@ typedef struct DependencySet {
     DagNode               *definition_node;
     String                *fallback_expr;
     String                *fallback_parent;
+    String                *condition;
     boolean                deactivated;
     Vector                *deps;
 } DependencySet;
@@ -786,4 +788,4 @@ extern void xsltEvalFunction(xmlXPathParserContextPtr ctxt, int nargs);
 extern xmlNode *doDiff(String *diffrules, boolean swap);
 
 // system.c
-extern String *username();
+extern String *username(void);

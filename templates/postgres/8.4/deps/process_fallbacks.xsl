@@ -8,11 +8,11 @@
 
   <!--- This template is used to process fallback nodes.  These are
         automatically generated when dependencies that contain a
-	fallback are processed.  Note that because diffs may have
-	dynamically created dependencies (eg, when the owner of an
-	object is changed), this is not part of the normal add_deps
-	styleseheet procesing.   Instead, fallbacks are processed very
-	explicitly, from deps.c, as and when they are encountered.
+        fallback are processed.  Note that because diffs may have
+        dynamically created dependencies, this is not part of the normal
+        add_deps styleseheet procesing.  Instead, fallbacks are
+        processed very explicitly, from deps.c, as and when they are
+        encountered.
   -->
   <xsl:template match="fallback">
     <root>
@@ -30,6 +30,7 @@
 		    role="{$role}">
 	    <dependencies>
 	      <dependency fqn="{concat('role.', $role)}"/>
+	      <dependency fqn="{@parent}"/>
 	    </dependencies>
 	    <fallback fqn="{@fqn}" role="{$role}" privilege="{$priv}"/>
 	  </dbobject>
@@ -44,7 +45,7 @@
 	  <xsl:variable name="from" 
 			select="substring-after($names, '.')"/>
 	  <dbobject type="fallback" subtype="{$subtype}" fqn="{@fqn}"
-		    from="{$from}" to="{$to}" parent="cluster">
+		    from="{$from}" to="{$to}">
 	    <dependencies>
 	      <dependency fqn="{concat('role.', $from)}"/>
 	      <dependency fqn="{concat('role.', $to)}"/>

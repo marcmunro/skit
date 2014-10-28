@@ -483,7 +483,9 @@ DependencySet *
 dependencySetNew(DagNode *definition_node)
 {
     DependencySet *new = skalloc(sizeof(DependencySet));
+    static int id = 1;
     new->type = OBJ_DEPENDENCYSET;
+    new->id = id++;
     new->priority = 100;
     new->chosen_dep = 0;
     new->cycles = 0;
@@ -491,6 +493,7 @@ dependencySetNew(DagNode *definition_node)
     new->definition_node = definition_node;
     new->fallback_expr = NULL;
     new->fallback_parent = NULL;
+    new->condition = NULL;
     new->deactivated = FALSE;
     new->deps = vectorNew(10);
     return new;
@@ -540,6 +543,7 @@ dependencySetFree(DependencySet *depset, boolean free_contents)
 	objectFree((Object *) depset->deps, TRUE);
 	objectFree((Object *) depset->fallback_expr, TRUE);
 	objectFree((Object *) depset->fallback_parent, TRUE);
+	objectFree((Object *) depset->condition, TRUE);
     }
     skfree(depset);
 }
@@ -661,11 +665,13 @@ depIsActive(Dependency *dep)
 	if (dep->depset->chosen_dep >= dep->depset->deps->elems) {
 	    return FALSE;
 	}
-	cur_dep = (Dependency *) dereference(
-	    ELEM(dep->depset->deps, dep->depset->chosen_dep));
-	//assertDependency(cur_dep);
-	if (cur_dep->endfallback == dep) {
-	    return TRUE;
+	if (cur_dep = (Dependency *) dereference(
+		ELEM(dep->depset->deps, dep->depset->chosen_dep)))
+	{
+	    //assertDependency(cur_dep);
+	    if (cur_dep->endfallback == dep) {
+		return TRUE;
+	    }
 	}
 
 	return (cur_dep == dep);
@@ -715,7 +721,8 @@ dependencySetSexp(DependencySet *depset)
 	fqn = "??";
     }
     tmp = objectSexp((Object *) depset->deps);
-    tmp2 = newstr("<%s for (%s) %s %s>", objTypeName((Object *) depset), 
+    tmp2 = newstr("<%s(%d) for (%s) %s %s>", objTypeName((Object *) depset), 
+		  depset->id, 
 		  nameForBuildType(depset->definition_node->build_type),
 		  fqn, tmp);
     skfree(tmp);

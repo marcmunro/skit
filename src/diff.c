@@ -300,8 +300,7 @@ getNodeDeps(xmlNode *node)
     Hash *deps = hashNew(TRUE);
     xmlNode *this = getNextNode(node->children);
     xmlNode *dep;
-    // TODO: rewrite variable name, maybe simplify.
-    String *condition;
+    String *direction;
 
     while (this) {
 	if (isDependencies(this)) {
@@ -309,11 +308,11 @@ getNodeDeps(xmlNode *node)
 	}
 	else {
 	    if (isDepNode(this)) {
-		if (!(condition = directionForDep(this))) {
-		    condition = stringNew("");
+		if (!(direction= directionForDep(this))) {
+		    direction = stringNew("");
 		}
 		dep = xmlCopyNode(this, 1);
-		(void) hashVectorAppend(deps, (Object *) condition, 
+		(void) hashVectorAppend(deps, (Object *) direction, 
 					(Object *) nodeNew(dep));
 	    }
 	    this = getNextNode(this->next);

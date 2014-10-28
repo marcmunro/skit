@@ -81,9 +81,6 @@
       <xsl:call-template name="fqn-root"/>
     </xsl:param>
     <xsl:param name="to"/>
-    <xsl:if test="$to = $owner">
-      <dependency fqn="{concat('grant.', $type, '.', $root, '.', $priv)}"/>
-    </xsl:if>
     <dependency pqn="{concat('grant.', $type, '.', $root, '.', 
 		             $priv, ':', $to)}"/>
     <dependency pqn="{concat('grant.', $type, '.', $root, '.', 
@@ -216,14 +213,6 @@
 	</xsl:for-each>
       </xsl:if>
 
-      <xsl:if test="ancestor::schema and comment">
-	<!-- This object is a descendent of a schema and contains a
-	     comment.  To create a comment, "usage" privilege is required
-	     on the schema.  Note: the default schema privilege required
-	     to create the object is "create".  --> 
-	<extra-schema-privs action="build" priv="usage"/>
-      </xsl:if>
-
       <xsl:if test="$owner and $do_context = 'yes'">
 	<context type="owner" value="{$owner}" 
 		 default="{//cluster/@username}"/>	
@@ -241,6 +230,23 @@
 
 	<xsl:if test="$do_schema_grant = 'yes'">
 	  <xsl:call-template name="SchemaGrant"/>
+	</xsl:if>
+
+	<xsl:if test="ancestor::schema and comment">
+	  <!-- This object is a descendent of a schema and contains a
+	       comment.  To modify a comment, "usage" privilege is
+	       required on the schema.  Note: the default schema
+	       privilege required to create the object is "create".  -->
+	  <dependency-set 
+	      priority="1"
+	      direction="forwards"
+	      condition="element[@type='comment']"
+	      fallback="{concat('privilege.role.', $owner, '.superuser')}"
+	      parent="ancestor::dbobject[database]">
+	    <xsl:call-template name="deps-schema-usage">
+	      <xsl:with-param name="to" select="@owner"/>
+	    </xsl:call-template>
+	  </dependency-set>
 	</xsl:if>
       </dependencies>
 
