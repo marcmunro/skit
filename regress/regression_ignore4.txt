@@ -5,3 +5,4 @@
 > REVOKE ALL ON SEQUENCE s2a FROM PUBLIC;
 # Ignore superfluous revoke against schemata.
 . REVOKE ALL ON SCHEMA n2 FROM PUBLIC;
+. REVOKE ALL ON SCHEMA n3 FROM PUBLIC;

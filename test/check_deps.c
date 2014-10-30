@@ -1931,10 +1931,29 @@ dd1_testcase_1(Hash *nodes_by_fqn)
 static void
 dd1_testcase_2(Hash *nodes_by_fqn)
 {
-    requireDeps("DD_TC1_1", nodes_by_fqn, 
-		"diff.sequence.regressdb.n1.s1", 
-		"diffprep.sequence.regressdb.n1.s1", 
-		"diff.schema.regressdb.n1", NULL);
+    /* Fallback is needed because r1 loses usage on schema n2.
+     * grant.schema.regressdb.n2.create:r1 is required because 
+     * create priv is required and there has been a change to it.  */
+    requireDeps("DD_TC2_1", nodes_by_fqn, 
+		"diff.sequence.regressdb.n2.s2", 
+		"diffprep.sequence.regressdb.n2.s2", 
+		"diff.grant.schema.regressdb.n2.create:r1",
+		"fallback.privilege.role.r1.superuser.1", NULL);
+    requireDeps("DD_TC2_2", nodes_by_fqn, 
+		"endfallback.privilege.role.r1.superuser.1",
+		"diff.sequence.regressdb.n2.s2", NULL);
+}
+
+/* See comments in test/data/depdiffs_1a.sql */
+static void
+dd1_testcase_3(Hash *nodes_by_fqn)
+{
+    requireDeps("DD_TC3_1", nodes_by_fqn, 
+		"diff.sequence.regressdb.n3.s3", 
+		"diffprep.sequence.regressdb.n3.s3", 
+		"diff.grant.schema.regressdb.n3.create:r1",
+		"diff.grant.schema.regressdb.n3.usage:public",
+		NULL);
 }
 
 /* Dependency diff tests. */
@@ -1954,12 +1973,13 @@ START_TEST(depdiffs_1)
 	nodes = dagFromDoc(diffs);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//fprintf(stderr, "\n============FINAL==============\n");
-	//showVectorDeps(nodes);
+	showVectorDeps(nodes);
 
 	/* See comments in test/data/depdiffs_1a.sql for a description
 	   of each test case. */
 	dd1_testcase_1(nodes_by_fqn);
 	dd1_testcase_2(nodes_by_fqn);
+	dd1_testcase_3(nodes_by_fqn);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

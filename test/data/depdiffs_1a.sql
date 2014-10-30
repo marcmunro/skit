@@ -1,5 +1,5 @@
-# Test data for deps:depdiffs test.  This should be converted into an 
-# xml file.
+# Test data for deps:depdiffs unit test, and regression test4
+#
 # This provides test cases for dealing with dependencies on access rights to
 # the underlying schema for an object combined with access rights to
 # that object when ownerships change.  Specifically, it provides for
@@ -25,7 +25,7 @@
 #     +---+---+---+---+---+---+---+---+------+---+---+---+---+------+----+----+
 #   2 |r1 |r1 |r1 |r1 |yes|yes| - | - |  -   |yes|no | - | - |  no  | no | no |
 #     +---+---+---+---+---+---+---+---+------+---+---+---+---+------+----+----+
-#     |   |   |   |   |   |   |   |   |      |   |   |   |   |      |    |    |
+#   3 |r1 |r1 |r1 |r1 |yes|yes| - | - |  -   |yes|no | - | - |  yes | no | no |
 #     +---+---+---+---+---+---+---+---+------+---+---+---+---+------+----+----+
 #     |   |   |   |   |   |   |   |   |      |   |   |   |   |      |    |    |
 #     +---+---+---+---+---+---+---+---+------+---+---+---+---+------+----+----+
@@ -75,12 +75,19 @@ psql -d regressdb -U r1 << 'EOF'
 create schema n1;
 create sequence n1.s1;
 create sequence n1.s1a;
-
+ 
 -- Test case 2
 -- No ownership changes.  Schema owner loses usage priv on schema, sequence
 -- owned by schema owner.
 create schema n2;
+comment on schema n2 is 'n2';
 create sequence n2.s2;
 create sequence n2.s2a;
+
+-- Test case 3
+-- No ownership changes.  Schema owner loses usage priv on schema, sequence
+-- owned by schema owner, public usage priv on schema.
+create schema n3;
+create sequence n3.s3;
 
 EOF

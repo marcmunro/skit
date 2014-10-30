@@ -25,9 +25,16 @@ create schema n2;
 comment on schema n2 is 'n2';
 create sequence n2.s2;
 comment on sequence n2.s2 is 's2';
-create sequence n2.s2b;
 revoke usage on schema n2 from r1;
 reset session authorization;
 
+-- Test case 3
+-- No ownership changes.  Schema owner loses usage priv on schema, sequence
+-- owned by schema owner, public usage priv on schema.
+create schema n3;
+create sequence n3.s3;
+comment on sequence n3.s3 is 's3';
+grant usage on schema n3 to public;
+revoke usage on schema n3 from r1;
 
 EOF

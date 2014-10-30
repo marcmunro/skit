@@ -1116,35 +1116,6 @@ makeFallbackDagNode(
 }
 
 
-/* This highlights a possible issue with fallbacks.  What does it mean
- * if we depend on the build side of an object being dropped?  Should we
- * do an inverted dep from the dop node instead?  This requires careful
- * thought.  Do not remove this check without extensive thinking and
- * testing. 
- */
-static void
-checkDeactivatedNodeDeps(
-    DagNode *defn_node,
-    DagNode *fallback, 
-    volatile ResolverState *res_state) 
-{
-    int i;
-    Dependency *dep;
-
-    if (fallback->deps) {
-	EACH(fallback->deps, i) {
-	    dep = (Dependency *) ELEM(fallback->deps, i);
-	    assertDependency(dep);
-	    if (dep->dep->build_type == DEACTIVATED_NODE) {
-		fprintf(stderr, 
-			"CONSIDER: Fallback %s depends on "
-			"deactivated node %s\n\n",
-			fallback->fqn->value, dep->dep->fqn->value);
-	    }
-	}
-    }
-}
-
 static DagNode *
 newFallbackPair(DependencySet *depset, volatile ResolverState *res_state)
 {
@@ -1178,7 +1149,6 @@ newFallbackPair(DependencySet *depset, volatile ResolverState *res_state)
     identifyNodeDeps(fallback, res_state);
     recordNodeDeps(endfallback, res_state);
     identifyNodeDeps(endfallback, res_state);
-    checkDeactivatedNodeDeps(depset->definition_node, fallback, res_state);
 
     return fallback;
 }
@@ -1442,6 +1412,7 @@ identifyDepsForDepsets(volatile ResolverState *res_state)
     DependencySet *depset;
 
     sortDepsets(res_state);
+
     EACH(res_state->dependency_sets, i) {
 	depset = (DependencySet *) ELEM(res_state->dependency_sets, i);
 	if (depset->definition_node->build_type != DEACTIVATED_NODE) {

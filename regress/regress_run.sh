@@ -353,6 +353,9 @@ regression_test4()
 	regression_ignore4.txt
     diffglobals scratch/regressdb_test4a.gdmp  scratch/regressdb_test4a2.gdmp
 
+    gendrop scratch/regressdb_dump4a.xml scratch/regressdb_drop4a.sql \
+	     --ignore-contexts
+    execdrop scratch/regressdb_drop4a.sql
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 4 complete 1>&2
 }
