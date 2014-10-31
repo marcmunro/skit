@@ -1,11 +1,9 @@
 
 MODIFY 
 
-ownership stuff for:
+2 phases ownership change stuff for:
 
 database.xsl
-roles.xsl
-grants.xsl
 schemata.xsl
 domains.xsl
 types.xsl
@@ -15,7 +13,6 @@ casts.xsl
 operators.xsl
 operator_classes.xsl
 operator_families.xsl
-comments.xsl
 sequences.xsl
 tables.xsl
 constraints.xsl
@@ -28,7 +25,6 @@ fallback.xsl
 
 general code layout for:
 
-roles.xsl
 grants.xsl
 schemata.xsl
 domains.xsl
@@ -75,27 +71,10 @@ fallback.xsl
 
 tablespace privs (taking into account implicit privs on default tablespace) for:
 
-roles.xsl
-grants.xsl
-schemata.xsl
-domains.xsl
-types.xsl
-functions.xsl
-aggregates.xsl
-casts.xsl
-operators.xsl
-operator_classes.xsl
-operator_families.xsl
-comments.xsl
 sequences.xsl
 tables.xsl
 constraints.xsl
 indices.xsl
-triggers.xsl
-rules.xsl
-views.xsl
-conversions.xsl
-fallback.xsl
 
 
 
