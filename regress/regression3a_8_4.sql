@@ -70,7 +70,7 @@ create language "plpgsql";
 comment on language "plpgsql" is 
 'plpgsql';
 
-grant execute on plpgsql to wibble;
+grant usage on language plpgsql to wibble;
 
 
 DBEOF

@@ -21,10 +21,6 @@
 	<xsl:text>set escape_string_warning = off;&#x0A;</xsl:text>
       </print>
     </xsl:if>	
-
-    <xsl:if test="../@action='depart'">
-      <print>&#x0A;CLUSTEREOF&#x0A;</print>
-    </xsl:if>	
   </xsl:template>
 </xsl:stylesheet>
 

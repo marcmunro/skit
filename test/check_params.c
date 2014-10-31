@@ -831,7 +831,7 @@ START_TEST(diff)
     //trackMalloc(4097);
 
     BEGIN {
-	process_args2(6, args);
+	process_args2(5, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	objectFree((Object *) doc, TRUE);

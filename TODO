@@ -1,13 +1,9 @@
 
-WORKING ON finsihing conversion of ddl to new consistency.  Working on tables.xsl
-
 MODIFY 
 
 ownership stuff for:
 
-cluster.xsl
 database.xsl
-tablespace.xsl
 roles.xsl
 grants.xsl
 schemata.xsl
@@ -32,9 +28,6 @@ fallback.xsl
 
 general code layout for:
 
-cluster.xsl
-database.xsl
-tablespace.xsl
 roles.xsl
 grants.xsl
 schemata.xsl
@@ -58,7 +51,7 @@ conversions.xsl
 fallback.xsl
 
 
-diff tests for
+diff tests for:
 schemata.xsl
 domains.xsl
 types.xsl
@@ -82,9 +75,6 @@ fallback.xsl
 
 tablespace privs (taking into account implicit privs on default tablespace) for:
 
-cluster.xsl
-database.xsl
-tablespace.xsl
 roles.xsl
 grants.xsl
 schemata.xsl
@@ -107,13 +97,6 @@ views.xsl
 conversions.xsl
 fallback.xsl
 
-
-
-CHECK THIS:
-  It seems that the owner cannot modify the current value of the
-  sequence if they do not have update privilege on the sequence (and
-  possibly usage on the schema).  Note that this may be a postgresql bug
-  and should be checked, and reported if so.
 
 
 TODO:

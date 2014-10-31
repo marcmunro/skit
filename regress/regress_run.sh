@@ -264,7 +264,6 @@ regression_test3()
     echo ...running skit generate to create initial drop... 1>&2
     gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql \
 	     --ignore-contexts
-exit
     execdrop scratch/regressdb_drop3b.sql
 
     echo ...Creating source diff database... 1>&2

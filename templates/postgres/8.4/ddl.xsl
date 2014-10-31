@@ -157,7 +157,7 @@
   <xsl:template name="dbobject">
     <xsl:element name="print">
       <!-- diffprep and diff actions may not actually result in
-           code being created.  Such printable sections are therefor
+           code being created.  Such printable sections are therefore
 	   made conditional.  To enable printing of such conditional
 	   print nodes, a <do-print/> element should be added.  This
 	   conditionality is handled by navigation.xsl -->

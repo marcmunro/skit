@@ -55,9 +55,22 @@
 	  <dependency fqn="{concat('database.', ../../database/@name)}"/>
 	  <dependency fqn="cluster"/>
 	</dependency-set>
+	<!-- Tablespace owner must be a superuser. -->
+	<dependency-set
+	    fallback="{concat('privilege.role.', @owner, '.superuser')}"
+	    parent="ancestor::dbobject[cluster]">
+	  <dependency fqn="{concat('privilege.role.', @owner, '.superuser')}"/>
+	</dependency-set>
+
       </xsl:when>
       <xsl:otherwise>
 	<dependency fqn="{$parent}"/>
+	<!-- Tablespace owner must be a superuser. -->
+	<dependency-set
+	    fallback="{concat('privilege.role.', @owner, '.superuser')}"
+	    parent="//dbobject[database]">
+	  <dependency fqn="{concat('privilege.role.', @owner, '.superuser')}"/>
+	</dependency-set>
       </xsl:otherwise>
     </xsl:choose>
 
