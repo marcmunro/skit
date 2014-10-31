@@ -39,12 +39,52 @@
 	<xsl:call-template name="build_rolegrant"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:if test="../@diff or not (@automatic='yes')">
-	  <!-- In the other case we should do no ddl.  Not sure how best
-	       to handle this, maybe a <noprint> element would be
-	       useful. --> 
+	<xsl:if test="not (@automatic='yes')">
+	  <!-- Don't explicitly grant privs that are automatically
+	       generated. --> 
 	  <xsl:call-template name="build_objectgrant"/>
 	</xsl:if>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="grant" mode="diff">
+    <xsl:choose>
+      <xsl:when test="../@subtype='role'">
+	<do-print/>
+	<xsl:text>NOT IMPLEMENTED - CODE IN DDL/GRANTS.XSL</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:choose>
+	  <xsl:when test="../attribute[@name='with_grant']">
+	    <do-print/>
+	    <xsl:choose>
+	      <xsl:when test="../attribute[@name='with_grant' and @new='yes']">
+		<xsl:call-template name="build_objectgrant"/>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:text>NOT IMPLEMENTED - CODE2 IN DDL/GRANTS.XSL</xsl:text>
+	      </xsl:otherwise>
+	    </xsl:choose>
+	  </xsl:when>
+	  <xsl:when test="../attribute[@name='automatic']">
+	    <!-- Nothing very important has changed here, just whether
+	         the grant was automatic or not.  If it has changed from
+		 being automatic to not, we can explicitly preform the
+		 grant and all will be well.  If the change is the
+		 other way, there is nothing we can do - not that there
+		 will be any functional difference in the way the
+		 database behaves.  The only reason for doing anything
+		 at all here, is to try to keep the catalogs of the
+		 different databases in step (ie neither database will
+		 now show an empty acl field).  -->
+
+	    <xsl:if test="../attribute[@name='automatic' and @old='yes']">
+	      <do-print/>
+	      <xsl:call-template name="build_objectgrant"/>
+	    </xsl:if>
+	  </xsl:when>
+	</xsl:choose>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -57,11 +97,9 @@
 		           ' from ', skit:dbquote(@to), ';&#x0A;')"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:if test="../@diff or not (@automatic='yes')">
-	  <!-- In the other case we should do no ddl.  Not sure how best
-	       to handle this, maybe a <noprint> element would be
-	       useful (currently, we end up with just the comments and
-	       feedback). --> 
+	<xsl:if test="not (@automatic='yes')">
+	  <!-- Don't explicitly revoke privs that were automatically
+	       generated. --> 
 
 	  <xsl:value-of 
 	      select="concat('&#x0A;revoke ', @priv, ' on ')"/>

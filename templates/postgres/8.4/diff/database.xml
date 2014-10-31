@@ -5,7 +5,6 @@
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
   <dbobject type="database" key="type">
-    <attribute name="tablespace"/>
     <attribute name="encoding"/>
     <attribute name="connections"/>
     <attribute name="owner">
@@ -24,8 +23,9 @@
     <xi:include href="skitfile:diff/schemata.xml"/>
   </dbobject>
 
-  <!-- Nothing to do for dbincluster, except tell diff that it exists -->
-  <dbobject type="dbincluster" key="type"/>
+  <dbobject type="dbincluster" key="type">
+    <attribute name="tablespace"/>
+  </dbobject>
 
   <xi:include href="skitfile:diff/casts.xml"/>
   <xi:include href="skitfile:diff/operators.xml"/>

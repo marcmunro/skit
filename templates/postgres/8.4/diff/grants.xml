@@ -6,5 +6,6 @@
 
   <dbobject type="grant" key="fqn">
     <attribute name="with_grant"/>
+    <attribute name="automatic"/>
   </dbobject>
 </skit:inclusion>  

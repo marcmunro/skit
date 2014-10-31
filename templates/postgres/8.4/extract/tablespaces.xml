@@ -9,6 +9,7 @@
       <skit:attr name="name"/>
       <skit:attr name="owner"/>
       <skit:attr name="location"/>
+      <skit:attr name="privs"/>
       <skit:if test="(select tuple 'comment')">
 	<comment>
 	  <skit:text expr="(select tuple 'comment')"/>

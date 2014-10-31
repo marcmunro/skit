@@ -37,7 +37,7 @@
   <xsl:template match="database">
     <xsl:variable name="fqn" select="concat('dbincluster.', 
 				     @name)"/>
-    <dbobject type="dbincluster" name="{@name}" 
+    <dbobject type="dbincluster" name="{@name}" contents-type="database"
 	      qname="{skit:dbquote(@name)}" fqn="{$fqn}" parent="cluster">
       <dependencies>
 	<dependency fqn="cluster"/>

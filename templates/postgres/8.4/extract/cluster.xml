@@ -49,7 +49,7 @@
 	      <grant>
 		<skit:attr name="from" expr="owner"/>
 		<skit:attr name="to" expr="(car this)"/>
-		<skit:attr name="with-grant" expr="'no'"/>
+		<skit:attr name="with_grant" expr="'no'"/>
 		<skit:attr name="priv" expr="priv"/>
 		<skit:attr name="automatic" expr="'yes'"/>
 	      </grant>
@@ -136,7 +136,10 @@
 			<skit:attr name="priv" expr="privname"/>
 
 			<skit:if test="(select automatic to)">
-			  <skit:attr name="automatic" expr="'yes'"/>
+			  <skit:attr name="automatic" expr="'maybe'"/>
+			</skit:if>
+			<skit:if test="(not (select automatic to))">
+			  <skit:attr name="automatic" expr="'no'"/>
 			</skit:if>
 		      </grant>
 		    </skit:if>

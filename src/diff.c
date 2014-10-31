@@ -363,7 +363,10 @@ static xmlNode *
 skipToContents(xmlNode *node)
 {
     xmlNode *this = NULL;
-    String *type = nodeAttribute(node, "type");
+    String *type = nodeAttribute(node, "contents-type");
+    if (!type) {
+	type = nodeAttribute(node, "type");
+    }
 
     if (node) {
 	this = getNextNode(node->children);

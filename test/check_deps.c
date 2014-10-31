@@ -1973,7 +1973,7 @@ START_TEST(depdiffs_1)
 	nodes = dagFromDoc(diffs);
 	nodes_by_fqn = dagnodeHash(nodes);
 	//fprintf(stderr, "\n============FINAL==============\n");
-	showVectorDeps(nodes);
+	//showVectorDeps(nodes);
 
 	/* See comments in test/data/depdiffs_1a.sql for a description
 	   of each test case. */

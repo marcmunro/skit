@@ -50,10 +50,41 @@
     </print>
   </xsl:template>
 
+  <xsl:template match="dbobject[@type='dbincluster' and
+		                @action='diffprep']/database">
+    <print>
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+      <xsl:for-each select="../attribute[@name='tablespace']">
+	<xsl:if test="@old != 'pg_default'">
+	  <do-print/>
+	  <xsl:value-of 
+	      select="concat('alter database ', ../@qname,
+		      ' set tablespace pg_default;&#x0A;')"/>
+	</xsl:if>
+      </xsl:for-each>
+    </print>
+  </xsl:template>
+
+  <xsl:template match="dbobject[@type='dbincluster' and
+		                @action='diff']/database">
+    <print>
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+      <xsl:for-each select="../attribute[@name='tablespace']">
+	<xsl:if test="@new != 'pg_default'">
+	  <do-print/>
+	  <xsl:value-of 
+	      select="concat('alter database ', ../@qname,
+		             ' set tablespace ', skit:dbquote(@new),
+			     ';&#x0A;')"/>
+	</xsl:if>
+      </xsl:for-each>
+    </print>
+  </xsl:template>
+
+
   <xsl:template match="database" mode="diff">
-    <xsl:if test="../attribute">
-      <xsl:text>&#x0A;</xsl:text>
-    </xsl:if>
     <xsl:for-each select="../attribute[@name='connections']">
       <do-print/>
       <xsl:value-of 
@@ -66,14 +97,6 @@
       <xsl:value-of 
 	  select="concat('alter database ', ../@qname,
 		         ' owner to ', @new, ';&#x0A;')"/>
-    </xsl:for-each>
-
-    <xsl:for-each select="../attribute[@name='tablespace']">
-      <do-print/>
-      <xsl:value-of 
-	  select="concat('\echo WARNING: database default tablespace', 
-		         ' changes from &quot;', @old,
-			 '&quot; to &quot;', @new, '&quot;&#x0A;')"/>
     </xsl:for-each>
 
     <xsl:for-each select="../attribute[@name='encoding']">

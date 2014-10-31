@@ -265,16 +265,26 @@ arriveAt(Node *nav_to, Node *ancestor, Vector *arrivals)
     Node *this_node;
     xmlNode *new;
     Node *nav_node;
+    String *action = nodeAttribute(nav_to->node, "action");
 
-    this_node = nav_to->parent;
+    if (streq(action->value, "build")) {
+	/* We do not arrive at a node we are building. */
+	this_node = nav_to->parent;
+	
+    }
+    else {
+	this_node = nav_to;
+    }
+
     while (this_node && !nodesMatch(this_node, ancestor)) {
-	/* Add a departure from this into our departures vector. */
+	/* Add an arrival to this into our arrivals vector. */
 	new = xmlCopyNode(this_node->node, 2);
 	nav_node = nodeNew(new);
 	vectorInsert(arrivals, (Object *) nav_node, 0);
 
 	this_node = this_node->parent;
     }
+    objectFree((Object *) action, TRUE);
 }
 
 static Vector *

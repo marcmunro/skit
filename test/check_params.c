@@ -820,7 +820,8 @@ START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
 		    "regress/scratch/regressdb_dump3a.xml",
-		    "regress/scratch/regressdb_dump3b.xml" 
+		    "regress/scratch/regressdb_dump3b.xml",
+		    "--generate", "--print", "--full"
                     };
     Document *doc;
 
@@ -830,7 +831,7 @@ START_TEST(diff)
     //trackMalloc(4097);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(6, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	objectFree((Object *) doc, TRUE);

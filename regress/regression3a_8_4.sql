@@ -23,6 +23,8 @@ create role "lose" with login;
 create tablespace "tbs3" owner "regress"
   location :tbs3dir;
 
+-- Database diffs: comment, connection limit and tablespace.
+--
 create database "regressdb" with
  owner "regress"
  encoding 'UTF8'
@@ -34,6 +36,8 @@ comment on database "regressdb" is
 'old comment';
 \connect postgres
 
+-- tablespace diffs: comment, ownership, privs
+
 \set tbs2dir '''':home'/regress/REGRESSDB/tbs/tbs2'''
 create tablespace "tbs2" owner "lose"
   location :tbs2dir;
@@ -43,6 +47,15 @@ comment on tablespace tbs2 is 'This is the 2nd tablespace';
 -- This does nothing but makes the acl for the tablespace into 
 -- a non-default value.
 revoke all on tablespace tbs2 from public;
+
+
+\set tbs4dir '''':home'/regress/REGRESSDB/tbs/tbs4'''
+create tablespace "tbs4" owner "regress"
+  location :tbs4dir;
+
+comment on tablespace tbs4 is 'This is the 4th tablespace';
+
+
 
 CLUSTEREOF
 

@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <!-- Coding standard for postgres DDL generated from skit:
+  <!-- Code layout standard for postgres DDL generated from skit:
        Each object action is preceded by a blank line and
        followed by a blank line.  This means that there will be 2 lines
        between the creation of each different object.

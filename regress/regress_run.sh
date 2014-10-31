@@ -179,7 +179,12 @@ diffdump()
 diffglobals()
 {
     echo ......comparing pg_dumpall snapshots... 1>&2
-    exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 $3
+    if [ "x$3" = "x" ]; then
+        exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 
+    else
+        exitonfail regress/diffdump.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
+	    ${REGRESS_DIR}/$3
+    fi
 }
 
 diffextract()
@@ -192,8 +197,7 @@ regression_test1()
 {
     echo "Running regression test 1 (build and drop, simple-sort)..." 1>&2
     mkdir regress/scratch 2>/dev/null
-    #build_db regression1_`pguver`.sql
-    build_db regression1_`pguver`_tmp.sql
+    build_db regression1_`pguver`.sql
     dump_db regressdb scratch/regressdb_test1a.dmp ...
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump1a.xml ...
@@ -293,8 +297,8 @@ regression_test3()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3a2.xml ...
     diffdump scratch/regressdb_test3a.dmp scratch/regressdb_test3a2.dmp
-    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp
-
+    diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp \
+	regression_ignore3.txt
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2
 }

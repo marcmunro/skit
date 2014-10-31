@@ -1,54 +1,7 @@
+TEST with diff of with grant option on privs
+
+
 WORKING ON finsihing conversion of ddl to new consistency.  Working on tables.xsl
-
-
-
-
-DEPS HANDLING PLAN
-  - Get regression tests to pass
-  - When there are fallbacks on both sides but there do not need to be,
-    deactivate the fallback and dsendfallback leaving only the
-    dsfallback and endfallback.
-  - Figure out how to handle auto-dropping of dependent objects (eg
-    grant of select on a table when the role or table is dropped).
-
-
-Bugs and Issues:
-  We should optimise the dropping of dependent objects when their
-  dependency is dropped.  Eg grants on object when object is dropped.
-
-  Cannot manipulate roles which are superusers if we are not a superuser.
-  This seems to need dependency-sets which are conditional on the
-  activation or existence of fallback nodes.  We need to make this as
-  general a solution as possible, and we must recheck such conditional
-  dependency-sets when activating fallback nodes.
-  Example scripts in error_example.sql
-
-  Need to consider how to deal with automatically named constraints.
-
-  Condider whether we can remove diffprep nodes and combine them with
-  diff.  This would require us to use the old ownership context and
-  provide access rights to that old context for both sides of the dag.
-  The ownership change would then be the last thing that was done in the
-  diff script.
-
-  When multiple fallbacks have been invoked see whether one can be used
-  to make others unnecessary.
-  
-  Figure out how to give useful error messages when we do not have the
-  necessary priv for an operation.  To do this we may need the concept
-  of a temporary dependency (one that only needs to exist for the
-  duration of the build/drop/diff actions, and not subsequently. 
-
-  Allow handling of a lack of priv by commenting out the code.  This
-  probably also requires deps to be marked as temporary or transient or
-  some such.
-
-  Allow an as-user opton.
-
-  Allow nodes to be dependent on alternate parents (eg for cluster
-  objects such as roles, tablespaces, etc)?
-
-  Identify any issues/new features raised in DEPS.txt
 
 CHECK THIS:
   It seems that the owner cannot modify the current value of the
@@ -82,6 +35,16 @@ shout option for ddl (ie upper case)
 
 elininate ddl for the "other case" in ddl/grants.xsl commented around line 44
 
+deps optimisations:
+  - When there are fallbacks on both sides but there do not need to be,
+    deactivate the fallback and dsendfallback leaving only the
+    dsfallback and endfallback.
+  - Figure out how to handle auto-dropping of dependent objects (eg
+    grant of select on a table when the role or table is dropped).
+  - We should optimise the dropping of dependent objects when their
+    dependency is dropped.  Eg grants on object when object is dropped.
+
+
 smart tsort:
     new tsort function
     change name of tsort selection from simple_tsort to fast_tsort
@@ -90,6 +53,35 @@ make the echoes option functional in generate
 change name of ignore-contexts option in generate
 
 grep
+
+Others
+  Allow handling of a lack of priv by commenting out the code.  This
+  probably also requires deps to be marked as temporary or transient or
+  some such.
+
+  Allow an as-user opton.
+
+Bugs and Issues:
+
+  Cannot manipulate roles which are superusers if we are not a superuser.
+  This seems to need dependency-sets which are conditional on the
+  activation or existence of fallback nodes.  We need to make this as
+  general a solution as possible, and we must recheck such conditional
+  dependency-sets when activating fallback nodes.
+  Example scripts in error_example.sql
+
+  Need to consider how to deal with automatically named constraints.
+
+  Figure out how to give useful error messages when we do not have the
+  necessary priv for an operation.  To do this we may need the concept
+  of a temporary dependency (one that only needs to exist for the
+  duration of the build/drop/diff actions, and not subsequently. 
+
+  Allow nodes to be dependent on alternate parents (eg for cluster
+  objects such as roles, tablespaces, etc)?
+
+  Identify any issues/new features raised in DEPS.txt
+
 
 docs:
     man page
@@ -101,13 +93,6 @@ docs:
 9.1 changes
 9.2 changes
 9.3 changes
-
-
-The FBDROP and FBBUILD redirectActionTypes in deps.c are nasty hacks.
-Although they *may* be safe they should be replaced with something more
-elegant.  What may be needed is a separation of the fallback nodes into
-fallback and drop-side fallback variants.  Each of these would be
-created when resolving the appropriate DAG (forwards or backwards).
 
 
 

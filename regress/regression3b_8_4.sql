@@ -48,5 +48,18 @@ comment on tablespace tbs2 is 'This is the second tablespace';
 -- a non-default value.
 revoke all on tablespace tbs2 from public;
 
+-- Diffs on privs to tablespace
+revoke all on tablespace tbs3 from public;
+grant create on tablespace tbs3 to wibble;
+
+
+\set tbs4dir '''':home'/regress/REGRESSDB/tbs/tbs4'''
+create tablespace "tbs4" owner "regress"
+  location :tbs4dir;
+
+comment on tablespace tbs4 is 'This is the 4th tablespace';
+revoke all on tablespace tbs4 from public;
+
+
 CLUSTEREOF
 
