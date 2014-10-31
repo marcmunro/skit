@@ -65,8 +65,14 @@ grant create on tablespace tbs3 to keep;
 
 -- Check role grants
 grant regress to wibble;
-
-
-
 CLUSTEREOF
 
+psql -d regressdb -U regress <<'DBEOF'
+
+-- Languages
+set session authorization regress;
+create language "plpgsql";
+comment on language "plpgsql" is 
+'procedural language plpgsql';
+
+DBEOF

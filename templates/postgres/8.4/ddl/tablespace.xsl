@@ -51,7 +51,7 @@
 	<print>
 	  <xsl:value-of 
 	      select="concat('alter tablespace ', ../@qname,
-		      ' owner to ', $username,
+		      ' owner to ', skit:dbquote($username),
 		      ';&#x0A;')"/>
 	</print>
       </xsl:if>

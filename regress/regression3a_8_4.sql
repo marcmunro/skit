@@ -61,7 +61,16 @@ grant create on tablespace tbs3 to keep with grant option;
 -- Check role grants
 grant regress to keep;
 grant regress to wibble with admin option;
-
-
 CLUSTEREOF
 
+psql -d regressdb -U regress <<'DBEOF'
+
+-- Languages
+create language "plpgsql";
+comment on language "plpgsql" is 
+'plpgsql';
+
+grant execute on plpgsql to wibble;
+
+
+DBEOF
