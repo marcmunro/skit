@@ -58,6 +58,10 @@ comment on tablespace tbs4 is 'This is the 4th tablespace';
 -- Check handling of grant option.
 grant create on tablespace tbs3 to keep with grant option;
 
+-- Check role grants
+grant regress to keep;
+grant regress to wibble with admin option;
+
 
 CLUSTEREOF
 

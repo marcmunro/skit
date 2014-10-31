@@ -16,6 +16,18 @@
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
+  <xsl:template name="revoke_rolegrant">
+    <xsl:param name="admin-only" select="'no'"/>
+    <xsl:variable name="adminoption-text">
+      <xsl:if test="$admin-only='yes'">
+	<xsl:value-of select="'admin option for '"/>
+      </xsl:if>
+    </xsl:variable>
+    <xsl:value-of 
+	select="concat('revoke ', $adminoption-text, skit:dbquote(@priv), 
+		       ' from ', skit:dbquote(@to), ';&#x0A;')"/>
+  </xsl:template>
+
   <xsl:template name="build_objectgrant">
     <xsl:value-of select="concat('grant ', @priv, ' on ')"/>
     <xsl:choose>
@@ -76,7 +88,17 @@
     <xsl:choose>
       <xsl:when test="../@subtype='role'">
 	<do-print/>
-	<xsl:text>NOT IMPLEMENTED - CODE IN DDL/GRANTS.XSL</xsl:text>
+	<xsl:choose>
+	  <xsl:when test="../attribute[@name='with_admin' and @new='yes']">
+	    <xsl:call-template name="build_rolegrant"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:call-template name="revoke_rolegrant">
+	      <xsl:with-param name="admin-only" select="'yes'"/>
+	    </xsl:call-template>
+
+	  </xsl:otherwise>
+	</xsl:choose>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:choose>
