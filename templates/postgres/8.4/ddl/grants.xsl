@@ -33,6 +33,30 @@
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
+  <xsl:template name="revoke_objectgrant">
+    <xsl:param name="grant-only" select="'no'"/>
+    <xsl:variable name="grantoption-text">
+      <xsl:if test="$grant-only='yes'">
+	<xsl:value-of select="'grant option for '"/>
+      </xsl:if>
+    </xsl:variable>
+    <xsl:variable name="objecttype">
+      <xsl:choose>
+	<xsl:when test="../@subtype = 'view'">
+	  <xsl:text>table</xsl:text>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="../@subtype"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:value-of select="concat('revoke ', $grantoption-text, @priv, 
+			  ' on ', $objecttype, ' ', ../@on, ' from ', 
+			  skit:dbquote(@to), ';&#x0A;')"/>
+  </xsl:template>
+
+
   <xsl:template match="grant" mode="build">
     <xsl:choose>
       <xsl:when test="../@subtype='role'">
@@ -63,7 +87,9 @@
 		<xsl:call-template name="build_objectgrant"/>
 	      </xsl:when>
 	      <xsl:otherwise>
-		<xsl:text>NOT IMPLEMENTED - CODE2 IN DDL/GRANTS.XSL</xsl:text>
+		<xsl:call-template name="revoke_objectgrant">
+		  <xsl:with-param name="grant-only" select="'yes'"/>
+		</xsl:call-template>
 	      </xsl:otherwise>
 	    </xsl:choose>
 	  </xsl:when>

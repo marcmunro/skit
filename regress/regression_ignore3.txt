@@ -1,3 +1,4 @@
 # Ignore catalog-only diffs, exmplified by the following spurious revokes
 > REVOKE ALL ON TABLESPACE tbs3 FROM PUBLIC;
 > REVOKE ALL ON TABLESPACE tbs4 FROM PUBLIC;
+

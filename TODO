@@ -3,6 +3,10 @@ TEST with diff of with grant option on privs
 
 WORKING ON finsihing conversion of ddl to new consistency.  Working on tables.xsl
 
+Modify privileges on tablespaces check, to take into account default
+tablespace automatically giving create privilege.
+
+
 CHECK THIS:
   It seems that the owner cannot modify the current value of the
   sequence if they do not have update privilege on the sequence (and
@@ -32,8 +36,6 @@ generate:
 allow non-superusers to run skit
 
 shout option for ddl (ie upper case)
-
-elininate ddl for the "other case" in ddl/grants.xsl commented around line 44
 
 deps optimisations:
   - When there are fallbacks on both sides but there do not need to be,

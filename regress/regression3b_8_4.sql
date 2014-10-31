@@ -60,6 +60,7 @@ create tablespace "tbs4" owner "regress"
 comment on tablespace tbs4 is 'This is the 4th tablespace';
 revoke all on tablespace tbs4 from public;
 
+grant create on tablespace tbs3 to keep;
 
 CLUSTEREOF
 
