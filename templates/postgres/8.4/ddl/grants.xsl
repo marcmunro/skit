@@ -39,9 +39,9 @@
 	<xsl:call-template name="build_rolegrant"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:if test="not (@automatic='yes')">
+	<xsl:if test="../@diff or not (@automatic='yes')">
 	  <!-- Don't explicitly grant privs that are automatically
-	       generated. --> 
+	       generated when doing a (non-diff) build. --> 
 	  <xsl:call-template name="build_objectgrant"/>
 	</xsl:if>
       </xsl:otherwise>
@@ -70,14 +70,13 @@
 	  <xsl:when test="../attribute[@name='automatic']">
 	    <!-- Nothing very important has changed here, just whether
 	         the grant was automatic or not.  If it has changed from
-		 being automatic to not, we can explicitly preform the
+		 being automatic to not, we can explicitly perform the
 		 grant and all will be well.  If the change is the
 		 other way, there is nothing we can do - not that there
 		 will be any functional difference in the way the
 		 database behaves.  The only reason for doing anything
-		 at all here, is to try to keep the catalogs of the
-		 different databases in step (ie neither database will
-		 now show an empty acl field).  -->
+		 at all here is to try to keep the catalog acl fields
+		 of the databases in step.  -->
 
 	    <xsl:if test="../attribute[@name='automatic' and @old='yes']">
 	      <do-print/>
@@ -90,6 +89,7 @@
   </xsl:template>
 
   <xsl:template match="grant" mode="drop">
+    <do-print/>
     <xsl:choose>
       <xsl:when test="../@subtype='role'">
 	<xsl:value-of 
@@ -97,7 +97,7 @@
 		           ' from ', skit:dbquote(@to), ';&#x0A;')"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:if test="not (@automatic='yes')">
+	<xsl:if test="../@diff or not (@automatic='yes')">
 	  <!-- Don't explicitly revoke privs that were automatically
 	       generated. --> 
 
