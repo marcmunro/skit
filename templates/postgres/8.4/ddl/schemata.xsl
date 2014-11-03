@@ -36,6 +36,15 @@
       <do-print/>
       <xsl:value-of 
 	  select="concat('&#x0A;alter schema ', ../@qname, ' owner to ',
+			 skit:dbquote($username), ';&#x0A;')"/>
+    </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="schema" mode="diff">
+    <xsl:for-each select="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('&#x0A;alter schema ', ../@qname, ' owner to ',
 			 skit:dbquote(@new), ';&#x0A;')"/>
     </xsl:for-each>
   </xsl:template>

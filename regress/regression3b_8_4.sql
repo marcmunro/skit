@@ -70,9 +70,21 @@ CLUSTEREOF
 psql -d regressdb -U regress <<'DBEOF'
 
 -- Languages
-set session authorization regress;
-create language "plpgsql";
+alter user keep with superuser;
+
+set session authorization keep;
+create trusted language "plpgsql";
 comment on language "plpgsql" is 
 'procedural language plpgsql';
+reset session authorization;
+
+
+-- Schemata
+grant regress to keep;
+create schema n1;
+comment on schema n1 is 'schema n1';
+reset session authorization;
+revoke regress from keep;
+alter user keep with nosuperuser;
 
 DBEOF

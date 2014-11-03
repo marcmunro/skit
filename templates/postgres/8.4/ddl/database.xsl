@@ -84,6 +84,16 @@
   </xsl:template>
 
 
+  <xsl:template match="database" mode="diffprep">
+    <xsl:for-each select="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('alter database ', ../@qname,
+		         ' owner to ', skit:dbquote($username), 
+			 ';&#x0A;')"/>
+    </xsl:for-each>
+  </xsl:template>
+
   <xsl:template match="database" mode="diff">
     <xsl:for-each select="../attribute[@name='connections']">
       <do-print/>
@@ -96,7 +106,7 @@
       <do-print/>
       <xsl:value-of 
 	  select="concat('alter database ', ../@qname,
-		         ' owner to ', @new, ';&#x0A;')"/>
+		         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
     </xsl:for-each>
 
     <xsl:for-each select="../attribute[@name='encoding']">

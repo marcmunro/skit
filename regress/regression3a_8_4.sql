@@ -71,6 +71,8 @@ comment on language "plpgsql" is
 'plpgsql';
 
 grant usage on language plpgsql to wibble;
-
+-- Schemata
+create schema n1;
+comment on schema n1 is 'n1';
 
 DBEOF

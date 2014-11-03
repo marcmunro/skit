@@ -27,6 +27,17 @@
       <dependency fqn="{concat('function.', ancestor::database/@name,
 			       '.',  @validator_signature)}"/>
     </xsl:if>
+
+    <!-- Must be a superuser or (directly) the owner of the database. -->
+    <dependency-set
+	fallback="{concat('privilege.role.', @owner, '.superuser')}"
+	parent="ancestor::dbobject[database]" >
+	<dependency fqn="{concat('privilege.role.', @owner, '.superuser')}"/>
+	<xsl:if test="@owner=ancestor::database/@owner">
+	  <!-- This dependency is pretty easy to satisfy! -->
+	  <dependency fqn="{concat('role.', @owner)}"/>
+	</xsl:if>
+    </dependency-set>
   </xsl:template>
 </xsl:stylesheet>
 

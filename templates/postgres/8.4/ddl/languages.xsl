@@ -15,8 +15,12 @@
       <xsl:value-of 
 	  select="concat('&#x0A;set session authorization ', 
 		             $apos, @owner, $apos, 
-		         ';&#x0A;create language ', ../@qname, 
-			 ';&#x0A;')"/>
+		         ';&#x0A;create ')"/>
+      <xsl:if test="@trusted='yes'">
+	<xsl:text>trusted </xsl:text>
+      </xsl:if>
+      <xsl:value-of 
+	  select="concat('language ', ../@qname, ';&#x0A;')"/>
 
       <xsl:apply-templates/>
 
