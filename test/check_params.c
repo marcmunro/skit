@@ -815,23 +815,22 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
-#ifdef WIBBLE
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml",
 		    "regress/scratch/regressdb_dump3b.xml",
+		    "regress/scratch/regressdb_dump3a.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;
 
     initTemplatePath(".");
     //showFree(3563);
-    //showMalloc(9625);
+    //showMalloc(32098);
     //trackMalloc(4097);
 
     BEGIN {
-	process_args2(5, args);
+	process_args2(6, args);
 	doc = docStackPop();
 	//printSexp(stderr, "DOC:", (Object *) doc);
 	objectFree((Object *) doc, TRUE);
@@ -846,6 +845,7 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef WIBBLE
 #endif
 
 #ifdef wibble
@@ -1046,7 +1046,7 @@ params_suite(void)
     //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    //ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

@@ -59,8 +59,9 @@
       <xsl:text>&#x0A;alter </xsl:text>
       <xsl:call-template name="aggregate_header"/>
       <xsl:value-of 
-	  select="concat(' owner to ', @owner, ';&#x0A;')"/>
+	  select="concat(' owner to ', skit:dbquote(@owner), ';&#x0A;')"/>
     </xsl:if>
   </xsl:template>
+
 </xsl:stylesheet>
 

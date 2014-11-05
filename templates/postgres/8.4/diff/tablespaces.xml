@@ -5,12 +5,36 @@
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
   <dbobject type="tablespace" key="name">
-    <attribute name="owner">
+   <attribute name="owner">
+     <!-- The direction stuff below looks kinda odd.  Here is how it works:
+          The dependency-set direction makes the dependency-set apply of
+	  the backwards side of the dependency graph (ie for the
+	  diffprep rather than the diff node), which is where object
+	  ownership changes are applied.  The dependency direction
+	  overrides the natural direction of the dependency set to make
+	  the dependency against the forwards side of the graph (where
+	  the new owner role will be created if it does not already
+	  exist).
+          Note that dependencies from the drop side of the graph to the
+	  build side are somewhat dangerous as they can easily lead to
+	  dependency cycles.  In our case that is not a problem since
+	  the dependencies are effectively on the owner role (through
+	  grants on that role), and roles have no dependencies except on
+	  the cluster.  -->
 <!--
-    This is left in place as an example.  It is not clear that allowing
-    this is a good idea as it can easily lead to dependency cycles.
-    Maybe the code that supports this should be eliminated.
-
+      <dependency-set
+	  direction="backwards"
+          fallback="grant.role.{old.owner}.{new.owner}"
+	  parent="//dbobject[database]">
+        <dependency fqn="privilege.role.{old.owner}.superuser"
+		    direction="forwards"/>
+        <dependency pqn="grant.role.{old.owner}.{new.owner}" 
+		    direction="forwards"/>
+        <dependency fqn="cluster" direction="forwards"/>
+      </dependency-set>
+-->
+<!--
+    This is left in place as an example.
       <dependency-set 
 	  priority="100"
 	  eval_example="{eval.(username)}"

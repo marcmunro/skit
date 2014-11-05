@@ -40,10 +40,11 @@
 
   <xsl:template match="domain" mode="diff">
     <xsl:if test="(../attribute[@name!='owner']) or
-		  (../element[@type='constraint'])">
+                  (../element[@type='constraint'])">
       <do-print/>
       <xsl:text>&#x0A;</xsl:text>
     </xsl:if>
+
     <xsl:for-each select="../attribute[@name!='owner']">
       <xsl:if test="@name='nullable'">
 	<xsl:choose>

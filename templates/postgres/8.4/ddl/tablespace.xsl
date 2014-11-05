@@ -43,8 +43,9 @@
       <do-print/>
       <xsl:value-of 
 	  select="concat('&#x0A;alter tablespace ', ../@qname,
-		         ' owner to ', skit:dbquote($username),
-		          ';&#x0A;')"/>
+		         ' owner to ', 
+			 skit:dbquote(../attribute[@name='owner']/@new),
+			 ';&#x0A;')"/>
     </xsl:if>
   </xsl:template>
 
@@ -52,12 +53,6 @@
     <do-print/>
     <xsl:text>&#x0A;</xsl:text>
     <xsl:for-each select="../attribute">
-      <xsl:if test="@name='owner'">
-	<xsl:value-of 
-	    select="concat('alter tablespace ', ../@qname,
-		    ' owner to ', skit:dbquote(@new),
-		    ';&#x0A;')"/>
-      </xsl:if>
       <xsl:if test="@name='location'">
 	<xsl:value-of 
 	    select="concat('\echo WARNING tablespace &quot;', ../@name,

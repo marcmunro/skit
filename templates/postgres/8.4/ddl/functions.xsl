@@ -94,7 +94,8 @@
 	<xsl:call-template name="set_owner"/>
 	  
 	<xsl:value-of 
-	    select="concat('&#x0A;drop function ', ../@qname, ';&#x0A;&#x0A;')"/>
+	    select="concat('&#x0A;drop function ', 
+		           ../@qname, ';&#x0A;&#x0A;')"/>
 	  
 	<xsl:call-template name="reset_owner"/>
       </print>
@@ -107,13 +108,22 @@
       <xsl:text>&#x0A;alter function </xsl:text>
       <xsl:call-template name="function_header"/>
       <xsl:for-each select="../attribute[@name='owner']">
-	<xsl:value-of select="concat(' owner to ', @new, ';&#x0A;')"/>
+	<xsl:value-of select="concat(' owner to ', skit:dbquote($username), 
+			             ';&#x0A;')"/>
       </xsl:for-each>
     </xsl:if>
   </xsl:template>
 
   <xsl:template match="function" mode="diff">
     <do-print/>
+    <xsl:if test="../attribute[@name='owner']">
+      <xsl:text>&#x0A;alter function </xsl:text>
+      <xsl:call-template name="function_header"/>
+      <xsl:for-each select="../attribute[@name='owner']">
+	<xsl:value-of select="concat(' owner to ', skit:dbquote(@new), 
+			             ';&#x0A;')"/>
+      </xsl:for-each>
+    </xsl:if>
     <xsl:variable name="action">
       <xsl:choose>
 	<xsl:when 

@@ -430,6 +430,7 @@ makeDepset(DagNode *node, xmlNode *depnode, Vector *deps, boolean is_forwards)
     depset->fallback_expr = nodeAttribute(depnode, "fallback");
     depset->fallback_parent = nodeAttribute(depnode, "parent");
     depset->condition = nodeAttribute(depnode, "condition");
+
     if (depset->fallback_expr && !depset->fallback_parent) {
 	objectFree((Object *) depset, TRUE);
 	tmp = nodestr(depnode);
@@ -444,9 +445,7 @@ makeDepset(DagNode *node, xmlNode *depnode, Vector *deps, boolean is_forwards)
 	assertVector(deps);
 	EACH(deps, i) {
 	    dep = (Dependency *) ELEM(deps, i);
-	    if (dep->is_forwards == is_forwards) {
-		addDepToDepset(depset, dep);
-	    }
+	    addDepToDepset(depset, dep);
 	}
     }
     return depset;
@@ -497,16 +496,16 @@ recordDependencyInVector(DagNode *node, xmlNode *depnode, Vector *vec,
                          volatile ResolverState *res_state)
 {
     String *str;
+    String *direction;
     boolean fully_qualified;
     Dependency *dep;
-    boolean is_build_node = isBuildSideNode(node);
+    boolean is_forwards = isBuildSideNode(node);
 
     assertDagNode(node);
     assertVector(vec);
 
-
-    if ((isForwards(depnode) && is_build_node) ||
-	(isBackwards(depnode) && !is_build_node))
+    if ((isForwards(depnode->parent) && is_forwards) ||
+	(isBackwards(depnode->parent) && !is_forwards))
     {
 	if (str = nodeAttribute(depnode, "fqn")) {
 	    fully_qualified = TRUE;
@@ -520,7 +519,17 @@ recordDependencyInVector(DagNode *node, xmlNode *depnode, Vector *vec,
 		  node->fqn->value);
 	}
 
-        dep = dependencyNew(str, fully_qualified, is_build_node);
+	if (direction = nodeAttribute(depnode, "direction")) {
+	    /* This is an explicit override of the container's
+	     * direction. */
+	    is_forwards = streq(direction->value, "forwards");
+	    dbgSexp(direction);
+	    dbgNode(depnode);
+	    dbgSexp(node);
+	    objectFree((Object *) direction, TRUE);
+	}
+
+        dep = dependencyNew(str, fully_qualified, is_forwards);
 	dep->from = node;
 	vectorPush(vec, (Object *) dep);
     }
@@ -830,9 +839,11 @@ addFoundDeps(
 	    dbgSexp(dep->dep);
 	    dbgSexp(dep->dep->mirror_node);
 	    dbgSexp(depset->definition_node);
+/*
 	    RAISE(TSORT_ERROR, 
 		  newstr("Bad dependency from build side to drop, "
 			 "or vice versa."));
+*/
 	}
 	if (dep->dep->is_fallback && !dep->is_forwards) {
 	    /* This is a backwards dep on a dsfallback node, which should
@@ -1460,7 +1471,6 @@ conditionallyPromoteToRebuild(DagNode *node)
 		if (dep->dep && conditionallyPromoteToRebuild(dep->dep)) {
 		    node->status = REBUILD_NODE;
 		    node->mirror_node->status = DROP_NODE;
-		    RAISE(NOT_IMPLEMENTED_ERROR, newstr("test this2!"));
 		    return TRUE;
 		}
 	    }
@@ -2075,14 +2085,6 @@ resolveDependencySets(volatile ResolverState *res_state)
 	}
     }
 }
-/* 
-The current problem is that fallbacks created after deactivated nodes
-have been removed, can still find those deactivated nodes by looking
-them up in the qns.  This leads to problems with lost memory, tmp_deps
-being defined for those deactivated nodes, etc.  It would be better to
-completely lose the deactivated nodes or completely disable them.
-*/
-
 
 static void
 redirectNodeDeps(DagNode *node)
@@ -2096,11 +2098,15 @@ redirectNodeDeps(DagNode *node)
     EACH(node->deps, i) {
 	if (dep = (Dependency *) ELEM(node->deps, i)) {
 	    assertDependency(dep);
-	    if (!dep->is_forwards) {
-		if (!node->tmp_deps) {
-		    node->tmp_deps = vectorNew(10);
-		}
+	    if (!node->tmp_deps) {
+		node->tmp_deps = vectorNew(10);
+	    }
 
+	    if (dep->is_forwards) {
+		myVectorPush(&(node->tmp_deps), (Object *) dep);
+		ELEM(node->deps, i) = NULL;
+	    }
+	    else {
 		if (dep->dep) {
 		    if (dep->dep->build_type == DSENDFALLBACK_NODE) {
 			/* We must ensure that there is a matching
@@ -2349,6 +2355,7 @@ dagFromDoc(Document *doc)
 	recordDependencies(&resolver_state);
 	identifyDependencies(&resolver_state);
 
+	//showVectorDeps(resolver_state.all_nodes);
 	promoteRebuilds(resolver_state.all_nodes);
 	resetNodeStates(resolver_state.all_nodes);
 	setRebuildsToBuilds(resolver_state.all_nodes);

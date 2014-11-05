@@ -2012,7 +2012,7 @@ START_TEST(general_diffs)
     //dbgSexp(diffs);
 
     BEGIN {
-	showMalloc(12452);
+	//showMalloc(12452);
 	nodes = dagFromDoc(diffs);
 	//showVectorDeps(nodes);
 	nodes_by_fqn = dagnodeHash(nodes);

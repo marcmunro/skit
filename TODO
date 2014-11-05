@@ -1,32 +1,46 @@
+Architectural re-work
+
+When a cyclic dependency is detected, we will apply ddl to the node to
+see if it will result in no code being generated.  If so, the node can
+be deactivated.
+
+
+Working on the following ddl code changes in order to allow ownership
+changes and consolidate ddl standards.
 
 MODIFY 
 
-2 phases ownership change stuff for:
+Add forward deps on changed ownership for diffprep throughout:
 
-domains.xsl
-types.xsl
-functions.xsl
+tablespaces.xsl
 aggregates.xsl
 casts.xsl
-operators.xsl
+cluster.xsl
+columns.xsl
+constraints.xsl
+conversions.xsl
+functions.xsl
+GNUmakefile
+grants.xsl
+indices.xsl
+languages.xsl
 operator_classes.xsl
 operator_families.xsl
+operators.xsl
+process_fallbacks.xsl
+roles.xsl
+rules.xsl
+schemata.xsl
 sequences.xsl
 tables.xsl
-constraints.xsl
-indices.xsl
 triggers.xsl
-rules.xsl
+types.xsl
 views.xsl
-conversions.xsl
-fallback.xsl
+
+
 
 general code layout for:
 
-domains.xsl
-types.xsl
-functions.xsl
-aggregates.xsl
 casts.xsl
 operators.xsl
 operator_classes.xsl
@@ -44,9 +58,8 @@ fallback.xsl
 
 
 diff tests for:
-domains.xsl
 types.xsl
-functions.xsl
+(basetypes)
 aggregates.xsl
 casts.xsl
 operators.xsl
