@@ -297,6 +297,8 @@ int
 main(int argc, char *argv[])
 {
     int number_failed;
+    Symbol *fb_proc;
+    String *fallback_processor;
 
     suite_name[0] = '\0';
     test_name[0] = '\0';
@@ -324,6 +326,10 @@ main(int argc, char *argv[])
     }
     if (!suppressions) {
 	initBuiltInSymbols();
+	fb_proc = symbolNew("fallback_processor");
+	fallback_processor = stringNew("deps/process_fallbacks.xsl");
+	symSet(fb_proc, (Object *) fallback_processor);
+
 	ADD_SUITE(objects);
 	ADD_SUITE(options);
 	ADD_SUITE(exceptions);

@@ -28,8 +28,6 @@ static String required_str = {OBJ_STRING, "required"};
 static String default_str = {OBJ_STRING, "default"};
 static String add_deps_filename = {OBJ_STRING, "add_deps.xsl"};
 static String rm_deps_filename = {OBJ_STRING, "rm_deps.xsl"};
-static String fallback_processor_filename = {OBJ_STRING, 
-					     "deps/process_fallbacks.xsl"};
 static String global_str = {OBJ_STRING, "global"};
 static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
@@ -100,7 +98,8 @@ Document *
 getFallbackProcessor()
 {
     if (!fallback_processor) {
-	fallback_processor = findDoc(&fallback_processor_filename);
+	fallback_processor = 
+	    findDoc((String*) symbolGetValue("fallback_processor"));
     }
     return fallback_processor;
 }

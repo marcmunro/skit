@@ -1084,11 +1084,20 @@ static xmlNode *
 execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile input = nodeAttribute(template_node, "input");
+    String *volatile fallback_processor = nodeAttribute(template_node, 
+							"fallback_processor");
+    String *volatile ddl_processor = nodeAttribute(template_node, 
+						   "ddl_processor");
     Document *volatile source_doc = NULL;
     Vector *volatile sorted = NULL;
     xmlNode *root;
     xmlDocPtr xmldoc;
+    Symbol *fb_proc = symbolNew("fallback_processor");
+    Symbol *ddl_proc = symbolNew("ddl_processor");
     UNUSED(depth);
+    
+    symSet(fb_proc, (Object *) fallback_processor);
+    symSet(ddl_proc, (Object *) ddl_processor);
 
     BEGIN {
 	if (input && (streq(input->value, "pop"))) {
@@ -1914,6 +1923,63 @@ addChildren(xmlNode *to, xmlNode *from)
     xmlFreeNode(from);
 }
 
+static boolean
+isPrintable(xmlNode *node)
+{
+    boolean printable = FALSE;
+    String *conditional;
+
+    node = firstElement(node);
+    while (node && !printable) {
+	printable = isPrintable(node->children);
+	if (!printable) {
+	    if (streq((char *) node->name, "do-print")) {
+		printable = TRUE;
+	    }
+	    else if (streq((char *) node->name, "print")) {
+		conditional = nodeAttribute(node, "conditional");
+		if (conditional) {
+		    printable = streq(conditional->value, "no");
+		    objectFree((Object *) conditional, TRUE);
+		}
+		else {
+		    printable = TRUE;
+		}
+	    }
+	}
+	node = firstElement(node->next);
+    }
+    return printable;
+}
+
+static void 
+applyPrintFilter(xmlNode * node)
+{
+    node = firstElement(node);
+    while (node) {
+	if (streq((char *) node->name, "dbobject")) {
+	    if (!isPrintable(node->children)) {
+		/* This dbobject is not printable.  Disable it. */
+		(void) xmlNewProp(node, (xmlChar *) "disabled", 
+				  (xmlChar *) "yes");
+	    }
+	}
+	applyPrintFilter(node->children);
+	node = firstElement(node->next);
+    }
+}
+
+static xmlNode *
+execPrintFilter(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    xmlNode *result;
+
+    UNUSED(parent_node);
+    result = processChildren(template_node, NULL, depth + 1);
+    applyPrintFilter(result);
+    return result;
+}
+
 static xmlNode *
 execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1978,6 +2044,7 @@ initSkitProcessors()
 	addProcessor("let", &execLet);
 	addProcessor("options", &ignoreFn);  /* Options are processed in
 						a previous partial pass */
+	addProcessor("printfilter", &execPrintFilter);
 	addProcessor("process", &execProcess);
 	addProcessor("result", &execResult);
 	addProcessor("runsql", &execRunsql);

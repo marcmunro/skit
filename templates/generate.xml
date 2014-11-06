@@ -79,9 +79,13 @@
       <skit:attr name="time" expr="(current-timestamp)"/>
       <printable/>
       <skit:add_navigation>
-	<skit:xslproc stylesheet="ddl.xsl" debug="debug">
-	  <skit:tsort input="pop"/>
-	</skit:xslproc>
+	<skit:printfilter>
+	  <skit:xslproc stylesheet="ddl.xsl" debug="debug">
+	    <skit:tsort input="pop" 
+			fallback_processor="deps/process_fallbacks.xsl"
+			ddl_processor="ddl.xsl"/>
+	  </skit:xslproc>
+	</skit:printfilter>
       </skit:add_navigation>
     </dump>	
   </skit:xslproc>

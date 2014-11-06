@@ -409,18 +409,17 @@ doAddNavigation(
 }
 
 static boolean
-nodeHasPrintElement(xmlNode *node)
+nodeIsDisabled(xmlNode *node)
 {
-    while (node = getNextNode(node)) {
-	if (streq((char *) node->name, "print")) {
-	    return TRUE;
-	}
-	if (nodeHasPrintElement(node->children)) {
-	    return TRUE;
-	}
-	node = node->next;
+    String *disabled = nodeAttribute(node, "disabled");
+    boolean result = FALSE;
+
+    if (disabled) {
+	result = streq(disabled->value, "yes");
+	objectFree((Object *) disabled, TRUE);
     }
-    return FALSE;
+
+    return result;
 }
 
 /* Find a dbobject node by doing a depth first traversal of nodes. */
@@ -509,10 +508,9 @@ addNavigationToDoc(xmlNode *parent_node)
     EACH(nodes, i) {
 	this = (Node *) ELEM(nodes, i);
 	
-	if (nodeHasPrintElement(this->node)) {
-	    /* If this node contains no <print> elements, there is
-	     * no work to be done for it, so no point in adding any
-	     * navigation. */
+	if (!nodeIsDisabled(this->node)) {
+	    /* If this node is disabled, there is no work to be done for
+	     * it, so no point in adding any navigation. */
 	    node_from = node_to;
 	    node_to = this;
 
