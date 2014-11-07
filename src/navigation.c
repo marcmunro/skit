@@ -112,7 +112,7 @@ getContexts(xmlNode *node)
 	    assert(context->context_type, "Missing type attribute for context");
 
 	    context_direction = dependencyApplicationForString(
-		nodeAttribute(context_node, "direction"));
+		nodeAttribute(context_node, "applies"));
 	    if (contextApplies(build_direction, context_direction)) {
 		result = consNew((Object *) context, (Object *) result);
 	    }

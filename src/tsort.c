@@ -29,11 +29,77 @@ tsort_deps(Vector *nodes, DagNode *node, Vector *results)
     if (deps = node->deps) {
 	EACH(deps, i) {
 	    dep = (DagNode *) ELEM(deps, i);
+	    node->cur_dep = i;
 	    tsort_node(nodes, dep, results);
 	}
     }
 }
 
+
+static Vector *
+nodesInCycle(DagNode *node)
+{
+    Vector *nodes_in_cycle = vectorNew(10);
+    DagNode *this = node;
+    do {
+	vectorPush(nodes_in_cycle, (Object *) this);
+	this = (DagNode*) ELEM(this->deps, this->cur_dep);
+    } while (this != node);
+    return nodes_in_cycle;
+}
+
+static Document *
+applyDDL(Document *doc)
+{
+    Document *ddl_processor = getDDLProcessor();
+    Document *result;
+    BEGIN {
+	docStackPush(doc);
+	applyXSL(ddl_processor);
+    }
+    EXCEPTION(ex) {
+	result = docStackPop();
+	objectFree((Object *) result, TRUE);
+	RAISE();
+    }
+    END;
+    result = docStackPop();
+    return result;
+}
+
+static boolean
+breakCycle(DagNode *node)
+{
+    Vector *nodes_in_cycle = nodesInCycle(node);
+    Document *doc = docFromVector(NULL, nodes_in_cycle);
+    Vector *ddl_nodes;
+    int i;
+    DagNode *this;
+    boolean result = FALSE;
+
+    dbgSexp(nodes_in_cycle);
+    doc = applyDDL(doc);
+    ddl_nodes = dagNodesFromDoc(doc);
+
+    EACH(ddl_nodes, i) {
+	this = (DagNode *) ELEM(ddl_nodes, i);
+	if (!isPrintable(this->dbobject->children)) {
+	    /* The DDL for this node does nothing useful, so we can
+	     * remove it from the cycle.  We do this by setting the
+	     * node's build_type to DEACTIVATED_NODE. 
+	     */
+	    printSexp(stderr, "CAN REMOVE FROM CYCLE: ", (Object *) this);
+	    this = (DagNode *) ELEM(nodes_in_cycle, i);
+	    this->build_type = DEACTIVATED_NODE;
+	    result = TRUE;
+	}
+    }
+
+    objectFree((Object *) nodes_in_cycle, FALSE);
+    objectFree((Object *) doc, TRUE);
+    objectFree((Object *) ddl_nodes, TRUE);
+    return result;
+}
 
 static void
 tsort_node(Vector *nodes, DagNode *node, Vector *results)
@@ -52,8 +118,13 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
     case RESOLVED: 
 	BEGIN {
 	    node->status = VISITING;
-	    tsort_deps(nodes, node, results);
-	    vectorPush(results, (Object *) node);
+	    if (node->build_type != DEACTIVATED_NODE) {
+		tsort_deps(nodes, node, results);
+		vectorPush(results, (Object *) node);
+	    }
+	    else {
+		objectFree((Object *) node, TRUE);
+	    }
 	}
 	EXCEPTION(ex);
 	WHEN(TSORT_CYCLIC_DEPENDENCY) {
@@ -67,6 +138,14 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 		/* We are at the start of the cyclic dependency.
 		 * Set errmsg to describe this, and reset cycle_node
 		 * for the RAISE below. */ 
+		if (breakCycle(node)) {
+		    /* We have broken the cycle, so we retry this node,
+		     * the simplest way possible. */
+		    node->status = UNVISITED;
+		    skfree(errmsg);
+		    tsort_node(nodes, node, results);
+		    return;
+		}
 		tmpmsg = newstr("Cyclic dependency detected: (%s) %s->%s", 
 				nameForBuildType(node->build_type),
 				node->fqn->value, errmsg);
@@ -81,6 +160,7 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 	    }
 	    
 	    skfree(errmsg);
+	    node->status = UNVISITED;
 	    RAISE(TSORT_CYCLIC_DEPENDENCY, tmpmsg, cycle_node);
 	}
 	node->status = VISITED;

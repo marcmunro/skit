@@ -41,8 +41,6 @@ comment on database "regressdb" is
 'new comment';
 \connect postgres
 
-/*
-TODO: Uncomment this for test purposes.
 \set tbs2dir '''':home'/regress/REGRESSDB/tbs/tbs2'''
 create tablespace "tbs2" owner "keep"
   location :tbs2dir;
@@ -52,7 +50,6 @@ comment on tablespace tbs2 is 'This is the second tablespace';
 -- This does nothing but makes the acl for the tablespace into 
 -- a non-default value.
 revoke all on tablespace tbs2 from public;
-*/
 
 -- Diffs on privs to tablespace
 revoke all on tablespace tbs3 from public;

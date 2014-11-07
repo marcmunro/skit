@@ -280,18 +280,18 @@ setDiff(xmlNode *node, DiffType difftype)
 
 
 String *
-directionForDep(xmlNode *node)
+attributeForDep(xmlNode *node, char *attribute)
 {
-    String *direction_str = nodeAttribute(node, "direction");
-    if (direction_str) {
-        stringLowerInPlace(direction_str);
+    String *result = nodeAttribute(node, attribute);
+    if (result) {
+        stringLowerInPlace(result);
     }
     else {
         if (isDepNode(node->parent)) {
-            return directionForDep(node->parent);
+            return attributeForDep(node->parent, attribute);
         }
     }
-    return direction_str;
+    return result;
 }
 
 static Hash *
@@ -308,7 +308,7 @@ getNodeDeps(xmlNode *node)
 	}
 	else {
 	    if (isDepNode(this)) {
-		if (!(direction= directionForDep(this))) {
+		if (!(direction= attributeForDep(this, "direction"))) {
 		    direction = stringNew("");
 		}
 		dep = xmlCopyNode(this, 1);
@@ -350,7 +350,7 @@ copyContext(xmlNode *node, char *condition)
     if (this) {
 	result = xmlCopyNode(this, 1);
 	if (condition) {
-	    (void) xmlNewProp(result, (xmlChar *) "direction", 
+	    (void) xmlNewProp(result, (xmlChar *) "applies", 
 			      (xmlChar *) condition);
 	}
         
@@ -854,7 +854,7 @@ evalDiffDep(xmlNode *depnode, xmlNode *content1, xmlNode *content2)
     xmlNode *kids;
     xmlNode *cur = depnode;
     do {
-	new = xmlCopyNode(depnode, 0);
+	new = xmlCopyNode(cur, 0);
 	evalDiffDepProps(new, cur, content1, content2);
 
 	if (cur->children) {
@@ -1036,11 +1036,11 @@ freeDepsHash(Hash *hash)
 }
 
 static xmlNode *
-makeDependenciesNode(char *direction)
+makeDependenciesNode(char *applies)
 {
     xmlNode *deps = xmlNewNode(NULL, BAD_CAST "dependencies");
-    if (direction) {
-	(void) xmlNewProp(deps, (xmlChar *) "direction", (xmlChar *) direction);
+    if (applies) {
+	(void) xmlNewProp(deps, (xmlChar *) "applies", (xmlChar *) applies);
     }
     return deps;
 }
@@ -1072,7 +1072,7 @@ addDepsForDiff(xmlNode *to_node, xmlNode *dbobject, boolean is_forwards)
     xmlNode *deps;
     String *direction_str = is_forwards? &forwards_str: &backwards_str;
 
-    deps = makeDependenciesNode(is_forwards? "forwards": "backwards");
+    deps = makeDependenciesNode(direction_str->value);
     addToDeps(deps, (Vector *) hashDel(deps_hash, (Object *) &empty_str));
     addToDeps(deps, (Vector *) hashDel(deps_hash, (Object *) direction_str));
     freeDepsHash(deps_hash);
@@ -1095,12 +1095,16 @@ diffPair(xmlNode *dbobject1, xmlNode *dbobject2,
     DiffType difftype;
     boolean  do_rebuild = FALSE;
 
+    String *fqn = nodeAttribute(dbobject1, "fqn");
+    objectFree((Object *) fqn, TRUE);
+
     if (ruleset = rulesetForNode(dbobject1, rules)) {
 	difflist = elementDiffs(contents1, contents2, 
 				ruleset, &diffdeps, &do_rebuild);
     }
 
     BEGIN {
+
 	result = xmlCopyNode(dbobject2, 2);
 	addDepsForDiff(result, dbobject1, FALSE);
 	addDepsForDiff(result, dbobject2, TRUE);

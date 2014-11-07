@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <dump xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xi="http://www.w3.org/2003/XInclude" dbtype="postgres" dbname="regressdb" time="20141017123420" dbname2="regressdb" time2="20141017123410" retain_deps="true">
   <dbobject type="cluster" visit="true" name="cluster" fqn="cluster" diff="diffkids">
-    <dependencies direction="backwards"/>
-    <dependencies direction="forwards"/>
+    <dependencies applies="backwards"/>
+    <dependencies applies="forwards"/>
     <cluster type="postgres" port="54325 host=/var/run/postgresql" version="8.4.22" host="/var/run/postgresql" skit_xml_version="0.1" username="marc">
       <dbobject type="role" name="keep" qname="keep" fqn="role.keep" parent="database.regressdb" diff="diff">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
         <element status="gone" type="comment">
@@ -29,10 +29,10 @@
         </role>
       </dbobject>
       <dbobject type="role" name="marc" qname="marc" fqn="role.marc" parent="database.regressdb" diff="none">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
         <role name="marc" login="y" max_connections="-1">
@@ -41,37 +41,37 @@
           <privilege priv="createrole"/>
           <privilege priv="createdb"/>
           <dbobject type="privilege" name="superuser" fqn="privilege.role.marc.superuser" qname="superuser" parent="role.marc" role_qname="marc" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="role.marc"/>
             </dependencies>
             <privilege priv="superuser"/>
           </dbobject>
           <dbobject type="privilege" name="inherit" fqn="privilege.role.marc.inherit" qname="inherit" parent="role.marc" role_qname="marc" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="role.marc"/>
             </dependencies>
             <privilege priv="inherit"/>
           </dbobject>
           <dbobject type="privilege" name="createrole" fqn="privilege.role.marc.createrole" qname="createrole" parent="role.marc" role_qname="marc" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="role.marc"/>
             </dependencies>
             <privilege priv="createrole"/>
           </dbobject>
           <dbobject type="privilege" name="createdb" fqn="privilege.role.marc.createdb" qname="createdb" parent="role.marc" role_qname="marc" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="role.marc"/>
             </dependencies>
             <privilege priv="createdb"/>
@@ -79,13 +79,13 @@
         </role>
       </dbobject>
       <dbobject type="role" name="regress" qname="regress" fqn="role.regress" parent="cluster" diff="diff">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency-set>
             <dependency fqn="database.regressdb"/>
             <dependency fqn="cluster"/>
           </dependency-set>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency-set>
             <dependency fqn="database.regressdb"/>
             <dependency fqn="cluster"/>
@@ -107,10 +107,10 @@
           <comment>'new comment'</comment>
           <privilege priv="superuser"/>
           <dbobject type="privilege" name="superuser" fqn="privilege.role.regress.superuser" qname="superuser" parent="role.regress" role_qname="regress" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="role.regress"/>
             </dependencies>
             <privilege priv="superuser"/>
@@ -124,10 +124,10 @@
         </role>
       </dbobject>
       <dbobject type="role" name="wibble" qname="wibble" fqn="role.wibble" parent="database.regressdb" diff="diff">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="database.regressdb"/>
         </dependencies>
         <attribute name="expires" status="diff" old="2007-03-02 00:00:00-08" new="2007-03-01 00:00:00-08"/>
@@ -145,11 +145,11 @@
         </role>
       </dbobject>
       <dbobject type="tablespace" name="pg_default" fqn="tablespace.pg_default" qname="pg_default" parent="cluster" diff="none">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="database.regressdb"/>
           <dependency fqn="role.marc"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency-set>
             <dependency fqn="database."/>
             <dependency fqn="cluster"/>
@@ -158,26 +158,26 @@
         </dependencies>
         <tablespace name="pg_default" owner="marc" location="">
           <dbobject type="grant" name="create:marc" fqn="grant.tablespace.pg_default.create" qname="" parent="tablespace.pg_default" pqn="grant.tablespace.pg_default.create:marc" subtype="tablespace" on="pg_default" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="tablespace.pg_default"/>
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="tablespace.pg_default"/>
               <dependency fqn="role.marc"/>
             </dependencies>
-            <context type="owner" value="marc" default="marc" direction="backwards"/>
-            <context type="owner" value="marc" default="marc" direction="forwards"/>
+            <context type="owner" value="marc" default="marc" applies="backwards"/>
+            <context type="owner" value="marc" default="marc" applies="forwards"/>
             <grant from="marc" to="marc" with_grant="no" priv="create" automatic="yes"/>
           </dbobject>
         </tablespace>
       </dbobject>
       <dbobject type="tablespace" name="tbs2" fqn="tablespace.tbs2" qname="tbs2" parent="database.regressdb" diff="diff">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="database.regressdb"/>
           <dependency fqn="role.lose"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="database.regressdb"/>
           <dependency fqn="role.keep"/>
         </dependencies>
@@ -198,64 +198,64 @@
         <tablespace name="tbs2" owner="keep" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs2">
           <comment>'This is the second tablespace'</comment>
           <dbobject type="grant" name="create:keep" fqn="grant.tablespace.tbs2.create" qname="" parent="tablespace.tbs2" pqn="grant.tablespace.tbs2.create:keep" subtype="tablespace" on="tbs2" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="tablespace.tbs2"/>
               <dependency fqn="role.lose"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="tablespace.tbs2"/>
               <dependency fqn="role.keep"/>
             </dependencies>
-            <context type="owner" value="lose" default="marc" direction="backwards"/>
-            <context type="owner" value="keep" default="marc" direction="forwards"/>
+            <context type="owner" value="lose" default="marc" applies="backwards"/>
+            <context type="owner" value="keep" default="marc" applies="forwards"/>
             <grant from="keep" to="keep" with_grant="no" priv="create" automatic="yes"/>
           </dbobject>
         </tablespace>
       </dbobject>
       <dbobject type="tablespace" name="tbs3" fqn="tablespace.tbs3" qname="tbs3" parent="database.regressdb" diff="none">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency-set>
             <dependency fqn="database."/>
             <dependency fqn="cluster"/>
           </dependency-set>
           <dependency fqn="role.regress"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="database.regressdb"/>
           <dependency fqn="role.regress"/>
         </dependencies>
         <tablespace name="tbs3" owner="regress" location="/home/marc/proj/skit/regress/REGRESSDB/tbs/tbs3">
           <dbobject type="grant" name="create:regress" fqn="grant.tablespace.tbs3.create" qname="" parent="tablespace.tbs3" pqn="grant.tablespace.tbs3.create:regress" subtype="tablespace" on="tbs3" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="tablespace.tbs3"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="tablespace.tbs3"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="regress" with_grant="no" priv="create" automatic="yes"/>
           </dbobject>
         </tablespace>
       </dbobject>
       <dbobject type="dbincluster" name="regressdb" qname="regressdb" fqn="dbincluster.regressdb" parent="cluster" diff="none">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="cluster"/>
           <dependency fqn="tablespace.tbs3"/>
           <dependency fqn="role.regress"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="cluster"/>
           <dependency fqn="role.regress"/>
         </dependencies>
       </dbobject>
       <dbobject type="database" visit="true" name="regressdb" qname="regressdb" fqn="database.regressdb" diff="diff">
-        <dependencies direction="backwards">
+        <dependencies applies="backwards">
           <dependency fqn="dbincluster.regressdb"/>
         </dependencies>
-        <dependencies direction="forwards">
+        <dependencies applies="forwards">
           <dependency fqn="dbincluster.regressdb"/>
         </dependencies>
         <attribute name="tablespace" status="diff" old="tbs3" new="pg_default"/>
@@ -272,133 +272,133 @@
         <database name="regressdb" owner="regress" encoding="UTF8" tablespace="pg_default" connections="4">
           <comment>'new comment'</comment>
           <dbobject type="grant" name="connect:regress" fqn="grant.database.regressdb.connect" qname="" parent="database.regressdb" pqn="grant.database.regressdb.connect:regress" subtype="database" on="regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="regress" with-grant="no" priv="connect" automatic="yes"/>
           </dbobject>
           <dbobject type="grant" name="temporary:regress" fqn="grant.database.regressdb.temporary" qname="" parent="database.regressdb" pqn="grant.database.regressdb.temporary:regress" subtype="database" on="regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="regress" with-grant="no" priv="temporary" automatic="yes"/>
           </dbobject>
           <dbobject type="grant" name="create:public" fqn="grant.database.regressdb.create:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.create:public" subtype="database" on="regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="public" with-grant="no" priv="create" automatic="yes"/>
           </dbobject>
           <dbobject type="grant" name="connect:public" fqn="grant.database.regressdb.connect:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.connect:public" subtype="database" on="regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="public" with-grant="no" priv="connect" automatic="yes"/>
           </dbobject>
           <dbobject type="grant" name="temporary:public" fqn="grant.database.regressdb.temporary:public" qname="" parent="database.regressdb" pqn="grant.database.regressdb.temporary:public" subtype="database" on="regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.regress"/>
             </dependencies>
-            <context type="owner" value="regress" default="marc" direction="backwards"/>
-            <context type="owner" value="regress" default="marc" direction="forwards"/>
+            <context type="owner" value="regress" default="marc" applies="backwards"/>
+            <context type="owner" value="regress" default="marc" applies="forwards"/>
             <grant from="regress" to="public" with-grant="no" priv="temporary" automatic="yes"/>
           </dbobject>
           <dbobject type="schema" name="public" fqn="schema.regressdb.public" qname="public" parent="database.regressdb" diff="none">
-            <dependencies direction="backwards">
+            <dependencies applies="backwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.marc"/>
             </dependencies>
-            <dependencies direction="forwards">
+            <dependencies applies="forwards">
               <dependency fqn="database.regressdb"/>
               <dependency fqn="role.marc"/>
             </dependencies>
-            <context type="owner" value="marc" default="marc" direction="backwards"/>
-            <context type="owner" value="marc" default="marc" direction="forwards"/>
+            <context type="owner" value="marc" default="marc" applies="backwards"/>
+            <context type="owner" value="marc" default="marc" applies="forwards"/>
             <schema name="public" owner="marc" privs="{marc=UC/marc,=UC/marc}">
               <comment>'standard public schema'</comment>
               <dbobject type="grant" name="usage:marc" fqn="grant.schema.regressdb.public.usage" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.usage:marc" subtype="schema" on="public" diff="none">
-                <dependencies direction="backwards">
+                <dependencies applies="backwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <dependencies direction="forwards">
+                <dependencies applies="forwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <context type="owner" value="marc" default="marc" direction="backwards"/>
-                <context type="owner" value="marc" default="marc" direction="forwards"/>
+                <context type="owner" value="marc" default="marc" applies="backwards"/>
+                <context type="owner" value="marc" default="marc" applies="forwards"/>
                 <grant from="marc" to="marc" with_grant="no" priv="usage" automatic="yes"/>
               </dbobject>
               <dbobject type="grant" name="create:marc" fqn="grant.schema.regressdb.public.create" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.create:marc" subtype="schema" on="public" diff="none">
-                <dependencies direction="backwards">
+                <dependencies applies="backwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <dependencies direction="forwards">
+                <dependencies applies="forwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <context type="owner" value="marc" default="marc" direction="backwards"/>
-                <context type="owner" value="marc" default="marc" direction="forwards"/>
+                <context type="owner" value="marc" default="marc" applies="backwards"/>
+                <context type="owner" value="marc" default="marc" applies="forwards"/>
                 <grant from="marc" to="marc" with_grant="no" priv="create" automatic="yes"/>
               </dbobject>
               <dbobject type="grant" name="usage:public" fqn="grant.schema.regressdb.public.usage:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.usage:public" subtype="schema" on="public" diff="none">
-                <dependencies direction="backwards">
+                <dependencies applies="backwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <dependencies direction="forwards">
+                <dependencies applies="forwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <context type="owner" value="marc" default="marc" direction="backwards"/>
-                <context type="owner" value="marc" default="marc" direction="forwards"/>
+                <context type="owner" value="marc" default="marc" applies="backwards"/>
+                <context type="owner" value="marc" default="marc" applies="forwards"/>
                 <grant from="marc" to="public" with_grant="no" priv="usage" automatic="yes"/>
               </dbobject>
               <dbobject type="grant" name="create:public" fqn="grant.schema.regressdb.public.create:public" qname="" parent="schema.regressdb.public" pqn="grant.schema.regressdb.public.create:public" subtype="schema" on="public" diff="none">
-                <dependencies direction="backwards">
+                <dependencies applies="backwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <dependencies direction="forwards">
+                <dependencies applies="forwards">
                   <dependency fqn="schema.regressdb.public"/>
                   <dependency fqn="role.marc"/>
                 </dependencies>
-                <context type="owner" value="marc" default="marc" direction="backwards"/>
-                <context type="owner" value="marc" default="marc" direction="forwards"/>
+                <context type="owner" value="marc" default="marc" applies="backwards"/>
+                <context type="owner" value="marc" default="marc" applies="forwards"/>
                 <grant from="marc" to="public" with_grant="no" priv="create" automatic="yes"/>
               </dbobject>
             </schema>

@@ -148,12 +148,12 @@
                   <dependency fqn="schema.skittest.public"/>
                   <dependency fqn="view.skittest.public.v2"/>
                   <dependency fqn="role.marc"/>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                     <dependency pqn="grant.schema.skittest.public.create:marc"/>
                     <dependency pqn="grant.schema.skittest.public.create:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>
                   </dependency-set>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                     <dependency pqn="grant.schema.skittest.public.usage:marc"/>
                     <dependency pqn="grant.schema.skittest.public.usage:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>
@@ -170,12 +170,12 @@
                   <dependency fqn="schema.skittest.public"/>
                   <dependency fqn="view.skittest.public.v3"/>
                   <dependency fqn="role.marc"/>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                     <dependency pqn="grant.schema.skittest.public.create:marc"/>
                     <dependency pqn="grant.schema.skittest.public.create:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>
                   </dependency-set>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                     <dependency pqn="grant.schema.skittest.public.usage:marc"/>
                     <dependency pqn="grant.schema.skittest.public.usage:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>
@@ -192,12 +192,12 @@
                   <dependency fqn="schema.skittest.public"/>
                   <dependency fqn="view.skittest.public.v1"/>
                   <dependency fqn="role.marc"/>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                     <dependency pqn="grant.schema.skittest.public.create:marc"/>
                     <dependency pqn="grant.schema.skittest.public.create:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>
                   </dependency-set>
-                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+                  <dependency-set priority="1" fallback="privilege.role.marc.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                     <dependency pqn="grant.schema.skittest.public.usage:marc"/>
                     <dependency pqn="grant.schema.skittest.public.usage:public"/>
                     <dependency fqn="privilege.role.marc.superuser"/>

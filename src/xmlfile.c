@@ -1066,8 +1066,8 @@ addActionNode(xmlNode *root, xmlNode *node, char *action)
     xmlAddChild(root, node);
 }
 
-void
-docFromVector(xmlNode *root_node, Vector *sorted_nodes)
+static void
+docNodesFromVector(xmlNode *root_node, Vector *sorted_nodes)
 {
     DagNode *node;
     xmlNode *copy;
@@ -1080,6 +1080,19 @@ docFromVector(xmlNode *root_node, Vector *sorted_nodes)
     }
 }
 
+Document *
+docFromVector(xmlNode *parent_node, Vector *sorted_nodes)
+{
+    xmlDocPtr xmldoc;
+    xmlNode *root;
+
+    xmldoc = xmlNewDoc(BAD_CAST "1.0");
+    root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
+    xmlDocSetRootElement(xmldoc, root);
+    docNodesFromVector(root, sorted_nodes);
+    return documentNew(xmldoc, NULL);
+}
+
 static xmlNode *
 execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
@@ -1089,9 +1102,9 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile ddl_processor = nodeAttribute(template_node, 
 						   "ddl_processor");
     Document *volatile source_doc = NULL;
+    Document *volatile result_doc = NULL;
     Vector *volatile sorted = NULL;
     xmlNode *root;
-    xmlDocPtr xmldoc;
     Symbol *fb_proc = symbolNew("fallback_processor");
     Symbol *ddl_proc = symbolNew("ddl_processor");
     UNUSED(depth);
@@ -1104,11 +1117,8 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
 	    source_doc = docStackPop();
 	}
 	sorted = tsort(source_doc);
-	xmldoc = xmlNewDoc(BAD_CAST "1.0");
-	root = parent_node? parent_node: xmlNewNode(NULL, BAD_CAST "root");
-	xmlDocSetRootElement(xmldoc, root);
-	docFromVector(root, sorted);
-	(void) documentNew(xmldoc, NULL);
+	result_doc = docFromVector(parent_node, sorted);
+	root = xmlDocGetRootElement(result_doc->doc);
     }
     EXCEPTION(ex);
     FINALLY {
@@ -1923,7 +1933,7 @@ addChildren(xmlNode *to, xmlNode *from)
     xmlFreeNode(from);
 }
 
-static boolean
+boolean
 isPrintable(xmlNode *node)
 {
     boolean printable = FALSE;

@@ -35,16 +35,18 @@ typedef unsigned char boolean;
 typedef enum {IS_NEW, IS_GONE, IS_DIFF, IS_SAME, 
 	      IS_UNKNOWN, IS_REBUILD, HAS_DIFFKIDS} DiffType;
 
-#define DIFFNEW       "new"
-#define DIFFGONE      "gone"
-#define DIFFDIFF      "diff"
-#define DIFFSAME      "none"
-#define DIFFUNKNOWN   "UNKNOWN"
-#define DIFFKIDS      "diffkids"
-#define ACTIONBUILD   "build"
-#define ACTIONDROP    "drop"
-#define ACTIONREBUILD "rebuild"
-#define ACTIONNONE    "none"
+#define DIFFNEW        	   "new"
+#define DIFFGONE       	   "gone"
+#define DIFFDIFF       	   "diff"
+#define DIFFSAME       	   "none"
+#define DIFFUNKNOWN    	   "UNKNOWN"
+#define DIFFKIDS       	   "diffkids"
+#define ACTIONBUILD    	   "build"
+#define ACTIONDROP     	   "drop"
+#define ACTIONREBUILD  	   "rebuild"
+#define ACTIONNONE     	   "none"
+#define ACTIONFALLBACK 	   "fallback"
+#define ACTIONENDFALLBACK  "endfallback"
 
 
 typedef enum {
@@ -306,6 +308,7 @@ typedef struct DependencySet {
     int                    priority;
     int                    chosen_dep;
     int                    cycles;
+    boolean                direction_is_forwards;
     boolean                has_fallback;
     DagNode               *definition_node;
     String                *fallback_expr;
@@ -325,6 +328,7 @@ typedef struct Dependency {
     DagNode               *dep;
     DependencySet         *depset;
     DagNode               *from; 
+    String                *condition;
     struct Dependency     *endfallback;
 } Dependency;
 
@@ -658,6 +662,7 @@ extern void finalAction(void);
 extern void addDeps(void);
 extern void applyXSL(Document *xslsheet);
 extern Document *getFallbackProcessor(void);
+extern Document *getDDLProcessor(void);
 
 // builtin_symbols.c
 extern void initBuiltInSymbols(void);
@@ -683,11 +688,12 @@ extern Document *applyXSLStylesheet(Document *src, Document *stylesheet);
 extern Document *processTemplate(Document *template);
 extern void addParamsNode(Document *doc, Object *params);
 extern void rmParamsNode(Document *doc);
-extern void docFromVector(xmlNode *parent_node, Vector *sorted_nodes);
 extern void docGatherContents(Document *doc, String *filename);
 extern xmlNode *firstElement(xmlNode *start);
 extern xmlNode *copyObjectNode(xmlNode *source);
 extern void freeSkitProcessors(void);
+extern Document *docFromVector(xmlNode *parent_node, Vector *sorted_nodes);
+extern boolean isPrintable(xmlNode *node);
 
 // document.c
 extern char *nodestr(xmlNode *node);
@@ -758,7 +764,7 @@ extern boolean isDependency(xmlNode *node);
 extern boolean isDependencies(xmlNode *node);
 extern boolean isDepNode(xmlNode *node);
 extern String *conditionForDep(xmlNode *node);
-extern String *directionForDep(xmlNode *node);
+extern String *attributeForDep(xmlNode *node, char *attribute);
 
 extern void showDeps(DagNode *node);
 extern void showVectorDeps(Vector *nodes);
@@ -770,6 +776,7 @@ extern Vector *resolving_tsort(Vector *nodelist);
 
 extern Vector *dagFromDoc(Document *doc);
 extern DependencyApplication dependencyApplicationForString(String *direction);
+extern Vector *dagNodesFromDoc(Document *doc);
 
 
 

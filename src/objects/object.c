@@ -489,6 +489,7 @@ dependencySetNew(DagNode *definition_node)
     new->priority = 100;
     new->chosen_dep = 0;
     new->cycles = 0;
+    new->direction_is_forwards = TRUE;
     new->has_fallback = FALSE;
     new->definition_node = definition_node;
     new->fallback_expr = NULL;
@@ -512,6 +513,7 @@ dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
     new->dep = NULL;
     new->depset = NULL;
     new->from = NULL;
+    new->condition = NULL;
     new->endfallback = NULL;
     return new;
 }
@@ -553,6 +555,7 @@ dependencyFree(Dependency *dep, boolean free_contents)
 {
     if (free_contents) {
 	objectFree((Object *) dep->qn, TRUE);
+	objectFree((Object *) dep->condition, TRUE);
     }
     skfree((Object *) dep);
 }

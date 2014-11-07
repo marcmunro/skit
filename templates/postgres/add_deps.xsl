@@ -123,7 +123,7 @@
       <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
-	  direction="forwards">
+	  applies="forwards">
 	<xsl:call-template name="deps-schema-create">
 	  <xsl:with-param name="to" select="@owner"/>
 	</xsl:call-template>
@@ -133,7 +133,7 @@
       <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	  parent="ancestor::dbobject[database]"
-	  direction="backwards">
+	  applies="backwards">
 	<xsl:if test="$owner">
 	  <xsl:call-template name="deps-schema-usage">
 	    <xsl:with-param name="to" select="@owner"/>
@@ -239,7 +239,7 @@
 	       privilege required to create the object is "create".  -->
 	  <dependency-set 
 	      priority="1"
-	      direction="forwards"
+	      applies="forwards"
 	      condition="element[@type='comment']"
 	      fallback="{concat('privilege.role.', $owner, '.superuser')}"
 	      parent="ancestor::dbobject[database]">

@@ -30,21 +30,23 @@ typedef struct ResolverState {
     int       fallback_no;
 } ResolverState;
 
+
+
 DependencyApplication
-dependencyApplicationForString(String *direction)
+dependencyApplicationForString(String *applies)
 {
     DependencyApplication result;
-    if (direction) {
-	if (streq(direction->value, "forwards")) {
+    if (applies) {
+	if (streq(applies->value, "forwards")) {
 	    result = FORWARDS;
 	}
-	else if (streq(direction->value, "backwards")) {
+	else if (streq(applies->value, "backwards")) {
 	    result = BACKWARDS;
 	}
 	else {
 	    result = UNKNOWN_DIRECTION;
 	}
-	objectFree((Object *) direction, TRUE);
+	objectFree((Object *) applies, TRUE);
 	return result;
     }
     return BOTH_DIRECTIONS;
@@ -156,6 +158,12 @@ buildTypeForDagNode(Node *node)
 	else if (streq(action->value, ACTIONNONE)) {
 	    build_type = EXISTS_NODE;
 	}
+	else if (streq(action->value, ACTIONFALLBACK)) {
+	    build_type = FALLBACK_NODE;
+	}
+	else if (streq(action->value, ACTIONENDFALLBACK)) {
+	    build_type = ENDFALLBACK_NODE;
+	}
 	else {
 	    fqn = nodeAttribute(((Node *) node)->node, "fqn");
 	    errmsg = newstr("buildTypeForDagnode: unexpected action "
@@ -219,7 +227,7 @@ addDagNodeToVector(Object *this, Object *vector)
 /* Read the source document, creating a single Dagnode for each
  * dbobject.
  */
-static Vector *
+Vector *
 dagNodesFromDoc(Document *doc)
 {
     Vector *volatile nodes = vectorNew(1000);
@@ -417,40 +425,6 @@ addDepToDepset(DependencySet *depset, Dependency *dep)
 }
 
 
-static DependencySet *
-makeDepset(DagNode *node, xmlNode *depnode, Vector *deps, boolean is_forwards)
-{
-    DependencySet *depset = dependencySetNew(node);
-    int i;
-    Dependency *dep;
-    char *tmp;
-    char *errmsg;
-
-    assertDagNode(node);
-    depset->fallback_expr = nodeAttribute(depnode, "fallback");
-    depset->fallback_parent = nodeAttribute(depnode, "parent");
-    depset->condition = nodeAttribute(depnode, "condition");
-
-    if (depset->fallback_expr && !depset->fallback_parent) {
-	objectFree((Object *) depset, TRUE);
-	tmp = nodestr(depnode);
-	errmsg = newstr("Must specify a parent xpath expression for "
-			"the fallback in:\n  %s\n", tmp);
-	skfree(tmp);
-	RAISE(XML_PROCESSING_ERROR, errmsg);
-    }
-    depset->priority = getPriority(depnode);
-
-    if (deps) {
-	assertVector(deps);
-	EACH(deps, i) {
-	    dep = (Dependency *) ELEM(deps, i);
-	    addDepToDepset(depset, dep);
-	}
-    }
-    return depset;
-}
-
 static boolean
 isDropSideNode(DagNode *node)
 {
@@ -475,37 +449,90 @@ isBuildSideNode(DagNode *node)
 }
 
 static boolean
-isForwards(xmlNode *depnode)
+appliesForwards(xmlNode *depnode)
 {
     DependencyApplication direction = 
-	dependencyApplicationForString(directionForDep(depnode));
+	dependencyApplicationForString(attributeForDep(depnode, "applies"));
     return (direction == FORWARDS) || (direction == BOTH_DIRECTIONS);
 }
 
 
 static boolean
-isBackwards(xmlNode *depnode)
+appliesBackwards(xmlNode *depnode)
 {
     DependencyApplication direction = 
-	dependencyApplicationForString(directionForDep(depnode));
+	dependencyApplicationForString(attributeForDep(depnode, "applies"));
     return (direction == BACKWARDS) || (direction == BOTH_DIRECTIONS);
 }
 
+static boolean
+directsForwards(xmlNode *depnode, boolean applies)
+{
+    DependencyApplication direction = 
+	dependencyApplicationForString(attributeForDep(depnode, "direction"));
+    if (direction == FORWARDS) {
+	return TRUE;
+    } else if (direction == BACKWARDS) {
+	return FALSE;
+    }
+    else {
+	return applies;
+    }
+}
+
+static DependencySet *
+makeDepset(DagNode *node, xmlNode *depnode, Vector *deps, boolean is_build_side)
+{
+    DependencySet *depset = dependencySetNew(node);
+    int i;
+    Dependency *dep;
+    char *tmp;
+    char *errmsg;
+
+    assertDagNode(node);
+    depset->fallback_expr = nodeAttribute(depnode, "fallback");
+    depset->fallback_parent = nodeAttribute(depnode, "parent");
+    depset->condition = attributeForDep(depnode, "condition");
+    depset->direction_is_forwards = directsForwards(depnode, is_build_side);
+
+    if (depset->fallback_expr && !depset->fallback_parent) {
+	objectFree((Object *) depset, TRUE);
+	tmp = nodestr(depnode);
+	errmsg = newstr("Must specify a parent xpath expression for "
+			"the fallback in:\n  %s\n", tmp);
+	skfree(tmp);
+	RAISE(XML_PROCESSING_ERROR, errmsg);
+    }
+    depset->priority = getPriority(depnode);
+
+    if (deps) {
+	assertVector(deps);
+	EACH(deps, i) {
+	    dep = (Dependency *) ELEM(deps, i);
+	    addDepToDepset(depset, dep);
+	}
+    }
+    return depset;
+}
+
+
 static void
-recordDependencyInVector(DagNode *node, xmlNode *depnode, Vector *vec,
-                         volatile ResolverState *res_state)
+recordDependencyInVector(
+    DagNode *node, 
+    xmlNode *depnode, 
+    Vector *vec,
+    volatile ResolverState *res_state)
 {
     String *str;
-    String *direction;
     boolean fully_qualified;
     Dependency *dep;
-    boolean is_forwards = isBuildSideNode(node);
+    boolean is_build_side = isBuildSideNode(node);
 
     assertDagNode(node);
     assertVector(vec);
 
-    if ((isForwards(depnode->parent) && is_forwards) ||
-	(isBackwards(depnode->parent) && !is_forwards))
+    if ((appliesForwards(depnode->parent) && is_build_side) ||
+	(appliesBackwards(depnode->parent) && !is_build_side))
     {
 	if (str = nodeAttribute(depnode, "fqn")) {
 	    fully_qualified = TRUE;
@@ -514,30 +541,26 @@ recordDependencyInVector(DagNode *node, xmlNode *depnode, Vector *vec,
 	    fully_qualified = FALSE;
 	}
 	else {
-	    RAISE(XML_PROCESSING_ERROR,
-		  "No qualified name found in dependency for %s.",
-		  node->fqn->value);
-	}
-
-	if (direction = nodeAttribute(depnode, "direction")) {
-	    /* This is an explicit override of the container's
-	     * direction. */
-	    is_forwards = streq(direction->value, "forwards");
-	    dbgSexp(direction);
 	    dbgNode(depnode);
-	    dbgSexp(node);
-	    objectFree((Object *) direction, TRUE);
+	    RAISE(XML_PROCESSING_ERROR,
+		  newstr("No qualified name found in dependency for %s",
+			 node->fqn->value));
 	}
 
-        dep = dependencyNew(str, fully_qualified, is_forwards);
+        dep = dependencyNew(str, fully_qualified, 
+			    directsForwards(depnode, is_build_side));
+	dep->condition = attributeForDep(depnode, "condition");
 	dep->from = node;
 	vectorPush(vec, (Object *) dep);
     }
 }
 
 static void
-recordDepNodeInVector(DagNode *node, xmlNode *depnode, Vector *vec,
-		      volatile ResolverState *res_state);
+recordDepNodeInVector(
+    DagNode *node, 
+    xmlNode *depnode, 
+    Vector *vec,
+    volatile ResolverState *res_state);
 
 static void
 recordDependencySetInVector(DagNode *node, xmlNode *depnode, Vector *vec,
@@ -546,7 +569,7 @@ recordDependencySetInVector(DagNode *node, xmlNode *depnode, Vector *vec,
     xmlNode *this = NULL;
     DependencySet *depset;
     Vector *deps_in_depset = vectorNew(10);
-    boolean is_build_node = isBuildSideNode(node);
+    boolean is_build_side = isBuildSideNode(node);
 
     assertDagNode(node);
     assertVector(vec);
@@ -555,10 +578,10 @@ recordDependencySetInVector(DagNode *node, xmlNode *depnode, Vector *vec,
 	    recordDepNodeInVector(node, this, deps_in_depset, res_state);
 	}
 	    
-	if ((isForwards(depnode) && is_build_node) ||
-	    (isBackwards(depnode) && !is_build_node)) 
+	if ((appliesForwards(depnode) && is_build_side) ||
+	    (appliesBackwards(depnode) && !is_build_side)) 
 	{
-	    depset = makeDepset(node, depnode, deps_in_depset, is_build_node);
+	    depset = makeDepset(node, depnode, deps_in_depset, is_build_side);
 	    vectorPush(vec, (Object *) depset);
 	}
     }
@@ -571,8 +594,11 @@ recordDependencySetInVector(DagNode *node, xmlNode *depnode, Vector *vec,
 
 
 static void
-recordDepNodeInVector(DagNode *node, xmlNode *depnode, Vector *vec,
-		      volatile ResolverState *res_state)
+recordDepNodeInVector(
+    DagNode *node, 
+    xmlNode *depnode, 
+    Vector *vec,
+    volatile ResolverState *res_state)
 {
     xmlNode *this = NULL;
     char *tmp;
@@ -730,6 +756,24 @@ getAppropriateDepsFromVector(
     return result;
 }
 
+static boolean
+xpathCondition(Document *doc, DagNode *node, String *condition)
+{
+    xmlXPathObject *obj;
+    boolean result = FALSE;
+
+    assertDoc(doc);
+    assertDagNode(node);
+    assertString(condition);
+
+    obj = xpathEval(doc, node->dbobject, condition->value);
+    if (obj && obj->nodesetval) {
+	result = obj->nodesetval->nodeNr > 0;
+    }
+    xmlXPathFreeObject(obj);
+    return result;
+}
+
 /* Attempt to fully identify a dependency (set the dep attibute),
  */
 static boolean
@@ -740,6 +784,11 @@ identifyDep(Dependency *dep, volatile ResolverState *res_state)
     assertDependency(dep);
 
     if (!dep->dep) {
+	if (dep->condition && !dep->depset) {
+	    if (!xpathCondition(res_state->doc, dep->from, dep->condition)) {
+		return TRUE; /* Assume that we qould ave found the dep. */
+	    }
+	}
 	found = findNodesByQn(dep->qn, dep->qn_is_full, res_state);
 	if (found) {
 	    if (found->type == OBJ_VECTOR) {
@@ -1148,7 +1197,8 @@ newFallbackPair(DependencySet *depset, volatile ResolverState *res_state)
      * to treat them as such. */ 
     fallback->mirror_node = endfallback;
     endfallback->mirror_node = fallback;
-    if (isBuildSideNode(depset->definition_node)) {
+
+    if (depset->direction_is_forwards) {
 	endfallback->build_type = ENDFALLBACK_NODE;
     }
     else {
@@ -1365,24 +1415,6 @@ initChosenDep(DependencySet *depset)
     }
 }
 
-static boolean
-xpathCondition(Document *doc, DagNode *node, String *condition)
-{
-    xmlXPathObject *obj;
-    boolean result = FALSE;
-
-    assertDoc(doc);
-    assertDagNode(node);
-    assertString(condition);
-
-    obj = xpathEval(doc, node->dbobject, condition->value);
-    if (obj && obj->nodesetval) {
-	result = obj->nodesetval->nodeNr > 0;
-    }
-    xmlXPathFreeObject(obj);
-    return result;
-}
-
 /* On entry to this function, most depsets will have direct references
  * to their dependencies.  On exit they must contain references.  This
  * is because there must be only one direct reference to each dependency
@@ -1526,6 +1558,9 @@ setRebuildsToBuilds(Vector *nodes)
 static boolean
 nodeIsActive(DagNode *node)
 {
+    if (!node) {
+	dbgSexp(node);
+    }
     assertDagNode(node);
     return (node->build_type != EXISTS_NODE) &&
 	(node->build_type != DEACTIVATED_NODE);
@@ -1539,7 +1574,7 @@ depMustBeDeactivated(DagNode *node, Dependency *dep)
     assertDagNode(node);
     assertDependency(dep);
 
-    if (!nodeIsActive(node) || !nodeIsActive(dep->dep)) {
+    if (!dep->dep || !nodeIsActive(node) || !nodeIsActive(dep->dep)) {
 	return TRUE;
     }
 

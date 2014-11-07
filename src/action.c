@@ -33,6 +33,7 @@ static String arg_str = {OBJ_STRING, "arg"};
 static Document *adddeps_document = NULL;
 static Document *rmdeps_document = NULL;
 static Document *fallback_processor = NULL;
+static Document *ddl_processor = NULL;
 
 static Cons *docstack = NULL;
 
@@ -104,6 +105,16 @@ getFallbackProcessor()
     return fallback_processor;
 }
 
+Document *
+getDDLProcessor()
+{
+    if (!ddl_processor) {
+	ddl_processor = 
+	    findDoc((String*) symbolGetValue("ddl_processor"));
+    }
+    return ddl_processor;
+}
+
 static Document *
 getAddDepsDoc()
 {
@@ -162,6 +173,10 @@ freeStdTemplates()
     if (fallback_processor) {
 	objectFree((Object *) fallback_processor, TRUE);
 	fallback_processor = NULL;
+    }
+    if (ddl_processor) {
+	objectFree((Object *) ddl_processor, TRUE);
+	ddl_processor = NULL;
     }
 }
 

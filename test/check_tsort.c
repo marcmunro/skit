@@ -323,8 +323,6 @@ START_TEST(navigation)
     Document *src_doc;
     Document *result_doc;
     Vector *sorted;
-    xmlNode *root;
-    xmlDocPtr xmldoc;
     //showMalloc(7040);
     //trackMalloc(7040);
 
@@ -334,14 +332,7 @@ START_TEST(navigation)
 
     src_doc = getDoc("test/data/gensource1.xml");
     sorted = tsort(src_doc);
-
-    xmldoc = xmlNewDoc(BAD_CAST "1.0");
-    root = xmlNewNode(NULL, BAD_CAST "root");
-    xmlDocSetRootElement(xmldoc, root);
-    result_doc = documentNew(xmldoc, NULL);
-
-    docFromVector(root, sorted);
-
+    result_doc = docFromVector(NULL, sorted);
     //dbgSexp(result_doc);
 
     objectFree((Object *) sorted, TRUE);
@@ -359,8 +350,6 @@ START_TEST(navigation2)
     Document *src_doc;
     Document *result_doc;
     Vector *sorted;
-    xmlNode *root;
-    xmlDocPtr xmldoc;
 
     initTemplatePath(".");
     setq_build();
@@ -368,13 +357,7 @@ START_TEST(navigation2)
 
     src_doc = getDoc("test/data/gensource1.xml");
     sorted = tsort(src_doc);
-
-    xmldoc = xmlNewDoc(BAD_CAST "1.0");
-    root = xmlNewNode(NULL, BAD_CAST "root");
-    xmlDocSetRootElement(xmldoc, root);
-    result_doc = documentNew(xmldoc, NULL);
-
-    docFromVector(root, sorted);
+    result_doc = docFromVector(NULL, sorted);
 
     //dbgSexp(result_doc);
 

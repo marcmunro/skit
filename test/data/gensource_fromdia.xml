@@ -12,10 +12,10 @@
       <dependencies>
         <dependency fqn="cluster"/>
         <dependency fqn="role.x"/>
-        <dependency-set fallback="privilege.role.x.superuser" parent="ancestor::dbobject[@type='cluster']" direction="forwards">
+        <dependency-set fallback="privilege.role.x.superuser" parent="ancestor::dbobject[@type='cluster']" applies="forwards">
 	  <dependency fqn="privilege.role.x.superuser"/>
         </dependency-set>
-        <dependency-set fallback="privilege.role.x.superuser" parent="ancestor::dbobject[@type='cluster']" direction="backwards">
+        <dependency-set fallback="privilege.role.x.superuser" parent="ancestor::dbobject[@type='cluster']" applies="backwards">
 	  <dependency fqn="privilege.role.x.superuser"/>
         </dependency-set>
       </dependencies>

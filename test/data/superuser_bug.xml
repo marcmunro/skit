@@ -245,12 +245,12 @@
               <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
               <dependency fqn="function.regressdb.public.seg_out(public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -269,12 +269,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -334,12 +334,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -399,12 +399,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -464,12 +464,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -527,12 +527,12 @@
             <dependencies>
               <dependency fqn="schema.regressdb.public"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -594,12 +594,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -659,12 +659,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -724,12 +724,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -788,12 +788,12 @@
               <dependency fqn="schema.regressdb.public"/>
               <dependency fqn="function.regressdb.public.seg_in(pg_catalog.cstring)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -855,12 +855,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -920,12 +920,12 @@
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="type.regressdb.public.seg"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -988,12 +988,12 @@
               <related_to fqn="operator.regressdb.public.&gt;(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1019,12 +1019,12 @@
               <dependency fqn="function.regressdb.public.seg_left(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&gt;&gt;(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1050,12 +1050,12 @@
               <related_to fqn="operator.regressdb.public.&gt;=(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&gt;(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1082,12 +1082,12 @@
               <related_to fqn="operator.regressdb.public.&lt;&gt;(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1114,12 +1114,12 @@
               <related_to fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&lt;&gt;(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1146,12 +1146,12 @@
               <related_to fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1178,12 +1178,12 @@
               <related_to fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1209,12 +1209,12 @@
               <dependency fqn="function.regressdb.public.seg_right(public.seg,public.seg)"/>
               <related_to fqn="operator.regressdb.public.&lt;&lt;(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1243,12 +1243,12 @@
               <dependency fqn="operator.regressdb.public.=(public.seg,public.seg)"/>
               <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1289,12 +1289,12 @@
             <dependencies>
               <dependency fqn="schema.regressdb.public"/>
               <dependency fqn="role.bark"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1324,12 +1324,12 @@
               <dependency fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
               <dependency fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
               <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.bark.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:bark"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.bark.superuser"/>
@@ -1364,12 +1364,12 @@
               <dependency fqn="operator.regressdb.public.&lt;(public.seg,public.seg)"/>
               <dependency fqn="operator.regressdb.public.&lt;=(public.seg,public.seg)"/>
               <dependency fqn="function.regressdb.public.seg_cmp(public.seg,public.seg)"/>
-              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:keep"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.keep.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.keep.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:keep"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.keep.superuser"/>

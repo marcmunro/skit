@@ -161,12 +161,12 @@
               <dependency fqn="schema.regressdb.public"/>
               <dependency fqn="tablespace.pg_default"/>
               <dependency fqn="role.wibble"/>
-              <dependency-set priority="1" fallback="privilege.role.wibble.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.wibble.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.regressdb.public.create:wibble"/>
                 <dependency pqn="grant.schema.regressdb.public.create:public"/>
                 <dependency fqn="privilege.role.wibble.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.wibble.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.wibble.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.regressdb.public.usage:wibble"/>
                 <dependency pqn="grant.schema.regressdb.public.usage:public"/>
                 <dependency fqn="privilege.role.wibble.superuser"/>

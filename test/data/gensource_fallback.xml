@@ -464,12 +464,12 @@ audit data'</comment>
               <dependency fqn="tablespace.pg_default"/>
               <dependency fqn="column.x.public.x.x"/>
               <dependency fqn="role.x"/>
-              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" direction="forwards">
+              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" applies="forwards">
                 <dependency pqn="grant.schema.x.public.create:x"/>
                 <dependency pqn="grant.schema.x.public.create:public"/>
                 <dependency fqn="privilege.role.x.superuser"/>
               </dependency-set>
-              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" direction="backwards">
+              <dependency-set priority="1" fallback="privilege.role.x.superuser" parent="ancestor::dbobject[database]" applies="backwards">
                 <dependency pqn="grant.schema.x.public.usage:x"/>
                 <dependency pqn="grant.schema.x.public.usage:public"/>
                 <dependency fqn="privilege.role.x.superuser"/>
