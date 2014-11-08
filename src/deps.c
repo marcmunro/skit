@@ -714,19 +714,24 @@ append(Object *first, Object *next)
 static boolean
 isAppropriateDepForNode(DagNode *node, Dependency *dep)
 {
+    if (node->is_fallback) {
+	if ((node->build_type == ENDFALLBACK_NODE) ||
+	    (node->build_type == DSENDFALLBACK_NODE))
+	{
+	    return FALSE;
+	}
+	/* If we are using a fallback, we must use the one from the
+	 * correct side of the dag, regardless of whether we have
+	 * overridden the direction of the dep, so we don't use
+	 * dep->is_forwards in this case.  */
+
+	return isBuildSideNode(node) == isBuildSideNode(dep->from);
+    }
+
     if ((dep->is_forwards && isBuildSideNode(node)) ||
 	((!dep->is_forwards) && isDropSideNode(node)))
     {
-	if (node->is_fallback) {
-	    if ((node->build_type == FALLBACK_NODE) ||
-		(node->build_type == DSFALLBACK_NODE))
-	    {
-		return TRUE;
-	    }
-	}
-	else {
-	    return TRUE;
-	}
+	return TRUE;
     }
     return FALSE;
 }

@@ -120,11 +120,8 @@ tsort_node(Vector *nodes, DagNode *node, Vector *results)
 	    node->status = VISITING;
 	    if (node->build_type != DEACTIVATED_NODE) {
 		tsort_deps(nodes, node, results);
-		vectorPush(results, (Object *) node);
 	    }
-	    else {
-		objectFree((Object *) node, TRUE);
-	    }
+	    vectorPush(results, (Object *) node);
 	}
 	EXCEPTION(ex);
 	WHEN(TSORT_CYCLIC_DEPENDENCY) {
@@ -203,10 +200,24 @@ tsort(Document *doc)
 {
     Vector *volatile nodes = NULL;
     Vector *results = NULL;
-
+    Vector *tmp;
+    int i;
+    DagNode *node;
     BEGIN {
 	nodes = dagFromDoc(doc);
 	results = simple_tsort(nodes);
+	tmp = results;
+	results = vectorNew(tmp->elems);
+	EACH(tmp, i) {
+	    node = (DagNode *) ELEM(tmp, i);
+	    if (node->build_type == DEACTIVATED_NODE) {
+		objectFree((Object *) node, TRUE);
+	    }
+	    else {
+		vectorPush(results, (Object *) node);
+	    }
+	}
+	objectFree((Object *) tmp, FALSE);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
