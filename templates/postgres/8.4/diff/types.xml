@@ -6,12 +6,20 @@
 
   <dbobject type="type" key="fqn">
     <attribute name="owner">
-      <dependency-set 
-	  fallback="grant.role.{old.owner}.{new.owner}"
-	  parent="ancestor::dbobject[database]">
-	<dependency fqn="privilege.role.{old.owner}.superuser"/>
-	<dependency pqn="grant.role.{old.owner}.{new.owner}"/>
-      </dependency-set>
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
     </attribute>
 
     <attribute name="subtype" rebuild="true"/>

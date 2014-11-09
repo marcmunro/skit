@@ -6,38 +6,20 @@
 
   <dbobject type="function" key="fqn">
     <attribute name="owner">
-
-      <!-- If the owner changes, we need either:
-	   - the old owner to be superuser (we change ownership on the 
-	     drop side of the DAG)
-	   - the old owner to have been granted the new owner role with
-	     the admin option
-
-           TODO: Fix the depset below in line with the comment.  
-	   Notes: 
-	     1) the fallback role if we use the grant role to role mechanism 
-	        must grant the role with the admin option (and the endfallback
-		must revert back to the previous state (ie no role or
-		role without admin option).
-	     2) The name of the fallback pqn is incorrect
-	     3) ensure fallbacks can match on pqn
-	     4) need to add conditional logic to pqn handling in order
-	        to only match where admin option has been granted.
-	     5) We need usint tests for these cases.
-	     6) The depset below should be wrapped in a conditional
-	        dependencies entry (condition="backwards")
-	     7) We must also have dependencies on the owner's access to
-	        the parent schema.
-	     8) All other object ownership diff records must be handled
-	        similarly. 
-      -->
-
-      <dependency-set 
-	  fallback="grant.role.{old.owner}.{new.owner}"
-	  parent="ancestor::dbobject[database]">
-	<dependency fqn="privilege.role.{old.owner}.superuser"/>
-	<dependency pqn="grant.role.{old.owner}.{new.owner}"/>
-      </dependency-set>
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
     </attribute>
     <attribute name="language"/>
     <attribute name="volatility"/>

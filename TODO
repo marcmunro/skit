@@ -10,34 +10,6 @@ changes and consolidate ddl standards.
 
 MODIFY 
 
-Add forward deps on changed ownership for diffprep throughout:
-
-tablespaces.xsl
-aggregates.xsl
-casts.xsl
-cluster.xsl
-columns.xsl
-constraints.xsl
-conversions.xsl
-functions.xsl
-GNUmakefile
-grants.xsl
-indices.xsl
-languages.xsl
-operator_classes.xsl
-operator_families.xsl
-operators.xsl
-process_fallbacks.xsl
-roles.xsl
-rules.xsl
-schemata.xsl
-sequences.xsl
-tables.xsl
-triggers.xsl
-types.xsl
-views.xsl
-
-
 
 general code layout for:
 
