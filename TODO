@@ -13,11 +13,6 @@ MODIFY
 
 general code layout for:
 
-casts.xsl
-operators.xsl
-operator_classes.xsl
-operator_families.xsl
-comments.xsl
 sequences.xsl
 tables.xsl
 constraints.xsl
@@ -30,14 +25,6 @@ fallback.xsl
 
 
 diff tests for:
-types.xsl
-(basetypes)
-aggregates.xsl
-casts.xsl
-operators.xsl
-operator_classes.xsl
-operator_families.xsl
-comments.xsl
 sequences.xsl
 tables.xsl
 constraints.xsl

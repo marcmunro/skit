@@ -47,24 +47,13 @@
 	<xsl:if test="@name='owner'">
 	  <xsl:value-of 
 	      select="concat('&#x0A;alter language ', ../@qname,
-		                 ' owner to ', skit:dbquote($username),
+		                 ' owner to ', skit:dbquote(@new),
 		             ';&#x0A;')"/>
 	</xsl:if>
       </xsl:for-each>
     </xsl:if>
   </xsl:template>
 
-  <xsl:template match="language" mode="diff">
-    <xsl:for-each select="../attribute">
-      <do-print/>
-      <xsl:if test="@name='owner'">
-	<xsl:value-of 
-	    select="concat('&#x0A;alter language ', ../@qname,
-		               ' owner to ', skit:dbquote(@new),
-		           ';&#x0A;')"/>
-      </xsl:if>
-    </xsl:for-each>
-  </xsl:template>
 </xsl:stylesheet>
 
 

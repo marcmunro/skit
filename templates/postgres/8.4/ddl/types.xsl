@@ -128,18 +128,11 @@
       <do-print/>
       <xsl:value-of 
 	  select="concat('&#x0A;alter type ', ../@qname,
-		         ' owner to ', skit:dbquote($username), ';&#x0A;')"/>
+		         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
     </xsl:for-each>
   </xsl:template>
 
   <xsl:template match="type" mode="diff">
-    <xsl:for-each select="../attribute[@name='owner']">
-      <do-print/>
-      <xsl:value-of 
-	  select="concat('&#x0A;alter type ', ../@qname,
-		         ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-    </xsl:for-each>
-
     <xsl:for-each select="../element/element[@type='comment']">
       <do-print/>
       <xsl:value-of select="concat('&#x0A;comment on column ', 
