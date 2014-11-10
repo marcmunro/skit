@@ -717,7 +717,23 @@ create type "public"."wib3"(
 comment on type "public"."wib3" is
 'wib3 but different';
 
-
 alter type public.wib3 owner to keep;
+
+
+-- Sequences
+create sequence "public"."thingy_id_seq"
+  start with 1 increment by 4
+  minvalue 1 maxvalue 9223372036854775807
+  cache 10
+  cycle;
+
+comment on sequence "public"."thingy_id_seq" is
+'different comment on thingy';
+
+alter sequence "public"."thingy_id_seq" owner to keep;
+
+select nextval('public.thingy_id_seq')
+  from generate_series(1,38);
+
 
 DBEOF

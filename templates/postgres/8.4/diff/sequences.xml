@@ -22,11 +22,13 @@
      </dependencies>
     </attribute>
     <attribute name="start_with"/>
+    <attribute name="last_value"/>
     <attribute name="increment_by"/>
     <attribute name="max_value"/>
     <attribute name="min_value"/>
     <attribute name="cache"/>
     <attribute name="is_cycled"/>
+    <attribute name="is_called"/>
     <element type="comment">
       <text/>
     </element>

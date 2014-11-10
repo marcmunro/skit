@@ -13,41 +13,34 @@ MODIFY
 
 general code layout for:
 
-sequences.xsl
 tables.xsl
 constraints.xsl
 indices.xsl
 triggers.xsl
 rules.xsl
 views.xsl
-conversions.xsl
 fallback.xsl
 
 
 diff tests for:
-sequences.xsl
+sequences.xsl   - (Change sequence next value)
 tables.xsl
 constraints.xsl
 indices.xsl
 triggers.xsl
 rules.xsl
 views.xsl
-conversions.xsl
 fallback.xsl
 
 
 tablespace privs (taking into account implicit privs on default tablespace) for:
 
-sequences.xsl
 tables.xsl
 constraints.xsl
 indices.xsl
 
 
 
-TODO:
-Check handling of all existing ownership diffs - are they being handled
-in a manner consistent with conversions?
 
 diffs:
     sequences (including the concat thing)
@@ -59,6 +52,8 @@ diffs:
     triggers (including the concat thing)
 
 Add handling for FDWs and any other 8.4 things
+Add handling for sequence owned by table.column
+
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

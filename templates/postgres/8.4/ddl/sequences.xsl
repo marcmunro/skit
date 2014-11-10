@@ -18,6 +18,12 @@
       <xsl:text>&#x0A;  cycle</xsl:text>
     </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
+    <xsl:if test="@is_called='t'">
+      <xsl:value-of 
+	  select="concat('select pg_catalog.setval(', $apos, 
+		          @schema, '.', @name, $apos,
+			  ', ', @last_value, ', true);&#x0A;')"/>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="sequence" mode="drop">
@@ -62,7 +68,7 @@
 		  <xsl:text>&#x0A;  cycle</xsl:text>
 		</xsl:when>
 		<xsl:otherwise>
-		  <xsl:text>&#x0A;  nocycle</xsl:text>
+		  <xsl:text>&#x0A;  no cycle</xsl:text>
 		</xsl:otherwise>
 	      </xsl:choose>
 	    </xsl:when>
@@ -72,9 +78,26 @@
       </xsl:if>
       <xsl:for-each select="../attribute[@name='start_with']">
 	<xsl:value-of 
+	    select="concat('alter sequence ', 
+		           skit:dbquote(../sequence/@schema, ../@name), 
+			   '&#x0A;  restart with ', @new,
+			   ';&#x0A;')"/>
+      </xsl:for-each>
+      <xsl:for-each select="../attribute[@name='last_value']">
+	<xsl:variable name="is_called">
+	  <xsl:choose>
+	    <xsl:when test="../sequence/@is_called='t'">
+	      <xsl:value-of select="'true'"/>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:value-of select="'false'"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
+	</xsl:variable>
+	<xsl:value-of 
 	    select="concat('select pg_catalog.setval(', $apos, 
 		           ../sequence/@schema, '.', ../@name, $apos,
-			   ', ', @new, ', true);&#x0A;')"/>
+			   ', ', @new, ', ', $is_called, ');&#x0A;')"/>
       </xsl:for-each>
     </xsl:if>
   </xsl:template>

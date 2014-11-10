@@ -18,11 +18,13 @@
 		   params="(concat (select sequence 'schema') '.' 
 			           (select sequence 'name'))">
 	<skit:attr name="start_with"/>
+	<skit:attr name="last_value"/>
 	<skit:attr name="increment_by"/>
 	<skit:attr name="max_value"/>
 	<skit:attr name="min_value"/>
 	<skit:attr name="cache"/>
 	<skit:attr name="is_cycled"/>
+	<skit:attr name="is_called"/>
       </skit:runsql>
 
       <skit:if test="(select sequence 'comment')">

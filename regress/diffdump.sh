@@ -57,14 +57,17 @@ eliminate_redundant_grants()
 # second file passed to the diff.  This allows very specific comparisons
 # to be made.  More usefully, lines beginning with dot, will be tested
 # against both files.
+# In the ignore file, lines beginning with # are considered to be
+# comments and are ignored.  Also empty lines are ignored.
 #
 eliminate_allowed()
 {
+    grep -v '^#' $2 | \
     if [ "x$1" = "x2" ]; then
-	grep -v '^<' $2
+	grep -v '^<' 
     else
-	grep -v '^>' $2
-    fi | cut -c 3- >fgrep.tmp
+	grep -v '^>' 
+    fi | grep . | cut -c 3- >fgrep.tmp
     grep -v -f fgrep.tmp - 
     rm -f fgrep.tmp
 }

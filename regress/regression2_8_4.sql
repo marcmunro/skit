@@ -490,6 +490,9 @@ create sequence "public"."thingy_id_seq"
 comment on sequence "public"."thingy_id_seq" is
 'thingy';
 
+select nextval('thingy_id_seq');
+select nextval('thingy_id_seq');
+
 
 create sequence "public"."wib_seq"
   start with 1000 increment by 1
