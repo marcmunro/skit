@@ -23,7 +23,6 @@ fallback.xsl
 
 
 diff tests for:
-sequences.xsl   - (Change sequence next value)
 tables.xsl
 constraints.xsl
 indices.xsl
@@ -43,7 +42,6 @@ indices.xsl
 
 
 diffs:
-    sequences (including the concat thing)
     tables (including the concat thing)
     constraints (including the concat thing)
     indices (including the concat thing)

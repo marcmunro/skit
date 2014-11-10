@@ -701,4 +701,30 @@ comment on sequence "public"."thingy_id_seq" is
 
 create sequence wibble.x;
 
+-- Tables
+-- Test:
+--    drop table
+--    create table
+--    changes to ownership
+--    column: type, size, nullability, default
+--    add columns
+--    drop columns
+--    have type of column rebuilt
+--    tablespace
+--    inheritence
+
+-- drop/create
+create table x (
+  key	integer not null,
+  val   varchar(20) not null
+);
+
+--    changes to ownership
+create table o (
+  key	integer not null,
+  val   varchar(20) not null
+);
+
+
+
 DBEOF

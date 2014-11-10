@@ -31,6 +31,7 @@
     <xi:include href="skitfile:diff/conversions.xml"/>
     <xi:include href="skitfile:diff/aggregates.xml"/>
     <xi:include href="skitfile:diff/sequences.xml"/>
+    <xi:include href="skitfile:diff/tables.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

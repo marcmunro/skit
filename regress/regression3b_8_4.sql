@@ -735,5 +735,12 @@ alter sequence "public"."thingy_id_seq" owner to keep;
 select nextval('public.thingy_id_seq')
   from generate_series(1,38);
 
+-- Tables
+set session authorization keep;
+create table o (
+  key	integer not null,
+  val   varchar(20) not null
+);
+reset session authorization;
 
 DBEOF

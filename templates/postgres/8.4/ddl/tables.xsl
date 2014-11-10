@@ -109,6 +109,18 @@
     <xsl:value-of 
 	    select="concat('&#x0A;drop table ', ../@qname, ';&#x0A;')"/>
   </xsl:template>
+
+  <xsl:template match="table" mode="diffprep">
+    <xsl:if test="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:for-each select="../attribute[@name='owner']">
+	<xsl:value-of 
+	    select="concat('&#x0A;alter table ', ../@qname,
+			   ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+      </xsl:for-each>
+    </xsl:if>
+  </xsl:template>
+
 </xsl:stylesheet>
 
 
