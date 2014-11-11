@@ -712,6 +712,8 @@ create sequence wibble.x;
 --    have type of column rebuilt
 --    tablespace
 --    inheritence
+--    comment
+--    column comment
 
 -- drop/create
 create table x (
@@ -719,10 +721,20 @@ create table x (
   val   varchar(20) not null
 );
 
---    changes to ownership
+--  changes to ownership, comment
 create table o (
   key	integer not null,
   val   varchar(20) not null
+);
+
+comment on table o is 
+'This is table o';
+
+
+--  add/drop columns
+create table c (
+  key	integer not null,
+  val1  varchar(20) not null
 );
 
 

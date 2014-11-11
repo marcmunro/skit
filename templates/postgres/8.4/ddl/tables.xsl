@@ -7,13 +7,16 @@
    version="1.0">
 
   <xsl:template name="column">
-    <xsl:if test="position() != 1">
+    <xsl:param name="position" select="position()"/>
+    <xsl:param name="spaces" select="'                              '"/>
+    <xsl:param name="prefix" select="'&#x0A;  '"/>
+    <xsl:if test="$position != 1">
       <xsl:value-of select="','"/>
     </xsl:if>
-    <xsl:value-of select="'&#x0A;  '"/>
+    <xsl:value-of select="$prefix"/>
     <xsl:value-of 
        select="concat(skit:dbquote(@name),
-	              substring('                              ',
+	              substring($spaces,
 		      string-length(skit:dbquote(@name))))"/>
     <xsl:value-of select="concat(' ', skit:dbquote(@type_schema, @type))"/>
     <xsl:if test="@size">
@@ -121,6 +124,30 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:template 
+      match="dbobject[@action='build' and @parent-type='table' and
+                      @parent-diff!='new']/column">
+    <print>
+      <xsl:value-of select="concat('&#x0A;alter table ', 
+			           ../@parent-qname, ' add ')"/>
+      <xsl:call-template name="column">
+	<xsl:with-param name="position" select="'1'"/>
+	<xsl:with-param name="spaces" select="' '"/>
+	<xsl:with-param name="prefix" select="''"/>
+      </xsl:call-template>
+      <xsl:value-of select="';&#x0A;'"/>
+    </print>
+  </xsl:template>
+
+  <xsl:template 
+      match="dbobject[@action='drop' and @parent-type='table' and
+                      @parent-diff!='gone']/column">
+    <print>
+      <xsl:value-of select="concat('&#x0A;alter table ', 
+			           ../@parent-qname, ' drop column ',
+				   ../@qname, ';&#x0A;')"/>
+    </print>
+  </xsl:template>
 </xsl:stylesheet>
 
 
