@@ -706,13 +706,14 @@ create sequence wibble.x;
 --    drop table
 --    create table
 --    changes to ownership
---    column: type, size, nullability, default
 --    add columns
 --    drop columns
+--    comment
+--    column: type, size, nullability, default
 --    have type of column rebuilt
 --    tablespace
+--    storage
 --    inheritence
---    comment
 --    column comment
 
 -- drop/create
@@ -731,10 +732,11 @@ comment on table o is
 'This is table o';
 
 
---  add/drop columns
+--  add/drop columns, change precision, change nullability
 create table c (
   key	integer not null,
-  val1  varchar(20) not null
+  val1  varchar(20) not null,
+  val2  varchar(20) not null
 );
 
 

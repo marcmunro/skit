@@ -6,6 +6,22 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="column-typedef">
+    <xsl:param name="with-null" select="'yes'"/>
+    <xsl:value-of select="skit:dbquote(@type_schema, @type)"/>
+    <xsl:if test="@size">
+      <xsl:value-of select="concat('(', @size)"/>
+      <xsl:if test="@precision">
+	<xsl:value-of select="concat(',', @precision)"/>
+      </xsl:if>
+      <xsl:value-of select="')'"/>
+    </xsl:if>
+    <xsl:value-of select="@dimensions"/>
+    <xsl:if test="$with-null='yes' and @nullable='no'">
+      <xsl:value-of select="' not null'"/>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:template name="column">
     <xsl:param name="position" select="position()"/>
     <xsl:param name="spaces" select="'                              '"/>
@@ -17,19 +33,8 @@
     <xsl:value-of 
        select="concat(skit:dbquote(@name),
 	              substring($spaces,
-		      string-length(skit:dbquote(@name))))"/>
-    <xsl:value-of select="concat(' ', skit:dbquote(@type_schema, @type))"/>
-    <xsl:if test="@size">
-      <xsl:value-of select="concat('(', @size)"/>
-      <xsl:if test="@precision">
-	<xsl:value-of select="concat(',', @precision)"/>
-      </xsl:if>
-      <xsl:value-of select="')'"/>
-    </xsl:if>
-    <xsl:value-of select="@dimensions"/>
-    <xsl:if test="@nullable='no'">
-      <xsl:value-of select="' not null'"/>
-    </xsl:if>
+		      string-length(skit:dbquote(@name))), '  ')"/>
+    <xsl:call-template name="column-typedef"/>
     <xsl:if test="@default">
       <xsl:value-of 
 	  select="concat('&#x0A;                                    default ', 
@@ -148,6 +153,39 @@
 				   ../@qname, ';&#x0A;')"/>
     </print>
   </xsl:template>
+
+  <xsl:template 
+      match="dbobject[@action='diff' and @parent-type='table']/column">
+    <print>
+      <xsl:for-each select="../attribute[@status='diff']">
+	<xsl:value-of select="concat('&#x0A;alter table ', ../@parent-qname,
+			             ' alter column ', ../@qname)"/>
+	<xsl:choose>
+	  <xsl:when test="@name='nullable'">
+	    <xsl:choose>
+	      <xsl:when test="@new='yes'">
+		<xsl:text> drop not null</xsl:text>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:text> set not null</xsl:text>
+	      </xsl:otherwise>
+	    </xsl:choose>
+	  </xsl:when>
+	  <xsl:when test="@name='size'">
+	    <xsl:text> type </xsl:text>
+	    <xsl:for-each select="../column">
+	      <xsl:call-template name="column-typedef">
+		<xsl:with-param name="with-null" select="'no'"/>
+		</xsl:call-template>
+	    </xsl:for-each>
+	  </xsl:when>
+	</xsl:choose>
+	<xsl:text>;</xsl:text>
+      </xsl:for-each>
+      <xsl:text>&#x0A;</xsl:text>
+    </print>
+  </xsl:template>
+
 </xsl:stylesheet>
 
 

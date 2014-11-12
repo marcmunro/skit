@@ -5,8 +5,8 @@
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
   <dbobject type="column" key="fqn">
-    <attribute name="type"/>
-    <attribute name="type_schema"/>
+    <attribute name="type" rebuild="true"/>
+    <attribute name="type_schema" rebuild="true"/>
     <attribute name="size"/>
     <attribute name="nullable"/>
     <element type="comment">

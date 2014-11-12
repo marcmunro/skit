@@ -1,9 +1,5 @@
 Architectural re-work
 
-When a cyclic dependency is detected, we will apply ddl to the node to
-see if it will result in no code being generated.  If so, the node can
-be deactivated.
-
 
 Working on the following ddl code changes in order to allow ownership
 changes and consolidate ddl standards.

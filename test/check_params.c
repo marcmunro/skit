@@ -820,6 +820,39 @@ START_TEST(diff)
     char *args[] = {"./skit", "-t", "diff.xml",
 		    "regress/scratch/regressdb_dump3a.xml",
 		    "regress/scratch/regressdb_dump3b.xml",
+		    "--print", "--full"
+                    };
+    Document *doc;
+
+    initTemplatePath(".");
+    //showFree(3563);
+    //showMalloc(32098);
+    //trackMalloc(4097);
+
+    BEGIN {
+	process_args2(5, args);
+	doc = docStackPop();
+	//printSexp(stderr, "DOC:", (Object *) doc);
+	objectFree((Object *) doc, TRUE);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+#ifdef WIBBLE
+#endif
+
+START_TEST(diffc)
+{
+    char *args[] = {"./skit", "-t", "diff.xml",
+		    "regress/scratch/regressdb_dump3a.xml",
+		    "regress/scratch/regressdb_dump3b.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;
@@ -845,6 +878,7 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
+
 #ifdef WIBBLE
 #endif
 
@@ -1047,6 +1081,7 @@ params_suite(void)
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
     ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diffc);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

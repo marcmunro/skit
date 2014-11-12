@@ -745,8 +745,9 @@ reset session authorization;
 
 create table c (
   key	integer not null,
-  val2  varchar(20) not null,
-  val3  varchar(20) not null
+  val1  varchar(19),
+  val3  varchar(20) not null,
+  val4  varchar(20) not null
 );
 
 
