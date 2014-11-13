@@ -11,6 +11,7 @@
     <attribute name="precision"/>
     <attribute name="nullable"/>
     <attribute name="default"/>
+    <attribute name="storage_policy"/>
     <element type="comment">
       <text/>
     </element>

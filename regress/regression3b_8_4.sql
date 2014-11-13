@@ -758,5 +758,6 @@ comment on column c.val1 is 'val1';
 comment on column c.val2 is 'new';
 comment on column c.val4 is 'val4';
 
+alter table c alter column val2 set storage external;
 
 DBEOF

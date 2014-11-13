@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <xsl:stylesheet
-   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-   xmlns:xi="http://www.w3.org/2003/XInclude"
-   xmlns:skit="http://www.bloodnok.com/xml/skit"
-   version="1.0">
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xi="http://www.w3.org/2003/XInclude"
+    xmlns:skit="http://www.bloodnok.com/xml/skit"
+    version="1.0">
 
   <xsl:template name="column-typedef">
     <xsl:param name="with-null" select="'yes'"/>
@@ -42,6 +42,61 @@
     </xsl:if>
   </xsl:template>
 
+  <!-- Produce the alter column part of an alter table statement for a
+       stats target.   
+       The context for this call is the comment element. -->
+  <xsl:template name="column-stats">
+    <xsl:value-of 
+	select="concat('&#x0A;  alter column ', skit:dbquote(@name),
+		       ' set statistics ', @stats_target)"/>
+  </xsl:template>
+
+  <!-- Produce the alter column part of an alter table statement for a
+       storage policy.   
+       The context for this call is the comment element. -->
+  <xsl:template name="column-storage">
+    <xsl:value-of 
+	select="concat(' alter column ', skit:dbquote(@name), 
+		       ' set storage ')"/>
+    <xsl:choose>
+      <xsl:when test="@storage_policy = 'p'">
+	<xsl:value-of select="'main'"/>
+      </xsl:when>
+      <xsl:when test="@storage_policy = 'e'">
+	<xsl:value-of select="'external'"/>
+      </xsl:when>
+      <xsl:when test="@storage_policy = 'm'">
+	<xsl:value-of select="'main'"/>
+      </xsl:when>
+      <xsl:when test="@storage_policy = 'x'">
+	<xsl:value-of select="'extended'"/>
+      </xsl:when>
+      <xsl:otherwise>
+	<!-- This may not be correct in all cases but is the best I can
+	     be bothered to do.  -->
+	<xsl:value-of select="'main'"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <!-- Produce the comment for a column.  
+       The context for this call is the comment element. -->
+  <xsl:template name="column-comment">
+    <xsl:param name="tbl-qname" select="../../@qname"/>
+    <xsl:if test="@is_local='t' and comment">
+      <xsl:value-of 
+	  select="concat('&#x0A;comment on column ', $tbl-qname, '.',
+	                 skit:dbquote(@name), ' is&#x0A;', comment/text(),
+			 ';&#x0A;')"/>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="alter-table-intro">
+    <xsl:param name="tbl-qname" select="../@qname"/>
+    <xsl:value-of select="concat('&#x0A;alter table only ', $tbl-qname)"/>
+  </xsl:template>
+
+
   <xsl:template match="table" mode="build">
     <xsl:value-of select="concat('create table ', ../@qname, ' (')"/>
     <xsl:for-each select="column[@is_local='t']">
@@ -65,51 +120,32 @@
     </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
 
+
     <xsl:if test="column[@stats_target]">
-      <xsl:value-of select="concat('&#x0A;alter table ', ../@qname)"/>
+      <xsl:call-template name="alter-table-intro"/>
       <xsl:for-each select="column[@stats_target]">
 	<xsl:if test="position() != '1'">
 	  <xsl:value-of select="', '"/>
 	</xsl:if>
-	<xsl:value-of 
-	    select="concat('&#x0A;  alter column ', skit:dbquote(@name),
-		           ' set statistics ', @stats_target)"/>
+	<xsl:call-template name="column-stats"/>
       </xsl:for-each>
       <xsl:value-of select="';&#x0A;'"/>
     </xsl:if>
     
     <xsl:if test="column[@storage_policy]">
-      <xsl:value-of select="concat('&#x0A;alter table ', ../@qname)"/>
+      <xsl:call-template name="alter-table-intro"/>
       <xsl:for-each select="column[@storage_policy]">
 	<xsl:if test="position() != '1'">
 	  <xsl:value-of select="', '"/>
 	</xsl:if>
-	<xsl:value-of 
-	    select="concat('&#x0A;  alter column ', skit:dbquote(@name),
-		           ' set storage ')"/>
-	<xsl:choose>
-	  <xsl:when test="@storage_policy = 'p'">
-	    <xsl:value-of select="'main'"/>
-	  </xsl:when>
-	  <xsl:when test="@storage_policy = 'e'">
-	    <xsl:value-of select="'external'"/>
-	  </xsl:when>
-	  <xsl:when test="@storage_policy = 'm'">
-	    <xsl:value-of select="'main'"/>
-	  </xsl:when>
-	  <xsl:when test="@storage_policy = 'x'">
-	    <xsl:value-of select="'extended'"/>
-	  </xsl:when>
-	</xsl:choose>
+	<xsl:text>&#x0A; </xsl:text>
+	<xsl:call-template name="column-storage"/>
       </xsl:for-each>
-      <xsl:value-of select="';&#x0A;'"/>
+      <xsl:text>;&#x0A;</xsl:text>
     </xsl:if>
     
-    <xsl:for-each select="column[@is_local='t']/comment">
-      <xsl:value-of 
-	  select="concat('&#x0A;comment on column ', ../../../@qname, '.',
-	                 skit:dbquote(../@name), ' is&#x0A;', text(),
-			 ';&#x0A;')"/>
+    <xsl:for-each select="column">
+      <xsl:call-template name="column-comment"/>
     </xsl:for-each>
   </xsl:template>
 
@@ -122,18 +158,37 @@
     <xsl:if test="../attribute[@name='owner']">
       <do-print/>
       <xsl:for-each select="../attribute[@name='owner']">
+      <xsl:call-template name="alter-table-intro"/>
 	<xsl:value-of 
-	    select="concat('&#x0A;alter table ', ../@qname,
-			   ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+	    select="concat(' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
       </xsl:for-each>
     </xsl:if>
   </xsl:template>
 
+  <!-- Column drops for rebuilds. -->
+  <xsl:template 
+      match="dbobject[@action='drop' and @parent-type='table' and
+                      @parent-diff!='gone']/column">
+    <print>
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+      <xsl:value-of select="concat('&#x0A;alter table only ', 
+			           ../@parent-qname, ' drop column ',
+				   ../@qname, ';&#x0A;')"/>
+      <xsl:call-template name="reset_owner"/>
+    </print>
+  </xsl:template>
+
+
+  <!-- Column builds for rebuilds. -->
   <xsl:template 
       match="dbobject[@action='build' and @parent-type='table' and
                       @parent-diff!='new']/column">
     <print>
-      <xsl:value-of select="concat('&#x0A;alter table ', 
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+
+      <xsl:value-of select="concat('&#x0A;alter table only ', 
 			           ../@parent-qname, ' add ')"/>
       <xsl:call-template name="column">
 	<xsl:with-param name="position" select="'1'"/>
@@ -141,32 +196,28 @@
 	<xsl:with-param name="prefix" select="''"/>
       </xsl:call-template>
       <xsl:text>;</xsl:text>
-      <xsl:if test="@is_local='t' and comment">
-	<xsl:value-of 
-	    select="concat('&#x0A;comment on column ', ../@parent-qname, '.',
-		           skit:dbquote(../@name), ' is&#x0A;', 
-			   comment/text(), ';&#x0A;')"/>
-      </xsl:if>
-    </print>
-  </xsl:template>
 
-  <xsl:template 
-      match="dbobject[@action='drop' and @parent-type='table' and
-                      @parent-diff!='gone']/column">
-    <print>
-      <xsl:call-template name="feedback"/>
-      <xsl:call-template name="set_owner"/>
-      <xsl:value-of select="concat('&#x0A;alter table ', 
-			           ../@parent-qname, ' drop column ',
-				   ../@qname, ';&#x0A;')"/>
+      <xsl:if test="@storage_policy">
+	<xsl:call-template name="alter-table-intro">
+	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	</xsl:call-template>
+	<xsl:call-template name="column-storage"/>
+	<xsl:text>;</xsl:text>
+      </xsl:if>
+      <xsl:call-template name="column-comment">
+	<xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+      </xsl:call-template>
       <xsl:call-template name="reset_owner"/>
     </print>
   </xsl:template>
 
-  <xsl:template name="alter-table">
-    <xsl:value-of select="concat('&#x0A;alter table ', ../@parent-qname,
-			         ' alter column ', ../@qname, ' ')"/>
+  <xsl:template name="alter-table-col">
+    <xsl:call-template name="alter-table-intro">
+      <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+    </xsl:call-template>
+    <xsl:value-of select="concat(' alter column ', ../@qname, ' ')"/>
   </xsl:template>
+
 
   <xsl:template 
       match="dbobject[@action='diff' and @parent-type='table']/column">
@@ -178,14 +229,14 @@
       <xsl:for-each 
 	  select="../attribute[@status='diff' and @name='nullable' and
 		               @new='yes']">
-	<xsl:call-template name="alter-table"/>
+	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>drop not null;</xsl:text>
       </xsl:for-each>
 
       <xsl:for-each 
 	  select="../attribute[@status='diff' and 
 		               (@name='size' or @name='precision')]">
-	<xsl:call-template name="alter-table"/>
+	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>type </xsl:text>
 	<xsl:for-each select="../column">
 	  <xsl:call-template name="column-typedef">
@@ -197,22 +248,31 @@
 
       <xsl:for-each 
 	  select="../attribute[@status!='gone' and @name='default']">
-	<xsl:call-template name="alter-table"/>
+	<xsl:call-template name="alter-table-col"/>
 	<xsl:value-of select="concat('set default ', @new, ';')"/>
       </xsl:for-each>
 
       <xsl:for-each 
 	  select="../attribute[@status='gone' and @name='default']">
-	<xsl:call-template name="alter-table"/>
+	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>drop default;</xsl:text>
       </xsl:for-each>
 
       <xsl:for-each 
 	  select="../attribute[@status='diff' and @name='nullable' and 
 		               @new='no']">
-	<xsl:call-template name="alter-table"/>
+	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>set not null;</xsl:text>
       </xsl:for-each>
+      
+      <xsl:if test="../attribute[@name='storage_policy']">
+	<xsl:call-template name="alter-table-intro">
+	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	</xsl:call-template>
+	<xsl:call-template name="column-storage"/>
+	<xsl:text>;</xsl:text>
+      </xsl:if>
+
       <xsl:call-template name="commentdiff">
 	<xsl:with-param name="sig">
 	  <xsl:value-of 

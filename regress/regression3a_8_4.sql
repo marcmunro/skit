@@ -713,6 +713,7 @@ create sequence wibble.x;
 --    have type of column rebuilt
 --    tablespace
 --    storage
+--    statistics
 --    inheritence
 
 -- drop/create
@@ -746,6 +747,13 @@ create table c (
 comment on column c.key is 'key';
 comment on column c.val1 is 'val1';
 comment on column c.val4 is 'val4';
+
+-- storage policies
+alter table c alter column val2 set storage main;
+alter table c alter column val3 set storage external;
+alter table c alter column val4 set storage external;
+
+-- stats targets
 
 
 DBEOF
