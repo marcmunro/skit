@@ -711,10 +711,10 @@ create sequence wibble.x;
 --    column comment
 --    column: type, size, nullability, default
 --    have type of column rebuilt
---    tablespace
 --    storage
 --    statistics
 --    inheritence
+--    tablespace
 
 -- drop/create
 create table x (
@@ -752,8 +752,13 @@ comment on column c.val4 is 'val4';
 alter table c alter column val2 set storage main;
 alter table c alter column val3 set storage external;
 alter table c alter column val4 set storage external;
+alter table c alter column val8 set storage external;
 
 -- stats targets
+alter table c alter column key set statistics 1000;
+alter table c alter column val2 set statistics 1000;
+alter table c alter column val4 set statistics 1000;
+alter table c alter column val8 set statistics 1000;
 
 
 DBEOF

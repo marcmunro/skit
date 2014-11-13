@@ -47,8 +47,11 @@
        The context for this call is the comment element. -->
   <xsl:template name="column-stats">
     <xsl:value-of 
-	select="concat('&#x0A;  alter column ', skit:dbquote(@name),
+	select="concat(' alter column ', skit:dbquote(@name),
 		       ' set statistics ', @stats_target)"/>
+    <xsl:if test="not(@stats_target)">
+      <xsl:text>-1</xsl:text>
+    </xsl:if>
   </xsl:template>
 
   <!-- Produce the alter column part of an alter table statement for a
@@ -127,6 +130,7 @@
 	<xsl:if test="position() != '1'">
 	  <xsl:value-of select="', '"/>
 	</xsl:if>
+	<xsl:text>&#x0A; </xsl:text>
 	<xsl:call-template name="column-stats"/>
       </xsl:for-each>
       <xsl:value-of select="';&#x0A;'"/>
@@ -197,6 +201,14 @@
       </xsl:call-template>
       <xsl:text>;</xsl:text>
 
+      <xsl:if test="@stats_target">
+	<xsl:call-template name="alter-table-intro">
+	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	</xsl:call-template>
+	<xsl:call-template name="column-stats"/>
+	<xsl:text>;</xsl:text>
+      </xsl:if>
+
       <xsl:if test="@storage_policy">
 	<xsl:call-template name="alter-table-intro">
 	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
@@ -204,6 +216,7 @@
 	<xsl:call-template name="column-storage"/>
 	<xsl:text>;</xsl:text>
       </xsl:if>
+
       <xsl:call-template name="column-comment">
 	<xsl:with-param name="tbl-qname" select="../@parent-qname"/>
       </xsl:call-template>
@@ -270,6 +283,14 @@
 	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
 	</xsl:call-template>
 	<xsl:call-template name="column-storage"/>
+	<xsl:text>;</xsl:text>
+      </xsl:if>
+
+      <xsl:if test="../attribute[@name='stats_target']">
+	<xsl:call-template name="alter-table-intro">
+	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	</xsl:call-template>
+	<xsl:call-template name="column-stats"/>
 	<xsl:text>;</xsl:text>
       </xsl:if>
 

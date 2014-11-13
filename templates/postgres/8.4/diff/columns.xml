@@ -12,6 +12,7 @@
     <attribute name="nullable"/>
     <attribute name="default"/>
     <attribute name="storage_policy"/>
+    <attribute name="stats_target"/>
     <element type="comment">
       <text/>
     </element>
