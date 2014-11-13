@@ -8,7 +8,9 @@
     <attribute name="type" rebuild="true"/>
     <attribute name="type_schema" rebuild="true"/>
     <attribute name="size"/>
+    <attribute name="precision"/>
     <attribute name="nullable"/>
+    <attribute name="default"/>
     <element type="comment">
       <text/>
     </element>

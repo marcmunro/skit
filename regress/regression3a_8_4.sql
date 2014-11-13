@@ -732,11 +732,15 @@ comment on table o is
 'This is table o';
 
 
---  add/drop columns, change precision, change nullability
+--  add/drop columns, change size and precision, change nullability and default
 create table c (
   key	integer not null,
   val1  varchar(20) not null,
-  val2  varchar(20) not null
+  val2  numeric(12,4) not null default 0::numeric,
+  val3  numeric(12,4) not null default 0::numeric,
+  val4  vv2_t not null,
+  val5  text,
+  val8  varchar(20) not null
 );
 
 

@@ -70,10 +70,11 @@
 			       @schema, '.', @sequence)}"/>
     </xsl:for-each>
 
-    <!-- The table depends on all of its columns -->
+    <!-- The table depends, softly, on all of its columns -->
     <xsl:for-each select="column">
       <dependency fqn="{concat('column.', $parent_core, '.', ../@name, 
-		               '.', @name)}"/>
+		               '.', @name)}"
+		  soft="'true'"/>
 
     </xsl:for-each>
   </xsl:template>

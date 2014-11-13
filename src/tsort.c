@@ -79,7 +79,7 @@ breakCycle(DagNode *node)
 
     dbgSexp(nodes_in_cycle);
     doc = applyDDL(doc);
-    ddl_nodes = dagNodesFromDoc(doc);
+    ddl_nodes = dagNodesFromDoc(doc->doc->children);
 
     EACH(ddl_nodes, i) {
 	this = (DagNode *) ELEM(ddl_nodes, i);

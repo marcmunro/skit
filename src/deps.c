@@ -228,12 +228,12 @@ addDagNodeToVector(Object *this, Object *vector)
  * dbobject.
  */
 Vector *
-dagNodesFromDoc(Document *doc)
+dagNodesFromDoc(xmlNode *root)
 {
     Vector *volatile nodes = vectorNew(1000);
 
     BEGIN {
-	(void) xmlTraverse(doc->doc->children, &addDagNodeToVector, 
+	(void) xmlTraverse(root, &addDagNodeToVector, 
 			   (Object *) nodes);
     }
     EXCEPTION(ex) {
@@ -383,22 +383,6 @@ makeMirrors(volatile ResolverState *res_state)
 	    makeMirrorNode(node, res_state);
 	}
     }
-}
-
-static xmlNode *
-nextDependency(xmlNode *start, xmlNode *prev)
-{
-    xmlNode *node;
-    if (prev) {
-	node = firstElement(prev->next);
-    }
-    else {
-	node = firstElement(start);
-    }
-    while (node && !isDepNode(node)) {
-	node = firstElement(node->next);
-    }
-    return node;
 }
 
 static int
@@ -1489,48 +1473,6 @@ identifyDependencies(volatile ResolverState *res_state)
     identifyDepsForDepsets(res_state);
 }
 
-static boolean
-conditionallyPromoteToRebuild(DagNode *node)
-{
-    Dependency *dep;
-    int i;
-    if (node->build_type == REBUILD_NODE) {
-	return TRUE;
-    }
-    if (node->status == UNVISITED) {
-	node->status = VISITED;
-	if ((node->build_type == DIFF_NODE) ||
-	    (node->build_type == EXISTS_NODE)) 
-	{
-	    EACH(node->deps, i) {
-		dep = (Dependency *) ELEM(node->deps, i);
-		assertDependency(dep);
-		if (dep->dep && conditionallyPromoteToRebuild(dep->dep)) {
-		    node->status = REBUILD_NODE;
-		    node->mirror_node->status = DROP_NODE;
-		    return TRUE;
-		}
-	    }
-	}
-    }
-    return FALSE;
-}
-
-
-/* Any node that depends on a node with a buld_type of REBUILD, must
- * itself be promoted to a rebuild. */
-static void
-promoteRebuilds(Vector *nodes)
-{
-    int i;
-    DagNode *node;
-    EACH(nodes, i) {
-        node = (DagNode *) ELEM(nodes, i);
-	assertDagNode(node);
-	(void) conditionallyPromoteToRebuild(node);
-    }
-}
-
 /* Reset the node->status back to UNVISITED. */
 static void
 resetNodeStates(Vector *nodes)
@@ -2386,7 +2328,7 @@ dagFromDoc(Document *doc)
 
     initResolverState(&resolver_state);
     resolver_state.doc = doc;
-    resolver_state.all_nodes = dagNodesFromDoc(doc);
+    resolver_state.all_nodes = dagNodesFromDoc(doc->doc->children);
 
     BEGIN {
 	makeQnHashes(&resolver_state);
@@ -2396,8 +2338,6 @@ dagFromDoc(Document *doc)
 	identifyDependencies(&resolver_state);
 
 	//showVectorDeps(resolver_state.all_nodes);
-	promoteRebuilds(resolver_state.all_nodes);
-	resetNodeStates(resolver_state.all_nodes);
 	setRebuildsToBuilds(resolver_state.all_nodes);
 
 	//showVectorDeps(resolver_state.all_nodes);

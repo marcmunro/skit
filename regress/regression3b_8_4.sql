@@ -746,8 +746,11 @@ reset session authorization;
 create table c (
   key	integer not null,
   val1  varchar(19),
-  val3  varchar(20) not null,
-  val4  varchar(20) not null
+  val2  numeric(12,6) not null default 1.0::numeric,
+  val3  numeric(12,4) not null,
+  val4  vv2_t,
+  val5  varchar,
+  val9  varchar(20)
 );
 
 

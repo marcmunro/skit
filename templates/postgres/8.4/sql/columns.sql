@@ -20,7 +20,7 @@ select a.attnum as colnum,
        case when a.attstorage = t.typstorage
        then null else a.attstorage end as storage_policy,
        a.attislocal as is_local,
-       quote_literal(pg_catalog.pg_get_expr(d.adbin, d.adrelid)) as default,
+       pg_catalog.pg_get_expr(d.adbin, d.adrelid) as default,
        nullif(a.attstattarget, -1) as stats_target,
        quote_literal(col_description(a.attrelid, a.attnum)) as comment
 from   pg_catalog.pg_attribute a

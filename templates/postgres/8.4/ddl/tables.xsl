@@ -154,33 +154,51 @@
     </print>
   </xsl:template>
 
+  <xsl:template name="alter-table">
+    <xsl:value-of select="concat('&#x0A;alter table ', ../@parent-qname,
+			         ' alter column ', ../@qname, ' ')"/>
+  </xsl:template>
   <xsl:template 
       match="dbobject[@action='diff' and @parent-type='table']/column">
     <print>
-      <xsl:for-each select="../attribute[@status='diff']">
-	<xsl:value-of select="concat('&#x0A;alter table ', ../@parent-qname,
-			             ' alter column ', ../@qname)"/>
-	<xsl:choose>
-	  <xsl:when test="@name='nullable'">
-	    <xsl:choose>
-	      <xsl:when test="@new='yes'">
-		<xsl:text> drop not null</xsl:text>
-	      </xsl:when>
-	      <xsl:otherwise>
-		<xsl:text> set not null</xsl:text>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:when>
-	  <xsl:when test="@name='size'">
-	    <xsl:text> type </xsl:text>
-	    <xsl:for-each select="../column">
-	      <xsl:call-template name="column-typedef">
-		<xsl:with-param name="with-null" select="'no'"/>
-		</xsl:call-template>
-	    </xsl:for-each>
-	  </xsl:when>
-	</xsl:choose>
+      <!-- If nullability is being allowed, deal with that first. -->
+      <xsl:for-each 
+	  select="../attribute[@status='diff' and @name='nullable' and
+		               @new='yes']">
+	<xsl:call-template name="alter-table"/>
+	<xsl:text>drop not null;</xsl:text>
+      </xsl:for-each>
+
+      <xsl:for-each 
+	  select="../attribute[@status='diff' and 
+		               (@name='size' or @name='precision')]">
+	<xsl:call-template name="alter-table"/>
+	<xsl:text>type </xsl:text>
+	<xsl:for-each select="../column">
+	  <xsl:call-template name="column-typedef">
+	    <xsl:with-param name="with-null" select="'no'"/>
+	  </xsl:call-template>
+	</xsl:for-each>
 	<xsl:text>;</xsl:text>
+      </xsl:for-each>
+
+      <xsl:for-each 
+	  select="../attribute[@status!='gone' and @name='default']">
+	<xsl:call-template name="alter-table"/>
+	<xsl:value-of select="concat('set default ', @new, ';')"/>
+      </xsl:for-each>
+
+      <xsl:for-each 
+	  select="../attribute[@status='gone' and @name='default']">
+	<xsl:call-template name="alter-table"/>
+	<xsl:text>drop default;</xsl:text>
+      </xsl:for-each>
+
+      <xsl:for-each 
+	  select="../attribute[@status='diff' and @name='nullable' and 
+		               @new='no']">
+	<xsl:call-template name="alter-table"/>
+	<xsl:text>set not null;</xsl:text>
       </xsl:for-each>
       <xsl:text>&#x0A;</xsl:text>
     </print>

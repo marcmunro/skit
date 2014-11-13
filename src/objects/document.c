@@ -1294,3 +1294,19 @@ isDepNode(xmlNode *node)
     return isDependency(node) || isDependencySet(node) || isDependencies(node);
 }
 
+xmlNode *
+nextDependency(xmlNode *start, xmlNode *prev)
+{
+    xmlNode *node;
+    if (prev) {
+	node = firstElement(prev->next);
+    }
+    else {
+	node = firstElement(start);
+    }
+    while (node && !isDepNode(node)) {
+	node = firstElement(node->next);
+    }
+    return node;
+}
+

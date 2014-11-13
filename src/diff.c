@@ -1346,6 +1346,136 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     return result;
 }
 
+static Hash *
+hashByFqn(Vector *all_nodes)
+{
+    Hash *hash = hashNew(TRUE);
+    String *fqn;
+    ObjReference *ref;
+    DagNode *node;
+    int i;
+
+    EACH(all_nodes, i) {
+	node = (DagNode *) ELEM(all_nodes, i);
+	assertDagNode(node);
+	ref = objRefNew((Object *) node);
+	fqn = stringDup(node->fqn);
+	hashAdd(hash, (Object *) fqn, (Object *) ref);
+    }
+    return hash;
+}
+
+static boolean checkRebuild(DagNode *node, Hash *hash);
+
+static boolean
+depIsOnRebuild(xmlNode *depnode, Hash *hash)
+{
+    String *fqn = nodeAttribute(depnode, "fqn");
+    DagNode *dagnode;
+    xmlNode *dep = NULL;
+
+    if (fqn) {
+	if (!nodeHasAttribute(depnode, "soft")) {
+	    if (dagnode = (DagNode *) 
+		dereference(hashGet(hash, (Object *) fqn))) 
+	    {
+		assertDagNode(dagnode);
+		if (checkRebuild(dagnode, hash)) {
+		    objectFree((Object *) fqn, TRUE);
+		    return TRUE;
+		}
+	    }
+	}
+	objectFree((Object *) fqn, TRUE);
+    }
+
+    while (dep = nextDependency(depnode->children, dep)) {
+	if (depIsOnRebuild(dep, hash)) {
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+static boolean
+dependsOnRebuild(DagNode *node, Hash *hash)
+{
+    xmlNode *dep = NULL;
+    while (dep = nextDependency(node->dbobject->children, dep)) {
+	if (depIsOnRebuild(dep, hash)) {
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+static void
+promoteNodeParent(DagNode *node, Hash *hash)
+{
+    String *parent_fqn = nodeAttribute(node->dbobject, "parent");
+    DagNode *parent_node;
+    String *diff;
+    if (parent_fqn) {
+	parent_node = (DagNode *) 
+	    dereference(hashGet(hash, (Object *) parent_fqn));
+	assertDagNode(parent_node);
+
+	if (diff = nodeAttribute(parent_node->dbobject, "diff")) {
+	    if (streq(diff->value, "none")) {
+		xmlSetProp(node->dbobject, (xmlChar *) "diff", 
+			   (xmlChar *) "diffkids");
+		
+		promoteNodeParent(parent_node, hash);
+	    }
+	    objectFree((Object *) diff, TRUE);
+	}
+    }
+    objectFree((Object *) parent_fqn, TRUE);
+}
+
+static void
+promoteNodeToRebuild(DagNode *node, Hash *hash)
+{
+    String *diff = nodeAttribute(node->dbobject, "diff");
+    node->build_type = REBUILD_NODE;
+    if (! (streq(diff->value, "new") || (streq(diff->value, "gone")))) {
+	xmlSetProp(node->dbobject, (xmlChar *) "diff", (xmlChar *) "rebuild");
+	promoteNodeParent(node, hash);
+    }
+    objectFree((Object *) diff, TRUE);
+}
+
+static boolean
+checkRebuild(DagNode *node, Hash *hash)
+{
+    if (node->status == UNVISITED) {
+	if (dependsOnRebuild(node, hash)) {
+	    promoteNodeToRebuild(node, hash);
+	}
+	node->status = VISITED;
+    }
+    return node->build_type == REBUILD_NODE;
+}
+
+static void
+promoteRebuilds(xmlNode *root)
+{
+    Vector *all_nodes;
+    Hash *hash;
+    DagNode *node;
+    int i;
+
+    all_nodes = dagNodesFromDoc(root);
+    hash = hashByFqn(all_nodes);
+
+    EACH(all_nodes, i) {
+	node = (DagNode *) ELEM(all_nodes, i);
+	(void) checkRebuild(node, hash);
+    }
+
+    objectFree((Object *) hash, TRUE);
+    objectFree((Object *) all_nodes, TRUE);
+}
 
 xmlNode *
 doDiff(String *diffrules, boolean swap)
@@ -1354,9 +1484,7 @@ doDiff(String *diffrules, boolean swap)
     Document *volatile doc1 = NULL;
     Document *volatile doc2 = NULL;
     Hash *volatile rules = NULL;
-
     xmlNode *result = NULL;
-
 
     BEGIN {
 	if (swap) {
@@ -1369,6 +1497,7 @@ doDiff(String *diffrules, boolean swap)
 	rules = loadDiffRules(diffrules);
 	result = processDiffRoot(xmlDocGetRootElement(doc1->doc), 
 				 xmlDocGetRootElement(doc2->doc), rules);
+	promoteRebuilds(result);
 	//dNode(result);
     }
     EXCEPTION(ex);

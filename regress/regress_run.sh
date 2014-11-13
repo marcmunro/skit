@@ -283,7 +283,7 @@ regression_test3()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3b2.xml ...
     diffdump scratch/regressdb_test3b.dmp scratch/regressdb_test3b2.dmp \
-	regression_ignore3.txt
+    	regression_ignore3.txt
 
     diffglobals scratch/regressdb_test3b.gdmp  scratch/regressdb_test3b2.gdmp \
 	regression_ignore3.txt
