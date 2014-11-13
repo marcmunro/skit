@@ -194,7 +194,16 @@
     <xsl:param name="fqn" select="concat(name(.), '.', $parent_core, 
 					 '.', $name)"/>
     <xsl:param name="parent" select="concat(name(..), '.', $parent_core)"/>
-    <xsl:param name="owner" select="@owner"/>
+    <xsl:param name="owner">
+      <xsl:choose>
+	<xsl:when test="@owner">
+	  <xsl:value-of select="@owner"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="../@owner"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:param>
     <xsl:param name="this_core" select="concat($parent_core, '.', @name)"/>
     <xsl:param name="do_schema_grant" select="'yes'"/>
     <xsl:param name="do_context" select="'yes'"/>

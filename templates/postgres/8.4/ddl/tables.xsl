@@ -140,7 +140,13 @@
 	<xsl:with-param name="spaces" select="' '"/>
 	<xsl:with-param name="prefix" select="''"/>
       </xsl:call-template>
-      <xsl:value-of select="';&#x0A;'"/>
+      <xsl:text>;</xsl:text>
+      <xsl:if test="@is_local='t' and comment">
+	<xsl:value-of 
+	    select="concat('&#x0A;comment on column ', ../@parent-qname, '.',
+		           skit:dbquote(../@name), ' is&#x0A;', 
+			   comment/text(), ';&#x0A;')"/>
+      </xsl:if>
     </print>
   </xsl:template>
 
@@ -148,9 +154,12 @@
       match="dbobject[@action='drop' and @parent-type='table' and
                       @parent-diff!='gone']/column">
     <print>
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
       <xsl:value-of select="concat('&#x0A;alter table ', 
 			           ../@parent-qname, ' drop column ',
 				   ../@qname, ';&#x0A;')"/>
+      <xsl:call-template name="reset_owner"/>
     </print>
   </xsl:template>
 
@@ -158,10 +167,14 @@
     <xsl:value-of select="concat('&#x0A;alter table ', ../@parent-qname,
 			         ' alter column ', ../@qname, ' ')"/>
   </xsl:template>
+
   <xsl:template 
       match="dbobject[@action='diff' and @parent-type='table']/column">
     <print>
       <!-- If nullability is being allowed, deal with that first. -->
+      <xsl:call-template name="feedback"/>
+      <xsl:call-template name="set_owner"/>
+
       <xsl:for-each 
 	  select="../attribute[@status='diff' and @name='nullable' and
 		               @new='yes']">
@@ -200,7 +213,14 @@
 	<xsl:call-template name="alter-table"/>
 	<xsl:text>set not null;</xsl:text>
       </xsl:for-each>
-      <xsl:text>&#x0A;</xsl:text>
+      <xsl:call-template name="commentdiff">
+	<xsl:with-param name="sig">
+	  <xsl:value-of 
+	      select="concat('column ', ../@parent-qname, '.', ../@qname)"/>
+	</xsl:with-param>
+      </xsl:call-template>
+
+      <xsl:call-template name="reset_owner"/>
     </print>
   </xsl:template>
 

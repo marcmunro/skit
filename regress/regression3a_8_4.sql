@@ -708,13 +708,12 @@ create sequence wibble.x;
 --    changes to ownership
 --    add columns
 --    drop columns
---    comment
+--    column comment
 --    column: type, size, nullability, default
 --    have type of column rebuilt
 --    tablespace
 --    storage
 --    inheritence
---    column comment
 
 -- drop/create
 create table x (
@@ -743,6 +742,10 @@ create table c (
   val8  varchar(20) not null
 );
 
+-- column comments
+comment on column c.key is 'key';
+comment on column c.val1 is 'val1';
+comment on column c.val4 is 'val4';
 
 
 DBEOF
