@@ -760,5 +760,15 @@ alter table c alter column val2 set statistics 1000;
 alter table c alter column val4 set statistics 1000;
 alter table c alter column val8 set statistics 1000;
 
+-- Inheritence
+/*
+create table d (
+  val20     varchar
+);
+
+create table i (
+  val9     varchar(20)
+) inherits (c, d);
+*/
 
 DBEOF

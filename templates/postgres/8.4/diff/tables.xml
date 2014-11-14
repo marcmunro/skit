@@ -22,6 +22,10 @@
      </dependencies>
     </attribute>
     <attribute name="tablespace"/>
+    <element type="inherits" key="inherit_order">
+      <attribute name="schema"/>
+      <attribute name="name"/>
+    </element>
     <element type="comment">
       <text/>
     </element>

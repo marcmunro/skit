@@ -668,7 +668,7 @@ START_TEST(gather)
 END_TEST
 #endif
 
-#ifdef unused
+#ifdef wibble
 START_TEST(scatter)
 {
     char *args[] = {"./skit", "-t", "scatter.xml",
@@ -696,7 +696,7 @@ START_TEST(scatter)
 END_TEST
 #endif
 
-#ifdef NEW_DEPS
+#ifdef wibble
 START_TEST(extract)
 {
     /* Run the database build for a regression test before running this
@@ -714,7 +714,7 @@ START_TEST(extract)
     //showMalloc(20129);
 
     BEGIN {
-	process_args2(7, args);
+	process_args2(8, args);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {
@@ -851,8 +851,8 @@ END_TEST
 START_TEST(diffc)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3b.xml",
 		    "regress/scratch/regressdb_dump3a.xml",
+		    "regress/scratch/regressdb_dump3b.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;

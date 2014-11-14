@@ -13,6 +13,7 @@
     <attribute name="default"/>
     <attribute name="storage_policy"/>
     <attribute name="stats_target"/>
+    <attribute name="is_local"/>
     <element type="comment">
       <text/>
     </element>

@@ -16,38 +16,56 @@
 	<skit:attr name="tablespace"/>
 	<skit:attr name="privs"/>
 
+	<skit:runsql to="columns" file="sql/columns.sql"
+		     params="(select table 'oid')"/>
+
 	<skit:runsql var="inherits" file="sql/inherits.sql"
 		     params="(select table 'oid')">
 	  <inherits>
 	    <skit:attr name="name" field="inherit_table"/>
 	    <skit:attr name="schema" field="inherit_schema"/>
 	    <skit:attr name="inherit_order"/>
+	    <skit:foreach var="column" from="columns">
+	      <skit:if test="(string= 't' (select column 'is_inherited'))">
+		<inherited-column>
+		  <skit:attr name="name"/>
+		  <skit:attr name="tablename"/>
+		  <skit:attr name="schemaname"/>
+		</inherited-column>
+	      </skit:if>
+	    </skit:foreach>
 	  </inherits>
 	</skit:runsql>
 
-	<skit:runsql to="columns" file="sql/columns.sql"
-		     params="(select table 'oid')"/>
 	<skit:foreach var="column" from="columns">
-	  <column>
-	    <skit:attr name="colnum"/>
-	    <skit:attr name="name"/>
-	    <skit:attr name="type"/>
-	    <skit:attr name="type_schema"/>
-	    <skit:attr name="size"/>
-	    <skit:attr name="precision"/>
-	    <skit:attr name="nullable"/>
-	    <skit:attr name="dimensions"/>
-	    <skit:attr name="typstorage"/>
-	    <skit:attr name="storage_policy"/>
-	    <skit:attr name="is_local"/>
-	    <skit:attr name="default"/>
-	    <skit:attr name="stats_target"/>
-	    <skit:if test="(select column 'comment')">
-	      <comment>
-		<skit:text expr="(select column 'comment')"/>
-	      </comment>
-	    </skit:if>
-	  </column>
+	  <!-- Should you ever want to debug the extract, this is a good 
+	       technique:
+	    <skit:exec 
+		expr="(debug 'EXPR: ' (select column 'is_inherited'))"/>
+	  -->
+
+	  <skit:if test="(not (string= 't' (select column 'is_inherited')))">
+	    <column>
+	      <skit:attr name="colnum"/>
+	      <skit:attr name="name"/>
+	      <skit:attr name="type"/>
+	      <skit:attr name="type_schema"/>
+	      <skit:attr name="size"/>
+	      <skit:attr name="precision"/>
+	      <skit:attr name="nullable"/>
+	      <skit:attr name="dimensions"/>
+	      <skit:attr name="typstorage"/>
+	      <skit:attr name="storage_policy"/>
+	      <skit:attr name="is_local"/>
+	      <skit:attr name="default"/>
+	      <skit:attr name="stats_target"/>
+	      <skit:if test="(select column 'comment')">
+		<comment>
+		  <skit:text expr="(select column 'comment')"/>
+		</comment>
+	      </skit:if>
+	    </column>
+	  </skit:if>
 	</skit:foreach>
 
 	<skit:runsql var="constraint" file="sql/table_constraints.sql"

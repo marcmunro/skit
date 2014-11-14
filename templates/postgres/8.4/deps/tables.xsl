@@ -70,12 +70,19 @@
 			       @schema, '.', @sequence)}"/>
     </xsl:for-each>
 
-    <!-- The table depends, softly, on all of its columns -->
-    <xsl:for-each select="column">
+    <!-- The table depends, softly, on all of its local columns -->
+    <xsl:for-each select="column[@is_local='t']">
       <dependency fqn="{concat('column.', $parent_core, '.', ../@name, 
 		               '.', @name)}"
 		  soft="'true'"/>
 
+    </xsl:for-each>
+    <!-- and, again softly, on all of its inherited columns -->
+    <xsl:for-each select="inherits/inherited-column">
+      <dependency fqn="{concat('column.', ancestor::database/@name, 
+		               '.', @schemaname, '.', @tablename, 
+			       '.', @name)}"
+		  soft="'true'"/>
     </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
