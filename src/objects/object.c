@@ -510,6 +510,7 @@ dependencyNew(String *qn, boolean qn_is_full, boolean is_forwards)
     new->qn = qn;
     new->qn_is_full = qn_is_full;
     new->is_forwards = is_forwards;
+    new->propagate_mirror = FALSE;
     new->dep = NULL;
     new->depset = NULL;
     new->from = NULL;

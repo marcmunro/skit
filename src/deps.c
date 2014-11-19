@@ -535,6 +535,9 @@ recordDependencyInVector(
 			    directsForwards(depnode, is_build_side));
 	dep->condition = attributeForDep(depnode, "condition");
 	dep->from = node;
+	if (nodeHasAttribute(depnode, "propagate-mirror")) {
+	    dep->propagate_mirror = TRUE;
+	}
 	vectorPush(vec, (Object *) dep);
     }
 }
@@ -2194,6 +2197,43 @@ convertDependencies(Vector *nodes)
 }
 
 static void
+addConditionalMirrorDep(DagNode *node, DagNode *mirror)
+{
+    Dependency *dep;
+    if ((node->build_type == BUILD_NODE) ||
+	(node->build_type == DIFF_NODE))
+    {
+	if ((mirror->build_type == DROP_NODE) ||
+	    (mirror->build_type == DIFFPREP_NODE))
+	{
+	    dep = dependencyNew(NULL, TRUE, TRUE);
+	    dep->dep = mirror;
+	    myVectorPush(&(node->deps), (Object *) dep);
+	}
+    }
+}
+
+static void
+addPropagatedMirrors(DagNode *node)
+{
+    Dependency *dep;
+    int i;
+    if ((node->build_type == BUILD_NODE) ||
+	(node->build_type == DIFF_NODE))
+    {
+	if (node->deps) {
+	    EACH(node->deps, i) {
+		dep = (Dependency *) dereference(ELEM(node->deps, i));
+		assertDependency(dep);
+		if (dep->propagate_mirror) {
+		    addConditionalMirrorDep(dep->dep, node->mirror_node);
+		}
+	    }
+	}
+    }
+}
+
+static void
 addDepsForMirrors(Vector *nodes)
 {
     DagNode *node;
@@ -2201,15 +2241,8 @@ addDepsForMirrors(Vector *nodes)
     EACH(nodes, i) {
         node = (DagNode *) ELEM(nodes, i);
 	if (node->mirror_node) {
-	    if ((node->build_type == BUILD_NODE) ||
-		(node->build_type == DIFF_NODE))
-	    {
-		if ((node->mirror_node->build_type == DROP_NODE) ||
-		    (node->mirror_node->build_type == DIFFPREP_NODE))
-		{
-		    myVectorPush(&(node->deps), (Object *) node->mirror_node);
-		}
-	    }
+	    addConditionalMirrorDep(node, node->mirror_node);
+	    addPropagatedMirrors(node);
 	}
     }
 }
@@ -2347,9 +2380,6 @@ dagFromDoc(Document *doc)
 	removeDeactivatedNodes(&resolver_state);
 
 	initDependencySets(&resolver_state); 
-        // QQ:WE MAY NEED TO ADD FALLBACKS HERE IF THERE ARE NOW NO ACTIVE DEPS!
-
-	//showVectorDeps(resolver_state.all_nodes);
 
 	resolveDependencySets(&resolver_state);
 	resetNodeStates(resolver_state.all_nodes);
@@ -2357,9 +2387,9 @@ dagFromDoc(Document *doc)
 	redirectDependencies(resolver_state.all_nodes);
 
 	finaliseFallbacks(resolver_state.all_nodes);
-	convertDependencies(resolver_state.all_nodes);
 	addDepsForMirrors(resolver_state.all_nodes);
 
+	convertDependencies(resolver_state.all_nodes);
 	cleanUpResolverState(&resolver_state);
 	//showVectorDeps(resolver_state.all_nodes);
 	//fprintf(stderr, "------------------------\n\n");

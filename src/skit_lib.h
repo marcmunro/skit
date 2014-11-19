@@ -325,6 +325,7 @@ typedef struct Dependency {
     String                *qn;
     boolean                qn_is_full;
     boolean                is_forwards;
+    boolean                propagate_mirror;
     DagNode               *dep;
     DependencySet         *depset;
     DagNode               *from; 

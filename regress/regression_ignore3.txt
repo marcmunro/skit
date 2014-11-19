@@ -3,4 +3,5 @@
 . REVOKE ALL ON SEQUENCE .* FROM PUBLIC;
 . REVOKE ALL ON TABLE .* FROM PUBLIC;
 . ^COPY
-
+# This column becomes attislocal and I can do nothing about it.
+>     val20 character varying,

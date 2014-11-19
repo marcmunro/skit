@@ -25,6 +25,8 @@
     <element type="inherits" key="inherit_order">
       <attribute name="schema"/>
       <attribute name="name"/>
+      <element type="inherited-column" key="name">
+      </element>
     </element>
     <element type="comment">
       <text/>

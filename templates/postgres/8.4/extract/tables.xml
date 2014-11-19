@@ -19,23 +19,29 @@
 	<skit:runsql to="columns" file="sql/columns.sql"
 		     params="(select table 'oid')"/>
 
-	<skit:runsql var="inherits" file="sql/inherits.sql"
-		     params="(select table 'oid')">
+	<skit:runsql to="inherits" file="sql/inherits.sql"
+		     params="(select table 'oid')"/>
+	<skit:foreach var="inh" from="inherits">
 	  <inherits>
 	    <skit:attr name="name" field="inherit_table"/>
 	    <skit:attr name="schema" field="inherit_schema"/>
 	    <skit:attr name="inherit_order"/>
 	    <skit:foreach var="column" from="columns">
-	      <skit:if test="(string= 't' (select column 'is_inherited'))">
+	      <skit:if test="(and (string= 't' (select column 'is_inherited'))
+			          (string= (select column 'tablename')
+				           (select inh 'inherit_table'))
+				  (string= (select column 'schemaname')
+				           (select inh 'inherit_schema')))">
 		<inherited-column>
 		  <skit:attr name="name"/>
 		  <skit:attr name="tablename"/>
 		  <skit:attr name="schemaname"/>
+		  <skit:attr name="colnum"/>
 		</inherited-column>
 	      </skit:if>
 	    </skit:foreach>
 	  </inherits>
-	</skit:runsql>
+	</skit:foreach>
 
 	<skit:foreach var="column" from="columns">
 	  <!-- Should you ever want to debug the extract, this is a good 

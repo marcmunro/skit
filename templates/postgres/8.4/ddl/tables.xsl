@@ -33,7 +33,7 @@
     <xsl:value-of 
        select="concat(skit:dbquote(@name),
 	              substring($spaces,
-		      string-length(skit:dbquote(@name))), '  ')"/>
+		      string-length(skit:dbquote(@name))), ' ')"/>
     <xsl:call-template name="column-typedef"/>
     <xsl:if test="@default">
       <xsl:value-of 
@@ -86,7 +86,7 @@
        The context for this call is the comment element. -->
   <xsl:template name="column-comment">
     <xsl:param name="tbl-qname" select="../../@qname"/>
-    <xsl:if test="@is_local='t' and comment">
+    <xsl:if test="comment">
       <xsl:value-of 
 	  select="concat('&#x0A;comment on column ', $tbl-qname, '.',
 	                 skit:dbquote(@name), ' is&#x0A;', comment/text(),
@@ -173,7 +173,7 @@
       </xsl:for-each>
     </xsl:if>
 
-    <xsl:for-each select="../element[@type='inherits' and @status!='new']">
+    <xsl:for-each select="../element[@type='inherits' and @status='gone']">
       <do-print/>
       <xsl:call-template name="alter-table-only-intro"/>
       <xsl:value-of 
@@ -184,7 +184,7 @@
   </xsl:template>
 
   <xsl:template match="table" mode="diff">
-    <xsl:for-each select="../element[@type='inherits' and @status!='gone']">
+    <xsl:for-each select="../element[@type='inherits' and @status='new']">
       <do-print/>
       <xsl:call-template name="alter-table-only-intro"/>
       <xsl:value-of 
@@ -192,6 +192,18 @@
 		         skit:dbquote(inherits/@schema), '.',
 			 skit:dbquote(inherits/@name), ';&#x0A;')"/>
     </xsl:for-each>
+  </xsl:template>
+
+  <!-- Context is the column element.  -->
+  <xsl:template name="build-column-from-diff">
+    <xsl:value-of select="concat('&#x0A;alter table ', 
+			           ../@parent-qname, ' add column ')"/>
+    <xsl:call-template name="column">
+      <xsl:with-param name="position" select="'1'"/>
+      <xsl:with-param name="spaces" select="' '"/>
+      <xsl:with-param name="prefix" select="''"/>
+    </xsl:call-template>
+    <xsl:text>;</xsl:text>
   </xsl:template>
 
   <!-- Column drops for rebuilds. -->
@@ -217,28 +229,21 @@
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>
 
-      <xsl:value-of select="concat('&#x0A;alter table ', 
-			           ../@parent-qname, ' add ')"/>
-      <xsl:call-template name="column">
-	<xsl:with-param name="position" select="'1'"/>
-	<xsl:with-param name="spaces" select="' '"/>
-	<xsl:with-param name="prefix" select="''"/>
-      </xsl:call-template>
-      <xsl:text>;</xsl:text>
-
-      <xsl:if test="@stats_target">
-	<xsl:call-template name="alter-table-only-intro">
-	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
-	</xsl:call-template>
-	<xsl:call-template name="column-stats"/>
-	<xsl:text>;</xsl:text>
-      </xsl:if>
+      <xsl:call-template name="build-column-from-diff"/>
 
       <xsl:if test="@storage_policy">
 	<xsl:call-template name="alter-table-only-intro">
 	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
 	</xsl:call-template>
 	<xsl:call-template name="column-storage"/>
+	<xsl:text>;</xsl:text>
+      </xsl:if>
+
+      <xsl:if test="@stats_target">
+	<xsl:call-template name="alter-table-only-intro">
+	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	</xsl:call-template>
+	<xsl:call-template name="column-stats"/>
 	<xsl:text>;</xsl:text>
       </xsl:if>
 
@@ -249,6 +254,7 @@
     </print>
   </xsl:template>
 
+
   <xsl:template name="alter-table-col">
     <xsl:call-template name="alter-table-intro">
       <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
@@ -257,34 +263,55 @@
   </xsl:template>
 
 
+  <!-- Column diffs (prep) -->
   <xsl:template 
       match="dbobject[@action='diffprep' and @parent-type='table']/column">
     <print conditional="yes">
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>
 
+      <!-- If a column has become inherited...  -->
       <xsl:if test="../attribute[@name='is_local' and @new='f']">
-	<!-- This column is now inherited, so we drop the original
-	     version.  -->
-	<do-print/>
-	<xsl:value-of select="concat('&#x0A;alter table ', 
-			             ../@parent-qname, ' drop column ',
-				     ../@qname, ';&#x0A;')"/>
+	<!-- If the column will be automatically added when the
+	     inherited column is created, we must drop our local
+	     copy. -->
+	<xsl:if test="../inherits-from[not(@eninherit-table)]">
+	  <do-print/>
+	  <xsl:value-of select="concat('&#x0A;alter table ', 
+			               ../@parent-qname, ' drop column ',
+				       ../@qname, ';&#x0A;')"/>
+	</xsl:if>
       </xsl:if>
+      
       <xsl:call-template name="reset_owner"/>
     </print>
   </xsl:template>
 
+  <!-- Column diffs -->
   <xsl:template 
       match="dbobject[@action='diff' and @parent-type='table']/column">
-    <print>
-      <!-- If nullability is being allowed, deal with that first. -->
+    <print conditional="yes">
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>
 
+      <!-- If a column has become disinherited by means of being
+	   dropped, we must recreate it.   -->
+      <xsl:if test="../attribute[@name='is_local' and @new='t']">
+	<xsl:variable name="col-name" select="@name"/>
+	<xsl:if test="../inherits-from[@column=$col-name 
+		                       and @col-diff='gone']">
+
+	  <do-print/>
+	  <xsl:call-template name="build-column-from-diff"/>
+	  <xsl:text>&#x0A;</xsl:text>
+	</xsl:if>
+      </xsl:if>
+
+      <!-- If nullability is being allowed, deal with that first. -->
       <xsl:for-each 
 	  select="../attribute[@status='diff' and @name='nullable' and
 		               @new='yes']">
+	<do-print/>
 	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>drop not null;</xsl:text>
       </xsl:for-each>
@@ -293,6 +320,7 @@
 	<xsl:for-each 
 	    select="../attribute[@status='diff' and 
 		                 (@name='size' or @name='precision')]">
+	  <do-print/>
 	  <xsl:call-template name="alter-table-col"/>
 	  <xsl:text>type </xsl:text>
 	  <xsl:for-each select="../column">
@@ -306,12 +334,14 @@
 
       <xsl:for-each 
 	  select="../attribute[@status!='gone' and @name='default']">
+	<do-print/>
 	<xsl:call-template name="alter-table-col"/>
 	<xsl:value-of select="concat('set default ', @new, ';')"/>
       </xsl:for-each>
 
       <xsl:for-each 
 	  select="../attribute[@status='gone' and @name='default']">
+	<do-print/>
 	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>drop default;</xsl:text>
       </xsl:for-each>
@@ -319,11 +349,13 @@
       <xsl:for-each 
 	  select="../attribute[@status='diff' and @name='nullable' and 
 		               @new='no']">
+	<do-print/>
 	<xsl:call-template name="alter-table-col"/>
 	<xsl:text>set not null;</xsl:text>
       </xsl:for-each>
       
       <xsl:if test="../attribute[@name='storage_policy']">
+	<do-print/>
 	<xsl:call-template name="alter-table-only-intro">
 	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
 	</xsl:call-template>
@@ -332,6 +364,7 @@
       </xsl:if>
 
       <xsl:if test="../attribute[@name='stats_target']">
+	<do-print/>
 	<xsl:call-template name="alter-table-only-intro">
 	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
 	</xsl:call-template>

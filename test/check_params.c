@@ -851,8 +851,8 @@ END_TEST
 START_TEST(diffc)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml",
 		    "regress/scratch/regressdb_dump3b.xml",
+		    "regress/scratch/regressdb_dump3a.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;

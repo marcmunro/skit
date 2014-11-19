@@ -761,10 +761,7 @@ comment on column c.val4 is 'val4';
 alter table c alter column val2 set storage external;
 alter table c alter column val2 set statistics 100;
 
-/*
 create table i (
   val20     varchar
 ) inherits (c);
-*/
-
 DBEOF
