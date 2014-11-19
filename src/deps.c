@@ -873,19 +873,7 @@ addFoundDeps(
     }
     else if (deps->type == OBJ_DAGNODE) {
 	dep->dep = (DagNode *) deps;
-	if (isBuildSideNode(depset->definition_node) != 
-	    isBuildSideNode(dep->dep))
-	{
-	    dbgSexp(dep);
-	    dbgSexp(dep->dep);
-	    dbgSexp(dep->dep->mirror_node);
-	    dbgSexp(depset->definition_node);
-/*
-	    RAISE(TSORT_ERROR, 
-		  newstr("Bad dependency from build side to drop, "
-			 "or vice versa."));
-*/
-	}
+
 	if (dep->dep->is_fallback && !dep->is_forwards) {
 	    /* This is a backwards dep on a dsfallback node, which should
 	     * not happen.  Instead we will make it a backwards dep

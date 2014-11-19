@@ -774,4 +774,6 @@ create table t4 (
   key integer not null
 ) tablespace tbs4;
 
+alter table t4 owner to lose; -- Lose does not have create rights on tbs4
+
 DBEOF
