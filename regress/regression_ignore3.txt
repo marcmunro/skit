@@ -4,4 +4,6 @@
 . REVOKE ALL ON TABLE .* FROM PUBLIC;
 . ^COPY
 # This column becomes attislocal and I can do nothing about it.
->     val20 character varying,
+.     val20 character varying,
+# Ditto this constraint.
+.     CONSTRAINT c__val1check CHECK (((val1)::text > 'a'::text))

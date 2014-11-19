@@ -94,6 +94,7 @@
 	    <skit:attr name="confmatchtype"/>
 	    <skit:attr name="confupdtype"/>
 	    <skit:attr name="confdeltype"/>
+	    <skit:attr name="is_local"/>
 
 	    <skit:if test="(select tuple 'refoid')">
 	      <reftable>

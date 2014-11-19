@@ -776,4 +776,18 @@ create table t4 (
 
 alter table t4 owner to lose; -- Lose does not have create rights on tbs4
 
+
+-- Constraints
+alter table t4 add constraint t4__keycheck check (key > 0);
+alter table c add constraint c__val1check check (val1 > 'a');
+alter table c add constraint c__keycheck check (key > 0);
+alter table i add constraint i__pk primary key (key);
+comment on constraint i__pk on i is
+'This is the pk for i';
+
+/*
+comment on constraint c__val1check on c is
+'This is a check constraint';
+*/
+
 DBEOF

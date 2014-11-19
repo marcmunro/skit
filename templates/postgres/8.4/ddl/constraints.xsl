@@ -29,8 +29,9 @@
   </xsl:template>
 
   <xsl:template match="constraint" mode="build">
+    <xsl:if test="@is_local='t'">
     <xsl:value-of 
-	select="concat('&#x0A;alter table only ', ../@table_qname,
+	select="concat('&#x0A;alter table ', ../@table_qname,
 		       '&#x0A;  add constraint ', skit:dbquote(@name))"/>
 
     <xsl:choose>
@@ -112,13 +113,16 @@
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text>;&#x0A;</xsl:text>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="constraint" mode="drop">
+    <xsl:if test="@is_local='t'">
     <xsl:value-of 
-	select="concat('&#x0A;alter table only ', ../@table_qname,
+	select="concat('&#x0A;alter table ', ../@table_qname,
 		       '&#x0A;  drop constraint ', skit:dbquote(@name),
 		       ';&#x0A;')"/>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
 

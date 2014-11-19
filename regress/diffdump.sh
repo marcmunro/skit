@@ -72,6 +72,12 @@ eliminate_allowed()
     rm -f fgrep.tmp
 }
 
+# Remove trailing commas
+trim_commas()
+{
+    sed -e 's/,$//'
+}
+
 # This does some minor filtering on the source files, to ensure 
 # diffs that are irrelevant are not found.  Also sorts the files
 # so that they will have contents in the same order.
@@ -89,7 +95,7 @@ prep_input()
 	cat - 
     else
 	eliminate_allowed $1 $2
-    fi | eliminate_redundant_grants | sort_attributes
+    fi | eliminate_redundant_grants | trim_commas | sort_attributes
 }
 
 prep_input 1 $3 < $1 >$1.tmp

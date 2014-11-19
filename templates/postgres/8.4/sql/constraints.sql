@@ -4,6 +4,7 @@ select c.oid as oid,
        c.conname as name,
        n.nspname as schema,
        c.contype as constraint_type,
+       c.conislocal as is_local,
        pg_catalog.pg_get_constraintdef(c.oid) as source
 from   pg_catalog.pg_constraint c
        inner join

@@ -763,4 +763,13 @@ create table t4 (
 );
 
 
+-- Constraints
+alter table t4 add constraint t4__keycheck check (key >= 0);
+alter table c add constraint c__val1check check (val1 > 'a');
+alter table i add constraint i__keycheck check (key > 0);
+
+/*
+comment on constraint c__val1check on c is
+'This is still a check constraint';
+*/
 DBEOF

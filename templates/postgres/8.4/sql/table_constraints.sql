@@ -24,6 +24,7 @@ select c.oid as oid,
        else null end as confupdtype,
        case c.contype when 'f' then c.confdeltype 
        else null end as confdeltype,
+       c.conislocal as is_local,
        quote_literal(obj_description(c.oid, 'pg_constraint')) as comment
 from   pg_catalog.pg_constraint c
 inner join  pg_catalog.pg_namespace n   -- Schema of constraint

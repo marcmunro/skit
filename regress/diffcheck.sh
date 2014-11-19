@@ -2,6 +2,7 @@
 # Check for differences between two xml schema dumps.
 
 # Put attributes of elements into a consistent order. 
+# Also eliminate any trailing commas
 sort_attributes()
 {
     sed -e '/<grant / s/\(.*\)\( from="[^"]*"\)\(.*\)\/>/\1\3\2\/>/' | \
