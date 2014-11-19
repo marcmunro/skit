@@ -768,4 +768,10 @@ create table d (
 create table i (
   val9     varchar(20)
 ) inherits (c, d);
+
+-- Tablespaces
+create table t4 (
+  key integer not null
+) tablespace tbs4;
+
 DBEOF

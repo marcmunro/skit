@@ -77,7 +77,6 @@ breakCycle(DagNode *node)
     DagNode *this;
     boolean result = FALSE;
 
-    dbgSexp(nodes_in_cycle);
     doc = applyDDL(doc);
     ddl_nodes = dagNodesFromDoc(doc->doc->children);
 
@@ -88,7 +87,6 @@ breakCycle(DagNode *node)
 	     * remove it from the cycle.  We do this by setting the
 	     * node's build_type to DEACTIVATED_NODE. 
 	     */
-	    printSexp(stderr, "CAN REMOVE FROM CYCLE: ", (Object *) this);
 	    this = (DagNode *) ELEM(nodes_in_cycle, i);
 	    this->build_type = DEACTIVATED_NODE;
 	    result = TRUE;

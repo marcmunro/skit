@@ -21,7 +21,14 @@
        </dependency-set>
      </dependencies>
     </attribute>
-    <attribute name="tablespace"/>
+
+    <attribute name="tablespace">
+      <dependencies
+	  applies="backwards">
+	<dependency direction="forwards" fqn="tablespace.{new.tablespace}"/>
+      </dependencies>
+    </attribute>
+
     <element type="inherits" key="inherit_order">
       <attribute name="schema"/>
       <attribute name="name"/>

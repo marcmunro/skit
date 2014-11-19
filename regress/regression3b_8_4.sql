@@ -56,13 +56,6 @@ revoke all on tablespace tbs3 from public;
 grant create on tablespace tbs3 to wibble;
 
 
-\set tbs4dir '''':home'/regress/REGRESSDB/tbs/tbs4'''
-create tablespace "tbs4" owner "regress"
-  location :tbs4dir;
-
-comment on tablespace tbs4 is 'This is the 4th tablespace';
-revoke all on tablespace tbs4 from public;
-
 -- Check handling of grant option.
 grant create on tablespace tbs3 to keep;
 
@@ -764,4 +757,10 @@ alter table c alter column val2 set statistics 100;
 create table i (
   val20     varchar
 ) inherits (c);
+
+create table t4 (
+  key integer not null
+);
+
+
 DBEOF
