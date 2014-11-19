@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="index" key="name">
+    <attribute name="tablespace" rebuild="true"/>
+    <attribute name="index_am"  rebuild="true"/>
+    <attribute name="unique"  rebuild="true"/>
+    <attribute name="clustered"  rebuild="true"/>
+    <attribute name="valid"  rebuild="true"/>
+    <attribute name="indexdef"  rebuild="true"/>
+    <attribute name="indexprs"  rebuild="true"/>
+    <attribute name="indpred"  rebuild="true"/>
+
+    <element type="column" key="colnum">
+      <attribute name="name"/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

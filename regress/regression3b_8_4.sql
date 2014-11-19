@@ -780,5 +780,7 @@ create table i2 (
 alter table i2 add constraint i2__key_uk
   unique(key, key2);
 
+-- Indexes
+create unique index i2__key2__uk on i2(key2);
 
 DBEOF

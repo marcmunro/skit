@@ -799,4 +799,8 @@ alter table i2 add constraint i2__i_fk
 alter table i2 add constraint i2__key_uk
   unique(key);
 
+-- Indexes
+create unique index i2__key2__uk on i2(key2)
+tablespace tbs4;
+
 DBEOF

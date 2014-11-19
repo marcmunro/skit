@@ -55,6 +55,7 @@
 
     <xi:include href="skitfile:diff/columns.xml"/>
     <xi:include href="skitfile:diff/constraints.xml"/>
+    <xi:include href="skitfile:diff/indexes.xml"/>
 
   </dbobject>	
 

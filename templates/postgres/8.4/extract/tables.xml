@@ -172,6 +172,7 @@
 		<skit:attr name="name" 
 			   expr="(select columns (try-to-int colnum) 
 				                   'name')"/>
+		<skit:attr name="colnum" expr="idx"/>
 	      </column>	
 	    </skit:foreach>
 
