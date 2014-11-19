@@ -785,9 +785,18 @@ alter table i add constraint i__pk primary key (key);
 comment on constraint i__pk on i is
 'This is the pk for i';
 
-/*
+
 comment on constraint c__val1check on c is
 'This is a check constraint';
-*/
+
+create table i2 (
+  key integer not null,
+  key2 integer not null
+);
+alter table i2 add constraint i2__i_fk 
+  foreign key(key) references i(key);
+
+alter table i2 add constraint i2__key_uk
+  unique(key);
 
 DBEOF

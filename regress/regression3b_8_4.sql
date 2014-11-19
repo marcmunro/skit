@@ -768,8 +768,17 @@ alter table t4 add constraint t4__keycheck check (key >= 0);
 alter table c add constraint c__val1check check (val1 > 'a');
 alter table i add constraint i__keycheck check (key > 0);
 
-/*
+
 comment on constraint c__val1check on c is
 'This is still a check constraint';
-*/
+
+create table i2 (
+  key integer not null,
+  key2 integer not null
+);
+
+alter table i2 add constraint i2__key_uk
+  unique(key, key2);
+
+
 DBEOF

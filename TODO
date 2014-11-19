@@ -9,8 +9,6 @@ MODIFY
 
 general code layout for:
 
-tables.xsl
-constraints.xsl
 indices.xsl
 triggers.xsl
 rules.xsl
@@ -19,20 +17,11 @@ fallback.xsl
 
 
 diff tests for:
-tables.xsl
-constraints.xsl
 indices.xsl
 triggers.xsl
 rules.xsl
 views.xsl
 fallback.xsl
-
-
-tablespace privs (taking into account implicit privs on default tablespace) for:
-
-tables.xsl
-constraints.xsl
-indices.xsl
 
 
 
