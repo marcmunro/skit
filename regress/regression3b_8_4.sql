@@ -783,4 +783,11 @@ alter table i2 add constraint i2__key_uk
 -- Indexes
 create unique index i2__key2__uk on i2(key2);
 
+-- Rules
+create rule i2__rule1 as on insert to i2
+do also insert into i 
+          (key, val1)
+   values (new.key, 'xx');
+
+
 DBEOF

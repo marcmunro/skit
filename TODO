@@ -9,17 +9,18 @@ MODIFY
 
 general code layout for:
 
-indices.xsl
-triggers.xsl
 rules.xsl
+triggers.xsl
 views.xsl
 fallback.xsl
 
 
 diff tests for:
-indices.xsl
-triggers.xsl
+
+comments on indexes and rules
+
 rules.xsl
+triggers.xsl
 views.xsl
 fallback.xsl
 
@@ -27,14 +28,16 @@ fallback.xsl
 
 
 diffs:
-    tables (including the concat thing)
-    constraints (including the concat thing)
-    indices (including the concat thing)
     rules (including the concat thing)
     views (including the concat thing)
     triggers (including the concat thing)
 
 Add handling for FDWs and any other 8.4 things
+  user mappings?
+  text search?
+  server?
+  constraint trigger?
+
 Add handling for sequence owned by table.column
 
 

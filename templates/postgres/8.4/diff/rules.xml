@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="rule" key="name">
+    <attribute name="name" rebuild="true"/>
+    <attribute name="table" rebuild="true"/>
+    <attribute name="schema" rebuild="true"/>
+    <attribute name="table_owner" rebuild="true"/>
+    <element type="source" rebuild="true">
+      <text/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  
