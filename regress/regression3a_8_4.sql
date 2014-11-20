@@ -799,9 +799,13 @@ alter table i2 add constraint i2__i_fk
 alter table i2 add constraint i2__key_uk
   unique(key);
 
+
 -- Indexes
 create unique index i2__key2__uk on i2(key2)
 tablespace tbs4;
+
+comment on index i2__key2__uk is
+'comment';
 
 
 -- Rules
@@ -809,6 +813,47 @@ create rule i2__rule1 as on insert to i2
 do also insert into i 
           (key)
    values (new.key);
+
+-- Triggers
+create or replace 
+function trigger1() returns trigger as
+$_$
+begin
+  if new.key > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create or replace 
+function trigger2() returns trigger as
+$_$
+begin
+  if new.key > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create trigger mytrigger1 
+before insert or update on i
+for each row execute procedure trigger1();
+
+comment on trigger mytrigger1 on i is
+'Trigger comment';
+
+create trigger mytrigger2 
+before insert or update on i
+for each row execute procedure trigger2();
+
+comment on trigger mytrigger2 on i is
+'Trigger comment';
 
 
 DBEOF

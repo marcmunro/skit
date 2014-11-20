@@ -57,6 +57,7 @@
     <xi:include href="skitfile:diff/constraints.xml"/>
     <xi:include href="skitfile:diff/indexes.xml"/>
     <xi:include href="skitfile:diff/rules.xml"/>
+    <xi:include href="skitfile:diff/triggers.xml"/>
 
   </dbobject>	
 

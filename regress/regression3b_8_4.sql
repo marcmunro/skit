@@ -768,7 +768,6 @@ alter table t4 add constraint t4__keycheck check (key >= 0);
 alter table c add constraint c__val1check check (val1 > 'a');
 alter table i add constraint i__keycheck check (key > 0);
 
-
 comment on constraint c__val1check on c is
 'This is still a check constraint';
 
@@ -780,14 +779,54 @@ create table i2 (
 alter table i2 add constraint i2__key_uk
   unique(key, key2);
 
+
 -- Indexes
 create unique index i2__key2__uk on i2(key2);
+
 
 -- Rules
 create rule i2__rule1 as on insert to i2
 do also insert into i 
           (key, val1)
    values (new.key, 'xx');
+
+comment on rule i2__rule1 is
+'rule comment';
+
+
+-- Triggers
+create or replace 
+function trigger1() returns trigger as
+$_$
+begin
+  if new.key > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create or replace 
+function trigger2() returns trigger as
+$_$
+begin
+  if new.key > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create trigger mytrigger2 
+before insert or update on i
+for each row execute procedure trigger1();
+
+comment on trigger mytrigger2 on i is
+'New trigger comment';
 
 
 DBEOF

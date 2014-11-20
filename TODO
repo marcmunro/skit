@@ -9,18 +9,12 @@ MODIFY
 
 general code layout for:
 
-rules.xsl
-triggers.xsl
 views.xsl
 fallback.xsl
 
 
 diff tests for:
 
-comments on indexes and rules
-
-rules.xsl
-triggers.xsl
 views.xsl
 fallback.xsl
 
@@ -28,9 +22,7 @@ fallback.xsl
 
 
 diffs:
-    rules (including the concat thing)
     views (including the concat thing)
-    triggers (including the concat thing)
 
 Add handling for FDWs and any other 8.4 things
   user mappings?
