@@ -1059,6 +1059,8 @@ select *
 from   schema2.keys_view
 where  key1 < 90;
 
+alter view schema2.keys_view alter column key1 set default 99;
+
 create rule keys_vrule1 as on insert to schema2.keys_view
 do instead insert into 
    schema2.keys2(key1, key2, key3, key4, key5)

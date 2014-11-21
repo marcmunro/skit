@@ -30,6 +30,13 @@
 	<xsl:value-of 
 	    select="concat('&#x0A;create or replace view ', ../@qname,
 		           ' as&#x0A;  ', source/text(), '&#x0A;')"/>
+
+	<xsl:for-each select="column[@default]">
+	  <xsl:value-of select="concat('alter view ', ../../@qname,
+				       ' alter column ', skit:dbquote(@name),
+				       ' set default ', @default, 
+				       ';&#x0A;')"/>
+	</xsl:for-each>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -44,6 +51,29 @@
 	    select="concat('&#x0A;drop view ', ../@qname, ';&#x0A;')"/>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="view" mode="diffprep">
+    <xsl:if test="../attribute[@name='owner']">
+      <do-print/>
+      <xsl:for-each select="../attribute[@name='owner']">
+	<xsl:value-of 
+	    select="concat('&#x0A;alter view ', ../@qname,
+		           ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+      </xsl:for-each>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="view" mode="diff">
+    <xsl:for-each select="../element[@type='column']/
+                          attribute[@name='default']">
+      <do-print/>
+      <xsl:value-of select="concat('&#x0A;alter view ', ../../@qname,
+				   ' alter column ', 
+				   skit:dbquote(../column/@name),
+				   ' set default ', @new, 
+				   ';&#x0A;')"/>
+    </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
 

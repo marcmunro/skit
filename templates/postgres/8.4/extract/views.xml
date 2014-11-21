@@ -72,11 +72,7 @@
 	    <skit:attr name="precision"/>
 	    <skit:attr name="nullable"/>
 	    <skit:attr name="dimensions"/>
-	    <skit:attr name="typstorage"/>
-	    <skit:attr name="storage_policy"/>
-	    <skit:attr name="is_local"/>
 	    <skit:attr name="default"/>
-	    <skit:attr name="stats_target"/>
 	    <skit:if test="(select column 'comment')">
 	      <comment>
 		<skit:text expr="(select column 'comment')"/>

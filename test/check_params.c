@@ -731,9 +731,10 @@ END_TEST
 #ifdef wibble
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--drop", 
+    char *args[] = {"./skit", "--generate", "--build", 
+		    "regress/scratch/regressdb_dump1a.xml",
 		    //"regress/scratch/dbdump/cluster.xml",
-		    "x",
+		    //"x",
 		    "--print", "--all"};
 
     initTemplatePath(".");
@@ -786,7 +787,7 @@ START_TEST(deps1a)
 END_TEST
 #endif
 
-#ifdef NEW_DEPS
+#ifdef wibble
 START_TEST(deps1b)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -815,6 +816,36 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
+#ifdef wibble
+START_TEST(deps)
+{
+    char *args[] = {"./skit", "--adddeps",
+		    "regress/scratch/regressdb_dump3a.xml",
+		    "--print", "--full"};
+
+    initTemplatePath(".");
+    //showFree(3549);
+    //showMalloc(4283);
+
+    BEGIN {
+	process_args2(5, args);
+    }
+    EXCEPTION(ex);
+    WHEN_OTHERS {
+	fprintf(stderr, "EXCEPTION %d, %s\n", ex->signal, ex->text);
+	fprintf(stderr, "%s\n", ex->backtrace);
+	//RAISE();
+	//fail("extract fails with exception");
+    }
+    END;
+
+    FREEMEMWITHCHECK;
+}
+END_TEST
+#endif
+
+
+#ifdef wibble
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -845,9 +876,9 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef WIBBLE
 #endif
 
+#ifdef wibble
 START_TEST(diffc)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
@@ -878,8 +909,6 @@ START_TEST(diffc)
     FREEMEMWITHCHECK;
 }
 END_TEST
-
-#ifdef WIBBLE
 #endif
 
 #ifdef wibble
@@ -1024,7 +1053,7 @@ do_deps(void *ignore)
     return 0;
 }
 
-START_TEST(deps)
+START_TEST(deps_quiet)
 {
     char *stderr;
     char *stdout;
@@ -1068,20 +1097,19 @@ params_suite(void)
 
     // Various parameters that must work
     ADD_TEST(tc_core, list);
-    //ADD_TEST(tc_core, list2);  // For debugging list without having 
-                                 // output captured
-    ADD_TEST(tc_core, deps);
+    ADD_TEST(tc_core, deps_quiet);
     ADD_TEST(tc_core, dbtype);
     ADD_TEST(tc_core, dbtype_unknown);
     ADD_TEST(tc_core, connect);
 
-    // Populate the regression test database
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
     //ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, list2); 
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    ADD_TEST(tc_core, diff);
-    ADD_TEST(tc_core, diffc);
+    //ADD_TEST(tc_core, diff);
+    //ADD_TEST(tc_core, diffc);
+    //ADD_TEST(tc_core, deps);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

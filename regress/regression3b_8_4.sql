@@ -829,4 +829,23 @@ comment on trigger mytrigger2 on i is
 'New trigger comment';
 
 
+-- Views
+create view vi as select key, val1, val2 from i;
+create view vi3 as select key, val1 from i;
+
+create table vi4_t (
+  key   integer not null,
+  val   text);
+
+create view vi4 as select * from vi4_t;
+alter view vi4 alter column key set default 99;
+comment on view vi4 is 'vi4, but different';
+
+create rule vi4_vrule1 as on insert to vi4
+do instead insert into 
+   vi4_t(key, val)
+   values (new.key + 1, new.val);
+
+
+
 DBEOF

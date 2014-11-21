@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="schema" key="name">
+  <dbobject type="view" key="name">
     <attribute name="owner">
       <!-- See comment in tablespaces.xml for an explanation of this. -->
      <dependencies
@@ -21,18 +21,20 @@
        </dependency-set>
      </dependencies>
     </attribute>
+    <element type="column" key="colnum">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="type" rebuild="true"/>
+      <attribute name="type_schema" rebuild="true"/>
+      <attribute name="size" rebuild="true"/>
+      <attribute name="precision" rebuild="true"/>
+      <attribute name="nullable" rebuild="true"/>
+      <attribute name="dimensions" rebuild="true"/>
+      <attribute name="default"/>
+    </element>
     <element type="comment">
       <text/>
     </element>
 
-    <xi:include href="skitfile:diff/types.xml"/>
-    <xi:include href="skitfile:diff/domains.xml"/>
-    <xi:include href="skitfile:diff/functions.xml"/>
-    <xi:include href="skitfile:diff/conversions.xml"/>
-    <xi:include href="skitfile:diff/aggregates.xml"/>
-    <xi:include href="skitfile:diff/sequences.xml"/>
-    <xi:include href="skitfile:diff/tables.xml"/>
-    <xi:include href="skitfile:diff/views.xml"/>
-  </dbobject>	
 
+  </dbobject>	
 </skit:inclusion>  

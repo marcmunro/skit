@@ -856,4 +856,23 @@ comment on trigger mytrigger2 on i is
 'Trigger comment';
 
 
+-- Views
+create view vi as select * from i;
+create view vi2 as select key, val1 from i;
+
+create table vi4_t (
+  key   integer not null,
+  val   text);
+
+create view vi4 as select * from vi4_t;
+alter view vi4 owner to keep;
+alter view vi4 alter column key set default nextval('public.thingy_id_seq');
+comment on view vi4 is 'vi4';
+
+create rule vi4_vrule1 as on insert to vi4
+do instead insert into 
+   vi4_t(key, val)
+   values (new.key, new.val);
+
+
 DBEOF
