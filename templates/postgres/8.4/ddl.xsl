@@ -36,6 +36,9 @@
   <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
     <xsl:choose>
+      <xsl:when test="name($objnode) = 'tsconfig'">
+	<xsl:text>text search configuration </xsl:text>
+      </xsl:when>
       <xsl:when test="contains(name($objnode), '_')">
 	<xsl:value-of 
 	    select="concat(substring-before(name($objnode), '_'),
@@ -237,5 +240,7 @@
   <xsl:include href="skitfile:ddl/rules.xsl"/>
   <xsl:include href="skitfile:ddl/views.xsl"/>
   <xsl:include href="skitfile:ddl/conversions.xsl"/>
+  <xsl:include href="skitfile:ddl/tsconfigs.xsl"/>
+  <xsl:include href="skitfile:ddl/tsconfig_mappings.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>

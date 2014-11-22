@@ -1,32 +1,8 @@
-Architectural re-work
-
-
-Working on the following ddl code changes in order to allow ownership
-changes and consolidate ddl standards.
-
-MODIFY 
-
-
-general code layout for:
-
-views.xsl
-fallback.xsl
-
-
-diff tests for:
-
-views.xsl
-fallback.xsl
-
-
-
-
-diffs:
-    views (including the concat thing)
+comments for tsconfig_mappings?????
+dictionaries
 
 Add handling for FDWs and any other 8.4 things
   user mappings?
-  text search?
   server?
   constraint trigger?
 
@@ -69,13 +45,6 @@ Others
 
 Bugs and Issues:
 
-  Cannot manipulate roles which are superusers if we are not a superuser.
-  This seems to need dependency-sets which are conditional on the
-  activation or existence of fallback nodes.  We need to make this as
-  general a solution as possible, and we must recheck such conditional
-  dependency-sets when activating fallback nodes.
-  Example scripts in error_example.sql
-
   Need to consider how to deal with automatically named constraints.
 
   Figure out how to give useful error messages when we do not have the
@@ -85,8 +54,6 @@ Bugs and Issues:
 
   Allow nodes to be dependent on alternate parents (eg for cluster
   objects such as roles, tablespaces, etc)?
-
-  Identify any issues/new features raised in DEPS.txt
 
 
 docs:

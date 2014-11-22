@@ -48,6 +48,7 @@
       <xi:include href="skitfile:extract/tables.xml"/>
       <xi:include href="skitfile:extract/views.xml"/>
       <xi:include href="skitfile:extract/conversions.xml"/>
+      <xi:include href="skitfile:extract/tsconfig.xml"/>
     </schema>
   </skit:runsql>
 </skit:inclusion>

@@ -96,6 +96,8 @@
   <xsl:include href="skitfile:deps/rules.xsl"/>
   <xsl:include href="skitfile:deps/views.xsl"/>
   <xsl:include href="skitfile:deps/conversions.xsl"/>
+  <xsl:include href="skitfile:deps/tsconfigs.xsl"/>
+  <xsl:include href="skitfile:deps/tsconfig_mappings.xsl"/>
 
 </xsl:stylesheet>
 
