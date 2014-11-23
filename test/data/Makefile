@@ -50,9 +50,10 @@ ensure_db_available:
 
 test_data: skit $(DATA_TARGETS)
 
-test/data_clean:
+test_data_clean:
 	@echo Cleaning test/data...
+	@rm -f $(DATA_TARGETS)
 
 # Describe what this makefile can build
-test/data_help:
+test_data_help:
 	@echo "test_data    - Create test xml files from sql files."

@@ -127,7 +127,7 @@ skgrind grind: skit_test valgrind/suppressions
 
 
 # Remove the shared library and all generated/intermediate files
-test_clean:
+test_clean: test_data_clean
 	@echo Cleaning test...
 	@rm -f $(TEST_OBJECTS) $(TEST_DEPS) \
 	       $(TEST_GARBAGE) skit skit_test \
@@ -135,7 +135,7 @@ test_clean:
 	       valgrind/suppressions $(SUPPRESSION_FILES) \
 		$(TEST_DIR)/alltests.dep
 
-tests_distclean: tests_clean
+test_distclean: test_clean
 
 
 # How to build a .grind target.  These targets are specified in
