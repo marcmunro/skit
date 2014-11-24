@@ -50,6 +50,7 @@
        <skit:runsql to="conversions" file="sql/conversions.sql"/>
        <skit:runsql to="tsconfigs" file="sql/tsconfigs.sql"/>
        <skit:runsql to="tsconfig_mappings" file="sql/tsconfig_mappings.sql"/>
+       <skit:runsql to="ts_parsers" file="sql/ts_parsers.sql"/>
 
        <xi:include href="skitfile:extract/function_sigs.xml"/>
        <xi:include href="skitfile:extract/languages.xml"/>

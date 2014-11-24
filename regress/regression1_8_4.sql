@@ -1106,6 +1106,21 @@ create text search configuration skit (copy = pg_catalog.english);
 comment on text search configuration skit is
 'comment for text search configuration';
 
+create text search parser myparser (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype',
+    headline = 'prsd_headline');
+
+create text search parser myparser2 (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype');
+
+comment on text search parser myparser2 is
+'Parser';
 
 DBEOF
 

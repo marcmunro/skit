@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="tsparser" from="ts_parsers" 
+		filter="(string= (select tsparser 'schema')
+			         (select schema 'name'))">
+    <ts_parser>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="start_proc"/>
+      <skit:attr name="start_schema"/>
+      <skit:attr name="token_proc"/>
+      <skit:attr name="token_schema"/>
+      <skit:attr name="end_proc"/>
+      <skit:attr name="end_schema"/>
+      <skit:attr name="headline_proc"/>
+      <skit:attr name="headline_schema"/>
+      <skit:attr name="lextype_proc"/>
+      <skit:attr name="lextype_schema"/>
+      <skit:if test="(select tsparser 'comment')">
+	<comment>
+	  <skit:text expr="(select tsparser 'comment')"/>
+	</comment>
+      </skit:if>
+    </ts_parser>
+  </skit:foreach>
+</skit:inclusion>  
