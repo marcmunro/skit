@@ -7,7 +7,7 @@
   <skit:foreach var="tsdict" from="tsdictionaries" 
 		filter="(string= (select tsdict 'schema')
 			         (select schema 'name'))">
-    <tsdictionary>
+    <text_search_dictionary>
       <skit:attr name="name"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
@@ -20,6 +20,6 @@
 	</comment>
       </skit:if>
 
-    </tsdictionary>
+    </text_search_dictionary>
   </skit:foreach>
 </skit:inclusion>  

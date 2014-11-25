@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="tsconfig" mode="build">
+  <xsl:template match="text_search_configuration" mode="build">
     <xsl:value-of 
 	select="concat('create text search configuration ', ../@qname,
 		       ' (&#x0A;    parser = ', 
@@ -14,13 +14,13 @@
 		       ');&#x0A;')"/>
   </xsl:template>
 
-  <xsl:template match="tsconfig" mode="drop">
+  <xsl:template match="text_search_configuration" mode="drop">
     <xsl:value-of 
 	select="concat('&#x0A;drop text search configuration ', 
 		       ../@qname, ';&#x0A;')"/>
   </xsl:template>
 
-  <xsl:template match="tsconfig" mode="diffprep">
+  <xsl:template match="text_search_configuration" mode="diffprep">
     <xsl:for-each select="../attribute[@name='owner']">
       <do-print/>
       <xsl:value-of 

@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="tsdictionary " mode="build">
+  <xsl:template match="text_search_dictionary" mode="build">
     <xsl:value-of 
 	select="concat('create text search dictionary ', ../@qname,
 		       ' (&#x0A;    template = ', 
@@ -18,7 +18,7 @@
     <xsl:text>);&#x0A;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="tsdictionary" mode="drop">
+  <xsl:template match="text_search_dictionary" mode="drop">
     <xsl:value-of 
 	select="concat('&#x0A;drop text search dictionary ', 
 		       ../@qname, ';&#x0A;')"/>

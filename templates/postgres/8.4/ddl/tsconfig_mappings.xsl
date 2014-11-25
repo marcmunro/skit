@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="tsconfig_map" mode="build">
+  <xsl:template match="text_search_configuration_map" mode="build">
     <xsl:value-of 
 	select="concat('alter text search configuration ', 
 		       skit:dbquote(@config_schema, @config_name),
@@ -22,7 +22,7 @@
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="tsconfig_map" mode="drop">
+  <xsl:template match="text_search_configuration_map" mode="drop">
     <xsl:value-of 
 	select="concat('alter text search configuration ', 
 		       skit:dbquote(@config_schema, @config_name),

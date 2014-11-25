@@ -7,7 +7,7 @@
    version="1.0">
 
   <!-- text serach configurations -->
-  <xsl:template match="tsconfig_map">
+  <xsl:template match="text_search_configuration_map">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <xsl:apply-templates select="." mode="dbobject">
@@ -15,10 +15,10 @@
     </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="tsconfig_map" mode="dependencies">
+  <xsl:template match="text_search_configuration_map" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
-    <dependency fqn="{concat('tsconfig.', $parent_core)}"/>
+    <dependency fqn="{concat('text_search_configuration.', $parent_core)}"/>
 
     <xsl:for-each select="tsconfig_mapping[@dictionary_schema!='pg_catalog']">
       <dependency fqn="{concat('schema.', ancestor::database/@name,

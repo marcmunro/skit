@@ -6,7 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="ts_parser" mode="build">
+  <xsl:template match="text_search_parser" mode="build">
     <xsl:value-of 
 	select="concat('create text search parser ', ../@qname,
 		       ' (&#x0A;    start = ', 
@@ -25,7 +25,7 @@
     <xsl:text>);&#x0A;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="ts_parser" mode="drop">
+  <xsl:template match="text_search_parser" mode="drop">
     <xsl:value-of 
 	select="concat('&#x0A;drop text search parser ', 
 		       ../@qname, ';&#x0A;')"/>

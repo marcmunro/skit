@@ -7,7 +7,7 @@
    version="1.0">
 
   <!-- text search parser -->
-  <xsl:template match="ts_parser">
+  <xsl:template match="text_search_parser">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <xsl:apply-templates select="." mode="dbobject">
@@ -15,7 +15,7 @@
     </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="ts_parser" mode="dependencies">
+  <xsl:template match="text_search_parser" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>

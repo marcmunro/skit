@@ -7,7 +7,7 @@
   <skit:foreach var="tsconfigmap" from="tsconfig_maps" 
 		filter="(string= (select tsconfigmap 'config_oid')
 			         (select tsconfig 'oid'))">
-    <tsconfig_map>
+    <text_search_configuration_map>
       <skit:attr name="name"/>
       <skit:attr name="token_id"/>
       <skit:attr name="config_name" expr="(select tsconfig 'name')"/>
@@ -25,6 +25,6 @@
 	  <skit:attr name="dictionary_owner"/>
 	</tsconfig_mapping>
       </skit:foreach>
-    </tsconfig_map>
+    </text_search_configuration_map>
   </skit:foreach>
 </skit:inclusion>  

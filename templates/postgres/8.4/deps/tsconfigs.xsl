@@ -7,7 +7,7 @@
    version="1.0">
 
   <!-- text serach configurations -->
-  <xsl:template match="tsconfig">
+  <xsl:template match="text_search_configuration">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <xsl:apply-templates select="." mode="dbobject">
@@ -15,7 +15,7 @@
     </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="tsconfig" mode="dependencies">
+  <xsl:template match="text_search_configuration" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>

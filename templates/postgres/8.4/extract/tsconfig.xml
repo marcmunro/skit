@@ -7,7 +7,7 @@
   <skit:foreach var="tsconfig" from="tsconfigs" 
 		filter="(string= (select tsconfig 'schema')
 			         (select schema 'name'))">
-    <tsconfig>
+    <text_search_configuration>
       <skit:attr name="name"/>
       <skit:attr name="schema"/>
       <skit:attr name="owner"/>
@@ -20,6 +20,6 @@
       </skit:if>
 
       <xi:include href="skitfile:extract/tsconfig_mapping.xml"/>
-    </tsconfig>
+    </text_search_configuration>
   </skit:foreach>
 </skit:inclusion>  

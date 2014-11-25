@@ -36,13 +36,16 @@
   <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
     <xsl:choose>
-      <xsl:when test="name($objnode) = 'tsdictionary'">
+      <xsl:when test="name($objnode) = 'text_search_dictionary'">
 	<xsl:text>text search dictionary </xsl:text>
       </xsl:when>
-      <xsl:when test="name($objnode) = 'ts_parser'">
+      <xsl:when test="name($objnode) = 'text_search_template'">
+	<xsl:text>text search template </xsl:text>
+      </xsl:when>
+      <xsl:when test="name($objnode) = 'text_search_parser'">
 	<xsl:text>text search parser </xsl:text>
       </xsl:when>
-      <xsl:when test="name($objnode) = 'tsconfig'">
+      <xsl:when test="name($objnode) = 'text_search_configuration'">
 	<xsl:text>text search configuration </xsl:text>
       </xsl:when>
       <xsl:when test="contains(name($objnode), '_')">
@@ -248,7 +251,8 @@
   <xsl:include href="skitfile:ddl/conversions.xsl"/>
   <xsl:include href="skitfile:ddl/tsconfigs.xsl"/>
   <xsl:include href="skitfile:ddl/tsconfig_mappings.xsl"/>
-  <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
+  <xsl:include href="skitfile:ddl/ts_templates.xsl"/>
   <xsl:include href="skitfile:ddl/ts_dicts.xsl"/>
+  <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>

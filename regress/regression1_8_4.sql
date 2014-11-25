@@ -1138,5 +1138,14 @@ create text search dictionary public.simple_dict (
 comment on text search dictionary public.simple_dict is
 'dict';
 
+create text search template mysimple (
+    init = dsimple_init,
+    lexize = dsimple_lexize
+);
+
+comment on text search template mysimple is
+'mysimple template';
+
+
 DBEOF
 

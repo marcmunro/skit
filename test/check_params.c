@@ -728,6 +728,7 @@ START_TEST(extract)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", 
@@ -755,7 +756,6 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -1103,7 +1103,7 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, list2); 
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);

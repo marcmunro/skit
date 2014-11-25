@@ -7,7 +7,7 @@
    version="1.0">
 
   <!-- text search dictionaries -->
-  <xsl:template match="tsdictionary">
+  <xsl:template match="text_search_dictionary">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <xsl:apply-templates select="." mode="dbobject">
@@ -15,13 +15,13 @@
     </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="tsdictionary" mode="dependencies">
+  <xsl:template match="text_search_dictionary" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>
 
     <xsl:if test="@template_schema!='pg_catalog'">
-      <dependency fqn="{concat('template.', 
+      <dependency fqn="{concat('text_search_template.', 
 		               ancestor::database/@name, '.',
 			       @template_schema, '.', 
 			       @template_name)}"/>
