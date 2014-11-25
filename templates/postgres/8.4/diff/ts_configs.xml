@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="schema" key="name">
+  <dbobject type="text_search_configuration" key="name">
     <attribute name="owner">
       <!-- See comment in tablespaces.xml for an explanation of this. -->
      <dependencies
@@ -21,19 +21,12 @@
        </dependency-set>
      </dependencies>
     </attribute>
+    <attribute name="parser_name"/>
+    <attribute name="parser_schema"/>
     <element type="comment">
       <text/>
     </element>
 
-    <xi:include href="skitfile:diff/types.xml"/>
-    <xi:include href="skitfile:diff/domains.xml"/>
-    <xi:include href="skitfile:diff/functions.xml"/>
-    <xi:include href="skitfile:diff/conversions.xml"/>
-    <xi:include href="skitfile:diff/aggregates.xml"/>
-    <xi:include href="skitfile:diff/sequences.xml"/>
-    <xi:include href="skitfile:diff/tables.xml"/>
-    <xi:include href="skitfile:diff/views.xml"/>
-    <xi:include href="skitfile:diff/ts_configs.xml"/>
+    <xi:include href="skitfile:diff/ts_config_mapping.xml"/>
   </dbobject>	
-
 </skit:inclusion>  

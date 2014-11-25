@@ -875,4 +875,10 @@ do instead insert into
    values (new.key, new.val);
 
 
+-- Text search configuration
+create text search configuration skit (copy = pg_catalog.english);
+
+comment on text search configuration skit is
+'comment for text search configuration';
+
 DBEOF

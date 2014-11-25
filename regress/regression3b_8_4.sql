@@ -847,5 +847,14 @@ do instead insert into
    values (new.key + 1, new.val);
 
 
+-- Text search configuration
+create text search configuration skit (copy = pg_catalog.english);
+alter text search configuration public.skit
+    drop mapping for asciiword;
+alter text search configuration public.skit
+    add mapping for asciiword with pg_catalog.english_stem,  pg_catalog.simple;
+
+comment on text search configuration skit is
+'updated comment for text search configuration';
 
 DBEOF

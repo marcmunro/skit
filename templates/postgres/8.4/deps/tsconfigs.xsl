@@ -21,5 +21,10 @@
     <dependency fqn="{concat('schema.', $parent_core)}"/>
     <dependency fqn="{concat('role.', @owner)}"/>
 
+    <xsl:if test="@parser_schema!='pg_catalog'">
+      <dependency fqn="{concat('text_search_parser.', 
+		               ancestor::database/@name, '.',
+			       @parser_schema, '.', @parser_name)}"/>
+    </xsl:if>
   </xsl:template>
 </xsl:stylesheet>

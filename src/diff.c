@@ -204,7 +204,7 @@ allDbobjects(xmlNode *node, Hash *rules)
 	    }
 	    else {
 		objectFree((Object *) type, TRUE);
-		tmp = nodestr(node);
+		tmp = nodestr(this);
 		errmsg = newstr("Cannot find key field %s in node %s.", 
 				keyattr, tmp);
 		skfree(tmp);
