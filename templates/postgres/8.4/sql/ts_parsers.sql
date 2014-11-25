@@ -11,27 +11,27 @@ select p.prsname as name,
        l.proname as lextype_proc,
        nl.nspname as lextype_schema,
        quote_literal(obj_description(p.oid, 'pg_ts_parser')) as comment
-  from pg_ts_parser p
- inner join pg_namespace n
+  from pg_catalog.pg_ts_parser p
+ inner join pg_catalog.pg_namespace n
     on n.oid = p.prsnamespace
- inner join pg_proc s
+ inner join pg_catalog.pg_proc s
     on s.oid = p.prsstart
- inner join pg_namespace ns
+ inner join pg_catalog.pg_namespace ns
     on ns.oid = s.pronamespace
- inner join pg_proc e
+ inner join pg_catalog.pg_proc e
     on e.oid = p.prsend
- inner join pg_namespace ne
+ inner join pg_catalog.pg_namespace ne
     on ne.oid = e.pronamespace
- inner join pg_proc t
+ inner join pg_catalog.pg_proc t
     on t.oid = p.prstoken
- inner join pg_namespace nt
+ inner join pg_catalog.pg_namespace nt
     on nt.oid = t.pronamespace
- inner join pg_proc l
+ inner join pg_catalog.pg_proc l
     on l.oid = p.prslextype
- inner join pg_namespace nl
+ inner join pg_catalog.pg_namespace nl
     on nl.oid = l.pronamespace
-  left outer join pg_proc h
+  left outer join pg_catalog.pg_proc h
     on h.oid = p.prsheadline
-  left outer join pg_namespace nh
+  left outer join pg_catalog.pg_namespace nh
     on nh.oid = h.pronamespace
  order by n.nspname, p.prsname;

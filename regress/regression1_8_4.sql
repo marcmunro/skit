@@ -1130,6 +1130,13 @@ create text search parser myparser2 (
 comment on text search parser myparser2 is
 'Parser';
 
+create text search dictionary public.simple_dict (
+    template = pg_catalog.simple,
+    stopwords = english
+);
+
+comment on text search dictionary public.simple_dict is
+'dict';
 
 DBEOF
 

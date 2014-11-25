@@ -99,6 +99,7 @@
   <xsl:include href="skitfile:deps/tsconfigs.xsl"/>
   <xsl:include href="skitfile:deps/tsconfig_mappings.xsl"/>
   <xsl:include href="skitfile:deps/ts_parsers.xsl"/>
+  <xsl:include href="skitfile:deps/ts_dicts.xsl"/>
 
 </xsl:stylesheet>
 

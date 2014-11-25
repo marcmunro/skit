@@ -49,6 +49,7 @@
       <xi:include href="skitfile:extract/views.xml"/>
       <xi:include href="skitfile:extract/conversions.xml"/>
       <xi:include href="skitfile:extract/tsconfig.xml"/>
+      <xi:include href="skitfile:extract/tsdictionary.xml"/>
       <xi:include href="skitfile:extract/ts_parsers.xml"/>
     </schema>
   </skit:runsql>

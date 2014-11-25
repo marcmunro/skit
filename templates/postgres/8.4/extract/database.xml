@@ -52,6 +52,7 @@
        <skit:runsql to="tsconfig_maps" file="sql/tsconfig_maps.sql"/>
        <skit:runsql to="tsconfig_mappings" file="sql/tsconfig_mappings.sql"/>
        <skit:runsql to="ts_parsers" file="sql/ts_parsers.sql"/>
+       <skit:runsql to="tsdictionaries" file="sql/ts_dicts.sql"/>
 
        <xi:include href="skitfile:extract/function_sigs.xml"/>
        <xi:include href="skitfile:extract/languages.xml"/>

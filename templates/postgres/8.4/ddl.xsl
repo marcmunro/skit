@@ -36,6 +36,9 @@
   <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
     <xsl:choose>
+      <xsl:when test="name($objnode) = 'tsdictionary'">
+	<xsl:text>text search dictionary </xsl:text>
+      </xsl:when>
       <xsl:when test="name($objnode) = 'ts_parser'">
 	<xsl:text>text search parser </xsl:text>
       </xsl:when>
@@ -246,5 +249,6 @@
   <xsl:include href="skitfile:ddl/tsconfigs.xsl"/>
   <xsl:include href="skitfile:ddl/tsconfig_mappings.xsl"/>
   <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
+  <xsl:include href="skitfile:ddl/ts_dicts.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>
