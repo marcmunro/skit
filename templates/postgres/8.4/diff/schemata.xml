@@ -34,6 +34,7 @@
     <xi:include href="skitfile:diff/tables.xml"/>
     <xi:include href="skitfile:diff/views.xml"/>
     <xi:include href="skitfile:diff/ts_configs.xml"/>
+    <xi:include href="skitfile:diff/ts_templates.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

@@ -881,4 +881,14 @@ create text search configuration skit (copy = pg_catalog.english);
 comment on text search configuration skit is
 'comment for text search configuration';
 
+
+-- Text Search template
+create text search template mysimple (
+    init = dsimple_init,
+    lexize = dsimple_lexize
+);
+
+comment on text search template mysimple is
+'mysimple template';
+
 DBEOF

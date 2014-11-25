@@ -857,4 +857,14 @@ alter text search configuration public.skit
 comment on text search configuration skit is
 'updated comment for text search configuration';
 
+
+-- Text Search template
+create text search template mysimple (
+    lexize = dsimple_lexize
+);
+
+comment on text search template mysimple is
+'mysimple template updated';
+
+
 DBEOF

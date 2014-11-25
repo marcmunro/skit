@@ -9,9 +9,9 @@ select t.tmplname as name,
   from pg_catalog.pg_ts_template t
  inner join pg_catalog.pg_namespace ts
     on ts.oid = t.tmplnamespace
- inner join pg_catalog.pg_proc i
+  left outer join pg_catalog.pg_proc i
     on i.oid = t.tmplinit
- inner join pg_catalog.pg_namespace ins
+  left outer join pg_catalog.pg_namespace ins
     on ins.oid = i.pronamespace
  inner join pg_catalog.pg_proc l
     on l.oid = t.tmpllexize
