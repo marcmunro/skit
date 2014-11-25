@@ -36,6 +36,7 @@
     <xi:include href="skitfile:diff/ts_configs.xml"/>
     <xi:include href="skitfile:diff/ts_templates.xml"/>
     <xi:include href="skitfile:diff/ts_dictionaries.xml"/>
+    <xi:include href="skitfile:diff/ts_parsers.xml"/>
   </dbobject>	
 
 </skit:inclusion>  

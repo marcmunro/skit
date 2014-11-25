@@ -899,6 +899,7 @@ create text search template mysimple2 (
 comment on text search template mysimple is
 'mysimple2 template';
 
+
 -- Text search dictionary
 create text search dictionary public.simple_dict (
     template = pg_catalog.simple,
@@ -907,6 +908,24 @@ create text search dictionary public.simple_dict (
 
 comment on text search dictionary public.simple_dict is
 'dict';
+
+
+-- Text search parser
+create text search parser myparser (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype',
+    headline = 'prsd_headline');
+
+create text search parser myparser2 (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype');
+
+comment on text search parser myparser2 is
+'Parser';
 
 
 DBEOF

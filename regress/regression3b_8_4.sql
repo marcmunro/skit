@@ -874,6 +874,7 @@ create text search template mysimple2 (
 comment on text search template mysimple is
 'mysimple2 template updated';
 
+
 -- Text search dictionary
 create text search dictionary public.simple_dict (
     template = pg_catalog.simple,
@@ -882,5 +883,17 @@ create text search dictionary public.simple_dict (
 
 comment on text search dictionary public.simple_dict is
 'dict updated';
+
+
+-- Text search parser
+create text search parser myparser2 (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype',
+    headline = 'prsd_headline');
+
+comment on text search parser myparser2 is
+'Parser updated';
 
 DBEOF

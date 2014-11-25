@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="text_search_parser" key="fqn">
+    <attribute name="start_proc" rebuild="true"/>
+    <attribute name="start_schema" rebuild="true"/>
+    <attribute name="token_proc" rebuild="true"/>
+    <attribute name="token_schema" rebuild="true"/>
+    <attribute name="end_proc" rebuild="true"/>
+    <attribute name="end_schema" rebuild="true"/>
+    <attribute name="headline_proc" rebuild="true"/>
+    <attribute name="headline_schema" rebuild="true"/>
+    <attribute name="lextype_proc" rebuild="true"/>
+    <attribute name="lextype_schema" rebuild="true"/>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+</skit:inclusion>  
