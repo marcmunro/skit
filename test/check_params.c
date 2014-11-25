@@ -816,6 +816,7 @@ START_TEST(deps1b)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(deps)
 {
     char *args[] = {"./skit", "--adddeps",
@@ -841,7 +842,6 @@ START_TEST(deps)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef wibble
 #endif
 
 
@@ -1109,7 +1109,7 @@ params_suite(void)
     //ADD_TEST(tc_core, deps1b);
     //ADD_TEST(tc_core, diff);
     //ADD_TEST(tc_core, diffc);
-    ADD_TEST(tc_core, deps);
+    //ADD_TEST(tc_core, deps);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);
     //ADD_TEST(tc_core, scatter);

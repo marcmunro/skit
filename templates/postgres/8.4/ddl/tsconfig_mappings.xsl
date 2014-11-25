@@ -6,17 +6,23 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
-  <xsl:template match="tsconfig_mapping" mode="build">
+  <xsl:template match="tsconfig_map" mode="build">
     <xsl:value-of 
 	select="concat('alter text search configuration ', 
 		       skit:dbquote(@config_schema, @config_name),
-		       '&#x0A;    add mapping for ', @name,
-		       ' with ', 
-		       skit:dbquote(@dictionary_schema, @dictionary_name),
-		       ';&#x0A;')"/>
+		       '&#x0A;    add mapping for ', @name, 
+		       ' with ')"/>
+    <xsl:for-each select="tsconfig_mapping"> 
+      <xsl:if test="position()!=1">
+	<xsl:text>,&#x0A;            </xsl:text>
+      </xsl:if>
+      <xsl:value-of 
+	  select="skit:dbquote(@dictionary_schema, @dictionary_name)"/>
+    </xsl:for-each>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="tsconfig_mapping" mode="drop">
+  <xsl:template match="tsconfig_map" mode="drop">
     <xsl:value-of 
 	select="concat('alter text search configuration ', 
 		       skit:dbquote(@config_schema, @config_name),

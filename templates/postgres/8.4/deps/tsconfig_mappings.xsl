@@ -7,7 +7,7 @@
    version="1.0">
 
   <!-- text serach configurations -->
-  <xsl:template match="tsconfig_mapping">
+  <xsl:template match="tsconfig_map">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <xsl:apply-templates select="." mode="dbobject">
@@ -15,19 +15,19 @@
     </xsl:apply-templates>
   </xsl:template>
 
-  <xsl:template match="tsconfig_mapping" mode="dependencies">
+  <xsl:template match="tsconfig_map" mode="dependencies">
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('tsconfig.', $parent_core)}"/>
-    <dependency fqn="{concat('role.', @dictionary_owner)}"/>
 
-    <xsl:if test="@dictionary_schema!='pg_catalog'">
+    <xsl:for-each select="tsconfig_mapping[@dictionary_schema!='pg_catalog']">
       <dependency fqn="{concat('schema.', ancestor::database/@name,
 		               '.', @dictionary_schema)}"/>
       <dependency fqn="{concat('dictionary.', ancestor::database/@name,
 		               '.', @dictionary_schema,
 			       '.', @dictionary_name)}"/>
-    </xsl:if>
+      <dependency fqn="{concat('role.', @dictionary_owner)}"/>
+    </xsl:for-each>
     
   </xsl:template>
 </xsl:stylesheet>

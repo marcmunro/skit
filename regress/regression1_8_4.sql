@@ -1103,6 +1103,14 @@ language plpgsql security definer cost 20 rows 3;
 -- Text search stuff
 create text search configuration skit (copy = pg_catalog.english);
 
+-- Create a mapping that uses multiple dictionaries.
+alter text search configuration public.skit
+    drop mapping for asciiword;
+
+alter text search configuration public.skit
+    add mapping for asciiword with pg_catalog.english_stem,  pg_catalog.simple;
+
+
 comment on text search configuration skit is
 'comment for text search configuration';
 
@@ -1121,6 +1129,7 @@ create text search parser myparser2 (
 
 comment on text search parser myparser2 is
 'Parser';
+
 
 DBEOF
 
