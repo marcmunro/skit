@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="text_search_template" key="name">
+  <dbobject type="text_search_template" key="fqn">
     <attribute name="init_proc" rebuild="true"/>
     <attribute name="init_schema" rebuild="true"/>
     <attribute name="lexize_proc" rebuild="true"/>

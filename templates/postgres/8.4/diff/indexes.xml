@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="index" key="name">
+  <dbobject type="index" key="fqn">
     <attribute name="tablespace" rebuild="true"/>
     <attribute name="index_am"  rebuild="true"/>
     <attribute name="unique"  rebuild="true"/>

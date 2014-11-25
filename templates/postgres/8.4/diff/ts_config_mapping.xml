@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="text_search_configuration_map" key="name">
+  <dbobject type="text_search_configuration_map" key="fqn">
     <element type="tsconfig_mapping" key="seqno" rebuild="true">
       <attribute name="dictionary_name" rebuild="true"/>
       <attribute name="dictionary_schema" rebuild="true"/>

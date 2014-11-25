@@ -4,9 +4,8 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="trigger" key="name">
+  <dbobject type="trigger" key="fqn">
     <attribute name="table" rebuild="true"/>
-    <attribute name="schema" rebuild="true"/>
     <attribute name="enabled" rebuild="true"/>
     <attribute name="deferrable" rebuild="true"/>
     <attribute name="initially_deferred" rebuild="true"/>

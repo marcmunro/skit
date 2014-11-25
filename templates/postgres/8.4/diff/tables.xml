@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="table" key="name">
+  <dbobject type="table" key="fqn">
     <attribute name="owner">
       <!-- See comment in tablespaces.xml for an explanation of this. -->
      <dependencies

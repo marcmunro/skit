@@ -866,5 +866,21 @@ create text search template mysimple (
 comment on text search template mysimple is
 'mysimple template updated';
 
+create text search template mysimple2 (
+    init = dsimple_init,
+    lexize = dsimple_lexize
+);
+
+comment on text search template mysimple is
+'mysimple2 template updated';
+
+-- Text search dictionary
+create text search dictionary public.simple_dict (
+    template = pg_catalog.simple,
+    stopwords = english
+);
+
+comment on text search dictionary public.simple_dict is
+'dict updated';
 
 DBEOF

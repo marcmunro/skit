@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="rule" key="name">
+  <dbobject type="rule" key="fqn">
     <attribute name="name" rebuild="true"/>
     <attribute name="table" rebuild="true"/>
     <attribute name="schema" rebuild="true"/>
