@@ -59,6 +59,7 @@
        <xi:include href="skitfile:extract/languages.xml"/>
        <xi:include href="skitfile:extract/casts.xml"/>
        <xi:include href="skitfile:extract/fdws.xml"/>
+       <xi:include href="skitfile:extract/foreign_servers.xml"/>
        <xi:include href="skitfile:extract/schema.xml"/>
      </skit:let>
    </database>

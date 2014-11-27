@@ -4,7 +4,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
-  <dbobject type="foreign_data_wrapper" key="name">
+  <dbobject type="foreign_server" key="name">
     <attribute name="owner">
       <!-- See comment in tablespaces.xml for an explanation of this. -->
      <dependencies
@@ -21,8 +21,9 @@
        </dependency-set>
      </dependencies>
     </attribute>
-    <attribute name="validator_proc" rebuild="true"/>
-    <attribute name="validator_schema" rebuild="true"/>
+    <attribute name="foreign_data_wrapper" rebuild="true"/>
+    <attribute name="type" rebuild="true"/>
+    <attribute name="version" rebuild="true"/>
     <attribute name="owner" rebuild="true"/>
     <attribute name="options" rebuild="true"/>
   </dbobject>	

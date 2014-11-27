@@ -940,5 +940,16 @@ create foreign data wrapper mywrapper
 
 grant all on foreign data wrapper mywrapper to keep;
 
+-- Foreign Data Server
+create server kong 
+    type 'postgresql' version '8.4'
+    foreign data wrapper postgresql; 
+
+grant all on foreign server kong to keep;
+
+create server s2 
+    foreign data wrapper dummy
+    options (debug 'true');
+
 
 DBEOF

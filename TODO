@@ -3,7 +3,6 @@ dictionaries
 
 Add handling for FDWs and any other 8.4 things
   user mappings?
-  server?
   constraint trigger?
 
 Add handling for sequence owned by table.column

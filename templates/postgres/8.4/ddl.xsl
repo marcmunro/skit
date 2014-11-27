@@ -36,6 +36,9 @@
   <xsl:template name="dbobject-typename">
     <xsl:param name="typename"/>
     <xsl:choose>
+      <xsl:when test="$typename = 'foreign_server'">
+	<xsl:text>foreign server</xsl:text>
+      </xsl:when>
       <xsl:when test="$typename = 'foreign_data_wrapper'">
 	<xsl:text>foreign data wrapper</xsl:text>
       </xsl:when>
@@ -266,5 +269,6 @@
   <xsl:include href="skitfile:ddl/ts_dicts.xsl"/>
   <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
   <xsl:include href="skitfile:ddl/fdws.xsl"/>
+  <xsl:include href="skitfile:ddl/foreign_servers.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>
