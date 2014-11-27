@@ -1147,7 +1147,7 @@ comment on text search template mysimple is
 'mysimple template';
 
 
--- Foreign Data Wrapper
+-- Foreign Data Wrappers
 create foreign data wrapper dummy;
 
 create foreign data wrapper postgresql 
@@ -1159,7 +1159,7 @@ create foreign data wrapper mywrapper
 grant all on foreign data wrapper mywrapper to keep;
 
 
--- Foreign Data Server
+-- Foreign Data Servers
 create server kong 
     type 'postgresql' version '8.4'
     foreign data wrapper postgresql; 
@@ -1170,6 +1170,15 @@ create server s2
     foreign data wrapper dummy
     options (debug 'true');
 
+
+-- User Mappings
+create user mapping for keep
+    server kong
+    options (user 'general', password 'confusion');
+
+create user mapping for public
+    server kong
+    options (user 'major', password 'problem');
 
 
 DBEOF

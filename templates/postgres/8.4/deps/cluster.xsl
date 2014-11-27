@@ -103,6 +103,7 @@
   <xsl:include href="skitfile:deps/ts_parsers.xsl"/>
   <xsl:include href="skitfile:deps/fdws.xsl"/>
   <xsl:include href="skitfile:deps/foreign_servers.xsl"/>
+  <xsl:include href="skitfile:deps/user_mappings.xsl"/>
 
 </xsl:stylesheet>
 

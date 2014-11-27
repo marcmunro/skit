@@ -731,7 +731,7 @@ END_TEST
 #ifdef wibble
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--build", 
+    char *args[] = {"./skit", "--generate", "--drop", 
 		    "regress/scratch/regressdb_dump1a.xml",
 		    //"regress/scratch/dbdump/cluster.xml",
 		    //"x",

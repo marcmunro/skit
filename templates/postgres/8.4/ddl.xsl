@@ -36,6 +36,9 @@
   <xsl:template name="dbobject-typename">
     <xsl:param name="typename"/>
     <xsl:choose>
+      <xsl:when test="$typename = 'user_mapping'">
+	<xsl:text>user mapping</xsl:text>
+      </xsl:when>
       <xsl:when test="$typename = 'foreign_server'">
 	<xsl:text>foreign server</xsl:text>
       </xsl:when>
@@ -270,5 +273,6 @@
   <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
   <xsl:include href="skitfile:ddl/fdws.xsl"/>
   <xsl:include href="skitfile:ddl/foreign_servers.xsl"/>
+  <xsl:include href="skitfile:ddl/user_mappings.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>

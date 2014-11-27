@@ -920,4 +920,13 @@ create server s2
     options (debug 'true', wibble '4=3,5');
 
 
+-- User Mappings
+create user mapping for keep
+    server kong
+    options (user 'eneral', password 'confusion');
+
+create user mapping for public
+    server kong
+    options (user 'major', password 'roblem');
+
 DBEOF

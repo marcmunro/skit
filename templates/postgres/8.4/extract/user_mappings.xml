@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+  <skit:runsql var="mapping" file="sql/user_mappings.sql">
+    <user_mapping>
+     <skit:attr name="user"/>
+     <skit:attr name="server"/>
+     <skit:attr name="options"/>
+
+    </user_mapping>
+  </skit:runsql>
+</skit:inclusion>
