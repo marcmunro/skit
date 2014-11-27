@@ -1147,5 +1147,16 @@ comment on text search template mysimple is
 'mysimple template';
 
 
+-- Foreign Data Wrapper
+create foreign data wrapper dummy;
+
+create foreign data wrapper postgresql 
+    validator postgresql_fdw_validator;
+
+create foreign data wrapper mywrapper
+    options (debug 'true');
+
+grant all on foreign data wrapper mywrapper to keep;
+
 DBEOF
 

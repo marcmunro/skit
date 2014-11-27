@@ -928,4 +928,17 @@ comment on text search parser myparser2 is
 'Parser';
 
 
+-- Foreign Data Wrapper
+create foreign data wrapper dummy
+    options (debug 'true', abc '99,100');
+
+create foreign data wrapper postgresql 
+    validator postgresql_fdw_validator;
+
+create foreign data wrapper mywrapper
+    options (debug 'true');
+
+grant all on foreign data wrapper mywrapper to keep;
+
+
 DBEOF

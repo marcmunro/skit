@@ -58,6 +58,7 @@
        <xi:include href="skitfile:extract/function_sigs.xml"/>
        <xi:include href="skitfile:extract/languages.xml"/>
        <xi:include href="skitfile:extract/casts.xml"/>
+       <xi:include href="skitfile:extract/fdws.xml"/>
        <xi:include href="skitfile:extract/schema.xml"/>
      </skit:let>
    </database>

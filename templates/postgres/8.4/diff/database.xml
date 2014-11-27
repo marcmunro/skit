@@ -31,4 +31,5 @@
   <xi:include href="skitfile:diff/operators.xml"/>
   <xi:include href="skitfile:diff/operator_classes.xml"/>
   <xi:include href="skitfile:diff/operator_families.xml"/>
+  <xi:include href="skitfile:diff/fdws.xml"/>
 </skit:inclusion>  

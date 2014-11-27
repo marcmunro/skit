@@ -35,7 +35,9 @@
 	<xsl:text>table</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="../@subtype"/>
+	<xsl:call-template name="dbobject-typename">
+	  <xsl:with-param name="typename" select="../@subtype"/>
+	</xsl:call-template>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:value-of select="concat(' ', ../@on, ' to ', skit:dbquote(@to))"/>
@@ -156,7 +158,9 @@
 	      <xsl:text>table</xsl:text>
 	    </xsl:when>
 	    <xsl:otherwise>
-	      <xsl:value-of select="../@subtype"/>
+	      <xsl:call-template name="dbobject-typename">
+		<xsl:with-param name="typename" select="../@subtype"/>
+	      </xsl:call-template>
 	    </xsl:otherwise>
 	  </xsl:choose>
 	  <xsl:value-of 
@@ -176,7 +180,9 @@
 	<xsl:text>table</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="name(..)"/>
+	<xsl:call-template name="dbobject-typename">
+	  <xsl:with-param name="typename" select="name(..)"/>
+	</xsl:call-template>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:value-of 

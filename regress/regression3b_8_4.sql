@@ -896,4 +896,17 @@ create text search parser myparser2 (
 comment on text search parser myparser2 is
 'Parser updated';
 
+
+-- Foreign Data Wrapper
+create foreign data wrapper dummy
+    options (debug 'true');
+
+create foreign data wrapper postgresql 
+    no validator;
+
+create foreign data wrapper mywrapper
+    options (debug 'true');
+
+
+
 DBEOF

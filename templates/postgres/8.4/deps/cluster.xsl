@@ -101,6 +101,7 @@
   <xsl:include href="skitfile:deps/ts_templates.xsl"/>
   <xsl:include href="skitfile:deps/ts_dicts.xsl"/>
   <xsl:include href="skitfile:deps/ts_parsers.xsl"/>
+  <xsl:include href="skitfile:deps/fdws.xsl"/>
 
 </xsl:stylesheet>
 

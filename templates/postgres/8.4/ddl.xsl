@@ -31,33 +31,43 @@
   <xsl:template match="text()" mode="build"/>
   <xsl:template match="text()" mode="drop"/>
 
-  <!-- Template for getting object signatures preceded by the object
+  <!-- Templates for getting object signatures preceded by the object
        type name.  -->
-  <xsl:template name="obj-signature">
-    <xsl:param name="objnode"/>
+  <xsl:template name="dbobject-typename">
+    <xsl:param name="typename"/>
     <xsl:choose>
-      <xsl:when test="name($objnode) = 'text_search_dictionary'">
-	<xsl:text>text search dictionary </xsl:text>
+      <xsl:when test="$typename = 'foreign_data_wrapper'">
+	<xsl:text>foreign data wrapper</xsl:text>
       </xsl:when>
-      <xsl:when test="name($objnode) = 'text_search_template'">
-	<xsl:text>text search template </xsl:text>
+      <xsl:when test="$typename = 'text_search_dictionary'">
+	<xsl:text>text search dictionary</xsl:text>
       </xsl:when>
-      <xsl:when test="name($objnode) = 'text_search_parser'">
-	<xsl:text>text search parser </xsl:text>
+      <xsl:when test="$typename = 'text_search_template'">
+	<xsl:text>text search template</xsl:text>
       </xsl:when>
-      <xsl:when test="name($objnode) = 'text_search_configuration'">
-	<xsl:text>text search configuration </xsl:text>
+      <xsl:when test="$typename = 'text_search_parser'">
+	<xsl:text>text search parser</xsl:text>
       </xsl:when>
-      <xsl:when test="contains(name($objnode), '_')">
+      <xsl:when test="$typename = 'text_search_configuration'">
+	<xsl:text>text search configuration</xsl:text>
+      </xsl:when>
+      <xsl:when test="contains($typename, '_')">
 	<xsl:value-of 
-	    select="concat(substring-before(name($objnode), '_'),
-		    ' ', substring-after(name($objnode), '_'), ' ')" />
+	    select="concat(substring-before($typename, '_'),
+		    ' ', substring-after($typename, '_'))" />
       </xsl:when>
       <xsl:otherwise>
-	<xsl:value-of select="concat(name($objnode), ' ')"/>
+	<xsl:value-of select="$typename"/>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
 
+  <xsl:template name="obj-signature">
+    <xsl:param name="objnode"/>
+    <xsl:call-template name="dbobject-typename">
+      <xsl:with-param name="typename" select="name($objnode)"/>
+    </xsl:call-template>
+    <xsl:text> </xsl:text>
     <xsl:choose>
       <xsl:when test="(name($objnode) = 'constraint') or 
                       (name($objnode) = 'trigger')">
@@ -73,6 +83,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
+
 
   <!-- Template for dealing with comments.  This is invoked simply by
        using xsl:apply-templates from within the template for the 
@@ -254,5 +265,6 @@
   <xsl:include href="skitfile:ddl/ts_templates.xsl"/>
   <xsl:include href="skitfile:ddl/ts_dicts.xsl"/>
   <xsl:include href="skitfile:ddl/ts_parsers.xsl"/>
+  <xsl:include href="skitfile:ddl/fdws.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>
