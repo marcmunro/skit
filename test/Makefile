@@ -135,7 +135,7 @@ test_clean: test_data_clean
 	       valgrind/suppressions $(SUPPRESSION_FILES) \
 		$(TEST_DIR)/alltests.dep
 
-test_distclean: test_clean
+test_distclean: data_clean
 
 
 # How to build a .grind target.  These targets are specified in
@@ -157,4 +157,5 @@ test_help:
 	@echo "skgrind      - Run valgrind one test at a time, filtering output"
 	@echo "suppressions - Run valgrind to generate suppression files"
 	@echo "unit         - Run skit unit tests (define TESTS for specific tests)"
+	@echo "data_clean   - Remove auto-generated test data"
 	@echo "skit_test    - A Unit test executable for skit"

@@ -53,6 +53,8 @@ man:
 doc_clean: 
 	@echo "Cleaning doc (TODO)"
 
+doc_distclean: 
+
 # Describe what this makefile can build
 doc_help: 
 	@echo "html         - build skit html documentation"

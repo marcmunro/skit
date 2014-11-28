@@ -1,6 +1,6 @@
 #      Makefile for skit src files
 #
-#      Copyright (c) 2008 Marc Munro
+#      Copyright (c) 2008 - 2014 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3

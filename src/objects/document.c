@@ -1,7 +1,7 @@
 /**
  * @file   document.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -576,9 +576,9 @@ Document *
 docFromFile(String *path)
 {
     Document *volatile doc = NULL;
-    int ret;
     enum state_t {EXPECTING_OPTIONS, PROCESSING_OPTIONS, DONE} state;
-    int     option_node_depth;
+    int ret = 0;
+    int option_node_depth = 0;
     xmlTextReaderPtr reader;
 
     state = EXPECTING_OPTIONS;
@@ -616,7 +616,6 @@ docFromFile(String *path)
 	}
     }
     EXCEPTION(ex);
-    //fprintf(stderr, "EXCEPTION DOC FROM FILE\n");
     WHEN_OTHERS {
 	objectFree((Object *) doc, TRUE);
 	RAISE();
@@ -1181,7 +1180,7 @@ readTemplateDoc(String *filename, String *path, String *default_filename)
 {
     String *volatile filepath = templateFilePath(filename, path, 
 						 default_filename);
-    Document *doc;
+    Document *doc = NULL;
     BEGIN {
 	doc = simpleDocFromFile(filepath);
     }

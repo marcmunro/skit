@@ -59,6 +59,8 @@ droptestdb: dbstop
 	@rm -rf testdb valgrind/alltests
 	@echo "Done"
 
+dbscript_distclean:
+
 dbscript_clean: droptestdb
 	@rm -f testdb.start
 

@@ -1,6 +1,7 @@
 /**
  * @file   pgsql.c
  * \code
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Author:       Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro

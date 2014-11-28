@@ -1,7 +1,7 @@
 /**
  * @file   vector.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -223,7 +223,7 @@ vectorNth(Vector *vec, int n)
 Object *
 vectorGet(Vector *vec, Object *key)
 {
-    Object *result;
+    Object *result = NULL;
     Int4 *newkey;
     if (key->type == OBJ_INT4) {
 	return vectorNth(vec, ((Int4 *) key)->value);

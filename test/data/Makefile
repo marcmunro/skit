@@ -50,9 +50,11 @@ ensure_db_available:
 
 test_data: skit $(DATA_TARGETS)
 
-test_data_clean:
-	@echo Cleaning test/data...
+data_clean:
+	@echo Purging test/data...
 	@rm -f $(DATA_TARGETS)
+
+test_data_clean:
 
 # Describe what this makefile can build
 test_data_help:

@@ -1,7 +1,7 @@
 /**
  * @file   object.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -161,7 +161,7 @@ int4Free(Int4 *obj)
 int
 int4Cmp(Int4 *p1, Int4 *p2)
 {
-    int result;
+    int result = 0;
     Int4 *c2;
 
     assert(p1 && p1->type == OBJ_INT4, "int4Cmp: p1 is not Int4");
@@ -337,7 +337,7 @@ objectRead(TokenStr *sexp)
 static Object *
 trappedObjectRead(TokenStr *sexp)
 {
-    Object *obj;
+    Object *obj = NULL;
     BEGIN {
         obj = objectRead(sexp);
     }
@@ -816,7 +816,7 @@ consDup(Cons *cons)
 {
     Object *volatile carcopy = NULL;
     Object *volatile cdrcopy = NULL;
-    Cons *result;
+    Cons *result = NULL;
 
     assert(cons && (cons->type == OBJ_CONS), "consDup arg is not a cons cell");
 
@@ -981,7 +981,7 @@ void pSexp(Object *obj)
 Object *
 objSelect(Object *collection, Object *key)
 {
-    Object *result;
+    Object *result = NULL;
     collection = dereference(collection);
     switch (collection->type) {
     case OBJ_HASH: result = hashGet((Hash *) collection, key); break;
@@ -1036,7 +1036,7 @@ Object *
 objectFromStr(char *instr)
 {
     char *volatile str = newstr("%s", instr);
-    Object *obj;
+    Object *obj = NULL;
     TokenStr token_str = {str, '\0', NULL};
 
     BEGIN {

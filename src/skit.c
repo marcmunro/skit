@@ -1,7 +1,7 @@
 /**
  * @file   skit.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -69,6 +69,13 @@ process_args(int argc,
     finalAction();
 }
 
+static void
+shutdown()
+{
+#ifdef DEBUG
+    fprintf(stderr, "THIS IS A DEBUG BUILD\n");
+#endif
+}
 
 int
 main(int argc,
@@ -105,5 +112,6 @@ main(int argc,
     }
     memShutdown();
     /* END DEBUG CODE SECTION */
+    shutdown();
     return 0;
 }

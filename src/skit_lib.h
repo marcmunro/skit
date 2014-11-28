@@ -1,7 +1,7 @@
 /**
  * @file   skit_lib.h
  * \code
- *     Copyright (c) 2014 Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -26,6 +26,7 @@
  * XML versions history:
  * 0.1    Initial development version
  */
+#define SKIT_VERSION "0.1"
 #define SKIT_XML_VERSION "0.1"
 
 #define DIR_SEPARATOR '/'

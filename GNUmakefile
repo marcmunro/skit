@@ -51,6 +51,9 @@ CCNAME := $(shell echo $(CC) | tr '[a-z]' '[A-Z]')
 check: skit
 	./skit -t list.xml x.xml
 
+distclean: clean $(SUBDIRS:%=%_distclean)
+	#@rm -f ./configure config.log Makefile.global
+
 clean: $(SUBDIRS:%=%_clean)
 	@rm -f $(garbage) test.log
 
@@ -60,6 +63,7 @@ do_help: $(SUBDIRS:%=%_help)
 	@echo "help         - list major makefile targets"
 	@echo "check        - perform a simple interactive test run of skit"
 	@echo "clean        - remove all intermediate, backup and target files"
+	@echo "disctclean   - as clean but also remove all auto-generated files"
 
 help:
 	@echo "Major targets of this makefile:"

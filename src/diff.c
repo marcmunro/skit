@@ -1,7 +1,7 @@
 /**
  * @file   diff.c
  * \code
- *     Copyright (c) 2014 Marc Munro
+ *     Copyright (c) 2011 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
