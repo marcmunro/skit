@@ -29,6 +29,9 @@
     <attribute name="cache"/>
     <attribute name="is_cycled"/>
     <attribute name="is_called"/>
+    <attribute name="owned_by_schema" rebuild="true"/>
+    <attribute name="owned_by_table" rebuild="true"/>
+    <attribute name="owned_by_column" rebuild="true"/>
     <element type="comment">
       <text/>
     </element>

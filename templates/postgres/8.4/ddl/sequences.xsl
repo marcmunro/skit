@@ -17,6 +17,12 @@
     <xsl:if test="@cycled='t'">
       <xsl:text>&#x0A;  cycle</xsl:text>
     </xsl:if>
+    <xsl:if test="@owned_by_schema">
+      <xsl:value-of 
+	  select="concat('&#x0A;  owned by ', 
+		         skit:dbquote(@owned_by_schema, @owned_by_table),
+			 '.', skit:dbquote(@owned_by_column))"/>
+    </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
     <xsl:if test="@is_called='t'">
       <xsl:value-of 
@@ -46,7 +52,11 @@
     <xsl:if test="../attribute[@name!='owner'] or ../element">
       <do-print/>
       <xsl:text>&#x0A;</xsl:text>
-      <xsl:if test="../attribute[(@name!='owner') and (@name!='start_with')]">
+      <xsl:if test="../attribute[(@name='increment_by') or
+		                 (@name='max_value') or
+		                 (@name='min_value') or
+		                 (@name='cache') or
+		                 (@name='is_cycled')]">
 	<xsl:value-of select="concat('alter sequence ', ../@qname)"/>
 	<xsl:for-each select="../attribute">
 	  <xsl:choose>
@@ -76,6 +86,7 @@
 	</xsl:for-each>
 	<xsl:text>;&#x0A;</xsl:text>
       </xsl:if>
+
       <xsl:for-each select="../attribute[@name='start_with']">
 	<xsl:value-of 
 	    select="concat('alter sequence ', 

@@ -1,12 +1,3 @@
-comments for tsconfig_mappings?????
-dictionaries
-
-Add handling for FDWs and any other 8.4 things
-  user mappings?
-  constraint trigger?
-
-Add handling for sequence owned by table.column
-
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

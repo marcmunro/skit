@@ -736,6 +736,7 @@ create table o (
 );
 reset session authorization;
 
+
 create table c (
   key	integer not null,
   val1  varchar(19),
@@ -754,6 +755,7 @@ comment on column c.val4 is 'val4';
 alter table c alter column val2 set storage external;
 alter table c alter column val2 set statistics 100;
 
+
 create table i (
   val20     varchar
 ) inherits (c);
@@ -761,6 +763,11 @@ create table i (
 create table t4 (
   key integer not null
 );
+
+
+-- Sequences owned by tables
+create sequence xseq;
+create sequence oseq owned by c.key;
 
 
 -- Constraints

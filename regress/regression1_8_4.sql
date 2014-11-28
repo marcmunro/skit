@@ -548,10 +548,15 @@ comment on sequence "public"."thingy_id_seq" is
 
 grant select on table "thingy_id_seq" to "keep";
 
+create table wibbly (
+  wib_id integer not null
+);
+
 create sequence "public"."wib_seq"
   start with 1000 increment by 1
   minvalue 1 maxvalue 9223372036854775807
-  cache 1;
+  cache 1
+  owned by wibbly.wib_id;
 
 comment on sequence "public"."wib_seq" is
 'wib wib wib';
@@ -1040,6 +1045,11 @@ for each row execute procedure public.trigger1();
 
 comment on trigger mytrigger1 on schema2.keys2 is
 'Trigger comment';
+
+create constraint trigger my_ctrigger
+after insert or update on schema2.arrays
+for each row execute procedure public.trigger1();
+
 
 create view schema2.keys_view as
 select k1.key1, k1.key2, k1.key3, 

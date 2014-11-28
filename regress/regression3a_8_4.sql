@@ -731,7 +731,6 @@ create table o (
 comment on table o is 
 'This is table o';
 
-
 --  add/drop columns, change size and precision, change nullability and default
 create table c (
   key	integer not null,
@@ -775,6 +774,11 @@ create table t4 (
 ) tablespace tbs4;
 
 alter table t4 owner to lose; -- Lose does not have create rights on tbs4
+
+
+-- Sequences owned by tables
+create sequence xseq owned by x.key;
+create sequence oseq owned by o.key;
 
 
 -- Constraints

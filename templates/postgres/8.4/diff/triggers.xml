@@ -9,6 +9,7 @@
     <attribute name="enabled" rebuild="true"/>
     <attribute name="deferrable" rebuild="true"/>
     <attribute name="initially_deferred" rebuild="true"/>
+    <attribute name="is_constraint_trigger" rebuild="true"/>
     <attribute name="function" rebuild="true"/>
     <element type="source" rebuild="true">
       <text/>

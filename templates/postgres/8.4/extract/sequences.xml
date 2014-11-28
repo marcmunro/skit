@@ -13,6 +13,9 @@
       <skit:attr name="owner"/>
       <skit:attr name="tablespace"/>
       <skit:attr name="privs"/>
+      <skit:attr name="owned_by_schema"/>
+      <skit:attr name="owned_by_table"/>
+      <skit:attr name="owned_by_column"/>
 
       <skit:runsql var="seqcolumn" file="sql/sequence_cols.sql"
 		   params="(concat (select sequence 'schema') '.' 

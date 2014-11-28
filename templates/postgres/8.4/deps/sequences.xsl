@@ -22,7 +22,16 @@
 
     <dependency fqn="{concat('schema.', $parent_core)}"/>
     <xsl:if test="@tablespace">
-      <dependency fqn="{concat('tablespace.cluster.', @tablespace)}"/>
+      <dependency fqn="{concat('tablespace.', @tablespace)}"/>
+    </xsl:if>
+    <xsl:if test="@owned_by_column">
+      <dependency 
+	  fqn="{concat('column.', ancestor::database/@name, '.',
+		       @owned_by_schema, '.', @owned_by_table, '.',
+		       @owned_by_column)}"/>
+      <dependency 
+	  fqn="{concat('table.', ancestor::database/@name, '.',
+		       @owned_by_schema, '.', @owned_by_table)}"/>
     </xsl:if>
   </xsl:template>
 </xsl:stylesheet>
