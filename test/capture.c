@@ -1,7 +1,7 @@
 /**
  * @file   capture.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -137,7 +137,7 @@ captureOutput(TestRunner *test_fn,
 {
     int old_stdout;
     int old_stderr;
-    int result;
+    int result = 0;
     int sig;
     
     stdout_file = filenameFor("stdout");

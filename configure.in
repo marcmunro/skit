@@ -2,13 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-m4_define([VERSION],
-   esyscmd([grep 'SKIT_VERSION ' src/skit_config.h.in | \
+m4_define([SKIT_VERSION],
+   esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
             cut -d\" -f2 | tr -d '\n']))
 
-AC_INIT(Skit, VERSION, skit-general@pgfoundry.org)
+AC_INIT(skit, SKIT_VERSION, skit-general@pgfoundry.org)
 AC_CONFIG_SRCDIR([test/check_filepath.c])
-AC_CONFIG_HEADER([src/skit_config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -165,7 +164,7 @@ PKG_CHECK_MODULES(CHECK, [check >= 0.9.6])
 
 
 AC_MSG_CHECKING(whether to enable debugging)
-debug_default="no"
+debug_default="yes"
 AC_ARG_ENABLE(debug, [  --enable-debug=[no/yes] turn on debugging
                        [default=$debug_default]],, enable_debug=$debug_default)
 dnl Yes, DEBUG symbol will be defined

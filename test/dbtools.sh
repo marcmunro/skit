@@ -1,5 +1,9 @@
 #! /bin/sh
-# dbtools.sh
+#      Copyright (c) 2009 - 2014 Marc Munro
+#      Fileset:	skit - a database schema management toolset
+#      Author:  Marc Munro
+#      License: GPL V3
+#
 # Manage databse cluster for skit testing
 
 export TEST_HOME=`find . -name check_params.c | xargs dirname`

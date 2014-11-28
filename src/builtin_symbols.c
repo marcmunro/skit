@@ -589,8 +589,8 @@ static Object *
 fnAnd(Object *obj)
 {
     Cons *cons = (Cons *) obj;
-    Cons *prev;
-    Object *result;
+    Cons *prev = NULL;
+    Object *result = NULL;
     raiseIfNotList("and", obj);
 
     while (cons) {
@@ -603,8 +603,10 @@ fnAnd(Object *obj)
 	    return NULL;
 	}
     }
-    result = prev->car;
-    prev->car = NULL;
+    if (prev) {
+	result = prev->car;
+	prev->car = NULL;
+    }
     return result;
 }
 
@@ -667,7 +669,7 @@ fnCons(Object *obj)
     Object *volatile car = NULL;
     Object *volatile cdr = NULL;
     Cons *cons = (Cons *) obj;
-    Cons *result;
+    Cons *result = NULL;
     BEGIN {
 	raiseIfNotList("cons", obj);
 	car = objectEval(cons->car);
@@ -827,7 +829,7 @@ fnHashAdd(Object *obj)
     Object *volatile value = NULL;
     Cons *cons = (Cons *) obj;
     Hash *hash;
-    Object *ref;
+    Object *ref = NULL;
     Object *old;
 
     BEGIN {

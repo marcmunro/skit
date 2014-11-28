@@ -177,7 +177,7 @@ stylesheetFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile result_attr = nodeAttribute(template_node, "result");
     xmlNode *node = NULL;
-    Object *result_reqd;
+    Object *result_reqd = NULL;
     Document *doc = NULL;
     UNUSED(depth);
 
@@ -698,7 +698,7 @@ execIf(xmlNode *template_node, xmlNode *parent_node, int depth)
 static xmlNode *
 execLet(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
-    xmlNode *result;
+    xmlNode *result = NULL;
     newSymbolScope();
     BEGIN {
 	result = processChildren(template_node, parent_node, depth + 1);
@@ -857,7 +857,7 @@ execExecuteFunction(xmlNode *template_node, xmlNode *parent_node, int depth)
     Node *node;
     Symbol *name_sym;
     xmlNode *function_start;
-    xmlNode *result;
+    xmlNode *result = NULL;
 
     if (!name) {
 	RAISE(XML_PROCESSING_ERROR, 
@@ -1104,7 +1104,7 @@ execTsort(xmlNode *template_node, xmlNode *parent_node, int depth)
     Document *volatile source_doc = NULL;
     Document *volatile result_doc = NULL;
     Vector *volatile sorted = NULL;
-    xmlNode *root;
+    xmlNode *root = NULL;
     Symbol *fb_proc = symbolNew("fallback_processor");
     Symbol *ddl_proc = symbolNew("ddl_processor");
     UNUSED(depth);
@@ -1902,7 +1902,7 @@ diffFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile diffrules = nodeAttribute(template_node, "rules");
     String *volatile swap = nodeAttribute(template_node, "swap");
     Object *do_swap = evalSexp(swap->value);
-    xmlNode *result;
+    xmlNode *result = NULL;
     UNUSED(parent_node);
     UNUSED(depth);
 
@@ -1995,7 +1995,7 @@ execProcess(xmlNode *template_node, xmlNode *parent_node, int depth)
 {
     String *volatile input = nodeAttribute(template_node, "input");
     Document *volatile source_doc = NULL;
-    xmlNode *result;
+    xmlNode *result = NULL;
     xmlNode *root_node;
     xmlNode *oldfiles;
 

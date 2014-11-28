@@ -1,7 +1,7 @@
 /**
  * @file   check_except.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -206,7 +206,7 @@ ignore3(int i)
 static int 
 ignore4(int i)
 {
-    int result;
+    int result = 0;
     BEGIN {
 	result = ignore3(i);
     }

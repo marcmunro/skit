@@ -508,7 +508,7 @@ recordDependencyInVector(
     volatile ResolverState *res_state)
 {
     String *str;
-    boolean fully_qualified;
+    boolean fully_qualified = FALSE;
     Dependency *dep;
     boolean is_build_side = isBuildSideNode(node);
 

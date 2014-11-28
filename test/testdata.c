@@ -1,7 +1,7 @@
 /**
  * @file   testdata.c
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -214,7 +214,7 @@ testExecQry(Connection *connection,
 	    Object *params)
 {
     Cons *results;
-    Cursor *curs;
+    Cursor *curs = NULL;
     Vector *fields;
     Vector *rows;
     String *key = despacedString(qry);

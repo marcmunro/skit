@@ -48,7 +48,7 @@ static DependencyApplication
 buildDirection(xmlNode *dbobject)
 {
     String *action = nodeAttribute(dbobject, "action");
-    DependencyApplication result;
+    DependencyApplication result = UNKNOWN_DIRECTION;
 
     assert(action, "Expected action attribute for dbobject node");
     if (streq(action->value, "diff") ||

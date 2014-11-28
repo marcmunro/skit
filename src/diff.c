@@ -264,7 +264,7 @@ getMatch(xmlNode *node, Hash *objects, Hash *rules)
 static void
 setDiff(xmlNode *node, DiffType difftype)
 {
-    char  *type;
+    char  *type = DIFFUNKNOWN;
     switch (difftype) {
     case IS_NEW: type = DIFFNEW; break;
     case IS_GONE: type = DIFFGONE; break;
@@ -777,7 +777,7 @@ evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
     char *brace;
     xmlChar *attr;
     char *contents;
-    char *end;
+    char *end = NULL;
     char *result = newstr("");
     Object *obj;
     char *tmp;
@@ -808,6 +808,7 @@ evalAttr(xmlChar *expr, xmlNode *content1, xmlNode *content2)
 		    attr = xmlGetProp(content2, (xmlChar *) contents);
 		}
 		else {
+		    attr = NULL;
 		    RAISE(XML_PROCESSING_ERROR,
 			  newstr("Invalid braced expression: \"%s\"\n", expr));
 		}

@@ -1,7 +1,7 @@
 /**
  * @file   action.c
  * \code
- *     Copyright (c) 2009, 2010, 2011 Marc Munro
+ *     Copyright (c) 2009 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -469,7 +469,7 @@ static Object *
 parseTemplate(Object *obj)
 {
     String *volatile filename;
-    Object *action_info;
+    Object *action_info = NULL;
     UNUSED(obj);
 
     BEGIN {
@@ -489,7 +489,7 @@ parseTemplate(Object *obj)
 static Object *
 execParseTemplate(char *name)
 {
-    Object *action_info;
+    Object *action_info = NULL;
     String *volatile filename;
 
     BEGIN {
@@ -560,7 +560,7 @@ static Object *
 parseList(Object *obj)
 {
     String *volatile filename = stringNew("list.xml");
-    Object *params;
+    Object *params = NULL;
     UNUSED(obj);
     BEGIN {
 	params = doParseTemplate(filename);
@@ -672,7 +672,7 @@ parseAction(String *action)
 {
     String *volatile parser_name;
     Symbol *action_parser;
-    Hash *params;
+    Hash *params = NULL;
     Object *old;
 
     defineActionParsers();

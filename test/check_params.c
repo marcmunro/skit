@@ -1,7 +1,7 @@
 /**
  * @file   check_params.c
  * \code
- *     Copyright (c) 2014 Marc Munro
+ *     Copyright (c) 2011 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -547,7 +547,7 @@ END_TEST
 
 START_TEST(option_usage)
 {
-    char *out;
+    char *out = NULL;
     redirect_stdout("option_usage2");
     BEGIN {
 	show_usage(stdout);
