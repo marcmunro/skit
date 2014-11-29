@@ -15,6 +15,18 @@
     <option name='pass*word' type='string'/>
   </skit:options>
 
+  <skit:exec 
+      expr="(setq connect 
+	      (concat connect 
+	              (and database (concat ' dbname=' (chr 39) 
+		                       database (chr 39)))
+		      (and port (concat ' port=' port))
+		      (and username (concat ' user=' (chr 34)
+		                       username(chr 39)))
+		      (and password (concat ' password=' (chr 39)
+		                   password(chr 34)))
+		      (and host (concat ' host=' (chr 39)
+		                   host (chr 39)))))"/>
   <skit:runsql file="version.sql">
     <dump>
       <skit:attr name="dbtype" expr="dbtype"/>

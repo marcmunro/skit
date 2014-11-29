@@ -331,37 +331,6 @@ START_TEST(too_few_sources)
 }
 END_TEST
 
-START_TEST(incomplete_extract)
-{
-    char *args[] = {"./skit", "--extract"};
-    Cons *param_list;
-    Hash *param_hash;
-    String *action_key = stringNew("action");
-    String *action;
-
-    initTemplatePath(".");
-    param_list = process_args(2, args);
-    param_hash = (Hash *) param_list->car;
-    action = (String *) hashGet(param_hash, (Object *) action_key);
-
-    BEGIN {
-	executeAction(action, param_hash);
-
-	fail("Incomplete extract params not detected(1)");
-    }
-    EXCEPTION(ex);
-    WHEN_OTHERS {
-	objectFree((Object *) param_list, FALSE);
-	objectFree((Object *) action_key, TRUE);
-	fail_unless(contains(ex->text, "No database connection defined"),
-		    "Incomplete extract params not detected(2)");
-    }
-    END;
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 START_TEST(missing_template)
 {
     char *args[] = {"./skit", "-t", "missing.xml"};
@@ -705,7 +674,7 @@ START_TEST(extract)
      * runs execdrop, etc. */
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
+		    "dbname='regressdb' port='5433'"  " host=" PGHOST,
                     "--print", "--full"};
 
     initTemplatePath(".");
@@ -1086,7 +1055,6 @@ params_suite(void)
     ADD_TEST(tc_core, missing_file);
     ADD_TEST(tc_core, too_many_sources);
     ADD_TEST(tc_core, too_few_sources);
-    ADD_TEST(tc_core, incomplete_extract);
     ADD_TEST(tc_core, missing_template);
     ADD_TEST(tc_core, multiple_options);
     ADD_TEST(tc_core, unknown_type);

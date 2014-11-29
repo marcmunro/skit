@@ -450,6 +450,32 @@ fnDebug(Object *obj)
     return NULL;
 }
 
+/* (chr ascii-value)
+ */
+static Object *
+fnChr(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Int4 *ascii = NULL;
+    char *ch;
+    String *volatile result = NULL;
+
+    BEGIN {
+	ascii = (Int4 *) nextParam("chr", &cons, OBJ_INT4, TRUE, TRUE, 1);
+	ch = newstr(" ");
+	ch[0] = ascii->value;
+	result = stringNewByRef(ch);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	if (ascii) {
+	    objectFree((Object *) ascii, TRUE);
+	}
+    }
+    END;
+    return (Object *) result;
+}
+
 static Object *
 fnSelect(Object *obj)
 {
@@ -890,39 +916,41 @@ initBaseSymbols()
      * simplifying the handling of babylisp expressions.
      * TODO: Refactor more of these functions. */
 
-    symbolCreate("setq", &fnSetq, NULL);
-    symbolCreate("join", &fnJoin, NULL);
-    symbolCreate("split", &fnSplit, NULL);
-    symbolCreate("try-to-int", &fnInt4Promote, NULL);
-    symbolCreate("map", &fnMap, NULL);
-    symbolCreate("version", &fnVersion, NULL);
-    symbolCreate("current-timestamp",  &fnCurTimestamp, NULL);  
-    symbolCreate("params", NULL, NULL);
-    symbolCreate("debug", &fnDebug, NULL);                      /*XX*/
-    symbolCreate("tuple", NULL, NULL);
-    symbolCreate("tuplestack", NULL, NULL);
-    symbolCreate("quote", &fnQuote, NULL);
-    symbolCreate("list", &fnList, NULL);
-    symbolCreate("dbquote", &fnDBQuote, NULL);
-    symbolCreate("string=", &fnStringEq, NULL);                 /*XX*/
-    symbolCreate("string-match", &fnStringMatch, NULL);         /*XX*/
-    symbolCreate("select", &fnSelect, NULL);
-    symbolCreate("replace", &fnReplace, NULL);
-    symbolCreate("not", &fnNot, NULL);
     symbolCreate("and", &fnAnd, NULL);
-    symbolCreate("or", &fnOr, NULL);
-    symbolCreate("concat", &fnConcat, NULL);
-    symbolCreate("cons", &fnCons, NULL);
-    symbolCreate("car", &fnCar, NULL);
-    symbolCreate("cdr", &fnCdr, NULL);
     symbolCreate("+", &fnPlus, NULL);
     symbolCreate("-", &fnMinus, NULL);
-    symbolCreate("re", &fnRegexp, NULL);                        /*XX*/
-    symbolCreate("length", &fnLength, NULL);
-    symbolCreate("hashadd", &fnHashAdd, NULL);
-    symbolCreate("username", &fnUsername, NULL);
+    symbolCreate("car", &fnCar, NULL);
+    symbolCreate("cdr", &fnCdr, NULL);
+    symbolCreate("chr", &fnChr, NULL);
+    symbolCreate("concat", &fnConcat, NULL);
+    symbolCreate("cons", &fnCons, NULL);
+    symbolCreate("current-timestamp",  &fnCurTimestamp, NULL);  
     symbolCreate("dbhandlers", NULL, (Object *) dbhash);
+    symbolCreate("dbquote", &fnDBQuote, NULL);
+    symbolCreate("debug", &fnDebug, NULL);                      /*XX*/
+    symbolCreate("hashadd", &fnHashAdd, NULL);
+    symbolCreate("join", &fnJoin, NULL);
+    symbolCreate("length", &fnLength, NULL);
+    symbolCreate("list", &fnList, NULL);
+    symbolCreate("map", &fnMap, NULL);
+    symbolCreate("not", &fnNot, NULL);
+    symbolCreate("or", &fnOr, NULL);
+    symbolCreate("params", NULL, NULL);
+    symbolCreate("quote", &fnQuote, NULL);
+    symbolCreate("re", &fnRegexp, NULL);                        /*XX*/
+    symbolCreate("replace", &fnReplace, NULL);
+    symbolCreate("select", &fnSelect, NULL);
+    symbolCreate("setq", &fnSetq, NULL);
     symbolCreate("skit_xml_version", NULL, (Object *) xml_version);
+    symbolCreate("string=", &fnStringEq, NULL);                 /*XX*/
+    symbolCreate("string-match", &fnStringMatch, NULL);         /*XX*/
+    symbolCreate("split", &fnSplit, NULL);
+    symbolCreate("try-to-int", &fnInt4Promote, NULL);
+    symbolCreate("tuple", NULL, NULL);
+    symbolCreate("tuplestack", NULL, NULL);
+    symbolCreate("username", &fnUsername, NULL);
+    symbolCreate("version", &fnVersion, NULL);
+
 
     defineVar("dbtype", (Object *) stringNew("postgres"));
     defineVar("dbver", NULL);

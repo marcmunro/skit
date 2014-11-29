@@ -47,59 +47,33 @@ pgsqlConnectionCheck(PGconn *conn)
 }
 
 static String *
-get_param(String *connect,
-		  char *symbol_name, 
-		  char *regexp_str,
-		  boolean *from_params)
+getFromString(String *str, char *regexp_str)
 {
-	boolean is_new = FALSE;
-	String *result= (String *) symbolGetValueWithStatus(symbol_name, &is_new);
 	Regexp *match;
+	String *result;
 
-	if (connect && !result) {
-		/* If there is a connect string but no result information,
-		 * attempt to retrieve the result information from the connect
-		 * string */
-		match = regexpNew(regexp_str);		 
-		result = regexpReplaceOnly(connect, match, &replace3);
-		if (result->value[0] == '\0') {
-			/* String is empty */
-			objectFree((Object *) result, TRUE);
-			result = NULL;
-		}
-		objectFree((Object *) match, TRUE);
+	match = regexpNew(regexp_str);		 
+	result = regexpReplaceOnly(str, match, &replace3);
+
+	if (result->value[0] == '\0') {
+		/* String is empty */
+		objectFree((Object *) result, TRUE);
+		result = NULL;
 	}
-	else {
-		/* Every result from this function is it's own value not
-		 * referenced elsewhere, and should be freed appropriately */
-		result = (String *) objectCopy((Object *) result);
-	}
-	if (is_new) {
-		*from_params = TRUE;
-	}
+	objectFree((Object *) match, TRUE);
 	return result;
 }
 
 static void
-record_param(String *value, char *name, boolean make_global)
+record_param(String *value, char *name)
 {
 	Symbol *sym = symbolGet(name);
 
 	if (!sym) {
 		sym = symbolNew(name);
 	}
-	if (!make_global) {
-		setScopeForSymbol(sym);
-	}
+	setScopeForSymbol(sym);
 	symSet(sym, (Object *) value);
-}
-
-static char *
-append(char *source, char *token, String *str)
-{
-	char *result = newstr("%s%s='%s' ", source, token, str->value);
-	skfree(source);
-	return result;
 }
 
 static Connection *
@@ -115,82 +89,55 @@ pgsqlConnect(Object *sqlfuncs)
 	Connection *volatile connection = 
 		(Connection *) symbolGetValue("dbconnection");
 	String *volatile connect;
-	boolean make_global;
-	boolean new_connection;
 	String *host;
     String *port;
     String *dbname;
     String *user;
     String *pass;
 	Symbol *sym;
-	char *tmp;
 
-	connect = (String *) symbolGetValueWithStatus("connect", &new_connection);
+	connect = (String *) symbolGetValue("connect");
 
 	if (!connect) {
 		RAISE(SQL_ERROR,
 			  newstr("No database connection defined"));
 	}
 
-	new_connection = make_global = (connection == NULL);
+	host = getFromString(connect, HOST_MATCH);
+	port = getFromString(connect, PORT_MATCH);
+	dbname = getFromString(connect, DBNAME_MATCH);
+    user = getFromString(connect, USER_MATCH);
+    pass = getFromString(connect, PASSWD_MATCH);
 
-	host = get_param(connect, "host", HOST_MATCH, &new_connection);
-    port = get_param(connect, "port", PORT_MATCH, &new_connection);
-    dbname = get_param(connect, "dbname", DBNAME_MATCH, &new_connection);
-	if (!dbname) {
-		/* In a connect string the dbname param is called dbname, but
-		   the parameter, as defined in connect.xml, we have called
-		   database. */
-		dbname = get_param(connect, "database", 
-						   DBNAME_MATCH, &new_connection);
+	record_param(host, "host");
+	record_param(port, "port");
+	record_param(dbname, "dbname");
+	record_param(user, "username");
+	record_param(pass, "password");
+	record_param(connect, "connect");
+	
+	connection = (Connection *) skalloc(sizeof(Connection));
+	connection->type = OBJ_CONNECTION;
+	connection->sqlfuncs = sqlfuncs;
+	connection->dbtype = stringNew("postgres");
+	connection->conn = NULL;
+	
+	BEGIN {
+		connection->conn = (void *) PQconnectdb(connect->value);
+		pgsqlConnectionCheck((PGconn *) connection->conn);
 	}
-    user = get_param(connect, "username", USER_MATCH, &new_connection);
-    pass = get_param(connect, "password", PASSWD_MATCH, &new_connection);
-
-	if (new_connection) {
-		record_param(host, "host", make_global);
-		record_param(port, "port", make_global);
-		record_param(dbname, "dbname", make_global);
-		record_param(user, "username", make_global);
-		record_param(pass, "password", make_global);
-
-		tmp = newstr("");
-		if (host) tmp = append(tmp, "host", host);
-		if (port) tmp = append(tmp, "port", port);
-		if (dbname) tmp = append(tmp, "dbname", dbname);
-		skfree(connect->value);
-		connect->value = tmp;
-
-		record_param(connect, "connect", make_global);
-
-		connection = (Connection *) skalloc(sizeof(Connection));
-		connection->type = OBJ_CONNECTION;
-		connection->sqlfuncs = sqlfuncs;
-		connection->dbtype = stringNew("postgres");
-		connection->conn = NULL;
-
-		BEGIN {
-			connection->conn = (void *) PQconnectdb(connect->value);
-			pgsqlConnectionCheck((PGconn *) connection->conn);
-		}
-		EXCEPTION(ex) {
-			objectFree((Object *) connection, TRUE);
-		}
-		WHEN(SQL_ERROR) {
-			RAISE(SQL_ERROR,
-				  newstr("Cannot connect to database type \"postgres\""
-						 " with \"%s\"\n  %s", connect->
-						 value, ex->text));
-		}
-		END;
-		sym = symbolNew("dbconnection");
-		sym->svalue = (Object *) connection;
+	EXCEPTION(ex) {
+		objectFree((Object *) connection, TRUE);
 	}
-	else {
-		objectFree((Object *) host, TRUE);
-		objectFree((Object *) port, TRUE);
-		objectFree((Object *) dbname, TRUE);
+	WHEN(SQL_ERROR) {
+		RAISE(SQL_ERROR,
+			  newstr("Cannot connect to database type \"postgres\""
+					 " with \"%s\"\n  %s", connect->
+					 value, ex->text));
 	}
+	END;
+	sym = symbolNew("dbconnection");
+	sym->svalue = (Object *) connection;
 	return connection;
 }
 

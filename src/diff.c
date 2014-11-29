@@ -1330,6 +1330,8 @@ processDiffRoot(xmlNode *root1, xmlNode *root2, Hash *rules)
     String *time2 = nodeAttribute(dump2, "time");
     boolean has_diffs;
 
+    assert(dbname2, "dbname is missing in 2nd xml stream");
+
     (void) xmlNewProp(result, (xmlChar *) "dbname2", 
 		      (xmlChar *) dbname2->value);
     (void) xmlNewProp(result, (xmlChar *) "time2", (xmlChar *) time2->value);
