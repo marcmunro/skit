@@ -5,7 +5,7 @@
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Provides unit tests for exception handling using the check

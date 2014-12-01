@@ -5,7 +5,7 @@
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Provides test data and a database access layer to retrieve it

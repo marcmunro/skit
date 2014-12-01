@@ -1,7 +1,7 @@
 # ----------
 # GNUmakefile
 #
-#      Copyright (c) 2009 - 2012 Marc Munro
+#      Copyright (c) 2009 - 2014 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -52,7 +52,7 @@ check: skit
 	./skit -t list.xml x.xml
 
 distclean: clean $(SUBDIRS:%=%_distclean)
-	#@rm -f ./configure config.log Makefile.global
+	@rm -f ./configure config.log Makefile.global
 
 clean: $(SUBDIRS:%=%_clean)
 	@rm -f $(garbage) test.log
@@ -60,10 +60,10 @@ clean: $(SUBDIRS:%=%_clean)
 
 # Provide a list of the targets buildable by this makefile.
 do_help: $(SUBDIRS:%=%_help)
-	@echo "help         - list major makefile targets"
-	@echo "check        - perform a simple interactive test run of skit"
-	@echo "clean        - remove all intermediate, backup and target files"
-	@echo "disctclean   - as clean but also remove all auto-generated files"
+	@echo "help             - list major makefile targets"
+	@echo "check            - perform a simple interactive test run of skit"
+	@echo "clean            - remove all intermediate, backup and target files"
+	@echo "disctclean       - as clean but also remove all auto-generated files"
 
 help:
 	@echo "Major targets of this makefile:"

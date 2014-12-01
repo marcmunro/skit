@@ -1,11 +1,9 @@
 #      Makefile for skit src/objects files
 #
-#      Copyright (c) 2008 Marc Munro
+#      Copyright (c) 2008 - 2024 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
-#
-# $Id$
 #
 # Do not attempt to use this makefile directly: its targets are available
 # and should be built from the main GNUmakefile in the parent directory.

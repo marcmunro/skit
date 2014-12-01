@@ -1,6 +1,6 @@
 #      Makefile for skit test database
 #
-#      Copyright (c) 2009 Marc Munro
+#      Copyright (c) 2009 - 2014 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -65,7 +65,7 @@ dbscript_clean: droptestdb
 	@rm -f testdb.start
 
 dbscript_help:
-	@echo "testdb       - Create a local test database"
-	@echo "dbstart      - Start the local test database"
-	@echo "dbstop       - Stop the local test database"
-	@echo "droptestdb   - Drop the local test database"
+	@echo "testdb           - Create a local test database"
+	@echo "dbstart          - Start the local test database"
+	@echo "dbstop           - Stop the local test database"
+	@echo "droptestdb       - Drop the local test database"

@@ -153,9 +153,9 @@ test_distclean: data_clean
 
 # Describe what this makefile can build
 test_help:
-	@echo "grind        - Run unit test executable for skit with valgrind"
-	@echo "skgrind      - Run valgrind one test at a time, filtering output"
-	@echo "suppressions - Run valgrind to generate suppression files"
-	@echo "unit         - Run skit unit tests (define TESTS for specific tests)"
-	@echo "data_clean   - Remove auto-generated test data"
-	@echo "skit_test    - A Unit test executable for skit"
+	@echo "grind            - Run unit test executable for skit with valgrind"
+	@echo "skgrind          - Run valgrind one test at a time, filtering output"
+	@echo "suppressions     - Run valgrind to generate suppression files"
+	@echo "unit             - Run skit unit tests (define TESTS for specific tests)"
+	@echo "data_clean       - Remove auto-generated test data"
+	@echo "skit_test        - A Unit test executable for skit"

@@ -5,8 +5,6 @@
 #      Author:  Marc Munro
 #      License: GPL V3
 #
-# $Id$
-#
 # Do not attempt to use this makefile directly: its targets are available
 # and should be built from the main GNUmakefile in the parent directory.
 # The GNUmakefile in this directory will build using the parent GNUmakefile
@@ -55,7 +53,7 @@ src_clean: $(SRC_SUBDIRS:%=%_clean)
 
 # Describe what this makefile can build
 src_help: $(SRC_SUBDIRS:%=%_help)
-	@echo "skit         - build the skit executable"
+	@echo "skit             - build the skit executable"
 
 
 

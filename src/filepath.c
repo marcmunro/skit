@@ -5,7 +5,7 @@
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Determine where to find files based on path and version information

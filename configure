@@ -624,6 +624,8 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 XSLTPROC
+XML_VERSION
+MAJOR_VERSION
 DEBUG
 CHECK_LIBS
 CHECK_CFLAGS
@@ -2169,6 +2171,8 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 
 
 
@@ -4705,6 +4709,12 @@ $as_echo "no" >&6; }
 fi
 
 
+MAJOR_VERSION=0
+
+XML_VERSION=0.1
+
+
+
 # Docbook
 #
 #PGAC_PROG_NSGMLS
@@ -4753,8 +4763,6 @@ fi
 
   test -n "$XSLTPROC" && break
 done
-
-
 
 
 

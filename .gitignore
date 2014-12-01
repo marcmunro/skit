@@ -71,3 +71,9 @@ valgrind/out
 
 # The dbdump directory
 dbdump/
+
+# Generated stuff in the doc directory.
+doc/version.sgml
+doc/skit.xml
+doc/html
+doc/man

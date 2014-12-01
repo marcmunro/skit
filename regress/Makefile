@@ -1,6 +1,6 @@
 #      Makefile for skit test files
 #
-#      Copyright (c) 2009 - 2013 Marc Munro
+#      Copyright (c) 2009 - 2014 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -195,11 +195,11 @@ regress_distclean: regress_clean
 
 # Describe what this makefile can build
 regress_help:
-	@echo "regress              - Run full regression test suite"
-	@echo "regress_cluster      - Create regression test database cluster"
-	@echo "regression_env       - Show env variables used for regression"
-	@echo "regression_test1     - Regression test 1 (extract/generate)"
-	@echo "regression_test2     - Regression test 2 (scatter/gather)"
-	@echo "regression_test3     - Regression test 3 (diffs)"
-	@echo "regression_test4     - Regression test 3 (diffs)"
-	@echo "drop_regress_cluster - Drop regression test database cluster"
+	@echo "regress          - Run full regression test suite"
+	@echo "regress_cluster  - Create regression test database cluster"
+	@echo "regression_env   - Show env variables used for regression"
+	@echo "regression_test1 - Regression test 1 (extract/generate)"
+	@echo "regression_test2 - Regression test 2 (scatter/gather)"
+	@echo "regression_test3 - Regression test 3 (diffs)"
+	@echo "regression_test4 - Regression test 4 (diffs)"
+	@echo -e "drop_regress_cluster\n                 - Drop regression test database cluster"

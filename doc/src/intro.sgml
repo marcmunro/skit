@@ -1,0 +1,19 @@
+<!-- doc/src/sgml/intro.sgml -->
+
+<preface id="preface">
+ <title>Preface</title>
+
+ <para>
+  This book is the official documentation
+  for <productname>skit</productname>.  It is currently in an early
+  embryonic form, but is intended to eventually document all
+  functionality supported by skit.
+ </para>
+</preface>
+
+<chapter>
+  <title>Overview of <productname>skit</productname></title>
+  <para>	
+    
+  </para>
+</chapter>

@@ -1,12 +1,12 @@
 
 /**
- * @file   skit_lib.h
+ * @file   sql.h
  * \code
- *     Author:       Marc Munro
+ *     Copyright (c) 2011 - 2014 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Define the skitlib API.

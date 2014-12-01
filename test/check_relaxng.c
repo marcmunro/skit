@@ -5,7 +5,7 @@
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
- * $Id$
+ * 
  * \endcode
  * @brief  
  * Unit tests for checking relaxng validation of templates, etc

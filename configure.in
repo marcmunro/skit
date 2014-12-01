@@ -7,6 +7,8 @@ m4_define([SKIT_VERSION],
             cut -d\" -f2 | tr -d '\n']))
 
 AC_INIT(skit, SKIT_VERSION, skit-general@pgfoundry.org)
+
+
 AC_CONFIG_SRCDIR([test/check_filepath.c])
 
 # Checks for programs.
@@ -177,6 +179,12 @@ else
 fi
 
 
+AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+            cut -d\" -f2 | cut -d. -f1 | tr -d '\n']))
+AC_SUBST(XML_VERSION, esyscmd([grep 'XML_VERSION ' src/skit_lib.h | \
+            cut -d\" -f2 | tr -d '\n']))
+
+
 # Docbook
 #
 #PGAC_PROG_NSGMLS
@@ -185,8 +193,6 @@ fi
 #PGAC_PATH_DOCBOOK_STYLESHEETS
 #PGAC_PATH_COLLATEINDEX
 AC_CHECK_PROGS(XSLTPROC, xsltproc)
-
-
 
 
 AC_CONFIG_FILES([Makefile.global])
