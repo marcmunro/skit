@@ -1,4 +1,4 @@
-#      Makefile for skit test files
+#      Makefile for skit regression tests.
 #
 #      Copyright (c) 2009 - 2014 Marc Munro
 #      Fileset:	skit - a database schema management toolset

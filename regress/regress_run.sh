@@ -86,7 +86,11 @@ execdrop()
     echo ==== RUNNING DROP SCRIPT $1 ==== 
     exitonerr sh -e ${REGRESS_DIR}/$1
     echo ...checking that database is empty... 1>&2
-    pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | wc -l | \
+    # Expect only the connecting user's role
+    # pg_dumpall will contain plpgsql after version 9.0 of postgres, so
+    # we ignore that.
+    pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | \
+	grep -v 'LANGUAGE plpgsql' | wc -l | \
             grep ^1$ >/dev/null
     errexit
     echo ==== FINISHED DROP SCRIPT $1 ==== 

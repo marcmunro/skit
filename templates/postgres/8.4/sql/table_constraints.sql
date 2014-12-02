@@ -4,7 +4,10 @@ select c.oid as oid,
        n.nspname as schema,
        case c.contype when 'p' then 'primary key' 
        when 'u' then 'unique' 
-       when 'f' then 'foreign key' else 'check' end as constraint_type,
+       when 'f' then 'foreign key' 
+       when 't' then 'trigger'
+       when 'x' then 'exclusion'
+       else 'check' end as constraint_type,
        c.condeferrable as deferrable,
        c.condeferred as deferred,
        regexp_replace(c.conkey::text, '{(.*)}', E'\\1') as columns,
@@ -70,6 +73,7 @@ left outer join (pg_catalog.pg_depend dr    -- dependency of fk back to index
   and idxclass.relkind = 'i'
   and idxdep.classid = cclass.oid
   and idxdep.refclassid = ccons.oid
-where   c.conrelid = :1
+where c.conrelid = :1
 --where c.conrelid in (88410)
+  and c.contype != 't'
 order by c.contype, n.nspname, c.conname;

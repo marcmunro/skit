@@ -47,6 +47,7 @@
       <attribute name="schema"/>
       <attribute name="name"/>
       <element type="inherited-column" key="name">
+	<attribute name="storage-policy"/>
       </element>
     </element>
     <element type="comment">

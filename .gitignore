@@ -57,7 +57,7 @@ test/data/gendiffs_*.xml
 /regress/REGRESSDB/
 
 # The contents of the regress/scratch subdirectory
-/regress/scratch/
+/regress/scratch*/
 
 # The contents of the regress/tmp subdirectory
 /regress/tmp

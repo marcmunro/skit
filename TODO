@@ -1,4 +1,7 @@
 
+9.0:
+  exclusion constraints
+
 generate:
   - ensure vertical spacing is good in code generated for diffs
     (actually, for all code)

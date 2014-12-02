@@ -37,6 +37,7 @@
 		  <skit:attr name="tablename"/>
 		  <skit:attr name="schemaname"/>
 		  <skit:attr name="colnum"/>
+		  <skit:attr name="storage_policy"/>
 		</inherited-column>
 	      </skit:if>
 	    </skit:foreach>

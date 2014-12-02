@@ -124,28 +124,43 @@
   <!-- Column builds for rebuilds. -->
   <xsl:template 
       match="dbobject[@action='build' and @parent-type='table' and
-                      @parent-diff!='new']/column[@is_local='t']">
-    <print>
+                      @parent-diff!='new']/column">
+    <print conditional="yes">
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>
 
-      <xsl:call-template name="build-column-from-diff"/>
+      <xsl:choose>
+	<xsl:when test="@is_local='t'">
+	  <do-print/>
+	  <xsl:call-template name="build-column-from-diff"/>
 
-      <xsl:if test="@storage_policy">
-	<xsl:call-template name="alter-table-only-intro">
-	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
-	</xsl:call-template>
-	<xsl:call-template name="column-storage"/>
-	<xsl:text>;</xsl:text>
-      </xsl:if>
+	  <xsl:if test="@storage_policy">
+	    <xsl:call-template name="alter-table-only-intro">
+	      <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	    </xsl:call-template>
+	    <xsl:call-template name="column-storage"/>
+	    <xsl:text>;</xsl:text>
+	  </xsl:if>
 
-      <xsl:if test="@stats_target">
-	<xsl:call-template name="alter-table-only-intro">
-	  <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
-	</xsl:call-template>
-	<xsl:call-template name="column-stats"/>
-	<xsl:text>;</xsl:text>
-      </xsl:if>
+	  <xsl:if test="@stats_target">
+	    <xsl:call-template name="alter-table-only-intro">
+	      <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	    </xsl:call-template>
+	    <xsl:call-template name="column-stats"/>
+	    <xsl:text>;</xsl:text>
+	  </xsl:if>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:if test="@storage_policy">
+	    <do-print/>
+	    <xsl:call-template name="alter-table-only-intro">
+	      <xsl:with-param name="tbl-qname" select="../@parent-qname"/>
+	    </xsl:call-template>
+	    <xsl:call-template name="column-storage"/>
+	    <xsl:text>;</xsl:text>
+	  </xsl:if>
+	</xsl:otherwise>
+      </xsl:choose>
 
       <xsl:call-template name="column-comment">
 	<xsl:with-param name="tbl-qname" select="../@parent-qname"/>
