@@ -90,7 +90,7 @@ execdrop()
     # pg_dumpall will contain plpgsql after version 9.0 of postgres, so
     # we ignore that.
     pg_dumpall -p ${REGRESSDB_PORT} | grep ^CREATE | \
-	grep -v 'LANGUAGE plpgsql' | wc -l | \
+	grep -v 'plpgsql' | wc -l | \
             grep ^1$ >/dev/null
     errexit
     echo ==== FINISHED DROP SCRIPT $1 ==== 

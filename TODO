@@ -1,6 +1,10 @@
-
+More tests for:
 9.0:
   exclusion constraints
+  language creation/drop/diff other than plpgsql
+
+9.1
+  extensions
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

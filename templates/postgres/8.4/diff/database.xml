@@ -7,6 +7,8 @@
   <dbobject type="database" key="type">
     <attribute name="encoding"/>
     <attribute name="connections"/>
+    <attribute name="lc_collate"/>
+    <attribute name="lc_ctype"/>
     <attribute name="owner">
       <dependency-set 
 	  fallback="grant.role.{old.owner}.{new.owner}"
@@ -15,6 +17,10 @@
 	<dependency pqn="grant.role.{old.owner}.{new.owner}"/>
       </dependency-set>
     </attribute>
+    <element type="setting" key="name">
+      <attribute name="setting"/>
+      <attribute name="sourcefile"/>
+    </element>
     <element type="comment">
       <text/>
     </element>

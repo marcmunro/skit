@@ -237,6 +237,12 @@
 	  <dependency fqn="{concat('role.', @owner)}"/>
 	</xsl:if>
 
+	<xsl:if test="@extension">
+	  <dependency 
+	      fqn="{concat('extension.', ancestor::database/@name,
+		           '.', @extension)}"/>
+	</xsl:if>
+
 	<xsl:if test="$do_schema_grant = 'yes'">
 	  <xsl:call-template name="SchemaGrant"/>
 	</xsl:if>

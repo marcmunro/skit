@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:runsql var="extension" file="sql/extensions.sql">
+    <extension>
+      <skit:attr name="name"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="relocatable"/>
+      <skit:attr name="version"/>
+      <skit:attr name="config"/>
+      <skit:attr name="condition"/>
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
+    </extension>
+  </skit:runsql>
+</skit:inclusion>
+

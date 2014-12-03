@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+  <skit:runsql var="languages" file="sql/languages.sql">
+    <language>
+     <skit:attr name="name"/>
+     <skit:attr name="owner"/>
+     <skit:attr name="trusted"/>
+     <skit:attr name="handler_schema"/>
+     <skit:attr name="handler_function"/>
+     <skit:attr name="validator_schema"/>
+     <skit:attr name="validator_function"/>
+     <skit:attr name="extension"/>
+     <skit:if test="(select tuple 'comment')">
+       <comment>
+	 <skit:text expr="(select tuple 'comment')"/>
+       </comment>
+     </skit:if>
+
+     <skit:exec_function name="grants_from_privs"
+			 privileges="(select tuple 'privs')"
+			 owner="(select tuple 'owner')"
+			 automatic="&lt; 
+			     ((select tuple 'owner') . (list 'usage'))
+			      ('public' . (list 'usage'))&gt;"/>
+    </language>
+  </skit:runsql>
+</skit:inclusion>

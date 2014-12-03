@@ -112,6 +112,7 @@ reset session authorization;
 CLUSTEREOF
  
 psql -d regressdb -U bark <<'DBEOF'
+
  
 alter schema "public" owner to "regress";
  
@@ -120,10 +121,6 @@ comment on schema "public" is
 
 \echo Done with schema "public";
 
-
-
-comment on language "plpgsql" is
-'Procedural language';
 
 \echo updating schema "public";
 
@@ -212,10 +209,6 @@ comment on type "public"."mychar" is
 \echo updating schema "public";
 
 set session authorization 'regress';
-grant usage on schema "public" to "public";
-reset session authorization;
-
-set session authorization 'regress';
 grant create on schema "public" to "public";
 reset session authorization;
 \echo Done with schema "public";
@@ -282,8 +275,6 @@ reset session authorization;
 grant usage on language "plpgsql" to "keep2" with grant option;
 
 grant usage on language "plpgsql" to "keep";
-
-grant usage on language "plpgsql" to "public";
 
 grant usage on language "plpgsql" to "wibble";
 
@@ -362,9 +353,6 @@ language plpgsql stable strict;
 comment on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") is
 'function';
 
-set session authorization 'regress';
-grant execute on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") to "public";
-reset session authorization;
 
 create or replace function "public"."plpgsql2"(
     _z in "pg_catalog"."int4",
@@ -553,10 +541,15 @@ comment on sequence "public"."thingy_id_seq" is
 
 grant select on table "thingy_id_seq" to "keep";
 
+create table wibbly (
+  wib_id integer not null
+);
+
 create sequence "public"."wib_seq"
   start with 1000 increment by 1
   minvalue 1 maxvalue 9223372036854775807
-  cache 1;
+  cache 1
+  owned by wibbly.wib_id;
 
 comment on sequence "public"."wib_seq" is
 'wib wib wib';
@@ -757,6 +750,21 @@ comment on operator family "public"."seg_ops" using btree is
 'operator family for seg_ops';
 
 
+create operator family seg_ops3 using btree;
+alter operator family seg_ops3 using btree add operator 1 <(seg, seg);
+alter operator family seg_ops3 using btree add operator 2 <=(seg, seg);
+alter operator family seg_ops3 using btree add function 1 seg_cmp(seg, seg);
+
+create operator family seg_ops4 using btree;
+alter operator family seg_ops4 using btree add operator 1 <(seg, seg);
+alter operator family seg_ops4 using btree add operator 2 <=(seg, seg);
+alter operator family seg_ops4 using btree add function 1 seg_cmp(seg, seg);
+alter operator family seg_ops4 using btree owner to keep;
+
+comment on operator family seg_ops4 using btree is 
+'operator family seg_ops4';
+
+
 
 create type "public"."mychar2"(
   input = "public"."mycharin2",
@@ -895,7 +903,6 @@ is 'cast comment';
 
 
 
-
 create table schema2.arrays (
   key1          int4 not null,
   one           int4[] not null,
@@ -1029,6 +1036,11 @@ for each row execute procedure public.trigger1();
 comment on trigger mytrigger1 on schema2.keys2 is
 'Trigger comment';
 
+create constraint trigger my_ctrigger
+after insert or update on schema2.arrays
+for each row execute procedure public.trigger1();
+
+
 create view schema2.keys_view as
 select k1.key1, k1.key2, k1.key3, 
        k1.key4, cast(k2.mykey as integer) as wibble
@@ -1046,6 +1058,8 @@ create view schema2.view_on_view as
 select * 
 from   schema2.keys_view
 where  key1 < 90;
+
+alter view schema2.keys_view alter column key1 set default 99;
 
 create rule keys_vrule1 as on insert to schema2.keys_view
 do instead insert into 
@@ -1065,6 +1079,106 @@ create conversion myconv for 'SQL_ASCII' to 'MULE_INTERNAL' from schema2.myconv;
 comment on conversion myconv is
 'conversion comment';
 
+
+-- Now a cyclic view definition
+create view v1 as select 'a' as a, 'b' as b;
+create view v2 as select * from v1;
+create or replace view v1 as select * from v2;
+
+
+-- A plpgsql function that returns a set of rows
+create or replace
+function wibble(p1 varchar)
+  returns setof varchar as
+$$
+begin
+  return next 'a';
+  return next 'b';
+  return next 'c';
+end;
+$$
+language plpgsql security definer cost 20 rows 3;
+
+
+-- Text search stuff
+create text search configuration skit (copy = pg_catalog.english);
+
+-- Create a mapping that uses multiple dictionaries.
+alter text search configuration public.skit
+    drop mapping for asciiword;
+
+alter text search configuration public.skit
+    add mapping for asciiword with pg_catalog.english_stem,  pg_catalog.simple;
+
+
+comment on text search configuration skit is
+'comment for text search configuration';
+
+create text search parser myparser (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype',
+    headline = 'prsd_headline');
+
+create text search parser myparser2 (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype');
+
+comment on text search parser myparser2 is
+'Parser';
+
+create text search dictionary public.simple_dict (
+    template = pg_catalog.simple,
+    stopwords = english
+);
+
+comment on text search dictionary public.simple_dict is
+'dict';
+
+create text search template mysimple (
+    init = dsimple_init,
+    lexize = dsimple_lexize
+);
+
+comment on text search template mysimple is
+'mysimple template';
+
+
+-- Foreign Data Wrappers
+create foreign data wrapper dummy;
+
+create foreign data wrapper postgresql 
+    validator postgresql_fdw_validator;
+
+create foreign data wrapper mywrapper
+    options (debug 'true');
+
+grant all on foreign data wrapper mywrapper to keep;
+
+
+-- Foreign Data Servers
+create server kong 
+    type 'postgresql' version '8.4'
+    foreign data wrapper postgresql; 
+
+grant all on foreign server kong to keep;
+
+create server s2 
+    foreign data wrapper dummy
+    options (debug 'true');
+
+
+-- User Mappings
+create user mapping for keep
+    server kong
+    options (user 'general', password 'confusion');
+
+create user mapping for public
+    server kong
+    options (user 'major', password 'problem');
 
 
 DBEOF

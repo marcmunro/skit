@@ -7,20 +7,8 @@
      <skit:attr name="name"/>
      <skit:attr name="owner"/>
      <skit:attr name="encoding"/>
-     <skit:attr name="lc_collate"/>
-     <skit:attr name="lc_ctype"/>
      <skit:attr name="tablespace"/>
      <skit:attr name="connections"/>
-     <skit:runsql var="setting" file="sql/settings.sql">
-       <setting>
-	 <skit:attr name="name"/>
-	 <skit:attr name="setting"/>
-	 <skit:attr name="source"/>
-	 <skit:attr name="context"/>
-	 <skit:attr name="sourcefile"/>
-	 <skit:attr name="sourceline"/>
-       </setting>
-     </skit:runsql>
      <skit:if test="(select dbinfo 'comment')">
        <comment>
 	 <skit:text expr="(select dbinfo 'comment')"/>
@@ -73,6 +61,7 @@
        <xi:include href="skitfile:extract/fdws.xml"/>
        <xi:include href="skitfile:extract/foreign_servers.xml"/>
        <xi:include href="skitfile:extract/user_mappings.xml"/>
+       <xi:include href="skitfile:extract/extensions.xml"/>
        <xi:include href="skitfile:extract/schema.xml"/>
      </skit:let>
    </database>

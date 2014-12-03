@@ -17,6 +17,8 @@
 		         ' with&#x0A; owner ',
 			 skit:dbquote(@owner), '&#x0A; encoding ',
 			 $apos, @encoding, $apos, 
+			 '&#x0A; lc_collate ', $apos, @lc_collate, $apos,
+			 '&#x0A; lc_ctype ', $apos, @lc_ctype, $apos,
 			 '&#x0A; tablespace ',
 			 skit:dbquote(@tablespace), 
 			 '&#x0A; connection limit = ',
@@ -114,7 +116,45 @@
       <xsl:value-of 
 	  select="concat('\echo WARNING: database character encoding', 
 			 ' changes from &quot;', @old,
-			 '&quot; to &quot;', @new, '&quot;&#x0A;')"/>
+			 '&quot; to &quot;', @new, '&quot;&#x0A;&#x0A;')"/>
+    </xsl:for-each>
+    <xsl:for-each select="../attribute[@name='lc_collate']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('\echo WARNING: database collation order', 
+			 ' changes from &quot;', @old,
+			 '&quot; to &quot;', @new, '&quot;&#x0A;&#x0A;')"/>
+    </xsl:for-each>
+    <xsl:for-each select="../attribute[@name='lc_ctype']">
+      <do-print/>
+      <xsl:value-of 
+	  select="concat('\echo WARNING: database character classification', 
+			 ' changes from &quot;', @old,
+			 '&quot; to &quot;', @new, '&quot;&#x0A;&#x0A;')"/>
+    </xsl:for-each>
+    <xsl:for-each select="../element[@type='setting']/
+			  attribute[@name='setting']">
+      <do-print/>
+      <xsl:value-of select="concat('\echo WARNING: setting ', ../setting/@name,
+			           ' changes from ')"/>
+      <xsl:if test="(@status='diff') or (@status='gone')">
+	<xsl:value-of select="concat('&quot;', @old, '&quot; to ')"/>
+      </xsl:if>
+      <xsl:if test="@status='new'">
+	<xsl:text>default to </xsl:text>
+      </xsl:if>
+      <xsl:if test="(@status='diff') or (@status='new')">
+	<xsl:value-of select="concat('&quot;', @new, '&quot;')"/>
+      </xsl:if>
+      <xsl:if test="@status='gone'">
+	<xsl:text>default</xsl:text>
+      </xsl:if>
+      <xsl:if test="../setting/@sourcefile">
+	<xsl:value-of select="concat('...&#x0A;\echo ...at ', 
+			             ../setting/@sourcefile,
+	                             ':', ../setting/@sourceline)"/>
+      </xsl:if>
+      <xsl:text>&#x0A;&#x0A;</xsl:text>
     </xsl:for-each>
   </xsl:template>
 
