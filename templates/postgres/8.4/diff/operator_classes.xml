@@ -27,6 +27,8 @@
     <attribute name="famlily" rebuild="true"/>
     <attribute name="family_schema" rebuild="true"/>
     <attribute name="method" rebuild="true"/>
+    <attribute name="type_name" rebuild="true"/>
+    <attribute name="type_schema" rebuild="true"/>
     <attribute name="generates_opfamily" rebuild="true"/>
     <element type="comment">
       <text/>

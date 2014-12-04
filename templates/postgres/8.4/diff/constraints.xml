@@ -20,6 +20,8 @@
     <attribute name="confmatchtype" rebuild="true"/>
     <attribute name="confupdtype" rebuild="true"/>
     <attribute name="confdeltype" rebuild="true"/>
+    <attribute name="exclusion_opclass_schema" rebuild="true"/>
+    <attribute name="exclusion_opclass_name" rebuild="true"/>
     <attribute name="is_local" rebuild="true"/>
 
     <element type="comment">

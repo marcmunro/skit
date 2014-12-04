@@ -52,6 +52,11 @@
 			     @family_schema, '.', @family, '(',
 			     @method, ')')}"/>
 
+    <xsl:if test="@type_name and (@type_schema!='pg_catalog')">
+      <dependency fqn="{concat('type.', 
+		               ancestor::database/@name, '.', 
+			       skit:dbquote(@type_schema, @type_name))}"/>
+    </xsl:if>
     <!-- types will be a dependency of operators, etc -->
     <xsl:for-each select="opclass_operator">
       <xsl:call-template name="operator_dep"/>

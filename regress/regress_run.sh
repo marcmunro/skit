@@ -456,6 +456,9 @@ if [ "x$1" = "xpglib" ]; then
     exit
 fi
 
+pgbin=`pgbin`
+export pg_contrib=`${pgbin}/pg_config --sharedir`/contrib
+
 if [ "x$1" = "" ]; then
     regression_test1 >${REGRESS_LOG}
     regression_test2 >>${REGRESS_LOG}

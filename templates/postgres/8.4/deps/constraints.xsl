@@ -30,6 +30,14 @@
 			       reftable/@reftable, '.',
 			       reftable/@refconstraintname)}"/>
     </xsl:if>
+
+    <xsl:if test="@exclusion_opclass_name">
+      <dependency fqn="{concat('operator_class.', 
+			       ancestor::database/@name, '.',
+			       skit:dbquote(@exclusion_opclass_schema,
+			                    @exclusion_opclass_name),
+			       '(', @access_method, ')')}"/>
+    </xsl:if>
     <xsl:call-template name="depends"/>
   </xsl:template>
 </xsl:stylesheet>

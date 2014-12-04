@@ -105,11 +105,11 @@
 		             skit:dbquote(@tablespace))"/>
 	</xsl:if>
       </xsl:when>
-      <xsl:when test="@type = 'check'">
+      <xsl:when test="(@type='check') or (@type='exclusion')">
 	<xsl:value-of select="concat('&#x0A;  ', @source)"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:text>OTHER SORT OF CONSTRAINT</xsl:text>
+	<xsl:text> OTHER TYPE OF CONSTRAINT</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text>;&#x0A;</xsl:text>

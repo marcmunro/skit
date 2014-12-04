@@ -96,6 +96,8 @@
 	    <skit:attr name="confupdtype"/>
 	    <skit:attr name="confdeltype"/>
 	    <skit:attr name="is_local"/>
+	    <skit:attr name="exclusion_opclass_name"/>
+	    <skit:attr name="exclusion_opclass_schema"/>
 
 	    <skit:if test="(select tuple 'refoid')">
 	      <reftable>

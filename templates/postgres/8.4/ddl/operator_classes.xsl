@@ -24,12 +24,14 @@
   </xsl:template>
 
   <xsl:template name="function_params_defn">
-    <xsl:value-of 
-	select="concat('(',
-	               skit:dbquote(params/param[@position='1']/@schema,
-		                    params/param[@position='1']/@type), ',',
-		       skit:dbquote(params/param[@position='2']/@schema,
-		                    params/param[@position='2']/@type), ')')"/>
+    <xsl:text>(</xsl:text>
+    <xsl:for-each select="params/param">
+      <xsl:value-of select="skit:dbquote(@schema, @type)"/>
+      <xsl:if test="position() != last()">
+	<xsl:text>,</xsl:text>
+      </xsl:if>
+    </xsl:for-each>
+    <xsl:text>)</xsl:text>
   </xsl:template>
 
   <xsl:template name="function_defn">
@@ -67,6 +69,11 @@
       <xsl:text>,&#x0A;  </xsl:text>
       <xsl:call-template name="function_defn"/>
     </xsl:for-each>
+    <xsl:if test="@type_name">
+      <xsl:value-of 
+	  select="concat(',&#x0A;  storage ', 
+		         skit:dbquote(@type_schema, @type_name))"/>
+    </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 

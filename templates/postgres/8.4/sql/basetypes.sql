@@ -16,8 +16,8 @@ select t.oid as oid,
        case t.typalign when 'c' then 'char' when 's' then 'int2'
 	    when 'i' then 'int4' when 'd' then 'double' end as alignment,
 
-       case t.typstorage when 'p' then 'plain' when 'x' then 'external'
-	    when 'e' then 'extended' when 'm' then  'main' end as storage,
+       case t.typstorage when 'p' then 'plain' when 'x' then 'extended'
+	    when 'e' then 'external' when 'm' then  'main' end as storage,
        t.typdefault as default,
        quote_literal(obj_description(t.oid, 'pg_type')) as comment
 from   pg_catalog.pg_type t

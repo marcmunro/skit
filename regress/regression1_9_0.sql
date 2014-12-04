@@ -111,7 +111,8 @@ reset session authorization;
 
 CLUSTEREOF
  
-psql -d regressdb -U bark <<'DBEOF'
+
+psql -d regressdb -U bark -v contrib=${pg_contrib} <<'DBEOF'
 
  
 alter schema "public" owner to "regress";
@@ -1182,6 +1183,20 @@ create user mapping for keep
 create user mapping for public
     server kong
     options (user 'major', password 'problem');
+
+
+
+-- Exclusion constraints (need btree_gist)
+\i :contrib/btree_gist.sql
+
+create table circles (
+    plane_id           int not null,
+    is_non_overlapping boolean not null,
+    c                  circle not null,
+    exclude using gist (plane_id with =, c with &&)
+        where (is_non_overlapping)
+);
+
 
 
 DBEOF

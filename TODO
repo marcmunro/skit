@@ -1,6 +1,7 @@
 More tests for:
 9.0:
-  exclusion constraints
+  per column triggers
+  deferable uniqis_non_ue constraints
   language creation/drop/diff other than plpgsql
 
 9.1
