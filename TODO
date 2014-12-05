@@ -1,7 +1,7 @@
 More tests for:
 9.0:
-  per column triggers
-  deferable uniqis_non_ue constraints
+  index_parameters on unique, etc constraints (try fillfactors?)
+  deferable, etc unique constraints
   language creation/drop/diff other than plpgsql
 
 9.1

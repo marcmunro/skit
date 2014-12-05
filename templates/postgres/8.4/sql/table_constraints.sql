@@ -1,13 +1,10 @@
--- List all pk, exclusion, uk and fk constraints
+-- List all pk, uk and fk constraints
 select c.oid as oid,
        c.conname as name,
        n.nspname as schema,
        case c.contype when 'p' then 'primary key' 
        when 'u' then 'unique' 
-       when 'f' then 'foreign key' 
-       when 't' then 'trigger'
-       when 'x' then 'exclusion'
-       else 'check' end as constraint_type,
+       when 'f' then 'foreign key' else 'check' end as constraint_type,
        c.condeferrable as deferrable,
        c.condeferred as deferred,
        regexp_replace(c.conkey::text, '{(.*)}', E'\\1') as columns,
@@ -28,69 +25,51 @@ select c.oid as oid,
        case c.contype when 'f' then c.confdeltype 
        else null end as confdeltype,
        c.conislocal as is_local,
-       opc.opcname as exclusion_opclass_name,
-       opcn.nspname as exclusion_opclass_schema,
        quote_literal(obj_description(c.oid, 'pg_constraint')) as comment
-  from pg_catalog.pg_constraint c
- inner join  pg_catalog.pg_namespace n   -- Schema of constraint
-    on n.oid = c.connamespace
- inner join pg_catalog.pg_namespace cat  -- pg_catalog schema
-    on cat.nspname = 'pg_catalog'
- inner join pg_catalog.pg_class cclass   -- pg_class relation
-    on cclass.relname = 'pg_class'
-   and cclass.relnamespace = cat.oid
- inner join pg_catalog.pg_class ccons    -- pg_constraint relation
-    on ccons.relname = 'pg_constraint'	
-   and ccons.relnamespace = cat.oid
-  left outer join pg_catalog.pg_depend d  -- dependency on index relation
-    on d.refobjid = c.oid                -- (in order to get index tablespace)
-   and d.classid = cclass.oid
-   and d.refclassid = ccons.oid
-  left outer join pg_catalog.pg_class cl  -- index relation
-    on cl.oid = d.objid
-  left outer join pg_catalog.pg_tablespace t  -- tablespace for index
-    on t.oid = cl.reltablespace
-  left outer join pg_catalog.pg_am am         -- access method for index
-    on am.oid = cl.relam
-  left outer join pg_catalog.pg_authid au	    -- owner
-    on au.oid = cl.relowner
-  left outer join (pg_catalog.pg_class cr     -- referenced table for fk
-      inner join pg_catalog.pg_namespace nr    -- schema of ref table for fk
-         on nr.oid = cr.relnamespace
+from   pg_catalog.pg_constraint c
+inner join  pg_catalog.pg_namespace n   -- Schema of constraint
+  on  n.oid = c.connamespace
+inner join pg_catalog.pg_namespace cat  -- pg_catalog schema
+  on cat.nspname = 'pg_catalog'
+inner join pg_catalog.pg_class cclass   -- pg_class relation
+  on  cclass.relname = 'pg_class'
+  and cclass.relnamespace = cat.oid
+inner join pg_catalog.pg_class ccons    -- pg_constraint relation
+  on  ccons.relname = 'pg_constraint'	
+  and ccons.relnamespace = cat.oid
+left outer join pg_catalog.pg_depend d  -- dependency on index relation
+  on  d.refobjid = c.oid                -- (in order to get index tablespace)
+  and d.classid = cclass.oid
+  and d.refclassid = ccons.oid
+left outer join pg_catalog.pg_class cl  -- index relation
+  on cl.oid = d.objid
+left outer join pg_catalog.pg_tablespace t  -- tablespace for index
+  on t.oid = cl.reltablespace
+left outer join pg_catalog.pg_am am         -- access method for index
+  on am.oid = cl.relam
+left outer join pg_catalog.pg_authid au	    -- owner
+  on au.oid = cl.relowner
+left outer join (pg_catalog.pg_class cr     -- referenced table for fk
+   inner join pg_catalog.pg_namespace nr    -- schema of ref table for fk
+     on  nr.oid = cr.relnamespace
    )
-    on cr.oid = c.confrelid
-  left outer join (pg_catalog.pg_depend dr    -- dependency of fk back to index
-      inner join pg_catalog.pg_class idxclass  -- class entry for referenced idx
-         on idxclass.oid = dr.refobjid
-      inner join pg_catalog.pg_namespace idxns -- schema for referenced idx
-         on idxns.oid = idxclass.relnamespace
-       left outer join pg_catalog.pg_depend idxdep
-         on idxdep.objid = idxclass.oid
-       left outer join pg_catalog.pg_constraint idxcons
-         on idxcons.oid = idxdep.refobjid
+  on cr.oid = c.confrelid
+left outer join (pg_catalog.pg_depend dr    -- dependency of fk back to index
+   inner join pg_catalog.pg_class idxclass  -- class entry for referenced idx
+     on idxclass.oid = dr.refobjid
+   inner join pg_catalog.pg_namespace idxns -- schema for referenced idx
+     on idxns.oid = idxclass.relnamespace
+   left outer join pg_catalog.pg_depend idxdep
+     on  idxdep.objid = idxclass.oid
+   left outer join pg_catalog.pg_constraint idxcons
+     on  idxcons.oid = idxdep.refobjid
    )
-    on dr.objid = c.oid
-   and dr.classid = ccons.oid
-   and dr.refclassid = cclass.oid
-   and idxclass.relkind = 'i'
-   and idxdep.classid = cclass.oid
-   and idxdep.refclassid = ccons.oid
-  left outer join (pg_catalog.pg_depend dxp
-      inner join pg_catalog.pg_class cxp
-         on cxp.oid = dxp.refclassid
-	and cxp.relname = 'pg_constraint'
-      inner join pg_catalog.pg_depend dxopc
-         on dxopc.objid = dxp.objid
-      inner join pg_catalog.pg_class cxopc
-         on cxopc.oid = dxopc.refclassid
-	and cxopc.relname = 'pg_opclass'
-      inner join pg_catalog.pg_opclass opc
-         on opc.oid = dxopc.refobjid
-      inner join pg_catalog.pg_namespace opcn
-         on opcn.oid = opc.opcnamespace
-   )
-    on dxp.refobjid = c.oid
-   and c.contype = 'x'
- where c.conrelid = :1
-   and c.contype != 't'
- order by c.contype, n.nspname, c.conname;
+  on  dr.objid = c.oid
+  and dr.classid = ccons.oid
+  and dr.refclassid = cclass.oid
+  and idxclass.relkind = 'i'
+  and idxdep.classid = cclass.oid
+  and idxdep.refclassid = ccons.oid
+where   c.conrelid = :1
+--where c.conrelid in (88410)
+order by c.contype, n.nspname, c.conname;

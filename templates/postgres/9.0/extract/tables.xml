@@ -96,6 +96,10 @@
 	    <skit:attr name="confupdtype"/>
 	    <skit:attr name="confdeltype"/>
 	    <skit:attr name="is_local"/>
+	    <skit:attr name="indexdef"/>
+	    <skit:attr name="predicate"/>
+	    <skit:attr name="colexprs"/>
+	    <skit:attr name="operators"/>
 
 	    <skit:if test="(select tuple 'refoid')">
 	      <reftable>
@@ -119,10 +123,32 @@
 	    </skit:if>
 
 	    <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
-	    <skit:foreach from="colnums" var="colnum">
+	    <skit:if test="(select tuple 'operators')">
+	      <skit:var name="operatorlist" 
+			expr="(split (select tuple 'operators') ',')"/>
+	      <skit:var name="opclass_schemata" 
+			expr="(split (select tuple 'opclass_schemata') 
+			             ',')"/>
+	      <skit:var name="opclasses" 
+			expr="(split (select tuple 'opclass_names') ',')"/>
+	    </skit:if>
+
+	    <skit:foreach from="colnums" var="colnum" index="colidx">
 	      <column>
 		<skit:attr name="name" 
 			   expr="(select columns (try-to-int colnum) 'name')"/>
+		<skit:if test="(select constraint 'operators')">
+		  <skit:attr name="operator" 
+			     expr="(select operatorlist (- colidx 1))"/>
+		  <skit:attr name="opclass_schema" 
+			     expr="(replace 
+				    (select opclass_schemata (- colidx 1))
+				    /&quot;/ '')"/>
+		  <skit:attr name="opclass_name" 
+			     expr="(replace 
+				    (select opclasses (- colidx 1))
+				    /&quot;/ '')"/>
+		</skit:if>
 	      </column>	
 	    </skit:foreach>
 

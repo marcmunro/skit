@@ -1035,7 +1035,9 @@ language plpgsql;
 
 create trigger mytrigger1 
 before insert or update on schema2.keys2
-for each row execute procedure public.trigger1();
+for each row 
+when (new.key1 > 20)
+execute procedure public.trigger1();
 
 comment on trigger mytrigger1 on schema2.keys2 is
 'Trigger comment';
@@ -1194,6 +1196,8 @@ create table circles (
     is_non_overlapping boolean not null,
     c                  circle not null,
     exclude using gist (plane_id with =, c with &&)
+        with (fillfactor = 20)
+        using index tablespace tbs2
         where (is_non_overlapping)
 );
 

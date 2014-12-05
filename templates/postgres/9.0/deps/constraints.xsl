@@ -30,6 +30,14 @@
 			       reftable/@reftable, '.',
 			       reftable/@refconstraintname)}"/>
     </xsl:if>
+
+    <xsl:for-each select="column[@opclass_schema!='pg_catalog']">
+      <dependency fqn="{concat('operator_class.', 
+			       ancestor::database/@name, '.',
+			       skit:dbquote(@opclass_schema,
+			                    @opclass_name),
+			       '(', ../@access_method, ')')}"/>
+    </xsl:for-each>
     <xsl:call-template name="depends"/>
   </xsl:template>
 </xsl:stylesheet>

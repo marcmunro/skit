@@ -21,7 +21,15 @@
     <attribute name="confupdtype" rebuild="true"/>
     <attribute name="confdeltype" rebuild="true"/>
     <attribute name="is_local" rebuild="true"/>
+    <attribute name="indexdef" rebuild="true"/>
+    <attribute name="predicate" rebuild="true"/>
+    <attribute name="oerators" rebuild="true"/>
 
+    <element type="column" key="name" rebuild="true">
+      <attribute name="operator" rebuild="true"/>
+      <attribute name="opclass_schema" rebuild="true"/>
+      <attribute name="opclass_name" rebuild="true"/>
+    </element>
     <element type="comment">
       <text/>
     </element>

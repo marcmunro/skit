@@ -108,6 +108,27 @@
       <xsl:when test="@type='check'">
 	<xsl:value-of select="concat('&#x0A;  ', @source)"/>
       </xsl:when>
+      <xsl:when test="@type='exclusion'">
+	<xsl:value-of 
+	    select="concat('&#x0A;  exclude using ', @access_method, '(')"/>
+	<xsl:for-each select="column">
+	  <xsl:value-of select="concat(@name, ' with ', @operator)"/>
+	  <xsl:if test="position()!=last()">
+	    <xsl:text>, </xsl:text>
+	  </xsl:if>
+	</xsl:for-each>
+	<xsl:text>)</xsl:text>
+	<xsl:if test="@indexdef">
+	  <xsl:value-of select="concat('&#x0A;  with ', @indexdef)"/>
+	</xsl:if>
+	<xsl:if test="@tablespace">
+	  <xsl:value-of select="concat('&#x0A;  using index tablespace ', 
+				       @tablespace)"/>
+	</xsl:if>
+	<xsl:if test="@predicate">
+	  <xsl:value-of select="concat('&#x0A;  ', @predicate)"/>
+	</xsl:if>
+      </xsl:when>
       <xsl:otherwise>
 	<xsl:text> OTHER TYPE OF CONSTRAINT</xsl:text>
       </xsl:otherwise>

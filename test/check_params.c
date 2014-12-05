@@ -674,13 +674,13 @@ START_TEST(extract)
      * runs execdrop, etc. */
     char *args[] = {"./skit", "-t", "extract.xml", "--dbtype=postgres", 
 		    "--connect", 
-		    "dbname='regressdb' port='5433'"  " host=" PGHOST,
+		    "dbname='regressdb' port='54325'"  " host=" PGHOST,
                     "--print", "--full"};
 
     initTemplatePath(".");
     registerTestSQL();
     //showFree(6265);
-    //showMalloc(20129);
+    //showMalloc(253276);
 
     BEGIN {
 	process_args2(8, args);
@@ -697,7 +697,6 @@ START_TEST(extract)
 END_TEST
 #endif
 
-#ifdef wibble
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--build", 
@@ -725,6 +724,7 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -1071,7 +1071,7 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    //ADD_TEST(tc_core, generate);   // during development of new db objects
+    ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, list2); 
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);

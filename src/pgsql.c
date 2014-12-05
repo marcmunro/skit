@@ -259,12 +259,18 @@ initTupleFields(Tuple *tuple)
 	String *key;
 	int col;
 	Int4 *colidx;
+	Object *oldkey;
 
 	for (col = 0; col < cursor->cols; col++) {
 		name = PQfname(cursor->cursor, col);
 		key = stringNew(name);
 		colidx = int4New(col);
-		(void) hashAdd(fields, (Object *) key, (Object *) colidx);
+		if (oldkey = hashAdd(fields, (Object *) key, (Object *) colidx)) {
+			objectFree(oldkey, TRUE);
+			objectFree((Object *) fields, TRUE);
+			RAISE(SQL_ERROR, 
+				  newstr("Duplicate column (%s) in tuple", name));
+		}
 	}
 	cursor->fields = fields;
 }

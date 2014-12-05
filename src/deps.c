@@ -273,7 +273,7 @@ cleanupHash(Hash *hash)
  * will become a vector with node appended to it.  Key is not consumed
  * by this function.
  */
-static void
+static Object *
 addToHash(Hash *hash, String *key, DagNode *node)
 {
     Object *obj;
@@ -293,13 +293,14 @@ addToHash(Hash *hash, String *key, DagNode *node)
 	    vectorPush(vec, obj);
 	    vectorPush(vec, (Object *) node);
 	    key2 = stringDup(key);
-	    (void) hashAdd(hash, (Object *) key2, (Object *) vec);
+	    return hashAdd(hash, (Object *) key2, (Object *) vec);
 	}
     }
     else {
 	key2 = stringDup(key);
-	(void) hashAdd(hash, (Object *) key2, (Object *) node);
+	return hashAdd(hash, (Object *) key2, (Object *) node);
     }
+    return NULL;
 }
 
 /* Return a Hash of Dagnodes keyed by fqn.
@@ -317,10 +318,16 @@ makeQnHashes(volatile ResolverState *res_state)
     EACH(res_state->all_nodes, i) {
 	node = (DagNode *) ELEM(res_state->all_nodes, i);
 	assert(node->type == OBJ_DAGNODE, "Incorrect node type");
-	addToHash(by_fqn, node->fqn, node);
+	if (addToHash(by_fqn, node->fqn, node)) {
+	    /* Key collision */
+	    cleanupHash(by_fqn);
+	    cleanupHash(by_pqn);
+	    RAISE(XML_PROCESSING_ERROR, 
+		  newstr("Duplicate fqn found: %s", node->fqn->value));
+	}
 
 	if (pqn = nodeAttribute(node->dbobject, "pqn")) {
-	    addToHash(by_pqn, pqn, node);
+	    (void) addToHash(by_pqn, pqn, node);
 	    objectFree((Object *) pqn, TRUE);
 	}
     }

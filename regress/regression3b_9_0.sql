@@ -63,7 +63,7 @@ grant create on tablespace tbs3 to keep;
 grant regress to wibble;
 CLUSTEREOF
 
-psql -d regressdb -U regress <<'DBEOF'
+psql -d regressdb -U bark -v contrib=${pg_contrib} <<'DBEOF'
 
 -- Languages
 alter user keep with superuser;
@@ -934,5 +934,20 @@ create user mapping for keep
 create user mapping for public
     server kong
     options (user 'major', password 'roblem');
+
+
+-- Exclusion constraints (need btree_gist)
+\i :contrib/btree_gist.sql
+
+create table circles (
+    plane_id           int not null,
+    is_non_overlapping boolean not null,
+    c                  circle not null,
+    exclude using gist (c with &&)
+        with (fillfactor = 20)
+        using index tablespace tbs3
+        where (is_non_overlapping)
+);
+
 
 DBEOF
