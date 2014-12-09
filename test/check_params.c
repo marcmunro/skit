@@ -697,10 +697,11 @@ START_TEST(extract)
 END_TEST
 #endif
 
+#ifdef wibble
 START_TEST(generate)
 {
-    char *args[] = {"./skit", "--generate", "--build", 
-		    "regress/scratch/regressdb_dump1a.xml",
+    char *args[] = {"./skit", "--generate", "--drop", 
+		    "regress/scratch/regressdb_dump4b.xml",
 		    //"regress/scratch/dbdump/cluster.xml",
 		    //"x",
 		    "--print", "--all"};
@@ -724,7 +725,6 @@ START_TEST(generate)
     FREEMEMWITHCHECK;
 }
 END_TEST
-#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -818,8 +818,8 @@ END_TEST
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml",
-		    "regress/scratch/regressdb_dump3b.xml",
+		    "regress/scratch/regressdb_dump4a.xml",
+		    "regress/scratch/regressdb_dump4b.xml",
 		    "--print", "--full"
                     };
     Document *doc;
@@ -851,8 +851,8 @@ END_TEST
 START_TEST(diffc)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump3a.xml",
-		    "regress/scratch/regressdb_dump3b.xml",
+		    "regress/scratch/regressdb_dump4a.xml",
+		    "regress/scratch/regressdb_dump4b.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;
@@ -1071,7 +1071,7 @@ params_suite(void)
     ADD_TEST(tc_core, connect);
 
     //ADD_TEST(tc_core, extract);  // Used to avoid running regression tests
-    ADD_TEST(tc_core, generate);   // during development of new db objects
+    //ADD_TEST(tc_core, generate);   // during development of new db objects
     //ADD_TEST(tc_core, list2); 
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);

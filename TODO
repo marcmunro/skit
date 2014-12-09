@@ -1,3 +1,12 @@
+Remove revoke element and replace it with a modified grant.  This will
+make diffs easier to do.
+
+check out QQQ in ddl/grants.xsl
+
+
+
+
+
 More tests for:
 9.0:
   index_parameters on unique, etc constraints (try fillfactors?)

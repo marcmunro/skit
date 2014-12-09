@@ -88,6 +88,19 @@
 	<xsl:value-of select="concat(':', @from)"/>
       </xsl:if>
     </xsl:variable>
+    <xsl:variable name="pqn">
+      <xsl:choose>
+	<xsl:when test="@automatic='revoke'">
+	  <!-- We do not want to consider revokes as dependencies for
+	       grants; this achieves that. -->
+	  <xsl:value-of select="concat('revoke.', $objname, '.', @priv,
+				       ':', @to)"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="concat($prefix, ':', @to)"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
 
     <xsl:apply-templates select="." mode="dbobject">
       <xsl:with-param name="parent_core" select="$parent_core"/>
@@ -98,7 +111,7 @@
 		      select="concat(@priv, ':', @to, ' on ', $objname)"/>
       <xsl:with-param name="fqn" select="concat($prefix, $fqn-suffix)"/>
       <xsl:with-param name="others">
-	<param name="pqn" value="{concat($prefix, ':', @to)}"/>
+	<param name="pqn" value="{$pqn}"/>
 	<param name="subtype">
 	  <xsl:attribute name="value">
 	    <xsl:choose>

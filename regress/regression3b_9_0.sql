@@ -63,7 +63,7 @@ grant create on tablespace tbs3 to keep;
 grant regress to wibble;
 CLUSTEREOF
 
-psql -d regressdb -U bark -v contrib=${pg_contrib} <<'DBEOF'
+psql -d regressdb -U regress -v contrib=${pg_contrib} <<'DBEOF'
 
 -- Languages
 alter user keep with superuser;
@@ -948,6 +948,13 @@ create table circles (
         using index tablespace tbs3
         where (is_non_overlapping)
 );
+
+-- Language ownership
+alter user keep with superuser;
+set session authorization keep;
+create language plpythonu;
+reset session authorization;
+alter user keep with nosuperuser;
 
 
 DBEOF

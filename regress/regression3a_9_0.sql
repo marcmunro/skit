@@ -62,7 +62,7 @@ grant regress to keep;
 grant regress to wibble with admin option;
 CLUSTEREOF
 
-psql -d regressdb -U bark -v contrib=${pg_contrib} <<'DBEOF'
+psql -d regressdb -U regress -v contrib=${pg_contrib} <<'DBEOF'
 
 -- Languages
 comment on language "plpgsql" is 
@@ -978,5 +978,7 @@ create table circles (
         where (is_non_overlapping)
 );
 
+-- Language ownership
+create language plpythonu;
 
 DBEOF

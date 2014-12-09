@@ -70,6 +70,14 @@
 			  skit:dbquote(@to), ';&#x0A;')"/>
   </xsl:template>
 
+  <!-- Currently unused - may be useful later.
+  <xsl:template name="ownership-has-changed">
+    <xsl:variable name="objname" select="@on"/>
+    <xsl:variable name="type" select="@subtype"/>
+    <xsl:if test="//dbobject[@type=$type and @name=$on]/
+		  element[@type='owner']">YES</xsl:if>
+  </xsl:template>
+  -->
 
   <xsl:template match="grant" mode="build">
     <xsl:choose>
@@ -77,11 +85,43 @@
 	<xsl:call-template name="build_rolegrant"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:if test="../@diff or not (@automatic='yes')">
-	  <!-- Don't explicitly grant privs that are automatically
-	       generated when doing a (non-diff) build. --> 
-	  <xsl:call-template name="build_objectgrant"/>
-	</xsl:if>
+	<do-print/>
+	<xsl:value-of
+	    select="concat('--QQ diff:', ../@diff, ', auto: ', @automatic,
+	                   '&#x0A;')"/>
+
+	<xsl:choose>
+	  <xsl:when test="@automatic='revoke'">
+
+	    <xsl:value-of 
+		select="concat('revoke ', @priv, ' on ')"/>
+	    <xsl:choose>
+	      <xsl:when test="../@subtype = 'view'">
+		<xsl:text>table</xsl:text>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:value-of select="../@subtype"/>
+	      </xsl:otherwise>
+	    </xsl:choose>
+	    <xsl:value-of 
+		select="concat(' ', ../@on, ' from ', @to, ';&#x0A;')"/>
+
+	  </xsl:when>
+	  <xsl:when test="not (@automatic='yes')">
+	    <xsl:call-template name="build_objectgrant"/>
+	  </xsl:when>
+	  <!-- We will get here only when @automatic = 'yes'. -->
+	  <xsl:when test="../@diff='rebuild'">  
+	    <!-- No need for any action here.  This is just like the
+		 build case for non-diffs (ie do nothing).  -->
+	  </xsl:when>
+	  <xsl:when test="../@diff">
+	    <!-- If we are generating for a diff we should perform the
+	         grant unless we know that the owner has changed, in
+		 which case it is unnecessary.  -->
+	    <xsl:call-template name="build_objectgrant"/>
+	  </xsl:when>
+	</xsl:choose>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -103,7 +143,23 @@
 	</xsl:choose>
       </xsl:when>
       <xsl:otherwise>
+	      <do-print/>
+	<xsl:value-of
+	    select="concat('--QQ diff2:', ../@diff, ', auto: ', @automatic,
+	                   '&#x0A;')"/>
 	<xsl:choose>
+	  <xsl:when test="../attribute[@name='automatic' and
+                                       (@old='revoke' or @new='revoke')]">
+	    <!-- We are going to perform or undo a revocation of what would be
+	         an automatic grant. -->
+	    <xsl:if test="../attribute[@new='revoke']">
+	      <xsl:call-template name="revoke_objectgrant"/>
+	    </xsl:if>
+	    <xsl:if test="../attribute[@old='revoke']">
+	      <xsl:call-template name="build_objectgrant"/>
+	    </xsl:if>
+	  </xsl:when>
+
 	  <xsl:when test="../attribute[@name='with_grant']">
 	    <do-print/>
 	    <xsl:choose>
@@ -139,7 +195,6 @@
   </xsl:template>
 
   <xsl:template match="grant" mode="drop">
-    <do-print/>
     <xsl:choose>
       <xsl:when test="../@subtype='role'">
 	<xsl:value-of 
@@ -169,25 +224,6 @@
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>
-  </xsl:template>
-
-  <xsl:template match="revoke">
-    <xsl:call-template name="set_owner_from"/>
-    <xsl:value-of 
-	select="concat('revoke ', @priv, ' on ')"/>
-    <xsl:choose>
-      <xsl:when test="name(..) = 'view'">
-	<xsl:text>table</xsl:text>
-      </xsl:when>
-      <xsl:otherwise>
-	<xsl:call-template name="dbobject-typename">
-	  <xsl:with-param name="typename" select="name(..)"/>
-	</xsl:call-template>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:value-of 
-	select="concat(' ', ../../@qname, ' from ', @to, ';&#x0A;')"/>
-    <xsl:call-template name="reset_owner_from"/>
   </xsl:template>
 </xsl:stylesheet>
 

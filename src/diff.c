@@ -1404,11 +1404,19 @@ static boolean
 dependsOnRebuild(DagNode *node, Hash *hash)
 {
     xmlNode *dep = NULL;
+    if (node->status == VISITING) {
+	/* Cyclic deps are possible here.  This should prevent it from
+	 * being a problem. */
+	return FALSE;
+    }
+    node->status = VISITING;
     while (dep = nextDependency(node->dbobject->children, dep)) {
 	if (depIsOnRebuild(dep, hash)) {
+	    node->status = UNVISITED;
 	    return TRUE;
 	}
     }
+    node->status = UNVISITED;
     return FALSE;
 }
 

@@ -81,34 +81,32 @@
 	    <skit:var name="privset" 
 		      expr="(select privs_list 
 			              (re (concat to '=.*/' owner)))"/>
-	    <skit:if test="(not privset)">
-	      <!-- None of the expected automatic privs have been found,
-		   create a shortcut revoke for all privs. -->
-	      <revoke>
-		<skit:attr name="from" expr="owner"/>
-		<skit:attr name="to" expr="to"/>
-		<skit:attr name="priv" expr="'all'"/>
-	      </revoke>
-	    </skit:if>
-	    <skit:if test="privset">
-	      <!-- Check whether all expected automatic privs are present,
-		   creating revokes for any that are not. -->
+	    <!-- Check whether all expected automatic privs are present,
+		 creating revokes for any that are not. -->
 	      
-	      <skit:var name="granted" expr="(replace privset 
-					       /.*=([A-Za-z]*).*/ '\1')"/>
-	      <skit:foreach expr="(cdr this)" var="actual">
-		<skit:if test="(not (string-match 
-			                (re (select privchars actual))
-					granted))">
+	    <skit:var name="granted" expr="(replace (or privset '')
+					   /.*=([A-Za-z]*).*/ '\1')"/>
+	    <skit:foreach expr="(cdr this)" var="actual">
+	      <skit:if test="(not (string-match 
+			           (re (select privchars actual)) granted))">
 		
-		  <revoke>
-		    <skit:attr name="from" expr="owner"/>
-		    <skit:attr name="to" expr="to"/>
-		    <skit:attr name="priv" expr="actual"/>
-		  </revoke>
-		</skit:if>
-	      </skit:foreach>
-	    </skit:if>
+		<!--
+		<skit:exec expr="(debug 'AUTOMATIC' automatic)"/>
+		<skit:exec expr="(debug 'PRIVILEGES' privileges)"/>
+		<skit:exec expr="(debug 'PRIVS_LIST' privs_list)"/>
+		<skit:exec expr="(debug 'PRIVSET' privset)"/>
+		<skit:exec expr="(debug 'PRIVCHARS' privchars)"/>
+		<skit:exec expr="(debug 'ACTUAL' actual)"/>
+		<skit:exec expr="(debug 'GRANTED' granted)"/>
+		-->
+		<grant>
+		  <skit:attr name="from" expr="owner"/>
+		  <skit:attr name="to" expr="to"/>
+		  <skit:attr name="priv" expr="actual"/>
+		  <skit:attr name="automatic" expr="'revoke'"/>
+		</grant>
+	      </skit:if>
+	    </skit:foreach>
 	  </skit:foreach>
 
 	  <skit:foreach from="privs_list" var="privs_str">

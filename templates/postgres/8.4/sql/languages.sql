@@ -5,12 +5,7 @@ select l.lanname as name,
        h.proname as handler_function,
        hv.nspname as validator_schema,
        v.proname as validator_function,
-       -- Explicitly show default privs if they are not given.
-       -- Defaults are usage to public and to owner.
-       case when l.lanacl is null 
-       then '{=U/' || o.rolname || ',' || o.rolname || 
-              '=U/' || o.rolname || '}'
-       else l.lanacl::text end as privs,
+       l.lanacl::text as privs,
        o.rolname as owner,
        quote_literal(obj_description(l.oid, 'pg_language')) as comment
 from   pg_catalog.pg_language l 

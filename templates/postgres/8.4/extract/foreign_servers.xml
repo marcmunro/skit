@@ -16,8 +16,7 @@
 			 privileges="(select tuple 'privs')"
 			 owner="(select tuple 'owner')"
 			 automatic="&lt; 
-			     ((select tuple 'owner') . (list 'usage'))
-			      ('public' . (list 'usage'))&gt;"/>
+			     ((select tuple 'owner') . (list 'usage'))&gt;"/>
     </foreign_server>
   </skit:runsql>
 </skit:inclusion>

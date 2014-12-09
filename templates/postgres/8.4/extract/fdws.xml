@@ -10,13 +10,13 @@
      <skit:attr name="validator_schema"/>
      <skit:attr name="validator_proc"/>
      <skit:attr name="options"/>
+     <skit:attr name="privs"/>
 
      <skit:exec_function name="grants_from_privs"
 			 privileges="(select tuple 'privs')"
 			 owner="(select tuple 'owner')"
 			 automatic="&lt; 
-			     ((select tuple 'owner') . (list 'usage'))
-			      ('public' . (list 'usage'))&gt;"/>
+			     ((select tuple 'owner') . (list 'usage'))&gt;"/>
     </foreign_data_wrapper>
   </skit:runsql>
 </skit:inclusion>
