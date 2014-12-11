@@ -86,10 +86,6 @@
       </xsl:when>
       <xsl:otherwise>
 	<do-print/>
-	<xsl:value-of
-	    select="concat('--QQ diff:', ../@diff, ', auto: ', @automatic,
-	                   '&#x0A;')"/>
-
 	<xsl:choose>
 	  <xsl:when test="@automatic='revoke'">
 
@@ -143,10 +139,7 @@
 	</xsl:choose>
       </xsl:when>
       <xsl:otherwise>
-	      <do-print/>
-	<xsl:value-of
-	    select="concat('--QQ diff2:', ../@diff, ', auto: ', @automatic,
-	                   '&#x0A;')"/>
+	<do-print/>
 	<xsl:choose>
 	  <xsl:when test="../attribute[@name='automatic' and
                                        (@old='revoke' or @new='revoke')]">

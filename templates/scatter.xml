@@ -21,7 +21,7 @@
   <dump>
     <printable/>
     <skit:process>
-      <skit:xslproc stylesheet="scatter.xsl">
+      <skit:xslproc stylesheet="scatter.xsl" debug="debug">
 	<skit:xslproc stylesheet="prescatter.xsl" input="pop"/>
       </skit:xslproc>
     </skit:process>

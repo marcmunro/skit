@@ -11,9 +11,10 @@
       <!-- If this is plpgsql, it should only be created if we
 	   are processing a diff.  -->
       <xsl:value-of 
-	  select="concat('create extension', ../@qname,
-		         '&#x0A;    schema ', skit:dbquote(@schema),
-			 '&#x0A;    version ', @version)"/>
+	  select='concat("create extension ", ../@qname,
+		         "&#x0A;    schema ", skit:dbquote(@schema),
+			 "&#x0A;    version &apos;", @version,
+			 "&apos;")'/>
       <xsl:text>;&#x0A;</xsl:text>
     </xsl:if>
   </xsl:template>

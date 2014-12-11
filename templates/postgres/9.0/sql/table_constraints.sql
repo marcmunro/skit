@@ -35,7 +35,7 @@ with my_constraints as (
        inner join pg_catalog.pg_namespace nr    -- schema of ref table for fk
            on nr.oid = cr.relnamespace
     ) on cr.oid = c.confrelid
-   --where c.conrelid = 17057
+   -- where c.conrelid = 17137
    where c.conrelid = :1
      and c.contype != 't'
 ),
@@ -100,6 +100,7 @@ with my_constraints as (
       on oc.oid = c.opclass_oid
     left outer join pg_catalog.pg_namespace ocn
       on ocn.oid = oc.opcnamespace
+   order by a.attnum
 ),  colstrs as (
   select oid, 
          string_agg(quote_ident(colname), ', ') as colnames,

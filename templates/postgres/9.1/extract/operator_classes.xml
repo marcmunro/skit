@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:function name="opfamily_operator_attrs">
+    <skit:attr name="name"/>
+    <skit:attr name="schema"/>
+    <skit:attr name="strategy"/>
+    <skit:attr name="recheck"/>
+    <skit:if test="(select opclass_oper 'leftarg_type')">
+      <arg position="left">
+	<skit:attr name="name"
+		   expr="(select opclass_oper 'leftarg_type')"/>
+	<skit:attr name="schema"
+		   expr="(select opclass_oper 'leftarg_schema')"/>
+      </arg>	
+    </skit:if>
+    <skit:if test="(select opclass_oper 'rightarg_type')">
+      <arg position="right">
+	<skit:attr name="name"
+		   expr="(select opclass_oper 'rightarg_type')"/>
+	<skit:attr name="schema"
+		   expr="(select opclass_oper 'rightarg_schema')"/>
+      </arg>	
+    </skit:if>
+  </skit:function>
+
+  <skit:function name="opfamily_function_attrs">
+    <skit:attr name="name"/>
+    <skit:attr name="schema"/>
+    <skit:attr name="proc_num"/>
+    <skit:var name="argtypes" 
+	      expr="(split (select tuple 'argtype_oids') ',')"/>
+    <skit:attr name="function"
+	       expr="(select function_sigs (select tuple 'proc_oid'))"/>
+    <params>
+      <skit:foreach from="argtypes" var="arg" index="idx">
+	<param>
+	  <skit:let>
+	    <skit:var name="argtuple" expr="(select alltypes arg)"/>
+	    <skit:attr name="type" expr="(select argtuple 'name')"/>
+	    <skit:attr name="schema" expr="(select argtuple 'schema')"/>
+	    <skit:attr name="name" expr="(select argnames (- idx 1))"/>
+	    <skit:attr name="mode" expr="(select argmodes (- idx 1))"/>
+	    <skit:attr name="position" expr="idx"/>
+	  </skit:let>
+	</param>
+      </skit:foreach>
+    </params>
+  </skit:function>
+
+  <skit:function name="opfamily_operators">
+    <skit:foreach var="opclass_oper" from="opclass_opers"
+		  filter="(and (not (select opclass_oper 'class_oid'))
+			       (string= (select opclass_oper 'family_oid')
+			       (select operator_family 'oid')))">
+      <opfamily_operator>	
+	<skit:exec_function name="opfamily_operator_attrs"/>
+      </opfamily_operator>	
+    </skit:foreach>
+  </skit:function>
+
+  <skit:function name="opclass_operators">
+    <skit:foreach var="opclass_oper" from="opclass_opers"
+		  filter="(string= (select opclass_oper 'class_oid')
+			  (select operator_class 'oid'))">
+      <opclass_operator>	
+	<skit:exec_function name="opfamily_operator_attrs"/>
+      </opclass_operator>
+    </skit:foreach>
+  </skit:function>
+
+  <skit:function name="opfamily_functions">
+    <skit:foreach var="opclass_func" from="opclass_funcs"
+		  filter="(and (not (select opclass_func 'class_oid'))
+			       (string= (select opclass_func 'family_oid')
+			       (select operator_family 'oid')))">
+      <opfamily_function>
+	<skit:exec_function name="opfamily_function_attrs"/>
+      </opfamily_function>
+    </skit:foreach>
+  </skit:function>
+
+  <skit:function name="opclass_functions">
+    <skit:foreach var="opclass_func" from="opclass_funcs"
+		  filter="(string= (select opclass_func 'class_oid')
+			  (select operator_class 'oid'))">
+      <opclass_function>
+	<skit:exec_function name="opfamily_function_attrs"/>
+      </opclass_function>
+    </skit:foreach>
+  </skit:function>
+
+  <skit:foreach var="operator_class" from="operator_classes" 
+		filter="(string= (select operator_class 'schema')
+			         (select schema 'name'))">
+    <operator_class>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="is_default"/>
+      <skit:attr name="intype_name"/>
+      <skit:attr name="intype_schema"/>
+      <skit:attr name="family"/>
+      <skit:attr name="family_schema"/>
+      <skit:attr name="method"/>
+      <skit:attr name="type_name"/>
+      <skit:attr name="type_schema"/>
+      <skit:attr name="extension"/>
+      <skit:if test="(select operator_class 'comment')">
+	<comment>
+	  <skit:text expr="(select operator_class 'comment')"/>
+	</comment>
+      </skit:if>
+
+      <skit:exec_function name="opclass_operators"/>
+      <skit:exec_function name="opclass_functions"/>
+    </operator_class>
+  </skit:foreach>
+</skit:inclusion>  
+
+

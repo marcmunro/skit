@@ -121,6 +121,37 @@
     </xsl:element>
   </xsl:template>
 
+  <xsl:template name="make-plural">
+    <xsl:choose>
+      <xsl:when test="@type='schema'">
+	<xsl:text>schemata</xsl:text>
+      </xsl:when>
+      <xsl:when test="@type='index'">
+	<xsl:text>indices</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="concat(@type,'s')"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template name="getpath">
+    <xsl:variable name="depth"
+		  select="string-length(@fqn) - 
+			  string-length(translate(@fqn,'.',''))"/>
+    <xsl:if test="$depth = 0">
+      <xsl:text>cluster</xsl:text>
+    </xsl:if>
+    <xsl:if test="$depth > 0">
+      <xsl:for-each select="../..">
+	<xsl:call-template name="getpath"/>
+	<xsl:text>/</xsl:text>
+      </xsl:for-each>
+      <xsl:call-template name="make-plural"/>
+      <xsl:value-of select="concat('/',@name)"/>
+    </xsl:if>
+  </xsl:template>
+
   <xsl:template name="dbobject">
     <!-- Replace the dbobject element with a skit:scatter element.  This
 	 provides a directive to skit to write a single file for the
@@ -141,99 +172,14 @@
       -->
       <xsl:element name="skit:scatter">
 	<xsl:attribute name="path">
-	  <xsl:choose>
-	    <xsl:when test="@type='cluster'">
-	      <xsl:value-of select="''"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='database'">
-	      <xsl:value-of select="'cluster/databases/'"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='role'">
-	      <xsl:value-of select="'cluster/roles/'"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='tablespace'">
-	      <xsl:value-of select="'cluster/tablespaces/'"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='language'">
-	      <xsl:value-of select="concat('cluster/databases/', ../@name, 
-				           '/languages/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='cast'">
-	      <xsl:value-of select="concat('cluster/databases/', ../@name, '/casts/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='schema'">
-	      <xsl:value-of select="concat('cluster/databases/', ../@name, 
-				           '/schemata/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='type'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/types/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='domain'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/domains/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='operator_class'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/operator_classes/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='operator_family'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-  				           '/schemata/', ../@name, 
-					   '/operator_families/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='conversion'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/conversions/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='sequence'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/sequences/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='view'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/views/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='table'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../@name, 
-				           '/schemata/', ../@name, 
-					   '/tables/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='constraint'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
-				           '/schemata/', ../../../../@name, 
-					   '/tables/', ../@name, 
-					   '/constraints/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='index'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
-				           '/schemata/', ../../../../@name, 
-					   '/tables/', ../@name, '/indices/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='trigger'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
-				           '/schemata/', ../../../../@name, 
-					   '/tables/', ../@name, 
-					   '/triggers/')"/>
-	    </xsl:when>	
-	    <xsl:when test="@type='rule'">
-	      <xsl:value-of select="concat('cluster/databases/', ../../../../../@name, 
-				           '/schemata/', ../../../../@name, 
-					   '/', name(..), 's/',
-					   ../@name, '/rules/')"/>
-	    </xsl:when>	
-	    <xsl:otherwise>
-	      <xsl:value-of select="concat('UNHANDLED/', name(..))"/>
-	    </xsl:otherwise>
-	  </xsl:choose>
+	  <xsl:variable name="fullpath">
+	    <xsl:call-template name="getpath"/>
+	  </xsl:variable>
+	  <xsl:value-of select="substring($fullpath, 1,
+	                                  string-length($fullpath) -
+					  string-length(@name))"/>
 	</xsl:attribute>
-	
+
 	<xsl:attribute name="name">
 	  <xsl:choose>
 	    <xsl:when test="@type='cluster'">

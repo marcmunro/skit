@@ -1,20 +1,26 @@
-Remove revoke element and replace it with a modified grant.  This will
-make diffs easier to do.
-
-check out QQQ in ddl/grants.xsl
-
-
-
-
-
-More tests for:
-9.0:
-  index_parameters on unique, etc constraints (try fillfactors?)
-  deferable, etc unique constraints
-  language creation/drop/diff other than plpgsql
 
 9.1
   extensions
+
+components in extensions:
+  languages             yes
+  casts
+  conversions
+  functions		yes
+  aggregates
+  operators		yes    
+  operator_families     yes
+  operator_classes	yes
+  tables
+  sequences
+  rules
+  constraints
+  triggers
+  indexes
+  types
+  domains
+
+  
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

@@ -110,14 +110,8 @@
       </xsl:when>
       <xsl:when test="@type='exclusion'">
 	<xsl:value-of 
-	    select="concat('&#x0A;  exclude using ', @access_method, '(')"/>
-	<xsl:for-each select="column">
-	  <xsl:value-of select="concat(@name, ' with ', @operator)"/>
-	  <xsl:if test="position()!=last()">
-	    <xsl:text>, </xsl:text>
-	  </xsl:if>
-	</xsl:for-each>
-	<xsl:text>)</xsl:text>
+	    select="concat('&#x0A;  exclude using ', @access_method, '(',
+                           @colexprs, ')')"/>
 	<xsl:if test="@indexdef">
 	  <xsl:value-of select="concat('&#x0A;  with ', @indexdef)"/>
 	</xsl:if>
