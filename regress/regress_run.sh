@@ -27,6 +27,10 @@ build_db()
 {
     echo ...creating base objects... 1>&2
     echo ==== BUILDING DB FROM ${REGRESS_DIR}/$1 $2====
+    if [ ! -r "${REGRESS_DIR}/$1" ]; then
+	echo "FILE NOT FOUND: \"${REGRESS_DIR}/$1\"" 1>&2
+	exit 2
+    fi
     exitonerr sh -e ${REGRESS_DIR}/$1 
     echo ==== FINISHED BUILD FROM $1 ====
 }

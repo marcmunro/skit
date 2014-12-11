@@ -19,12 +19,20 @@
        </comment>
      </skit:if>
 
-     <skit:exec_function name="grants_from_privs"
-			 privileges="(select tuple 'privs')"
-			 owner="(select tuple 'owner')"
-			 automatic="&lt; 
+     <skit:if test="(string= (select tuple 'trusted') 'yes')">
+       <skit:exec_function name="grants_from_privs"
+			   privileges="(select tuple 'privs')"
+			   owner="(select tuple 'owner')"
+			   automatic="&lt; 
 			     ((select tuple 'owner') . (list 'usage'))
 			      ('public' . (list 'usage'))&gt;"/>
+     </skit:if>
+     <skit:if test="(string= (select tuple 'trusted') 'no')">
+       <skit:exec_function name="grants_from_privs"
+			   privileges="(select tuple 'privs')"
+			   owner="(select tuple 'owner')"
+			   automatic="nil"/>
+     </skit:if>
     </language>
   </skit:runsql>
 </skit:inclusion>

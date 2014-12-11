@@ -964,7 +964,7 @@ create user mapping for public
 
 
 -- Exclusion constraints (need btree_gist)
-\i :contrib/btree_gist.sql
+create extension btree_gist;
 
 create table circles (
     plane_id           int not null,

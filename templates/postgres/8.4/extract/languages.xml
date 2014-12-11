@@ -12,7 +12,6 @@
      <skit:attr name="handler_function"/>
      <skit:attr name="validator_schema"/>
      <skit:attr name="validator_function"/>
-     <skit:attr name="comment"/>
      <skit:if test="(select tuple 'comment')">
        <comment>
 	 <skit:text expr="(select tuple 'comment')"/>
