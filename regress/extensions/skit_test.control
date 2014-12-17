@@ -1,0 +1,17 @@
+# skit_test.control
+#
+#      Postgres extension control file for skit_test extension (for
+#      testing of skit.
+#
+#      Copyright (c) 2011 - 2014 Marc Munro
+#      Fileset:	skit - a database schema management toolset
+#      Author:  Marc Munro
+#      License: GPL V3
+#
+
+directory       = '/home/marc/proj/skit/regress/extensions'
+default_version = '1.0'
+superuser       = true
+relocatable     = false
+
+comment = 'Provides the means to test skit''s handling of extensions.'

@@ -1,34 +1,47 @@
+NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
+Also config for the same
+
 
 9.1
-  extensions
+  extensions (diffs)
+  foreign table
+
 
 components in extensions:
   languages             yes
-  casts
-  conversions
+  casts			yes
+  conversions		yes
   functions		yes
-  aggregates
+  aggregates		yes
   operators		yes    
   operator_families     yes
   operator_classes	yes
-  tables
-  sequences
+  tables		yes
+  constraints		yes
+  indexes		yes
   rules
-  constraints
   triggers
-  indexes
-  types
-  domains
+  sequences		yes
+  comptypes		yes
+  types			yes
+  domains		yes
+  schemata
+
+  foreign data stuff
+  text search stuff
 
   
 
 generate:
   - ensure vertical spacing is good in code generated for diffs
     (actually, for all code)
-
-allow non-superusers to run skit
-
-shout option for ddl (ie upper case)
+  - allow non-superusers to run skit
+  - shout option for ddl (ie upper case)
+  - allow upgrades for extensions to be done manually (ie without
+    upgrade script).
+  - eliminate empty code blocks
+  - eliminate any unnecessary grants (there seem to be some associated
+    with extensions in 9.1 regression test3)
 
 deps optimisations:
   - When there are fallbacks on both sides but there do not need to be,

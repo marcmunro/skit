@@ -187,8 +187,7 @@
     <xsl:element name="print">
       <!-- diffprep and diff actions may not actually result in
            code being created.  Such printable sections are therefore
-	   made conditional.  This is also the case for objects which 
-	   are part of extensions.  To enable printing of such conditional
+	   made conditional.  To enable printing of such conditional
 	   print nodes, a <do-print/> element should be added.  This
 	   conditionality is handled by navigation.xsl -->
       <xsl:if test="(../@action = 'diff') or 
@@ -200,16 +199,16 @@
       <xsl:call-template name="set_owner"/>
 
       <xsl:choose>
+	<xsl:when test="@extension">
+	  <!-- For now, we will do nothing for objects which are part of
+	       an extension.  -->
+	</xsl:when>
 	<xsl:when test="../@action='build'">
-	  <xsl:if test="not(@extension)">
-	    <xsl:apply-templates select="." mode="build"/>
-	  </xsl:if>
+	  <xsl:apply-templates select="." mode="build"/>
 	  <xsl:apply-templates/>   <!-- Deal with comments -->
 	</xsl:when>
 	<xsl:when test="../@action='drop'">
-	  <xsl:if test="not(@extension)">
-	    <xsl:apply-templates select="." mode="drop"/>
-	  </xsl:if>
+	  <xsl:apply-templates select="." mode="drop"/>
 	</xsl:when>
 	<xsl:when test="../@action='diffprep'">
 	  <xsl:if test="not(@extension)">

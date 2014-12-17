@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="domain" from="domains" 
+		filter="(string= (select domain 'schema')
+			         (select schema 'name'))">
+    <domain>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="basetype"/>
+      <skit:attr name="basetype_schema"/>
+      <skit:attr name="default"/>
+      <skit:attr name="nullable"/>
+      <skit:attr name="extension"/>
+      <skit:foreach var="constraint" from="constraints"	
+		    filter="(string= (select domain 'conoid')
+			             (select constraint 'oid'))">
+	<constraint>
+	  <skit:attr name="name"/>
+	  <skit:attr name="schema"/>
+	  <skit:attr name="constraint_type"/>
+	  <source>
+	    <skit:text expr="(select constraint 'source')"/>
+	  </source>
+
+	</constraint>
+      </skit:foreach>
+      <skit:if test="(select domain 'comment')">
+	<comment>
+	  <skit:text expr="(select domain 'comment')"/>
+	</comment>
+      </skit:if>
+    </domain>
+  </skit:foreach>
+</skit:inclusion>  
+

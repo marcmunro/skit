@@ -814,12 +814,11 @@ END_TEST
 #endif
 
 
-#ifdef wibble
 START_TEST(diff)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump4a.xml",
-		    "regress/scratch/regressdb_dump4b.xml",
+		    "regress/scratch/regressdb_dump3a.xml",
+		    "regress/scratch/regressdb_dump3b.xml",
 		    "--print", "--full"
                     };
     Document *doc;
@@ -845,14 +844,14 @@ START_TEST(diff)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef wibble
 #endif
 
-#ifdef wibble
 START_TEST(diffc)
 {
     char *args[] = {"./skit", "-t", "diff.xml",
-		    "regress/scratch/regressdb_dump4a.xml",
-		    "regress/scratch/regressdb_dump4b.xml",
+		    "regress/scratch/regressdb_dump3a.xml",
+		    "regress/scratch/regressdb_dump3b.xml",
 		    "--generate", "--print", "--full"
                     };
     Document *doc;
@@ -878,6 +877,7 @@ START_TEST(diffc)
     FREEMEMWITHCHECK;
 }
 END_TEST
+#ifdef wibble
 #endif
 
 #ifdef wibble
@@ -1075,8 +1075,8 @@ params_suite(void)
     //ADD_TEST(tc_core, list2); 
     //ADD_TEST(tc_core, deps1a);
     //ADD_TEST(tc_core, deps1b);
-    //ADD_TEST(tc_core, diff);
-    //ADD_TEST(tc_core, diffc);
+    ADD_TEST(tc_core, diff);
+    ADD_TEST(tc_core, diffc);
     //ADD_TEST(tc_core, deps);
     //ADD_TEST(tc_core, difflist);
     //ADD_TEST(tc_core, diffgen);

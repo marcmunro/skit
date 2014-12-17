@@ -15,6 +15,7 @@
       <skit:attr name="is_default"/>
       <skit:attr name="function_name"/>
       <skit:attr name="function_schema"/>
+      <skit:attr name="extension"/>
       <depends>
 	<skit:attr name="function"
 		   expr="(select function_sigs 

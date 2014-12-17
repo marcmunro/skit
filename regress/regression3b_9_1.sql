@@ -68,10 +68,6 @@ psql -d regressdb -U regress -v contrib=${pg_contrib} <<'DBEOF'
 -- Languages
 alter user keep with superuser;
 
-set session authorization keep;
-comment on language "plpgsql" is 
-'procedural language plpgsql';
-reset session authorization;
 
 -- Schemata
 grant regress to keep;
@@ -952,5 +948,6 @@ create language plpythonu;
 reset session authorization;
 alter user keep with nosuperuser;
 
+create extension skit_test version '2.0';
 
 DBEOF

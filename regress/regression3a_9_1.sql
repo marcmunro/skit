@@ -65,8 +65,6 @@ CLUSTEREOF
 psql -d regressdb -U regress -v contrib=${pg_contrib} <<'DBEOF'
 
 -- Languages
-comment on language "plpgsql" is 
-'plpgsql';
 
 grant usage on language plpgsql to wibble;
 
@@ -978,5 +976,7 @@ create table circles (
 
 -- Language ownership
 create language plpythonu;
+
+create extension skit_test;
 
 DBEOF

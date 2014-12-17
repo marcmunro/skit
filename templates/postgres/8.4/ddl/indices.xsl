@@ -7,7 +7,14 @@
    version="1.0">
 
   <xsl:template match="index" mode="build">
-    <xsl:value-of select="concat('&#x0A;', @indexdef, ';&#x0A;')"/>
+    <xsl:value-of select="concat('&#x0A;', @indexdef)"/>
+    <xsl:if test="@tablespace">
+      <xsl:value-of select="concat('&#x0A;  tablespace ', @tablespace)"/>
+    </xsl:if>
+    <xsl:if test="@indpred">
+      <xsl:value-of select="concat('&#x0A;  ', @indpred)"/>
+    </xsl:if>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
   <xsl:template match="index" mode="drop">

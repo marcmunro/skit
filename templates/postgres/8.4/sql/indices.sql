@@ -12,9 +12,16 @@ select c.oid as oid,
        i.indkey as colnums,
        --'1978 86328' as operator_classes, 
        i.indclass as operator_classes,
-       pg_catalog.pg_get_indexdef(i.indexrelid) as indexdef,
+       case when i.indpred is not null 
+       then regexp_replace(pg_catalog.pg_get_indexdef(c.oid),
+	                   ' WHERE .*', '')
+       else pg_catalog.pg_get_indexdef(c.oid)
+       end as indexdef,
+       case when i.indpred is not null 
+       then regexp_replace(pg_catalog.pg_get_indexdef(c.oid),
+	                   '.* WHERE ', 'where ')
+       else null end as indpred,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
-       --indpred, indexprs
 from   pg_catalog.pg_index i
 inner join pg_catalog.pg_class c on c.oid = i.indexrelid
 inner join pg_catalog.pg_namespace n on n.oid = c.relnamespace
@@ -41,6 +48,6 @@ inner join pg_catalog.pg_database dat
 inner join pg_catalog.pg_tablespace td
   on td.oid = dat.dattablespace
 where  i.indrelid = :1
---where  i.indrelid = 88436
+--where  i.indrelid = 16552
 and    d.objid is null                  -- eliminate indexes for constraints
 order by n.nspname, c.relname;

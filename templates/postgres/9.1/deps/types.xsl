@@ -62,6 +62,10 @@
       <dependency fqn="{concat('extension.', ancestor::database/@name,
 			       '.',  @extension)}"/>
     </xsl:if>
+    <xsl:if test="@extension">
+      <dependency fqn="{concat('extension.', ancestor::database/@name,
+			       '.',  @extension)}"/>
+    </xsl:if>
 
     <xsl:for-each select="handler-function">
       <dependency fqn="{concat('function.', ancestor::database/@name, 

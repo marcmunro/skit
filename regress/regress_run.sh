@@ -195,6 +195,18 @@ diffglobals()
     fi
 }
 
+diffxml()
+{
+    echo ......comparing skit dumps... 1>&2
+    if [ "x$3" = "x" ]; then
+        exitonfail regress/diffxml.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 
+    else
+        exitonfail regress/diffxml.sh ${REGRESS_DIR}/$1 ${REGRESS_DIR}/$2 \
+	    ${REGRESS_DIR}/$3
+    fi
+}
+
+
 diffextract()
 {
     echo ......checking results of extracts... 1>&2
@@ -310,6 +322,14 @@ regression_test3()
 	regression_ignore3.txt
     diffglobals scratch/regressdb_test3a.gdmp  scratch/regressdb_test3a2.gdmp \
 	regression_ignore3.txt
+
+    # Finally, check for significant diffs between the skit dumps taken
+    # before and after running the diffs.
+    diffxml scratch/regressdb_dump3a.xml scratch/regressdb_dump3a2.xml \
+	regression_xmlignore3.txt
+    diffxml scratch/regressdb_dump3b.xml scratch/regressdb_dump3b2.xml \
+	regression_xmlignore3.txt
+
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 3 complete 1>&2
 }
@@ -457,6 +477,11 @@ fi
 
 if [ "x$1" = "xpglib" ]; then
     `pgbin`/pg_config --pkglibdir
+    exit
+fi
+
+if [ "x$1" = "xpgconfig" ]; then
+    `pgbin`/pg_config
     exit
 fi
 

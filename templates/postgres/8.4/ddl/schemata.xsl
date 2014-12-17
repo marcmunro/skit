@@ -9,22 +9,25 @@
   <!-- Cannot use set session auth to change user in order to set the
        owner, so this template is explicit. -->
   <xsl:template match="dbobject[@action='build']/schema">
-    <print>
-      <xsl:call-template name="feedback"/>
-      <xsl:choose>
-	<xsl:when test="../@name='public'">
-	  <xsl:value-of 
-	      select="concat('&#x0A;alter schema ', ../@qname, ' owner to ')"/>
-	</xsl:when>
-	<xsl:otherwise>
-	  <xsl:value-of 
-	      select="concat('&#x0A;create schema ', ../@qname, 
-		             ' authorization ')"/>
-	</xsl:otherwise>
-      </xsl:choose>
-      <xsl:value-of select="concat(skit:dbquote(@owner), ';&#x0A;')"/>
-      <xsl:apply-templates/>
-    </print>
+    <xsl:if test="not(@extension)">
+      <print>
+	<xsl:call-template name="feedback"/>
+	<xsl:choose>
+	  <xsl:when test="../@name='public'">
+	    <xsl:value-of 
+		select="concat('&#x0A;alter schema ', ../@qname, 
+			       ' owner to ')"/>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:value-of 
+		select="concat('&#x0A;create schema ', ../@qname, 
+			       ' authorization ')"/>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:value-of select="concat(skit:dbquote(@owner), ';&#x0A;')"/>
+	<xsl:apply-templates/>
+      </print>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="schema" mode="drop">

@@ -28,5 +28,16 @@
     </xsl:if>
   </xsl:template>
 
+  <xsl:template match="extension" mode="diff">
+    <xsl:for-each select="../attribute[@name='version']">
+      <do-print/>
+      <xsl:value-of 
+	  select='concat("alter extension ", ../@qname,
+	                 " update to &apos;", @new, 
+			 "&apos;;")'/>
+    </xsl:for-each>
+    <xsl:text>&#x0A;</xsl:text>
+  </xsl:template>
+
 </xsl:stylesheet>
 

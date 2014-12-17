@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:runsql var="schema" file="sql/schemata.sql">
+    <schema>
+      <skit:attr name="name"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="privs"/>
+      <skit:attr name="extension"/>
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
+
+      <skit:if test="(not (string= (select tuple 'name') 'public'))">
+	<skit:exec_function name="grants_from_privs"
+			    privileges="(select tuple 'privs')"
+			    owner="(select tuple 'owner')"
+			    automatic="&lt; 
+				       ((select tuple 'owner') . 
+				         (list 'create' 'usage'))&gt;"/>
+      </skit:if>
+
+      <skit:if test="(string= (select tuple 'name') 'public')">
+	<skit:exec_function name="grants_from_privs"
+			    privileges="(select tuple 'privs')"
+			    owner="(select tuple 'owner')"
+			    automatic="&lt; 
+				       ((select tuple 'owner') . 
+				         (list 'create' 'usage'))
+				       ('public' . 
+                                         (list 'create' 'usage'))&gt;"/>
+      </skit:if>
+
+      <xi:include href="skitfile:extract/domains.xml"/>
+      <xi:include href="skitfile:extract/enums.xml"/>
+      <xi:include href="skitfile:extract/basetypes.xml"/>
+      <xi:include href="skitfile:extract/comptypes.xml"/>
+      <xi:include href="skitfile:extract/functions.xml"/>
+      <xi:include href="skitfile:extract/aggregates.xml"/>
+      <xi:include href="skitfile:extract/operators.xml"/>
+      <xi:include href="skitfile:extract/operator_classes.xml"/>
+      <xi:include href="skitfile:extract/operator_families.xml"/>
+      <xi:include href="skitfile:extract/sequences.xml"/>
+      <xi:include href="skitfile:extract/tables.xml"/>
+      <xi:include href="skitfile:extract/views.xml"/>
+      <xi:include href="skitfile:extract/conversions.xml"/>
+      <xi:include href="skitfile:extract/tsconfig.xml"/>
+      <xi:include href="skitfile:extract/ts_templates.xml"/>
+      <xi:include href="skitfile:extract/tsdictionary.xml"/>
+      <xi:include href="skitfile:extract/ts_parsers.xml"/>
+    </schema>
+  </skit:runsql>
+</skit:inclusion>
+

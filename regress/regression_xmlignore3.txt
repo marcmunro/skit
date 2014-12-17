@@ -1,0 +1,5 @@
+# The locality of this column changes beyond our control.  Ho hum
+fqn="column.regressdb.public.i.val20"
+
+# Ditto this constraint
+fqn="constraint.regressdb.public.i.c__val1check"
