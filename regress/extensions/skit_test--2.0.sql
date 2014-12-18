@@ -95,6 +95,60 @@ create conversion myconv2 for 'SQL_ASCII' to 'MULE_INTERNAL' from myconv;
 create schema skit_test;
 
 
+create rule skit_test2__rule1 as on insert to skit_test2
+do also insert into skit_test
+          (key)
+   values (new.key2);
+
+
+create or replace 
+function trigger99() returns trigger as
+$_$
+begin
+  if new.key > 4 then
+    return new;
+  else
+    return null;
+  end if;
+end;
+$_$
+language plpgsql;
+
+create trigger mytrigger99
+before insert or update on skit_test
+for each row execute procedure trigger99();
+
+create text search configuration skit_test (copy = pg_catalog.english);
+
+create text search template mysimple99 (
+    init = dsimple_init,
+    lexize = dsimple_lexize
+);
+
+create text search dictionary public.simple_dict99 (
+    template = pg_catalog.simple,
+    stopwords = english
+);
+
+create text search parser myparser99 (
+    start = 'prsd_start',
+    gettoken = 'prsd_nexttoken',
+    end = 'prsd_end',
+    lextypes = 'prsd_lextype',
+    headline = 'prsd_headline');
+
+create foreign data wrapper dummy99
+    options (debug 'true', abc '99,100');
+
+create server s99
+    foreign data wrapper dummy99
+    options (debug 'true');
+
+create user mapping for keep
+    server s99
+    options (user 'general', password 'confusion');
+
+
 comment on extension skit_test is
 'extension';
 

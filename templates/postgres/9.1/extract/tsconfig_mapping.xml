@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="tsconfigmap" from="tsconfig_maps" 
+		filter="(string= (select tsconfigmap 'config_oid')
+			         (select tsconfig 'oid'))">
+    <text_search_configuration_map>
+      <skit:attr name="name"/>
+      <skit:attr name="token_id"/>
+      <skit:attr name="config_name" expr="(select tsconfig 'name')"/>
+      <skit:attr name="config_schema" expr="(select tsconfig 'schema')"/>
+      <skit:attr name="extension"
+		 expr="(select tsconfig 'extension')"/>
+   
+      <skit:foreach var="tsconfigmapping" from="tsconfig_mappings" 
+		    filter="(and (string= (select tsconfigmapping 'config_oid')
+			                  (select tsconfig 'oid'))
+			         (string= (select tsconfigmapping 'token_id')
+			                  (select tsconfigmap 'token_id')))">
+	<tsconfig_mapping>
+	  <skit:attr name="seqno"/>
+	  <skit:attr name="dictionary_name"/>
+	  <skit:attr name="dictionary_schema"/>
+	  <skit:attr name="dictionary_owner"/>
+	</tsconfig_mapping>
+      </skit:foreach>
+    </text_search_configuration_map>
+  </skit:foreach>
+</skit:inclusion>  

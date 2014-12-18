@@ -5,30 +5,36 @@ Also config for the same
 9.1
   extensions (diffs)
   foreign table
+  collations
+  large objects?
 
 
 components in extensions:
-  languages             yes
-  casts			yes
-  conversions		yes
-  functions		yes
-  aggregates		yes
-  operators		yes    
-  operator_families     yes
-  operator_classes	yes
-  tables		yes
-  constraints		yes
-  indexes		yes
-  rules
-  triggers
-  sequences		yes
-  comptypes		yes
-  types			yes
-  domains		yes
-  schemata
-
-  foreign data stuff
-  text search stuff
+  languages                yes
+  casts			   yes
+  conversions		   yes
+  functions		   yes
+  aggregates		   yes
+  operators		   yes    
+  operator_families        yes
+  operator_classes	   yes
+  tables		   yes
+  constraints		   yes
+  indexes		   yes
+  rules			   yes
+  triggers		   yes
+  sequences		   yes
+  comptypes		   yes
+  types			   yes
+  domains		   yes
+  schemata		   yes
+  text search config	   yes
+  text search template	   yes
+  text search dictionary   yes
+  text search parser	   yes
+  foreign data wrapper	   yes
+  foreign data server	   yes
+  user mapping		   yes
 
   
 

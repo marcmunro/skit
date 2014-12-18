@@ -40,6 +40,20 @@ drop function myconv(integer, integer, cstring, internal, integer);
 drop schema skit_test;
 
 
+drop trigger mytrigger99 on skit_test;
+drop function trigger99();
+
+drop text search parser myparser99;
+drop text search dictionary public.simple_dict99;
+drop text search template mysimple99;
+drop text search configuration skit_test;
+
+drop user mapping for keep server s99;
+drop server s99;
+drop foreign data wrapper dummy99;
+
+
+
 comment on extension skit_test is
 'Extension skit_test';
 
