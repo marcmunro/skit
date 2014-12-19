@@ -35,8 +35,8 @@
       </xsl:for-each>
       <xsl:value-of select="')'"/>
     </xsl:if>
-    <xsl:if test ="@tablespace">
-	  <xsl:value-of select="concat('&#x0A;tablespace ', @tablespace)"/>
+    <xsl:if test ="@tablespace_is_default!='t'">
+      <xsl:value-of select="concat('&#x0A;tablespace ', @tablespace)"/>
     </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
 

@@ -18,7 +18,11 @@
 
 
   <xsl:template match="table" mode="build">
-    <xsl:value-of select="concat('create table ', ../@qname, ' (')"/>
+    <xsl:text>create </xsl:text>
+    <xsl:if test="@is_foreign='t'">
+      <xsl:text>foreign </xsl:text>
+    </xsl:if>
+    <xsl:value-of select="concat('table ', ../@qname, ' (')"/>
     <xsl:for-each select="column[@is_local='t']">
       <xsl:sort select="@colnum"/>
       <xsl:call-template name="column"/>
@@ -37,6 +41,14 @@
     </xsl:if>
     <xsl:if test ="@tablespace_is_default!='t'">
       <xsl:value-of select="concat('&#x0A;tablespace ', @tablespace)"/>
+    </xsl:if>
+    <xsl:if test="@is_foreign='t'">
+      <xsl:value-of select="concat('&#x0A;server ', 
+	                           skit:dbquote(@foreign_server_name))"/>
+      <xsl:if test="@foreign_table_options">
+	<xsl:value-of select="concat('&#x0A;options (', 
+			             @foreign_table_options, ')')"/>
+      </xsl:if>
     </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
 
@@ -70,8 +82,12 @@
   </xsl:template>
 
   <xsl:template match="table" mode="drop">
+    <xsl:text>&#x0A;drop </xsl:text>
+    <xsl:if test="@is_foreign='t'">
+      <xsl:text>foreign </xsl:text>
+    </xsl:if>
     <xsl:value-of 
-	    select="concat('&#x0A;drop table ', ../@qname, ';&#x0A;')"/>
+	    select="concat('table ', ../@qname, ';&#x0A;')"/>
   </xsl:template>
 
   <xsl:template match="table" mode="diffprep">

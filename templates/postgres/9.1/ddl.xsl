@@ -71,7 +71,13 @@
   <xsl:template name="obj-signature">
     <xsl:param name="objnode"/>
     <xsl:call-template name="dbobject-typename">
-      <xsl:with-param name="typename" select="name($objnode)"/>
+      <xsl:with-param name="typename">
+	<xsl:if test="(name($objnode) = 'table') and 
+                      ($objnode/@is_foreign = 't')">
+	  <xsl:text>foreign </xsl:text>
+	</xsl:if>
+	<xsl:value-of select="name($objnode)"/>
+      </xsl:with-param>
     </xsl:call-template>
     <xsl:text> </xsl:text>
     <xsl:choose>

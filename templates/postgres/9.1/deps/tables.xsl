@@ -47,6 +47,10 @@
       <dependency fqn="{concat('extension.', ancestor::database/@name,
 			       '.',  @extension)}"/>
     </xsl:if>
+    <xsl:if test="@foreign_server_name">
+      <dependency fqn="{concat('foreign_server.', ancestor::database/@name,
+			       '.',  @foreign_server_name)}"/>
+    </xsl:if>
     <xsl:if test="@tablespace">
       <dependency fqn="{concat('tablespace.', @tablespace)}"/>
     </xsl:if>

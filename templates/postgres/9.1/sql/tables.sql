@@ -6,7 +6,11 @@ select c.oid::oid as oid,
        r.rolname as owner,
        case when t.spcname is null then td.spcname
        else t.spcname end as tablespace, 
+       t.spcname is null as tablespace_is_default,
        c.relacl::text as privs,
+       c.relkind = 'f' as is_foreign,
+       fs.srvname as foreign_server_name,
+       ft.ftoptions as foreign_table_options,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment,
        x.extname as extension
   from pg_catalog.pg_class c
@@ -28,6 +32,11 @@ select c.oid::oid as oid,
     on dx.objid = c.oid
    and dx.deptype = 'e'
    and cx.relname = 'pg_class'
- where c.relkind = 'r'
+  left outer join (
+            pg_catalog.pg_foreign_table ft
+      inner join pg_catalog.pg_foreign_server fs
+         on fs.oid = ft.ftserver)
+    on ft.ftrelid = c.oid
+ where c.relkind in ('r', 'f')
    and n.nspname not in ('pg_catalog', 'pg_toast', 'information_schema')
   order by 1, 2;

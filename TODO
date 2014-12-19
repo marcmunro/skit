@@ -3,7 +3,6 @@ Also config for the same
 
 
 9.1
-  extensions (diffs)
   foreign table
   collations
   large objects?
@@ -35,6 +34,8 @@ components in extensions:
   foreign data wrapper	   yes
   foreign data server	   yes
   user mapping		   yes
+  foreign table
+  collations
 
   
 
@@ -105,3 +106,6 @@ REFACTORINGS
 Remove as many attributes as possible from the dbobject element.
 Particularly role_name, table_name and qname.  Move any needed fields
 into the actual dbobject (eg table, role, view) objects.
+
+add tablespace_is_default attribute for sequences, constraints and
+indices.

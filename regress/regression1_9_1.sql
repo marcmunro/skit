@@ -1191,5 +1191,25 @@ create table circles (
         where (is_non_overlapping)
 );
 
+
+-- Foreign tables.
+create foreign table films (
+    code        char(5) not null,
+    title       varchar(40) not null
+)
+server kong;
+
+comment on foreign table films is
+'A foreign table';
+
+
+create foreign table films2 (
+    code        char(5) not null,
+    title       varchar(40) not null
+)
+server kong;
+
+comment on foreign table films2 is
+'Another foreign table';
 DBEOF
 

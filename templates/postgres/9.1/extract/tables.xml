@@ -14,7 +14,11 @@
 	<skit:attr name="schema"/>
 	<skit:attr name="owner"/>
 	<skit:attr name="tablespace"/>
+	<skit:attr name="tablespace_is_default"/>
 	<skit:attr name="privs"/>
+	<skit:attr name="is_foreign"/>
+	<skit:attr name="foreign_server_name"/>
+	<skit:attr name="foreign_table_options"/>
 	<skit:attr name="extension"/>
 
 	<skit:runsql to="columns" file="sql/columns.sql"
@@ -255,14 +259,16 @@
 	  </comment>
 	</skit:if>
 
-	<skit:exec_function name="grants_from_privs"
-			    privileges="(select tuple 'privs')"
-			    owner="(select tuple 'owner')"
-			    automatic="&lt; 
-			     ((select tuple 'owner') . 
-			         (list 'insert' 'select' 'update'
-				       'delete' 'truncate' 'references' 
-				       'trigger'))&gt;"/>
+	<skit:if test="(not (string= (select table 'is_foreign') 't'))">
+	  <skit:exec_function name="grants_from_privs"
+			      privileges="(select tuple 'privs')"
+			      owner="(select tuple 'owner')"
+			      automatic="&lt; 
+					 ((select tuple 'owner') . 
+					  (list 'insert' 'select' 'update'
+					  'delete' 'truncate' 'references' 
+					  'trigger'))&gt;"/>
+	</skit:if>
       </skit:let>
       <xi:include href="skitfile:extract/triggers.xml"/>
       <xi:include href="skitfile:extract/rules.xml"/>

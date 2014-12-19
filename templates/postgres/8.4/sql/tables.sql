@@ -6,6 +6,7 @@ select c.oid::oid as oid,
        r.rolname as owner,
        case when t.spcname is null then td.spcname
        else t.spcname end as tablespace, 
+       t.spcname is null as tablespace_is_default,
        c.relacl::text as privs,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
 from   pg_catalog.pg_class c

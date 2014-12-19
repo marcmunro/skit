@@ -22,6 +22,9 @@
     <xsl:param name="parent_core" select="'NOT SUPPLIED'"/>
 
     <dependency fqn="{concat('table.', $parent_core)}"/>
+    <xsl:if test="@tablespace">
+      <dependency fqn="{concat('tablespace.', @tablespace)}"/>
+    </xsl:if>
     <!-- Dependencies on other constraints -->
     <xsl:if test="reftable/@refconstraintname">
       <dependency fqn="{concat('constraint.', 
