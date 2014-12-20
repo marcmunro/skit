@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="column" key="fqn">
+    <attribute name="type" rebuild="true"/>
+    <attribute name="type_schema" rebuild="true"/>
+    <attribute name="size"/>
+    <attribute name="precision"/>
+    <attribute name="nullable"/>
+    <attribute name="default"/>
+    <attribute name="storage_policy"/>
+    <attribute name="stats_target"/>
+    <attribute name="is_local"/>
+    <attribute name="collation" rebuild="true"/>
+    <attribute name="collation_schema" rebuild="true"/>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

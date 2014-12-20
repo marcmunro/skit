@@ -1309,3 +1309,41 @@ nextDependency(xmlNode *start, xmlNode *prev)
     return node;
 }
 
+static xmlNode *
+firstDepNode(xmlNode *node)
+{
+    while (node && !isDepNode(node)) {
+	node = firstElement(node->next);
+    }
+    return node;
+}
+
+xmlNode *
+nextDepFromTree(xmlNode *start, xmlNode *prev)
+{
+    xmlNode *node;
+    if (prev) {
+	/* Try for a kid */
+	node = firstDepNode(prev->children);
+	if (!node) {
+	    /* Try for a sibling. */
+	    node = firstDepNode(prev->next);
+	}
+	if (!node) {
+	    /* Go up the tree looking for siblings until we should go no
+	     * further. */ 
+	    prev = prev->parent;
+	    while (!node && (prev != start->parent)) {
+		node = firstDepNode(prev->next);
+		prev = prev->parent;
+	    }
+	}
+    }
+    else {
+	node = firstDepNode(start);
+    }
+    return node;
+}
+
+
+

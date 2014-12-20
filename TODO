@@ -33,7 +33,7 @@ components in extensions:
   foreign data server	   yes
   user mapping		   yes
   foreign table		   yes
-  collations
+  collations		   yes
 
   
 

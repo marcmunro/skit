@@ -39,7 +39,7 @@ drop function myconv(integer, integer, cstring, internal, integer);
 
 drop schema skit_test;
 
-
+drop collation collation99;
 drop trigger mytrigger99 on skit_test;
 drop function trigger99();
 

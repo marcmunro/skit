@@ -978,4 +978,18 @@ server stable;
 comment on foreign table films2 is
 'Another foreign table with more info';
 
+
+-- Collations
+create collation my_collation from "C";
+alter collation my_collation owner to keep;
+
+create collation wiblish (locale = 'POSIX');
+
+
+create table collated (
+  col1   text collate wiblish
+);
+
+comment on collation my_collation is 'C';
+
 DBEOF

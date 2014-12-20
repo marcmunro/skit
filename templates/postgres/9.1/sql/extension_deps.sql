@@ -18,6 +18,7 @@ with catalogs as (
 	 when 'pg_foreign_data_wrapper' then 'foreign data wrapper'
 	 when 'pg_foreign_server' then 'foreign server'
 	 when 'pg_user_mapping' then 'user mapping'
+	 when 'pg_collation' then 'collation'
 	 else 'unhandled: ' || c.relname end as objtype
     from pg_namespace n
    inner join pg_catalog.pg_class c
@@ -34,10 +35,12 @@ select e.oid as extension_oid,
 		tsc.cfgname, tst.tmplname,
 		tsd.dictname, tsp.prsname,
 		fdw.fdwname, fs.srvname,
-		umr.rolname || ' for ' || umfs.srvname) as name,
+		umr.rolname || ' for ' || umfs.srvname,
+		coll.collname) as name,
        coalesce(tn.nspname, pn.nspname, cn.nspname,
                 conn.nspname, tscn.nspname, tstn.nspname,
-		tsdn.nspname, tspn.nspname) as schema,
+		tsdn.nspname, tspn.nspname,
+		colln.nspname) as schema,
        d.objid as oid
   from pg_catalog.pg_extension e
  inner join catalogs cat
@@ -133,4 +136,10 @@ select e.oid as extension_oid,
         on umfs.oid = um.umserver)
     on um.oid = d.objid
    and refcat.catname = 'pg_user_mapping'
+  left outer join (
+           pg_catalog.pg_collation coll
+     inner join pg_catalog.pg_namespace colln
+        on colln.oid = coll.collnamespace)
+    on coll.oid = d.objid
+   and refcat.catname = 'pg_collation'
 where e.extname = 'skit_test'

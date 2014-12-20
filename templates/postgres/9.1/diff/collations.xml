@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="collation" key="fqn">
+    <attribute name="name" rebuild="true"/>
+    <attribute name="schema" rebuild="true"/>
+    <attribute name="owner">
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
+    </attribute>
+
+    <attribute name="lc_collate" rebuild="true"/>
+    <attribute name="lc_ctype" rebuild="true"/>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

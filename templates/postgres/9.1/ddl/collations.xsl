@@ -19,17 +19,16 @@
 	select="concat('drop collation ', ../@qname, ';&#x0A;')"/>
   </xsl:template>
 
-<!--
-  <xsl:template match="extension" mode="diff">
-    <xsl:for-each select="../attribute[@name='version']">
+  <xsl:template match="collation" mode="diffprep">
+    <xsl:if test="../attribute[@name='owner']">
       <do-print/>
-      <xsl:value-of 
-	  select='concat("alter extension ", ../@qname,
-	                 " update to &apos;", @new, 
-			 "&apos;;")'/>
-    </xsl:for-each>
-    <xsl:text>&#x0A;</xsl:text>
+      <xsl:for-each select="../attribute[@name='owner']">
+	<xsl:value-of 
+	    select="concat('&#x0A;alter collation ', ../@qname,
+		           ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
+      </xsl:for-each>
+    </xsl:if>
   </xsl:template>
--->
+
 </xsl:stylesheet>
 

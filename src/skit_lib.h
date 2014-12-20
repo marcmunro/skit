@@ -727,6 +727,7 @@ extern void dumpNode(FILE *output, xmlNode *node);
 extern void dNode(xmlNode *node);
 extern xmlNode *getNextNode(xmlNode *node);
 extern xmlNode *nextDependency(xmlNode *start, xmlNode *prev);
+extern xmlNode *nextDepFromTree(xmlNode *start, xmlNode *prev);
 
 
 // exceptions.c functions are defined in exceptions.h

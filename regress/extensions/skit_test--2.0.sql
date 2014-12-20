@@ -157,6 +157,10 @@ create foreign table films99 (
 server s99;
 
 
+create collation collation99 from "C";
+
+
+
 comment on extension skit_test is
 'extension';
 

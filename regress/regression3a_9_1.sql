@@ -1007,4 +1007,16 @@ server stable;
 comment on foreign table films2 is
 'Another foreign table';
 
+
+-- Collations
+create collation my_collation from "C";
+create collation wiblish (locale = 'C');
+
+create table collated (
+  col1   text collate wiblish
+);
+
+
+
+
 DBEOF

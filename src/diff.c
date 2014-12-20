@@ -1372,49 +1372,47 @@ depIsOnRebuild(xmlNode *depnode, Hash *hash)
 {
     String *fqn = nodeAttribute(depnode, "fqn");
     DagNode *dagnode;
-    xmlNode *dep = NULL;
+    boolean result = FALSE;
 
     if (fqn) {
-	if (!nodeHasAttribute(depnode, "soft")) {
-	    if (dagnode = (DagNode *) 
-		dereference(hashGet(hash, (Object *) fqn))) 
-	    {
-		assertDagNode(dagnode);
-		if (checkRebuild(dagnode, hash)) {
-		    objectFree((Object *) fqn, TRUE);
-		    return TRUE;
-		}
-	    }
+	/* We only follow fqn dependencies for the purpose of rbuild
+	 * promotion. */
+	if (dagnode = (DagNode *) 
+	    dereference(hashGet(hash, (Object *) fqn))) 
+	{
+	    assertDagNode(dagnode);
+	    result = checkRebuild(dagnode, hash);
 	}
 	objectFree((Object *) fqn, TRUE);
     }
-
-    while (dep = nextDependency(depnode->children, dep)) {
-	if (depIsOnRebuild(dep, hash)) {
-	    return TRUE;
-	}
-    }
-    return FALSE;
+    return result;
 }
 
 static boolean
 dependsOnRebuild(DagNode *node, Hash *hash)
 {
     xmlNode *dep = NULL;
+    boolean result;
+    boolean rebuild = FALSE;
+
     if (node->status == VISITING) {
 	/* Cyclic deps are possible here.  This should prevent it from
 	 * being a problem. */
 	return FALSE;
     }
     node->status = VISITING;
-    while (dep = nextDependency(node->dbobject->children, dep)) {
-	if (depIsOnRebuild(dep, hash)) {
-	    node->status = UNVISITED;
-	    return TRUE;
+    while (dep = nextDepFromTree(node->dbobject->children, dep)) {
+	if (isDependency(dep)) {
+	    result = depIsOnRebuild(dep, hash);
+	    if (nodeHasAttribute(dep, "soft")) {
+		/* soft dependencies do not lead to rebuild promotion. */
+		result = FALSE;
+	    }
+	    rebuild |= result;
 	}
     }
     node->status = UNVISITED;
-    return FALSE;
+    return rebuild;
 }
 
 static void
@@ -1430,7 +1428,7 @@ promoteNodeParent(DagNode *node, Hash *hash)
 
 	if (diff = nodeAttribute(parent_node->dbobject, "diff")) {
 	    if (streq(diff->value, "none")) {
-		xmlSetProp(node->dbobject, (xmlChar *) "diff", 
+		xmlSetProp(parent_node->dbobject, (xmlChar *) "diff", 
 			   (xmlChar *) "diffkids");
 		
 		promoteNodeParent(parent_node, hash);
