@@ -48,6 +48,7 @@ drop text search dictionary public.simple_dict99;
 drop text search template mysimple99;
 drop text search configuration skit_test;
 
+drop foreign table films99;
 drop user mapping for keep server s99;
 drop server s99;
 drop foreign data wrapper dummy99;

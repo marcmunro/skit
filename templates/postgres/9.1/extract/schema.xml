@@ -53,6 +53,7 @@
       <xi:include href="skitfile:extract/ts_templates.xml"/>
       <xi:include href="skitfile:extract/tsdictionary.xml"/>
       <xi:include href="skitfile:extract/ts_parsers.xml"/>
+      <xi:include href="skitfile:extract/collations.xml"/>
     </schema>
   </skit:runsql>
 </skit:inclusion>

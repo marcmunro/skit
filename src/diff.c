@@ -1096,9 +1096,6 @@ diffPair(xmlNode *dbobject1, xmlNode *dbobject2,
     DiffType difftype;
     boolean  do_rebuild = FALSE;
 
-    String *fqn = nodeAttribute(dbobject1, "fqn");
-    objectFree((Object *) fqn, TRUE);
-
     if (ruleset = rulesetForNode(dbobject1, rules)) {
 	difflist = elementDiffs(contents1, contents2, 
 				ruleset, &diffdeps, &do_rebuild);

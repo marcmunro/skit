@@ -105,6 +105,7 @@
   <xsl:include href="skitfile:deps/foreign_servers.xsl"/>
   <xsl:include href="skitfile:deps/user_mappings.xsl"/>
   <xsl:include href="skitfile:deps/extensions.xsl"/>
+  <xsl:include href="skitfile:deps/collations.xsl"/>
 
 </xsl:stylesheet>
 

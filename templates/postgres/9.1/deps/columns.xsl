@@ -40,9 +40,15 @@
 				 @type_schema, '.', @type)}"/>
       </xsl:if>	
 
-      <xsl:if test="@../extension">
+      <xsl:if test="@collation">
+	<dependency fqn="{concat('collation.', ancestor::database/@name,
+			         '.', @collation_schema,
+				 '.',  @collation)}"/>
+      </xsl:if>
+
+      <xsl:if test="../@extension">
 	<dependency fqn="{concat('extension.', ancestor::database/@name,
-			         '.',  @extension)}"/>
+			         '.',  ../@extension)}"/>
       </xsl:if>
       <xsl:if test="../inherits">
 	<xsl:variable name="colname" select="@name"/>

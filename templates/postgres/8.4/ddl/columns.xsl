@@ -106,10 +106,11 @@
     <xsl:text>;</xsl:text>
   </xsl:template>
 
-  <!-- Column drops for rebuilds. -->
+  <!-- Column drops for column rebuilds. -->
   <xsl:template 
       match="dbobject[@action='drop' and @parent-type='table' and
-                      @parent-diff!='gone']/column[@is_local='t']">
+                      @parent-diff!='gone' and 
+		      @parent-diff!='rebuild']/column[@is_local='t']">
     <print>
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>
@@ -121,10 +122,11 @@
   </xsl:template>
 
 
-  <!-- Column builds for rebuilds. -->
+  <!-- Column builds for column rebuilds. -->
   <xsl:template 
       match="dbobject[@action='build' and @parent-type='table' and
-                      @parent-diff!='new']/column">
+                      @parent-diff!='new' and 
+		      @parent-diff!='rebuild']/column">
     <print conditional="yes">
       <xsl:call-template name="feedback"/>
       <xsl:call-template name="set_owner"/>

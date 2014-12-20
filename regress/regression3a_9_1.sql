@@ -950,6 +950,12 @@ create server s2
     foreign data wrapper dummy
     options (debug 'true');
 
+create server stable
+    type 'postgresql' version '8.4'
+    foreign data wrapper postgresql; 
+
+grant all on foreign server stable to keep;
+
 
 -- User Mappings
 create user mapping for keep
@@ -981,7 +987,7 @@ create language plpythonu;
 -- Extensions
 create extension skit_test;
 
-/*
+
 -- Foreign Tables
 create foreign table films (
     code        char(5) not null,
@@ -996,10 +1002,9 @@ create foreign table films2 (
     code        char(5) not null,
     title       varchar(40) not null
 )
-server kong;
+server stable;
 
 comment on foreign table films2 is
 'Another foreign table';
-*/
 
 DBEOF

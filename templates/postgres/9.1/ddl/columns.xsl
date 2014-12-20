@@ -27,7 +27,7 @@
     <xsl:param name="spaces" select="'                              '"/>
     <xsl:param name="prefix" select="'&#x0A;  '"/>
     <xsl:if test="$position != 1">
-      <xsl:value-of select="','"/>
+      <xsl:text>,</xsl:text>
     </xsl:if>
     <xsl:value-of select="$prefix"/>
     <xsl:value-of 
@@ -35,6 +35,11 @@
 	              substring($spaces,
 		      string-length(skit:dbquote(@name))), ' ')"/>
     <xsl:call-template name="column-typedef"/>
+    <xsl:if test="@collation">
+      <xsl:value-of 
+	  select="concat(' collate ', 
+	                 skit:dbquote(@collation_schema, @collation))"/>
+    </xsl:if>
     <xsl:if test="@default">
       <xsl:value-of 
 	  select="concat('&#x0A;                                    default ', 
@@ -96,7 +101,12 @@
 
   <!-- Context is the column element.  -->
   <xsl:template name="build-column-from-diff">
-    <xsl:value-of select="concat('&#x0A;alter table ', 
+    <xsl:variable name="foreign">
+      <xsl:if test="@is_foreign = 't'">
+	<xsl:text>foreign </xsl:text>
+      </xsl:if>
+    </xsl:variable>
+    <xsl:value-of select="concat('&#x0A;alter ', $foreign, 'table ', 
 			           ../@parent-qname, ' add column ')"/>
     <xsl:call-template name="column">
       <xsl:with-param name="position" select="'1'"/>
@@ -106,15 +116,21 @@
     <xsl:text>;</xsl:text>
   </xsl:template>
 
-  <!-- Column drops for rebuilds. -->
+  <!-- Column drops for column rebuilds. -->
   <xsl:template 
       match="dbobject[@action='drop' and @parent-type='table' and
-                      @parent-diff!='gone']/column[@is_local='t']">
+                      @parent-diff!='gone' and 
+		      @parent-diff!='rebuild']/column[@is_local='t']">
     <xsl:if test="not(@extension)">
       <print>
 	<xsl:call-template name="feedback"/>
 	<xsl:call-template name="set_owner"/>
-	<xsl:value-of select="concat('&#x0A;alter table ', 
+	<xsl:variable name="foreign">
+	  <xsl:if test="@is_foreign = 't'">
+	    <xsl:text>foreign </xsl:text>
+	  </xsl:if>
+	</xsl:variable>
+	<xsl:value-of select="concat('&#x0A;alter ', $foreign, 'table ', 
 			             ../@parent-qname, ' drop column ',
 				     ../@qname, ';&#x0A;')"/>
 	<xsl:call-template name="reset_owner"/>
@@ -123,10 +139,11 @@
   </xsl:template>
 
 
-  <!-- Column builds for rebuilds. -->
+  <!-- Column builds for column rebuilds. -->
   <xsl:template 
       match="dbobject[@action='build' and @parent-type='table' and
-                      @parent-diff!='new']/column">
+                      @parent-diff!='new' and 
+		      @parent-diff!='rebuild']/column">
     <xsl:if test="not(@extension)">
       <print conditional="yes">
 	<xsl:call-template name="feedback"/>

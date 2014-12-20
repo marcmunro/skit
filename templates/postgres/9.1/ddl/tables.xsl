@@ -8,12 +8,20 @@
 
   <xsl:template name="alter-table-only-intro">
     <xsl:param name="tbl-qname" select="../@qname"/>
-    <xsl:value-of select="concat('&#x0A;alter table only ', $tbl-qname)"/>
+    <xsl:text>&#x0A;alter </xsl:text>
+    <xsl:if test="@foreign='t'">
+      <xsl:text>foreign </xsl:text>
+    </xsl:if>
+    <xsl:value-of select="concat('table only ', $tbl-qname)"/>
   </xsl:template>
 
   <xsl:template name="alter-table-intro">
     <xsl:param name="tbl-qname" select="../@qname"/>
-    <xsl:value-of select="concat('&#x0A;alter table ', $tbl-qname)"/>
+    <xsl:text>&#x0A;alter </xsl:text>
+    <xsl:if test="@foreign='t'">
+      <xsl:text>foreign </xsl:text>
+    </xsl:if>
+    <xsl:value-of select="concat('table ', $tbl-qname)"/>
   </xsl:template>
 
 

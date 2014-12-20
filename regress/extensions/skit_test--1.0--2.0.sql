@@ -146,5 +146,14 @@ create user mapping for keep
     server s99
     options (user 'general', password 'confusion');
 
+create foreign table films99 (
+    code        char(5) not null,
+    title       varchar(40) not null,
+    prod	date
+)
+server s99;
+
+
+
 comment on extension skit_test is
 'extension';

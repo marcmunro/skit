@@ -917,6 +917,12 @@ create server s2
     foreign data wrapper dummy
     options (debug 'true', wibble '4=3,5');
 
+create server stable
+    type 'postgresql' version '8.4'
+    foreign data wrapper postgresql; 
+
+grant all on foreign server stable to keep;
+
 
 -- User Mappings
 create user mapping for keep
@@ -953,7 +959,6 @@ create extension skit_test version '2.0';
 
 
 -- Foreign Tables
-/*
 create foreign table films (
     code        char(5) not null,
     title       varchar(40) not null
@@ -968,9 +973,9 @@ create foreign table films2 (
     title       varchar(40) not null,
     prod	date
 )
-server kong;
+server stable;
 
 comment on foreign table films2 is
 'Another foreign table with more info';
-*/
+
 DBEOF

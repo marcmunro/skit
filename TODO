@@ -3,9 +3,7 @@ Also config for the same
 
 
 9.1
-  foreign table
   collations
-  large objects?
 
 
 components in extensions:
@@ -34,7 +32,7 @@ components in extensions:
   foreign data wrapper	   yes
   foreign data server	   yes
   user mapping		   yes
-  foreign table
+  foreign table		   yes
   collations
 
   
