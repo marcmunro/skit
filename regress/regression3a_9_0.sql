@@ -42,6 +42,8 @@ comment on database "regressdb" is
 create tablespace "tbs2" owner "lose"
   location :tbs2dir;
 
+alter tablespace tbs2 set (seq_page_cost = 1.5, random_page_cost = 4.2);
+
 comment on tablespace tbs2 is 'This is the 2nd tablespace';
 
 -- This does nothing but makes the acl for the tablespace into 

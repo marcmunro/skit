@@ -45,6 +45,8 @@ comment on database "regressdb" is
 create tablespace "tbs2" owner "keep"
   location :tbs2dir;
 
+alter tablespace tbs2 set (seq_page_cost = 1.6);
+
 comment on tablespace tbs2 is 'This is the second tablespace';
 
 -- This does nothing but makes the acl for the tablespace into 
@@ -58,6 +60,8 @@ grant create on tablespace tbs3 to wibble;
 
 -- Check handling of grant option.
 grant create on tablespace tbs3 to keep;
+
+alter tablespace tbs3 set (seq_page_cost = 1.4);
 
 -- Check role grants
 grant regress to wibble;

@@ -2,8 +2,11 @@ NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
 Also config for the same
 
 
-9.1
-  collations
+
+improve option handling in objects other than tablespace (fdws, etc) by
+turning them into elements rather than combined attributes as is done
+for tablespaces.
+
 
 
 components in extensions:

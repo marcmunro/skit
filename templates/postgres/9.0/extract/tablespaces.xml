@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+
+  <skit:function name="extract_options">
+    <skit:parameter name="options"/>
+
+    <skit:if test="options">
+      <skit:var name="optionlist"
+		expr="(split (replace options /^\\{(.*)\\}$/ '\1') ',')"/>
+      <skit:foreach from="optionlist" var="this">
+	<option>
+	  <skit:var name="parts" expr="(split this '=')"/>
+	  <skit:attr name="name" expr="(select parts 0)"/>
+	  <skit:attr name="value" expr="(select parts 1)"/>
+	</option>
+      </skit:foreach>
+    </skit:if>
+  </skit:function>
+
+  <skit:runsql file="sql/tbs.sql">
+    <tablespace>	
+      <skit:attr name="name"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="location"/>
+      <skit:attr name="privs"/>
+
+      <skit:exec_function name="extract_options"
+			  options="(select tuple 'options')"/>
+
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
+      <!-- <skit:exec expr="(debug 'TUPLE: ' tuple)"/> -->
+
+      <skit:exec_function name="grants_from_privs"
+			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
+			  automatic="&lt; 
+			     ((select tuple 'owner') . (list 'create'))&gt;"/>
+    </tablespace>
+  </skit:runsql>
+</skit:inclusion>  
+
