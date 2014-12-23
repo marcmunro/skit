@@ -14,7 +14,7 @@
     <attribute name="storage_policy"/>
     <attribute name="stats_target"/>
     <attribute name="is_local"/>
-    <attribute name="collation" rebuild="true"/>
+    <attribute name="collation_name" rebuild="true"/>
     <attribute name="collation_schema" rebuild="true"/>
     <element type="comment">
       <text/>

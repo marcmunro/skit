@@ -20,8 +20,23 @@
       <skit:attr name="element"/>
       <skit:attr name="passbyval"/>
       <skit:attr name="is_defined"/> 
+      <skit:attr name="type_category"/> 
+      <skit:attr name="is_preferred"/> 
+      <skit:if test="(select tuple 'collation_oid')">
+	<skit:attr name="is_collatable" expr="t"/> 
+	<skit:let>
+	  <skit:var name="collation"
+		    expr="(select collations 
+			          (select tuple 'collation_oid'))"/>
+	  <skit:if test="collation">
+	    <skit:attr name="collation_name"
+		       expr="(select collation 'schema')"/> 
+	    <skit:attr name="collation_schema"
+		       expr="(select collation 'name')"/> 
+	  </skit:if>
+	</skit:let>
+      </skit:if>
       <skit:attr name="extension"/>
-      <!-- TODO: element, typmod_in, typmod_out attributes? -->
       <skit:exec_function name="type_handler"
       			  oid="(select tuple 'input_oid')"
       			  type="'input'"/>

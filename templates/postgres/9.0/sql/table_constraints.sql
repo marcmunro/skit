@@ -35,7 +35,7 @@ with my_constraints as (
        inner join pg_catalog.pg_namespace nr    -- schema of ref table for fk
            on nr.oid = cr.relnamespace
     ) on cr.oid = c.confrelid
-   -- where c.conrelid = 17137
+   -- where c.conrelid = 16538
    where c.conrelid = :1
      and c.contype != 't'
 ),

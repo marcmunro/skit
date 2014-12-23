@@ -19,6 +19,10 @@ select t.oid as oid,
        case t.typstorage when 'p' then 'plain' when 'x' then 'extended'
 	    when 'e' then 'external' when 'm' then  'main' end as storage,
        t.typdefault as default,
+       t.typcategory as type_category,
+       t.typispreferred as is_preferred,
+       case when t.typcollation != 0 then t.typcollation
+       else null end as collation_oid,
        quote_literal(obj_description(t.oid, 'pg_type')) as comment,
        x.extname as extension
 from   pg_catalog.pg_type t

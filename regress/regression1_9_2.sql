@@ -49,7 +49,6 @@ create tablespace "tbs2" owner "regress"
   location :tbs2dir;
 
 alter tablespace tbs2 set (seq_page_cost = 1.5);
-
 comment on tablespace tbs2 is 'This is the second tablespace';
 
 create role "keep2" with login;
@@ -200,7 +199,9 @@ create type "public"."mychar"(
   internallength = 1,
   alignment = char,
   storage = plain,
-  delimiter = ',');
+  delimiter = ',',
+  category = 's',
+  preferred = true);
 
 comment on type "public"."mychar" is
 'mychar';

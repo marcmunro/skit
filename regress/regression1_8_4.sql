@@ -205,10 +205,13 @@ create type "public"."mychar"(
   internallength = 1,
   alignment = char,
   storage = plain,
-  delimiter = ',');
+  delimiter = ',',
+  category = 's',
+  preferred = true);
 
 comment on type "public"."mychar" is
 'mychar';
+
 
 \echo Done with schema "public";
 

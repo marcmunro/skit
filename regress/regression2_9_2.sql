@@ -18,6 +18,7 @@ create database "regressdb" with
  connection limit = -1;
 \connect regressdb
 
+
 comment on database "regressdb" is
 'old comment';
 \connect postgres
@@ -48,9 +49,9 @@ reset session authorization;
 create tablespace "tbs2" owner "regress"
   location :tbs2dir;
 
-alter tablespace tbs2 set (seq_page_cost = 1.5);
-
 comment on tablespace tbs2 is 'This is the second tablespace';
+
+
 
 create role "keep2" with login;
 alter role "keep2" password 'md5dd9b387fa54744451a97dc9674f6aba2';
@@ -60,34 +61,10 @@ set session authorization 'lose';
 grant "keep" to "keep2" with admin option;
 reset session authorization;
 
-
-set session authorization 'regress';
-grant create on tablespace "tbs2" to "keep2";
-reset session authorization;
 create role "marco" with login;
 alter role "marco" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
 alter role "marco" noinherit;
 
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "marco" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "keep2";
-reset session authorization;
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "keep2" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "keep" with grant option;
-reset session authorization;
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "keep";
-reset session authorization;
 
 create role "wibble" with login;
 alter role "wibble" password 'md54ea9ea89bc47825ea7b2fe7c2288b27a';
@@ -106,24 +83,23 @@ set session authorization 'keep';
 grant "keep" to "wibble" with admin option;
 reset session authorization;
 
-
-set session authorization 'regress';
-grant create on tablespace "tbs3" to "wibble";
-reset session authorization;
-
 CLUSTEREOF
  
-
-psql -d regressdb -U bark -v contrib=${pg_contrib} <<'DBEOF'
-
+psql -d regressdb -U bark <<'DBEOF'
  
 alter schema "public" owner to "regress";
  
 comment on schema "public" is
 'old public schema';
 
+
 \echo Done with schema "public";
 
+
+comment on language "plpgsql" is
+'Procedural language';
+
+--revoke usage on language plpgsql from public;
 
 \echo updating schema "public";
 
@@ -137,7 +113,7 @@ begin
   return _state + _next;
 end;
 $_$
-language plpgsql stable cost 5;
+language plpgsql stable cost 5 security definer;
 
 create or replace function "public"."addint4"(
     _state in "pg_catalog"."int4",
@@ -185,9 +161,6 @@ create or replace function "public"."mycharin"(
 as 'charin'
 language internal immutable strict;
  
-grant execute on function "public"."mycharin"(
-    in "pg_catalog"."cstring") to keep;
-
 create or replace function "public"."mycharout"(
     in "public"."mychar")
   returns "pg_catalog"."cstring"
@@ -201,25 +174,11 @@ create type "public"."mychar"(
   internallength = 1,
   alignment = char,
   storage = plain,
-  delimiter = ',',
-  category = 's',
-  preferred = true);
+  delimiter = ',');
 
 comment on type "public"."mychar" is
 'mychar';
 
-\echo Done with schema "public";
-
-
-\echo updating schema "public";
-
-set session authorization 'regress';
-grant create on schema "public" to "public";
-reset session authorization;
-\echo Done with schema "public";
-
-
-\echo updating schema "public";
 -- 
 
 create table "public"."additional" (
@@ -272,23 +231,10 @@ create table "public"."thing_2" (
 
 \echo Done with schema "public";
 
-
-set session authorization 'marco';
-grant create on database "regressdb" to "keep";
-reset session authorization;
-
-grant usage on language "plpgsql" to "keep2" with grant option;
-
-grant usage on language "plpgsql" to "keep";
-
-grant usage on language "plpgsql" to "wibble";
-
 comment on language plpgsql is 'this is plpgsql';
 
 \echo updating schema "public";
 
-grant select on table "public"."additional" to "keep2" with grant option;
- 
 create or replace function "public"."mycharin2"(
     in "pg_catalog"."cstring")
   returns "public"."mychar2"
@@ -357,7 +303,6 @@ language plpgsql stable strict;
 
 comment on function "public"."plpgsql1"("pg_catalog"."int4", "pg_catalog"."int4") is
 'function';
-
 
 create or replace function "public"."plpgsql2"(
     _z in "pg_catalog"."int4",
@@ -543,36 +488,18 @@ create sequence "public"."thingy_id_seq"
 comment on sequence "public"."thingy_id_seq" is
 'thingy';
 
+select nextval('thingy_id_seq');
+select nextval('thingy_id_seq');
 
-grant select on table "thingy_id_seq" to "keep";
-
-create table wibbly (
-  wib_id integer not null
-);
 
 create sequence "public"."wib_seq"
   start with 1000 increment by 1
   minvalue 1 maxvalue 9223372036854775807
-  cache 1
-  owned by wibbly.wib_id;
+  cache 1;
 
 comment on sequence "public"."wib_seq" is
 'wib wib wib';
 
-
-grant delete on table "wib_seq" to "keep";
-
-grant insert on table "wib_seq" to "keep";
-
-grant references on table "wib_seq" to "keep";
-
-grant rule on table "wib_seq" to "keep";
-
-grant select on table "wib_seq" to "keep";
-
-grant trigger on table "wib_seq" to "keep";
-
-grant update on table "wib_seq" to "keep";
 
 create sequence "public"."wibble_seq"
   start with 1000 increment by 1
@@ -585,23 +512,6 @@ create sequence "public"."wubble_seq"
   minvalue 1 maxvalue 9223372036854775807
   cache 1;
 
--- \echo Done with schema "public";
--- 
--- 
-set session authorization 'marco';
-grant temporary on database "regressdb" to "keep" with grant option;
-reset session authorization;
-
-set session authorization 'marco';
-grant temporary on database "regressdb" to "public";
-reset session authorization;
-
-set session authorization 'regress';
-grant temporary on database "regressdb" to "public";
-reset session authorization;
--- 
--- \echo updating schema "public";
--- 
 -- 
 create operator "public".< (
   leftarg = "public"."wib",
@@ -755,21 +665,6 @@ comment on operator family "public"."seg_ops" using btree is
 'operator family for seg_ops';
 
 
-create operator family seg_ops3 using btree;
-alter operator family seg_ops3 using btree add operator 1 <(seg, seg);
-alter operator family seg_ops3 using btree add operator 2 <=(seg, seg);
-alter operator family seg_ops3 using btree add function 1 seg_cmp(seg, seg);
-
-create operator family seg_ops4 using btree;
-alter operator family seg_ops4 using btree add operator 1 <(seg, seg);
-alter operator family seg_ops4 using btree add operator 2 <=(seg, seg);
-alter operator family seg_ops4 using btree add function 1 seg_cmp(seg, seg);
-alter operator family seg_ops4 using btree owner to keep;
-
-comment on operator family seg_ops4 using btree is 
-'operator family seg_ops4';
-
-
 
 create type "public"."mychar2"(
   input = "public"."mycharin2",
@@ -882,10 +777,6 @@ comment on column "public"."vv5_t".name is
 
 create schema schema2;
 
-revoke usage on schema schema2 from public;
-grant usage on schema schema2 to regress;
-comment on schema schema2 is 'this is a comment for schema2';
-
 create type schema2.yesno as enum ('no', 'yes');
 comment on type schema2.yesno is 'boolean-ish';
 
@@ -907,8 +798,6 @@ comment on cast("public"."mychar" as "pg_catalog"."bytea")
 is 'cast comment';
 
 
-create cast("public"."postal2" as "public"."mychar")
-  without function;
 
 
 create table schema2.arrays (
@@ -1039,17 +928,10 @@ language plpgsql;
 
 create trigger mytrigger1 
 before insert or update on schema2.keys2
-for each row 
-when (new.key1 > 20)
-execute procedure public.trigger1();
+for each row execute procedure public.trigger1();
 
 comment on trigger mytrigger1 on schema2.keys2 is
 'Trigger comment';
-
-create constraint trigger my_ctrigger
-after insert or update on schema2.arrays
-for each row execute procedure public.trigger1();
-
 
 create view schema2.keys_view as
 select k1.key1, k1.key2, k1.key3, 
@@ -1061,15 +943,10 @@ where k1.key1 < 99;
 comment on view schema2.keys_view is
 'A view.';
 
-grant all on table schema2.keys_view to keep2 with grant option;
-grant select on table schema2.keys_view to keep;
-
 create view schema2.view_on_view as
 select * 
 from   schema2.keys_view
 where  key1 < 90;
-
-alter view schema2.keys_view alter column key1 set default 99;
 
 create rule keys_vrule1 as on insert to schema2.keys_view
 do instead insert into 
@@ -1095,117 +972,29 @@ create view v1 as select 'a' as a, 'b' as b;
 create view v2 as select * from v1;
 create or replace view v1 as select * from v2;
 
+-- Now revoke all automatically created privileges from one object of
+-- each type. 
+revoke all on database regressdb from regress;
+revoke all on database regressdb from public;
+revoke all on schema public from regress;
+revoke all on schema public from public;
+revoke all on language "plpgsql" from public;
+revoke all on language "plpgsql" from :USER;
+revoke all on tablespace tbs2 from regress;
 
--- A plpgsql function that returns a set of rows
-create or replace
-function wibble(p1 varchar)
-  returns setof varchar as
-$$
-begin
-  return next 'a';
-  return next 'b';
-  return next 'c';
-end;
-$$
-language plpgsql security definer cost 20 rows 3;
+revoke all on function public.addint4(int4, int4)
+  from public;
+revoke all on function public.addint4(int4, int4)
+  from :USER;
 
+revoke all on sequence public.thingy_id_seq from public;
+revoke all on sequence public.thingy_id_seq from :USER;
 
--- Text search stuff
-create text search configuration skit (copy = pg_catalog.english);
+revoke all on table public.additional from public;
+revoke all on table public.additional from :USER;
 
--- Create a mapping that uses multiple dictionaries.
-alter text search configuration public.skit
-    drop mapping for asciiword;
-
-alter text search configuration public.skit
-    add mapping for asciiword with pg_catalog.english_stem,  pg_catalog.simple;
-
-
-comment on text search configuration skit is
-'comment for text search configuration';
-
-create text search parser myparser (
-    start = 'prsd_start',
-    gettoken = 'prsd_nexttoken',
-    end = 'prsd_end',
-    lextypes = 'prsd_lextype',
-    headline = 'prsd_headline');
-
-create text search parser myparser2 (
-    start = 'prsd_start',
-    gettoken = 'prsd_nexttoken',
-    end = 'prsd_end',
-    lextypes = 'prsd_lextype');
-
-comment on text search parser myparser2 is
-'Parser';
-
-create text search dictionary public.simple_dict (
-    template = pg_catalog.simple,
-    stopwords = english
-);
-
-comment on text search dictionary public.simple_dict is
-'dict';
-
-create text search template mysimple (
-    init = dsimple_init,
-    lexize = dsimple_lexize
-);
-
-comment on text search template mysimple is
-'mysimple template';
-
-
--- Foreign Data Wrappers
-create foreign data wrapper dummy;
-
-create foreign data wrapper postgresql 
-    validator postgresql_fdw_validator;
-
-create foreign data wrapper mywrapper
-    options (debug 'true');
-
-grant all on foreign data wrapper mywrapper to keep;
-
-
--- Foreign Data Servers
-create server kong 
-    type 'postgresql' version '8.4'
-    foreign data wrapper postgresql; 
-
-grant all on foreign server kong to keep;
-
-create server s2 
-    foreign data wrapper dummy
-    options (debug 'true');
-
-
--- User Mappings
-create user mapping for keep
-    server kong
-    options (user 'general', password 'confusion');
-
-create user mapping for public
-    server kong
-    options (user 'major', password 'problem');
-
-
-
--- Exclusion constraints (need btree_gist)
-\i :contrib/btree_gist.sql
-
-create table circles (
-    plane_id           int not null,
-    is_non_overlapping boolean not null,
-    c                  circle not null,
-    exclude using gist (plane_id with =, c with &&)
-        with (fillfactor = 20)
-        using index tablespace tbs2
-        where (is_non_overlapping)
-);
-
-
+revoke all on table v1 from public;
+revoke all on table v1 from :USER;
 
 DBEOF
 

@@ -62,9 +62,10 @@
       <dependency fqn="{concat('extension.', ancestor::database/@name,
 			       '.',  @extension)}"/>
     </xsl:if>
-    <xsl:if test="@extension">
-      <dependency fqn="{concat('extension.', ancestor::database/@name,
-			       '.',  @extension)}"/>
+    <xsl:if test="@collation_name and @collation_schema != 'pg_catalog'">
+      <dependency fqn="{concat('collation.', ancestor::database/@name,
+			       '.',  @collation_schema,
+			       '.',  @collation_name)}"/>
     </xsl:if>
 
     <xsl:for-each select="handler-function">
@@ -78,6 +79,11 @@
 		    (@type_schema != 'information_schema')">
 	<dependency fqn="{concat('type.', ancestor::database/@name, '.',
 			  @type_schema, '.', @type)}"/>
+      </xsl:if>
+      <xsl:if test="@collation_name and @collation_schema != 'pg_catalog'">
+	<dependency fqn="{concat('collation.', ancestor::database/@name,
+			         '.',  @collation_schema,
+			         '.',  @collation_name)}"/>
       </xsl:if>
     </xsl:for-each>
   </xsl:template>

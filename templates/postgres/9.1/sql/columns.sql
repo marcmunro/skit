@@ -42,7 +42,8 @@ select a.attnum as colnum,
        a.attislocal as is_local,
        pg_catalog.pg_get_expr(d.adbin, d.adrelid) as default,
        nullif(a.attstattarget, -1) as stats_target,
-       a.attcollation as collation_oid,
+       col.collname as collation_name,
+       coln.nspname as collation_schema,
        quote_literal(col_description(a.attrelid, a.attnum)) as comment
   from inheritence_set iset
  inner join pg_catalog.pg_attribute a
@@ -53,6 +54,10 @@ select a.attnum as colnum,
     on t.oid = a.atttypid
  inner join pg_catalog.pg_namespace n2 
     on n2.oid = t.typnamespace
+  left outer join (pg_catalog.pg_collation col
+        inner join pg_catalog.pg_namespace coln
+           on (coln.oid = col.collnamespace))
+    on col.oid = a.attcollation
   left outer join pg_catalog.pg_attrdef d
     on (    d.adrelid = a.attrelid
         and d.adnum = a.attnum)

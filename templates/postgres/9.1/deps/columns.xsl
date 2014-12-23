@@ -40,10 +40,10 @@
 				 @type_schema, '.', @type)}"/>
       </xsl:if>	
 
-      <xsl:if test="@collation">
+      <xsl:if test="@collation_name and @collation_schema != 'pg_catalog'">
 	<dependency fqn="{concat('collation.', ancestor::database/@name,
 			         '.', @collation_schema,
-				 '.',  @collation)}"/>
+				 '.',  @collation_name)}"/>
       </xsl:if>
 
       <xsl:if test="../@extension">

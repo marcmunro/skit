@@ -40,6 +40,8 @@
       <attribute name="name" rebuild="true"/>
       <attribute name="type" rebuild="true"/>
       <attribute name="type_schema" rebuild="true"/>
+      <attribute name="collation_name" rebuild="true"/>
+      <attribute name="collation_schema" rebuild="true"/>
       <element type="comment">
 	<text/>
       </element>

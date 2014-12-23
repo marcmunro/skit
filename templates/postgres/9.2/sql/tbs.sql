@@ -1,7 +1,8 @@
 -- List all tablespaces
 select t.spcname as name,
        r.rolname as owner,
-       t.spclocation as location,
+       pg_catalog.pg_tablespace_location(t.oid) as location,
+       t.spcoptions as options,
        t.spcacl::text as privs,
        quote_literal(shobj_description(t.oid, 'pg_tablespace')) as comment
 from   pg_tablespace t

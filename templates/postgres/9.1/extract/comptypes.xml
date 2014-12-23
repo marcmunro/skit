@@ -23,6 +23,8 @@
 	  <skit:attr name="type_schema"/>
 	  <skit:attr name="size"/>
 	  <skit:attr name="precision"/>
+	  <skit:attr name="collation_name"/>
+	  <skit:attr name="collation_schema"/>
 	  <skit:if test="(select typcolumn 'comment')">
 	    <comment>
 	      <skit:text expr="(select typcolumn 'comment')"/>

@@ -35,10 +35,10 @@
 	              substring($spaces,
 		      string-length(skit:dbquote(@name))), ' ')"/>
     <xsl:call-template name="column-typedef"/>
-    <xsl:if test="@collation">
+    <xsl:if test="@collation_name">
       <xsl:value-of 
 	  select="concat(' collate ', 
-	                 skit:dbquote(@collation_schema, @collation))"/>
+	                 skit:dbquote(@collation_schema, @collation_name))"/>
     </xsl:if>
     <xsl:if test="@default">
       <xsl:value-of 

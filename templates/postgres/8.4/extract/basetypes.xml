@@ -20,7 +20,8 @@
       <skit:attr name="element"/>
       <skit:attr name="passbyval"/>
       <skit:attr name="is_defined"/> 
-      <!-- TODO: element, typmod_in, typmod_out attributes? -->
+      <skit:attr name="type_category"/> 
+      <skit:attr name="is_preferred"/> 
       <skit:exec_function name="type_handler"
       			  oid="(select tuple 'input_oid')"
       			  type="'input'"/>

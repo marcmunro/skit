@@ -75,15 +75,8 @@
 			 expr="(select table 'is_foreign')"/>
 	      <skit:attr name="extension"
 			 expr="(select table 'extension')"/>
-	      <skit:if test="(select column 'collation_oid')">
-		<skit:var name="this_collation" 
-			  expr="(select collations 
-				        (select column 'collation_oid'))"/>
-		<skit:attr name="collation"
-			   expr="(select this_collation 'name')"/>  
-		<skit:attr name="collation_schema"
-			   expr="(select this_collation 'schema')"/>  
-	      </skit:if>
+	      <skit:attr name="collation_name"/>
+	      <skit:attr name="collation_schema"/>
 	      <skit:if test="(select column 'comment')">
 		<comment>
 		  <skit:text expr="(select column 'comment')"/>

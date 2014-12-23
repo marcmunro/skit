@@ -199,7 +199,10 @@ create type "public"."mychar"(
   internallength = 1,
   alignment = char,
   storage = plain,
-  delimiter = ',');
+  delimiter = ',',
+  category = 's',
+  preferred = true,
+  collatable = true);
 
 comment on type "public"."mychar" is
 'mychar';
@@ -1221,6 +1224,10 @@ create collation wiblish (locale = 'C');
 
 create table collated (
   col1   text collate wiblish
+);
+
+create type wiblish_thing as (
+  wibbly  char collate wiblish
 );
 
 DBEOF

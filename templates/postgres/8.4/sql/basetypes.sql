@@ -19,6 +19,8 @@ select t.oid as oid,
        case t.typstorage when 'p' then 'plain' when 'x' then 'extended'
 	    when 'e' then 'external' when 'm' then  'main' end as storage,
        t.typdefault as default,
+       t.typcategory as type_category,
+       t.typispreferred as is_preferred,
        quote_literal(obj_description(t.oid, 'pg_type')) as comment
 from   pg_catalog.pg_type t
        inner join

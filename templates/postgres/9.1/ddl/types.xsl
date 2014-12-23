@@ -79,9 +79,24 @@
               <xsl:value-of 
 		  select="concat(',&#x0A;  storage = ', @storage)"/>
 	    </xsl:if>
-	    <xsl:if test="@element">
+	    <xsl:if test="@type_category">
               <xsl:value-of 
-		  select="concat(',&#x0A;  element = ', 'TODO')"/>
+		  select='concat(",&#x0A;  category = &apos;", 
+			         @type_category, "&apos;")'/>
+	    </xsl:if>
+	    <xsl:if test="@is_preferred">
+              <xsl:text>,&#x0A;  preferred = </xsl:text>
+	      <xsl:choose>
+		<xsl:when test="@is_preferred='t'">
+		  <xsl:text>true</xsl:text>
+		</xsl:when>
+		<xsl:otherwise>
+		  <xsl:text>false</xsl:text>
+		</xsl:otherwise>
+	      </xsl:choose>
+	    </xsl:if>
+	    <xsl:if test="@is_collatable">
+              <xsl:text>,&#x0A;  collatable = true</xsl:text>
 	    </xsl:if>
 	    <xsl:if test="@delimiter">
               <xsl:value-of 
