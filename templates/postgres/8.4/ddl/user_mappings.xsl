@@ -21,17 +21,18 @@
     <xsl:value-of 
 	select="concat('create user mapping for ', $user,
                        ' server ', @server)"/>
-    <xsl:if test="@options">
-      <xsl:variable name="options" 
-		    select="substring(@options, 2, 
-			              string-length(@options) - 2)"/>
+    <xsl:if test="option">
       <xsl:text>&#x0A;    options(</xsl:text>
-      <xsl:call-template name="process-options">
-	<xsl:with-param name="options" select="$options"/>
-      </xsl:call-template>
+      <xsl:for-each select="option">
+	<xsl:if test="position() != 1">
+	  <xsl:text>,&#x0A;            </xsl:text>
+	</xsl:if>
+	<xsl:value-of 
+	    select='concat(@name, " &apos;", @value, "&apos;")'/>
+      </xsl:for-each>
       <xsl:text>)</xsl:text>
     </xsl:if>
-     <xsl:text>;&#x0A;</xsl:text>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
   <xsl:template match="user_mapping" mode="drop">
@@ -48,6 +49,30 @@
     <xsl:value-of 
 	select="concat('&#x0A;drop user mapping for ', $user,
                        ' server ', @server, ';&#x0A;')"/>
+  </xsl:template>
+
+  <xsl:template match="user_mapping" mode="diff">
+    <do-print/>
+    <xsl:text>&#x0A;</xsl:text>
+    <xsl:for-each select="../element/option">
+      <xsl:value-of select="concat('alter user mapping for ', 
+			           skit:dbquote(../user_mapping/@user), 
+				   ' server ', ../user_mapping/@server,
+				   ' options (')"/>
+      <xsl:choose>
+	<xsl:when test="../@status='gone'">
+	  <xsl:value-of select="concat('drop ', @name, ');&#x0A;')"/>
+	</xsl:when>
+	<xsl:when test="../@status='new'">
+	  <xsl:value-of select='concat("add ", @name, " &apos;",
+				       @value, "&apos;);&#x0A;")'/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select='concat("add ", @name, " &apos;",
+				       @value, "&apos;);&#x0A;")'/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
   </xsl:template>
 
 </xsl:stylesheet>

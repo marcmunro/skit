@@ -3,11 +3,6 @@ Also config for the same
 
 
 
-improve option handling in objects other than tablespace (fdws, etc) by
-turning them into elements rather than combined attributes as is done
-for tablespaces.
-
-
 
 components in extensions:
   languages                yes
@@ -96,8 +91,6 @@ docs:
     doxygen
     developers guide
 
-9.0 changes
-9.1 changes
 9.2 changes
 9.3 changes
 

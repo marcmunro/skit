@@ -9,8 +9,9 @@
      <skit:attr name="owner"/>
      <skit:attr name="validator_schema"/>
      <skit:attr name="validator_proc"/>
-     <skit:attr name="options"/>
      <skit:attr name="privs"/>
+     <skit:exec_function name="extract_options"
+			 options="(select tuple 'options')"/>
 
      <skit:exec_function name="grants_from_privs"
 			 privileges="(select tuple 'privs')"

@@ -87,7 +87,6 @@
 	    <skit:attr name="deferred"/>
 	    <skit:attr name="deferrable"/>
 	    <skit:attr name="source"/>
-	    <skit:attr name="options"/>
 	    <skit:attr name="tablespace"/>
 	    <skit:attr name="owner"/>
 	    <skit:attr name="access_method"/>
@@ -97,6 +96,8 @@
 	    <skit:attr name="confupdtype"/>
 	    <skit:attr name="confdeltype"/>
 	    <skit:attr name="is_local"/>
+	    <skit:exec_function name="extract_options"
+				options="(select tuple 'options')"/>
 
 	    <skit:if test="(select tuple 'refoid')">
 	      <reftable>

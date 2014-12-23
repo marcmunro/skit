@@ -96,6 +96,15 @@ addText(xmlNodePtr node, String *value)
     xmlAddChild(node, text);
 }
 
+static xmlNode *
+addElement(xmlNodePtr node, String *name)
+{
+    xmlNode *elem;
+    elem = xmlNewNode(NULL, BAD_CAST name->value);
+    xmlAddChild(node, elem);
+    return elem;
+}
+
 Document *
 applyXSLStylesheet(Document *src, Document *stylesheet)
 {
@@ -360,6 +369,34 @@ attributeFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     FINALLY {
 	objectFree((Object *) name, TRUE);
 	objectFree((Object *) str, TRUE);
+    }
+    END;
+    return NULL;
+}
+
+static xmlNode *
+elementFn(xmlNode *template_node, xmlNode *parent_node, int depth)
+{
+    String *volatile expr = nodeAttribute(template_node, "expr");
+    String *volatile name;
+    xmlNode *elem;
+    xmlNode *child;
+
+    UNUSED(depth);
+
+    if (!expr) {
+	RAISE(XML_PROCESSING_ERROR,
+	      newstr("No expr field provided for skit_element"));
+    }
+    BEGIN {
+	name = (String *) evalSexp(expr->value);
+	elem = addElement(parent_node, dereference(name));
+	child = processChildren(template_node, elem, depth + 1);
+    }
+    EXCEPTION(ex);
+    FINALLY {
+	objectFree((Object *) name, TRUE);
+	objectFree((Object *) expr, TRUE);
     }
     END;
     return NULL;
@@ -2042,6 +2079,7 @@ initSkitProcessors()
 	addProcessor("attribute", &attributeFn);
 	addProcessor("attr", &attributeFn);
 	addProcessor("diff", &diffFn);
+	addProcessor("element", &elementFn);
 	addProcessor("exception", &execException);
 	addProcessor("exec", &execFn);
 	addProcessor("exec_func", &execExecuteFunction);

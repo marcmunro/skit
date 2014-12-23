@@ -5,17 +5,18 @@
    xmlns:xi="http://www.w3.org/2003/XInclude">
   <skit:runsql var="server" file="sql/foreign_servers.sql">
     <foreign_server>
-     <skit:attr name="name"/>
-     <skit:attr name="owner"/>
-     <skit:attr name="foreign_data_wrapper"/>
-     <skit:attr name="type"/>
-     <skit:attr name="version"/>
-     <skit:attr name="options"/>
+      <skit:attr name="name"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="foreign_data_wrapper"/>
+      <skit:attr name="type"/>
+      <skit:attr name="version"/>
+      <skit:exec_function name="extract_options"
+			  options="(select tuple 'options')"/>
 
-     <skit:exec_function name="grants_from_privs"
-			 privileges="(select tuple 'privs')"
-			 owner="(select tuple 'owner')"
-			 automatic="&lt; 
+      <skit:exec_function name="grants_from_privs"
+			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
+			  automatic="&lt; 
 			     ((select tuple 'owner') . (list 'usage'))&gt;"/>
     </foreign_server>
   </skit:runsql>

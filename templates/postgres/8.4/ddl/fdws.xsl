@@ -7,74 +7,6 @@
    version="1.0">
 
 
-  <xsl:template name="process-option">
-    <xsl:param name="option"/>
-    <xsl:param name="comma"/>
-    <xsl:if test="$comma">
-      <xsl:text>,&#x0A;        </xsl:text>
-    </xsl:if>
-    <xsl:value-of select="substring-before($option, '=')"/>
-    <xsl:text> &apos;</xsl:text>
-    <xsl:value-of select="substring-after($option, '=')"/>
-    <xsl:text>&apos;</xsl:text>
-  </xsl:template>
-
-  <xsl:template name="process-options">
-    <xsl:param name="options"/>
-    <xsl:param name="comma" select="''"/>
-    <xsl:choose>
-      <xsl:when test="substring($options,1,1)='&quot;'">
-	<xsl:call-template name="process-option">
-	  <xsl:with-param name="option">
-	    <xsl:choose>
-	      <xsl:when test="contains($options, '&quot;,')">
-		<xsl:value-of 
-		    select="substring-before(substring($options,2),
-			                     '&quot;,')"/>
-	      </xsl:when>
-	      <xsl:otherwise>
-		<xsl:value-of 
-		    select="substring($options,2,
-			              string-length($options) - 2)"/>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:with-param>
-	  <xsl:with-param name="comma" select="$comma"/>
-	</xsl:call-template>
-	<xsl:if test="contains($options, '&quot;,')">
-	  <xsl:call-template name="process-options">
-	    <xsl:with-param name="options" 
-			    select="substring-after($options, '&quot;,')"/>
-	    <xsl:with-param name="comma" select="','"/>
-	  </xsl:call-template>
-	</xsl:if>
-      </xsl:when>
-      <xsl:otherwise>
-	<xsl:call-template name="process-option">
-	  <xsl:with-param name="option">
-	    <xsl:choose>
-	      <xsl:when test="contains($options, ',')">
-		<xsl:value-of 
-		    select="substring-before($options, ',')"/>
-	      </xsl:when>
-	      <xsl:otherwise>
-		<xsl:value-of select="$options"/>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </xsl:with-param>
-	  <xsl:with-param name="comma" select="$comma"/>
-	</xsl:call-template>
-	<xsl:if test="contains($options, ',')">
-	  <xsl:call-template name="process-options">
-	    <xsl:with-param name="options" 
-			    select="substring-after($options, ',')"/>
-	    <xsl:with-param name="comma" select="','"/>
-	  </xsl:call-template>
-	</xsl:if>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
-
   <xsl:template match="foreign_data_wrapper" mode="build">
     <xsl:value-of 
 	select="concat('create foreign data wrapper ', ../@qname,
@@ -89,17 +21,18 @@
 	<xsl:text>no validator</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:if test="@options">
-      <xsl:variable name="options" 
-		    select="substring(@options, 2, 
-			              string-length(@options) - 2)"/>
+    <xsl:if test="option">
       <xsl:text>&#x0A;    options(</xsl:text>
-      <xsl:call-template name="process-options">
-	<xsl:with-param name="options" select="$options"/>
-      </xsl:call-template>
+      <xsl:for-each select="option">
+	<xsl:if test="position() != 1">
+	  <xsl:text>,&#x0A;            </xsl:text>
+	</xsl:if>
+	<xsl:value-of 
+	    select='concat(@name, " &apos;", @value, "&apos;")'/>
+      </xsl:for-each>
       <xsl:text>)</xsl:text>
     </xsl:if>
-     <xsl:text>;&#x0A;</xsl:text>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
   <xsl:template match="foreign_data_wrapper" mode="drop">
@@ -108,5 +41,26 @@
 		       ../@qname, ';&#x0A;')"/>
   </xsl:template>
 
+  <xsl:template match="foreign_data_wrapper" mode="diff">
+    <do-print/>
+    <xsl:text>&#x0A;</xsl:text>
+    <xsl:for-each select="../element/option">
+      <xsl:value-of select="concat('alter foreign data wrapper ', 
+			           ../../@qname, ' options (')"/>
+      <xsl:choose>
+	<xsl:when test="../@status='gone'">
+	  <xsl:value-of select="concat('drop ', @name, ');&#x0A;')"/>
+	</xsl:when>
+	<xsl:when test="../@status='new'">
+	  <xsl:value-of select='concat("add ", @name, " &apos;",
+				       @value, "&apos;);&#x0A;")'/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select='concat("add ", @name, " &apos;",
+				       @value, "&apos;);&#x0A;")'/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:template>
 </xsl:stylesheet>
 

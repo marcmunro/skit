@@ -24,7 +24,9 @@
     <attribute name="validator_proc" rebuild="true"/>
     <attribute name="validator_schema" rebuild="true"/>
     <attribute name="owner" rebuild="true"/>
-    <attribute name="options" rebuild="true"/>
+    <element type="option" key="name">
+      <attribute name="value"/>
+    </element>
   </dbobject>	
 
 </skit:inclusion>

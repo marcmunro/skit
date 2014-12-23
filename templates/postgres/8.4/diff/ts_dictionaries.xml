@@ -23,7 +23,9 @@
     </attribute>
     <attribute name="template_name" rebuild="true"/>
     <attribute name="template_schema" rebuild="true"/>
-    <attribute name="init_options" rebuild="true"/>
+    <element type="init_option" key="name" rebuild="true">
+      <attribute name="value" rebuild="true"/>
+    </element>
     <element type="comment">
       <text/>
     </element>

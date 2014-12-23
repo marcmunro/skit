@@ -167,6 +167,45 @@
 	</skit:if>
       </skit:function>
 		     
+
+      <skit:function name="extract_options">
+	<skit:parameter name="options"/>
+	<skit:parameter name="element_name" default="'option'"/>
+
+	<skit:if test="options">
+	  <skit:var name="val" expr="nil"/>
+	  <skit:var name="prev" expr="nil"/>
+	  <skit:var name="optionlist"
+		    expr="(split (replace options /^\\{(.*)\\}$/ '\1') ',')"/>
+	  <skit:foreach from="optionlist" var="this">
+	    <!-- The regexps below remove any escaped characters, and then
+	         remove anything that is not a quote, finally removing
+		 all paired quotes.  If the remaining string contains a
+		 quote character, then the quotes in THIS were not
+		 balanced and THIS should be joined with the following
+		 entry from optionlist.  -->
+	    <skit:exec expr="(setq val (concat prev this))"/>
+	    <skit:var name="balanced"
+		      expr='(replace (replace (replace val /\\\\./ "")
+			                       /[^&quot;]/ "")
+				     /(&quot;&quot;)*/ "")'/>
+	    <skit:if test="(string= balanced (chr 34))">
+	      <skit:exec expr="(setq prev (concat val ','))"/>
+	    </skit:if>
+	    <skit:if test="(not (string= balanced (chr 34)))">
+	      <!-- Eliminate any leading and trailing quotes.  -->
+	      <skit:exec 
+		  expr='(setq val (replace val /^&quot;(.*)&quot;$/ "\\1"))'/>
+	      <skit:element expr="element_name">
+		<skit:var name="parts" expr="(split val '=')"/>
+		<skit:attr name="name" expr="(select parts 0)"/>
+		<skit:attr name="value" expr="(join (cdr parts) '='))"/>
+	      </skit:element>
+	    </skit:if>
+	  </skit:foreach>
+	</skit:if>
+      </skit:function>
+
       <!-- An example of a skit debug call -->
       <!-- <skit:exec expr="(debug 'PRIVNAMES' privnames)"/> -->
       <skit:attr name="port" expr="port"/>

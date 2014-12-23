@@ -13,8 +13,10 @@
       <skit:attr name="owner"/>
       <skit:attr name="template_name"/>
       <skit:attr name="template_schema"/>
-      <skit:attr name="init_options"/>
       <skit:attr name="extension"/>
+      <skit:exec_function name="extract_options"
+			  options="(select tuple 'init_options')"
+			  element_name="'init_option'"/>
       <skit:if test="(select tsdict 'comment')">
 	<comment>
 	  <skit:text expr="(select tsdict 'comment')"/>

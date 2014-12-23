@@ -23,9 +23,11 @@
     </attribute>
     <attribute name="foreign_data_wrapper" rebuild="true"/>
     <attribute name="type" rebuild="true"/>
-    <attribute name="version" rebuild="true"/>
+    <attribute name="version"/>
     <attribute name="owner" rebuild="true"/>
-    <attribute name="options" rebuild="true"/>
+    <element type="option" key="name">
+      <attribute name="value"/>
+    </element>
   </dbobject>	
 
 </skit:inclusion>

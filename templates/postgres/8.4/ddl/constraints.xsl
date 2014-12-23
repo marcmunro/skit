@@ -96,8 +96,16 @@
 	  <xsl:value-of select="skit:dbquote(@name)"/>
 	</xsl:for-each>
 	<xsl:text>)</xsl:text>
-	<xsl:if test="@options">
-	  <xsl:value-of select="concat('&#x0A;  with (', @options, ')')"/>
+	<xsl:if test="option">
+	  <xsl:text>&#x0A;  with (</xsl:text>
+	  <xsl:for-each select="option">
+	    <xsl:if test="position() != 1">
+	      <xsl:text>,&#x0A;        </xsl:text>
+	    </xsl:if>
+	    <xsl:value-of 
+		select='concat(@name, " = ", @value)'/>
+	  </xsl:for-each>
+	  <xsl:text>)</xsl:text>
 	</xsl:if>
 	<xsl:if test="@tablespace">
 	  <xsl:value-of 

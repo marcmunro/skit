@@ -11,7 +11,6 @@
     <attribute name="deferred" rebuild="true"/>
     <attribute name="deferrable" rebuild="true"/>
     <attribute name="source" rebuild="true"/>
-    <attribute name="options" rebuild="true"/>
     <attribute name="tablespace" rebuild="true"/>
     <attribute name="owner" rebuild="true"/>
     <attribute name="access_method" rebuild="true"/>
@@ -21,6 +20,9 @@
     <attribute name="confupdtype" rebuild="true"/>
     <attribute name="confdeltype" rebuild="true"/>
     <attribute name="is_local" rebuild="true"/>
+    <element type="option" key="name" rebuild="true">
+      <attribute name="value" rebuild="true"/>
+    </element>
 
     <element type="comment">
       <text/>

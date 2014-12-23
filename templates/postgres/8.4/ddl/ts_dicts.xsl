@@ -11,9 +11,12 @@
 	select="concat('create text search dictionary ', ../@qname,
 		       ' (&#x0A;    template = ', 
 		       skit:dbquote(@template_schema, @template_name))"/>
-    <xsl:if test="@init_options">
-      <xsl:value-of 
-	  select="concat(',&#x0A;    ', @init_options)"/>
+
+    <xsl:if test="init_option">
+      <xsl:for-each select="init_option">
+	<xsl:value-of 
+	    select='concat(",&#x0A;     ", @name, " = ", @value)'/>
+      </xsl:for-each>
     </xsl:if>
     <xsl:text>);&#x0A;</xsl:text>
   </xsl:template>
