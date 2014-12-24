@@ -1019,6 +1019,10 @@ create table collated (
 );
 
 
+-- Range types
+create type myint8_range as range (
+    subtype = int8);
+
 
 
 DBEOF

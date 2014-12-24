@@ -29,6 +29,10 @@ select p.oid as oid,
        nullif(p.probin, '-') as bin,
        case when r.rngtypid is not null 
            then true else null end as is_canonical_for_range,
+       case when ts.oid is not null 
+           then true else null end as is_for_shell_type,
+       ts.typname as shell_type_name,
+       tsn.nspname as shell_type_schema,
        coalesce(r.rngtypid::oid, t.oid::oid) as typoid,
        t.typinput::oid as type_input_oid,
        t.typoutput::oid as type_output_oid,
@@ -52,8 +56,14 @@ select p.oid as oid,
         or t.typsend = p.oid
         or t.typanalyze = p.oid)
    and t.typtype = 'b'
-  left outer join  pg_catalog.pg_range r
+  left outer join pg_catalog.pg_range r
     on r.rngcanonical = p.oid
+  left outer join (pg_catalog.pg_type ts
+          inner join pg_catalog.pg_namespace tsn
+	     on tsn.oid = ts.typnamespace)
+    on ts.oid = p.prorettype
+   and ts.typtype = 'p'
+   and not ts.typisdefined
   left outer join (pg_catalog.pg_depend dx -- dependency on extension
           inner join pg_catalog.pg_extension x
 	     on x.oid = dx.refobjid
@@ -68,7 +78,7 @@ select p.oid as oid,
 	    and crt.relname = 'pg_type'
 	   inner join pg_catalog.pg_type rt
 	      on rt.oid = drt.refobjid
-	     and rt.typtype = 'r')
+	     and rt.typtype in ('p', 'r'))
     on drt.objid = p.oid   
    and drt.deptype = 'i'
    and l.lanname = 'internal'

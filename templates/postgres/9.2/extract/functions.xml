@@ -42,6 +42,9 @@
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
       	<skit:attr name="is_canonical_for_range"/>
+      	<skit:attr name="is_for_shell_type"/>
+      	<skit:attr name="shell_type_name"/>
+      	<skit:attr name="shell_type_schema"/>
       	<skit:attr name="cost"/>
       	<skit:attr name="rows"/>
 

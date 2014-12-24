@@ -996,4 +996,31 @@ create table collated (
 
 comment on collation my_collation is 'C';
 
+
+-- Range types
+create type myint8_range;
+
+create 
+function myint8_range_canon(_in myint8_range)
+    returns myint8_range
+as 'int8range_canonical'
+language internal immutable strict;
+
+create 
+function myint8_range_diff(_in1 int8, _in2 int8)
+    returns double precision as
+$$
+begin
+   return 4;
+end;
+$$
+language plpgsql immutable;
+
+create type myint8_range as range (
+    subtype = int8, 
+    canonical = myint8_range_canon,
+    subtype_diff = myint8_range_diff);
+
+
+
 DBEOF

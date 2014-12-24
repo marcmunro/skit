@@ -84,14 +84,24 @@
   </xsl:template>
 
   <xsl:template match="function" mode="build">
-    <xsl:if test="@is_canonical_for_range">
-      <!-- Build the shell type before creating the canonical function -->
-      <xsl:value-of 
-	  select="concat('&#x0A;create type ',
-	                 skit:dbquote(handler-for-type/@schema,
-			              handler-for-type/@name),
-			 ';&#x0A;')"/>
-    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="@is_canonical_for_range">
+	<!-- Build the shell type before creating the canonical function -->
+	<xsl:value-of 
+	    select="concat('&#x0A;create type ',
+	                   skit:dbquote(handler-for-type/@schema,
+			                handler-for-type/@name),
+			   ';&#x0A;')"/>
+      </xsl:when>
+      <xsl:when test="@is_for_shell_type">
+	<!-- Build the shell type -->
+	<xsl:value-of 
+	    select="concat('&#x0A;create type ',
+	                   skit:dbquote(@shell_type_schema,
+			                @shell_type_name),
+			   ';&#x0A;')"/>
+      </xsl:when>
+    </xsl:choose>
     <xsl:call-template name="function"/>
   </xsl:template>
 
