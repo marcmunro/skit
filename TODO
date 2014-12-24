@@ -7,7 +7,14 @@ type changes including range types
 
 9.2 loads of stuff
 
+
+range functions
+
 security barrier views
+window functions
+leakproof functions
+transform functions?
+
 
 
 deferable constraints? 9.0 onwards

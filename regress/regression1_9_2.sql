@@ -201,7 +201,8 @@ create type "public"."mychar"(
   storage = plain,
   delimiter = ',',
   category = 's',
-  preferred = true);
+  preferred = true,
+  collatable = true);
 
 comment on type "public"."mychar" is
 'mychar';
@@ -1224,6 +1225,39 @@ create collation wiblish (locale = 'C');
 create table collated (
   col1   text collate wiblish
 );
+
+create type wiblish_thing as (
+  wibbly  char collate wiblish
+);
+
+
+-- Range types
+create type float8_range as range (subtype = float8, subtype_diff = float8mi);
+
+
+create type myint8_range;
+
+create 
+function myint8_range_canon(_in myint8_range)
+    returns myint8_range
+as 'int8range_canonical'
+language internal immutable strict;
+
+create 
+function myint8_range_diff(_in1 int8, _in2 int8)
+    returns double precision as
+$$
+begin
+   return 4;
+end;
+$$
+language plpgsql immutable;
+
+create type myint8_range as range (
+    subtype = int8, 
+    canonical = myint8_range_canon,
+    subtype_diff = myint8_range_diff);
+
 
 DBEOF
 

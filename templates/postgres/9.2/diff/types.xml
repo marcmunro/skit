@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="type" key="fqn">
+    <attribute name="owner">
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
+    </attribute>
+
+    <attribute name="subtype" rebuild="true"/>
+    <attribute name="delimiter" rebuild="true"/>
+    <attribute name="typelen" rebuild="true"/>
+    <attribute name="alignment" rebuild="true"/>
+    <attribute name="storage" rebuild="true"/>
+    <attribute name="passbyval" rebuild="true"/>
+    <attribute name="is_defined" rebuild="true"/>
+    <attribute name="type_category" rebuild="true"/>
+    <attribute name="is_preferred" rebuild="true"/>
+    <attribute name="subtype_name" rebuild="true"/>
+    <attribute name="subtype_schema" rebuild="true"/>
+    <attribute name="collation_name" rebuild="true"/>
+    <attribute name="collation_schema" rebuild="true"/>
+    <attribute name="opclass_name" rebuild="true"/>
+    <attribute name="opclass_schema" rebuild="true"/>
+    <attribute name="canonical_name" rebuild="true"/>
+    <attribute name="canonical_schema" rebuild="true"/>
+    <attribute name="subdiff_name" rebuild="true"/>
+    <attribute name="subdiff_schema" rebuild="true"/>
+
+    <element type="label" key="seq_no">
+      <attribute name="label" rebuild="true"/>
+    </element>
+
+    <element type="column" key="id">
+      <attribute name="name" rebuild="true"/>
+      <attribute name="type" rebuild="true"/>
+      <attribute name="type_schema" rebuild="true"/>
+      <attribute name="collation_name" rebuild="true"/>
+      <attribute name="collation_schema" rebuild="true"/>
+      <element type="comment">
+	<text/>
+      </element>
+    </element>
+
+    <element type="comment">
+      <text/>
+    </element>
+
+  </dbobject>	
+
+</skit:inclusion>  

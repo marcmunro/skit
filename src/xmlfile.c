@@ -390,7 +390,7 @@ elementFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     }
     BEGIN {
 	name = (String *) evalSexp(expr->value);
-	elem = addElement(parent_node, dereference(name));
+	elem = addElement(parent_node, (String *) dereference((Object *) name));
 	child = processChildren(template_node, elem, depth + 1);
     }
     EXCEPTION(ex);
@@ -399,7 +399,7 @@ elementFn(xmlNode *template_node, xmlNode *parent_node, int depth)
 	objectFree((Object *) expr, TRUE);
     }
     END;
-    return NULL;
+    return child;
 }
 
 static xmlNode *

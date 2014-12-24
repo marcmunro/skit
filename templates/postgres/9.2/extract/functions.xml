@@ -41,6 +41,7 @@
       	<skit:attr name="security_definer"/>
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>
+      	<skit:attr name="is_canonical_for_range"/>
       	<skit:attr name="cost"/>
       	<skit:attr name="rows"/>
 
@@ -51,13 +52,12 @@
 
 	<skit:if test="typoid">
 	  <handler-for-type>	
-	    <skit:exec expr="(debug 'TYPE ' typoid)"/>
 	    <skit:attr name="name"
-		       expr="(select basetypes typoid 'name')"/>
-	    <skit:exec expr="(debug 'NAME ' (or (select basetypes typoid 'name')
-			                        (select rangetypes typoid 'name')))"/>
+		       expr="(or (select basetypes typoid 'name')
+	                         (select rangetypes typoid 'name'))"/>
 	    <skit:attr name="schema"
-		       expr="(select basetypes typoid 'schema')"/>
+		       expr="(or (select basetypes typoid 'schema')
+			         (select rangetypes typoid 'schema'))"/>
 	    <!-- We provide the signatures only of functions that must be
 		 defined before the current type handler function -->
 	    

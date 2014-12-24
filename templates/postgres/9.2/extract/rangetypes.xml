@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="rangetype" from="rangetypes" 
+		filter="(string= (select rangetype 'schema')
+			         (select schema 'name'))">
+    <type>
+      <skit:attr name="name"/>
+      <skit:attr name="schema"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="subtype" expr="'range'"/>
+      <skit:attr name="is_defined" expr='t'/>
+      <skit:attr name="subtype_name"/>
+      <skit:attr name="subtype_schema"/>
+      <skit:attr name="collation_name"/>
+      <skit:attr name="collation_schema"/>
+      <skit:attr name="opclass_name"/>
+      <skit:attr name="opclass_schema"/>
+      <skit:attr name="canonical_name"/>
+      <skit:attr name="canonical_schema"/>
+      <skit:if test="(select tuple 'canonical_name')">
+	<skit:let>
+	  <skit:var name="function_sig" 
+		    expr="(select function_sigs 
+			          (select tuple 'canonical_oid'))"/>
+	  <skit:if test="function_sig">
+	    <skit:attr name="canonical_signature"
+		       expr="function_sig"/>
+	  </skit:if>
+	</skit:let>
+      </skit:if>
+      <skit:attr name="subdiff_name"/>
+      <skit:attr name="subdiff_schema"/>
+      <skit:if test="(select tuple 'subdiff_name')">
+	<skit:let>
+	  <skit:var name="function_sig" 
+		    expr="(select function_sigs 
+			          (select tuple 'subdiff_oid'))"/>
+	  <skit:if test="function_sig">
+	    <skit:attr name="subdiff_signature"
+		       expr="function_sig"/>
+	  </skit:if>
+	</skit:let>
+      </skit:if>
+      <skit:attr name="extension"/>
+      <skit:if test="(select tuple 'comment')">
+      	<comment>
+      	  <skit:text expr="(select tuple 'comment')"/>
+      	</comment>
+      </skit:if>
+    </type>
+  </skit:foreach>
+</skit:inclusion>  
+
