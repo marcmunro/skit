@@ -43,6 +43,11 @@
       </dependencies>
     </attribute>
 
+    <attribute name="with_oids"/>
+    <element type="option" key="name">
+      <attribute name="value"/>
+    </element>
+
     <element type="inherits" key="inherit_order">
       <attribute name="schema"/>
       <attribute name="name"/>

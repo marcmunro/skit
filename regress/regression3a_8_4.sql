@@ -722,16 +722,17 @@ create table x (
   val   varchar(20) not null
 );
 
---  changes to ownership, comment
+--  changes to ownership, comment, with_oids
 create table o (
   key	integer not null,
   val   varchar(20) not null
-);
+) with (oids);
 
 comment on table o is 
 'This is table o';
 
---  add/drop columns, change size and precision, change nullability and default
+--  add/drop columns, change size and precision, change nullability and
+--  default, and change fillfactor
 create table c (
   key	integer not null,
   val1  varchar(20) not null,
@@ -740,7 +741,7 @@ create table c (
   val4  vv2_t not null,
   val5  text,
   val8  varchar(20) not null
-);
+) with (fillfactor = 90);
 
 -- column comments
 comment on column c.key is 'key';

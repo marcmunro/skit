@@ -4,10 +4,12 @@ select c.oid::oid as oid,
        n.nspname as schema,
        c.relname as name,
        r.rolname as owner,
+       case when c.relhasoids then 't' else null end as with_oids,
        case when t.spcname is null then td.spcname
        else t.spcname end as tablespace, 
        t.spcname is null as tablespace_is_default,
        c.relacl::text as privs,
+       regexp_replace(c.reloptions::text, '{(.*)}', E'\\1') as options,
        quote_literal(obj_description(c.oid, 'pg_class')) as comment
 from   pg_catalog.pg_class c
     inner join pg_catalog.pg_database d

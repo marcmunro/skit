@@ -61,4 +61,5 @@ select a.attnum as colnum,
            on (n3.oid = t2.typnamespace))
     on (    t2.oid = t.typelem
         and t.typlen < 0)
-order by iset.seq_no, a.attnum;
+ where a.attnum > 0
+ order by iset.seq_no, a.attnum;

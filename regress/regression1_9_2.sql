@@ -225,7 +225,7 @@ create table "public"."additional" (
   "str1"                text not null,
   "str2"                varchar(40),
   mystr                 mychar
-) tablespace tbs3;
+) with (oids) tablespace tbs3;
 
 alter table public.additional
   alter column str2 set storage main;
@@ -922,7 +922,7 @@ create table schema2.keys_table (
   key2          int4 not null,
   key3          int4 not null,
   key4          int4
-);
+) with (fillfactor = 90, oids);
 
 alter table schema2.keys_table add constraint thing__pk
   primary key(key1, key2, key3, key4);
@@ -988,7 +988,8 @@ begin
     return x;
 end;
 $$
-language plpgsql immutable strict;
+language plpgsql immutable strict
+set search_path = schema2;
 
 create or replace rule keys_rule2 as on insert to schema2.keys2
 where key5 is not null

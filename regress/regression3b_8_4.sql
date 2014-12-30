@@ -733,7 +733,7 @@ set session authorization keep;
 create table o (
   key	integer not null,
   val   varchar(20) not null
-);
+) with (fillfactor = 90);
 reset session authorization;
 
 
@@ -745,7 +745,7 @@ create table c (
   val4  vv2_t,
   val5  varchar,
   val9  varchar(20)
-);
+) with (fillfactor = 70);
 
 comment on column c.key is 'changed';
 comment on column c.val1 is 'val1';

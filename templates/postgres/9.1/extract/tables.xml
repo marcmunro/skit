@@ -13,8 +13,11 @@
 	<skit:attr name="name"/>
 	<skit:attr name="schema"/>
 	<skit:attr name="owner"/>
+	<skit:attr name="with_oids"/>
 	<skit:attr name="tablespace"/>
 	<skit:attr name="tablespace_is_default"/>
+	<skit:exec_function name="extract_options"
+			    options="(select tuple 'options')"/>
 	<skit:attr name="privs"/>
 	<skit:attr name="is_foreign"/>
 	<skit:attr name="foreign_server_name"/>

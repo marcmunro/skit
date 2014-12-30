@@ -3,19 +3,12 @@ Also config for the same
 
 
 
+3 on commit stuff for tables
+4 column privs
 
-
-window functions  (8.4 onwards)
-function attributes:
-  cost
-  configuration_parameter
-  with (attributes)
-
-tables with oids
 leakproof functions
 transform functions?
 security barrier views
-
 
 
 deferable constraints? 9.0 onwards

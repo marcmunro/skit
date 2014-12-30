@@ -35,8 +35,26 @@
       </xsl:for-each>
       <xsl:value-of select="')'"/>
     </xsl:if>
+    <xsl:choose>
+      <xsl:when test="option">
+	<xsl:text>&#x0A;  with (</xsl:text>
+	<xsl:for-each select="option">
+	  <xsl:if test="position()!=1">
+	    <xsl:text>,</xsl:text>
+	  </xsl:if>
+	  <xsl:value-of select="concat(@name, ' = ', @value)"/>
+	</xsl:for-each>
+	<xsl:if test ="@with_oids">
+	  <xsl:text>, oids</xsl:text>
+	</xsl:if>
+	<xsl:text>)</xsl:text>
+      </xsl:when>
+      <xsl:when test ="@with_oids">
+	<xsl:text>&#x0A;  with (oids)</xsl:text>
+      </xsl:when>
+    </xsl:choose>
     <xsl:if test ="@tablespace_is_default!='t'">
-      <xsl:value-of select="concat('&#x0A;tablespace ', @tablespace)"/>
+      <xsl:value-of select="concat('&#x0A;  tablespace ', @tablespace)"/>
     </xsl:if>
     <xsl:text>;&#x0A;</xsl:text>
 
@@ -124,6 +142,45 @@
 	<xsl:text>;&#x0A;</xsl:text>
       </xsl:for-each>
     </xsl:for-each>
+    <xsl:if test="../element[@type='option']">
+      <do-print/>
+      <xsl:call-template name="alter-table-only-intro"/>
+      <xsl:if test="../element[@type='option' and @status='gone']">
+	<xsl:text>&#x0A;  reset (</xsl:text>
+	<xsl:for-each select="../element[@type='option' and @status='gone']">
+	  <xsl:if test="position()!=1">
+	    <xsl:text>, </xsl:text>
+	  </xsl:if>
+	  <xsl:value-of select="option/@name"/>
+	  <xsl:text>)</xsl:text>
+	</xsl:for-each>
+      </xsl:if>
+      <xsl:if test="../element[@type='option' and @status!='gone']">
+	<xsl:text>&#x0A;  set (</xsl:text>
+	<xsl:for-each select="../element[@type='option' and @status!='gone']">
+	  <xsl:if test="position()!=1">
+	    <xsl:text>, </xsl:text>
+	  </xsl:if>
+	  <xsl:value-of select="concat(option/@name, ' = ', option/@value)"/>
+	  <xsl:text>)</xsl:text>
+	</xsl:for-each>
+      </xsl:if>
+      <xsl:text>;&#x0A;</xsl:text>
+    </xsl:if>
+
+    <xsl:if test="../attribute[@name='with_oids']">
+      <do-print/>
+      <xsl:call-template name="alter-table-only-intro"/>
+      <xsl:choose>
+	<xsl:when test="../attribute[@name='with_oids' and @status='gone']">
+	  <xsl:text> set without oids;&#x0A;</xsl:text>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:text> set with oids;&#x0A;</xsl:text>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
+
   </xsl:template>
 
 </xsl:stylesheet>
