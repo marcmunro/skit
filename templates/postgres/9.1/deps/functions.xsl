@@ -52,6 +52,13 @@
       <dependency fqn="{concat('extension.', ancestor::database/@name,
 			       '.',  @extension)}"/>
     </xsl:if>
+    <xsl:if test="@leakproof">
+      <dependency-set 
+	  fallback="{concat('privilege.role.', @owner, '.superuser')}"
+	  parent="//dbobject[database]">
+	<dependency fqn="{concat('privilege.role.', @owner, '.superuser')}"/>
+      </dependency-set>
+    </xsl:if>
     <xsl:if test="(@language != 'c') and (@language != 'internal')
 	           and (@language != 'sql')">
       <dependency fqn="{concat('language.', ancestor::database/@name, 

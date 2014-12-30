@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="function" key="fqn">
+    <attribute name="owner">
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
+    </attribute>
+    <attribute name="language"/>
+    <attribute name="volatility"/>
+    <attribute name="cost"/>
+    <attribute name="rows"/>
+    <attribute name="security_definer"/>
+    <attribute name="is_strict"/>
+    <attribute name="is_window_fn" rebuild="true"/>
+    <attribute name="leakproof"/>
+    <attribute name="returns_set" rebuild="true"/>
+    <attribute name="bin"/>
+    <element type="result" rebuild="true">
+      <attribute name="type"/>
+      <attribute name="schema"/>
+    </element>
+    <element type="params">
+      <element type="param" key="position">
+	<attribute name="name" rebuild="true"/>
+	<attribute name="mode" rebuild="true"/>
+	<attribute name="default" rebuild="true"/>
+      </element>
+    </element>
+    <element type="config_setting" key="name">
+      <attribute name="setting"/>
+    </element>
+    <element type="source">
+      <text/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+  </dbobject>	
+
+</skit:inclusion>  

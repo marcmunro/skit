@@ -1034,4 +1034,13 @@ create function myrank() returns integer as 'window_rank'
 language internal window;
 
 
+-- Leakproof function
+create function secure(p1 integer) returns integer as
+$$
+begin
+  return p1 - 3;
+end;
+$$
+language plpgsql leakproof;
+
 DBEOF

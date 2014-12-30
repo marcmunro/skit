@@ -118,6 +118,13 @@
 			             ';&#x0A;')"/>
       </xsl:for-each>
     </xsl:if>
+
+    <xsl:if test="../attribute[@name='leakproof' and @status='gone']">
+      <do-print/>
+      <xsl:text>alter function </xsl:text>
+      <xsl:call-template name="function_header"/>
+      <xsl:text> not leakproof;&#x0A;</xsl:text>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="function" mode="diff">
@@ -200,6 +207,11 @@
 	      <xsl:text> security invoker;&#x0A;</xsl:text>
 	    </xsl:otherwise>
 	  </xsl:choose>
+	</xsl:if>
+	<xsl:if test="../attribute[@name='leakproof' and @status!='gone']">
+	  <xsl:text>alter function </xsl:text>
+	  <xsl:call-template name="function_header"/>
+	  <xsl:text> leakproof;&#x0A;</xsl:text>
 	</xsl:if>
 	<xsl:if test="../attribute[@name='cost']">
 	  <xsl:text>alter function </xsl:text>

@@ -21,6 +21,7 @@ select p.oid as oid,
        case when p.proiswindow then 'yes' else null end as is_window_fn,
        case when p.prosecdef then 'yes' else null end as security_definer,
        case when p.proisstrict then 'yes' else null end as is_strict,
+       case when p.proleakproof then 'yes' else null end as leakproof,
        case when p.proretset then 'yes' else null end as returns_set,
        case p.provolatile when 'i' then 'immutable' 
 	    when 's' then 'stable' else 'volatile' end as volatility,
