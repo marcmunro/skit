@@ -38,6 +38,7 @@
       	<skit:attr name="is_strict"/>
       	<skit:attr name="returns_set"/>
       	<skit:attr name="volatility"/>
+      	<skit:attr name="is_window_fn"/>
       	<skit:attr name="security_definer"/>
       	<skit:attr name="bin"/>
       	<skit:attr name="privs"/>

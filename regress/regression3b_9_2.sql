@@ -1022,5 +1022,9 @@ create type myint8_range as range (
     subtype_diff = myint8_range_diff);
 
 
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal;
+
 
 DBEOF

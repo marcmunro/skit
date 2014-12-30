@@ -1023,4 +1023,9 @@ create table collated (
 create type shell1;
 
 
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal window;
+
+
 DBEOF

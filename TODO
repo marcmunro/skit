@@ -6,6 +6,11 @@ Also config for the same
 
 
 window functions  (8.4 onwards)
+function attributes:
+  cost
+  configuration_parameter
+  with (attributes)
+
 tables with oids
 leakproof functions
 transform functions?

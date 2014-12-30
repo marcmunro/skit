@@ -961,4 +961,9 @@ reset session authorization;
 alter user keep with nosuperuser;
 
 
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal;
+
+
 DBEOF

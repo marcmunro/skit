@@ -70,6 +70,9 @@
     <xsl:if test="@is_strict='yes'">
       <xsl:text> strict</xsl:text>
     </xsl:if>
+    <xsl:if test="@is_window_fn='yes'">
+      <xsl:text> window</xsl:text>
+    </xsl:if>
     <xsl:if test="@security_definer='yes'">
       <xsl:text> security definer</xsl:text>
     </xsl:if>

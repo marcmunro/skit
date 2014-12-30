@@ -1194,5 +1194,9 @@ create user mapping for public
     options (user 'major', password 'problem');
 
 
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal window;
+
 DBEOF
 

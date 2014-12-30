@@ -996,4 +996,9 @@ create table collated (
 
 comment on collation my_collation is 'C';
 
+
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal;
+
 DBEOF

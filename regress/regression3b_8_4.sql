@@ -936,4 +936,10 @@ create user mapping for public
     server kong
     options (user 'major', password 'roblem');
 
+
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal;
+
+
 DBEOF

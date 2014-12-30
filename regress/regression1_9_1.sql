@@ -1230,5 +1230,10 @@ create type wiblish_thing as (
   wibbly  char collate wiblish
 );
 
+
+-- Window functions
+create function myrank() returns integer as 'window_rank'
+language internal window;
+
 DBEOF
 
