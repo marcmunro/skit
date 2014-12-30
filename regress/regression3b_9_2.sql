@@ -1036,4 +1036,11 @@ end;
 $$
 language plpgsql;
 
+
+-- Security barrier view
+create table keys (
+  key1 integer, key2 integer);
+
+create view secure_keys as
+  select key1, key2 from keys where key1 > 1000;
 DBEOF

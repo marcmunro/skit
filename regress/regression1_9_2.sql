@@ -1274,5 +1274,9 @@ end;
 $$
 language plpgsql leakproof;
 
+
+-- Security barrier view
+create view secure_keys with (security_barrier) as
+  select key1, key2 from schema2.keys_table where key1 > 1000;
 DBEOF
 
