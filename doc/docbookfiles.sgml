@@ -1,6 +1,0 @@
-<!-- doc/src/sgml/docbookfiles.sgml 
-     A list of the component parts of the skit documentation. -->
-
-<!ENTITY intro      SYSTEM "src/intro.sgml">
-
-

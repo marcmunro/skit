@@ -4,6 +4,8 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    xmlns:xi="http://www.w3.org/2003/XInclude">
 
+  <dbobject type="shelltype" key="fqn"/>
+
   <dbobject type="type" key="fqn">
     <attribute name="owner">
       <!-- See comment in tablespaces.xml for an explanation of this. -->

@@ -16,7 +16,8 @@ top_builddir = $(shell pwd)
 garbage := \\\#*  .\\\#*  *~  *.orig  *.rej  core 
 
 DEFAULT: help
-.PHONEY: DEFAULT all clean list help extract
+
+.PHONY: DEFAULT all clean list help extract
 
 # Connection information for postgres connections
 #DB_PORT = -p 5435

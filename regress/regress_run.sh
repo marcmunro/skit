@@ -245,7 +245,7 @@ regression_test1()
 
 regression_test2()
 {
-    echo "Running regression test 2 (scatter, gather, no privs, no contexts)..." 1>&2
+    echo "Running regression test 2 (scatter, gather)..." 1>&2
     mkdir regress/scratch 2>/dev/null
     rm -rf scratch/dbdump/*
     build_db regression2_`pguver`.sql
@@ -255,10 +255,8 @@ regression_test2()
 	    scratch/dbdump
     
     echo ...running skit generate from scatterfiles... 1>&2
-    gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql \
-	     --ignore-contexts
-    genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql \
-	     --ignore-contexts
+    gendrop scratch/dbdump/cluster.xml scratch/regressdb_drop2.sql 
+    genbuild scratch/dbdump/cluster.xml scratch/regressdb_build2.sql 
     execdrop scratch/regressdb_drop2.sql
     execbuild scratch/regressdb_build2.sql
     dump_db regressdb scratch/regressdb_test2b.dmp ......
@@ -282,8 +280,7 @@ regression_test3()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3b.xml ...
     echo ...running skit generate to create initial drop... 1>&2
-    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql \
-	     --ignore-contexts
+    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql 
     execdrop scratch/regressdb_drop3b.sql
 
     echo ...Creating source diff database... 1>&2
@@ -348,8 +345,7 @@ regression_test4()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump4b.xml ...
     echo ...running skit generate to create initial drop... 1>&2
-    gendrop scratch/regressdb_dump4b.xml scratch/regressdb_drop4b.sql \
-	     --ignore-contexts
+    gendrop scratch/regressdb_dump4b.xml scratch/regressdb_drop4b.sql 
     execdrop scratch/regressdb_drop4b.sql
 
     echo ...Creating source diff database... 1>&2
@@ -388,8 +384,7 @@ regression_test4()
 	regression_ignore4.txt
     diffglobals scratch/regressdb_test4a.gdmp  scratch/regressdb_test4a2.gdmp
 
-    gendrop scratch/regressdb_dump4a.xml scratch/regressdb_drop4a.sql \
-	     --ignore-contexts
+    gendrop scratch/regressdb_dump4a.xml scratch/regressdb_drop4a.sql 
     execdrop scratch/regressdb_drop4a.sql
     rm 	-f ${REGRESS_DIR}/tmp >/dev/null 2>&1
     echo Regression test 4 complete 1>&2
@@ -413,8 +408,7 @@ prep_for_unit_test()
     extract "dbname='regressdb' port=${REGRESSDB_PORT} host=${REGRESSDB_HOST}" \
 	    scratch/regressdb_dump3b.xml ...
     echo ...running skit generate to drop target database... 1>&2
-    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql \
-	     --ignore-contexts
+    gendrop scratch/regressdb_dump3b.xml scratch/regressdb_drop3b.sql 
     execdrop scratch/regressdb_drop3b.sql
     echo ...Creating source diff database... 1>&2
     build_db regression3a_`pguver`.sql

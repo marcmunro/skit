@@ -1,0 +1,11 @@
+<!-- doc/src/sgml/intro.sgml -->
+
+<chapter>
+  <title>What is skit?</title>
+  <para>	
+    Skit is a tool designed to aid database development.  Its primary
+    purpose is to enable developers to manage database development using
+    industry standard Source Code Management (SCM) tools, such
+    as git.
+  </para>
+</chapter>

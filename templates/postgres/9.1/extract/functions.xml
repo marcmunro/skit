@@ -51,11 +51,8 @@
 
 	<skit:if test="typoid">
 	  <handler-for-type>	
-	    <skit:exec expr="(debug 'TYPE ' typoid)"/>
 	    <skit:attr name="name"
 		       expr="(select basetypes typoid 'name')"/>
-	    <skit:exec expr="(debug 'NAME ' (or (select basetypes typoid 'name')
-			                        (select rangetypes typoid 'name')))"/>
 	    <skit:attr name="schema"
 		       expr="(select basetypes typoid 'schema')"/>
 	    <!-- We provide the signatures only of functions that must be

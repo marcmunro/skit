@@ -1019,6 +1019,8 @@ create table collated (
 );
 
 
+-- Shell Types
+create type shell1;
 
 
 DBEOF

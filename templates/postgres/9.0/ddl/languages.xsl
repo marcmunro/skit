@@ -6,6 +6,7 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+
   <xsl:template match="dbobject[@action='build']/language">
     <xsl:choose>
       <xsl:when test="(@name!='plpgsql') or @diff">
@@ -13,13 +14,10 @@
 	     processing a diff.  -->
 	<print>
 	  <xsl:call-template name="feedback"/>
-	  <!-- This direct generation of set session auth is required
-	       because there is no other way of defining the owner using
-	       the create language statement. -->
-	  <xsl:value-of 
-	      select="concat('&#x0A;set session authorization ', 
-		             $apos, @owner, $apos, 
-			     ';&#x0A;create ')"/>
+	  <xsl:text>&#x0A;create </xsl:text>
+	  <xsl:if test="@trusted='yes'">
+	    <xsl:text>trusted </xsl:text>
+	  </xsl:if>
 	  <xsl:if test="@trusted='yes'">
 	    <xsl:text>trusted </xsl:text>
 	  </xsl:if>
@@ -27,8 +25,6 @@
 	      select="concat('language ', ../@qname, ';&#x0A;')"/>
 
 	  <xsl:apply-templates/>
-
-	  <xsl:text>reset session authorization;&#x0A;</xsl:text>
 	</print>
       </xsl:when>
       <xsl:otherwise>

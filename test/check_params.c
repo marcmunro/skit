@@ -789,7 +789,7 @@ END_TEST
 START_TEST(deps)
 {
     char *args[] = {"./skit", "--adddeps",
-		    "regress/scratch/regressdb_dump1a.xml",
+		    "regress/scratch/dbdump/cluster.xml",
 		    "--print", "--full"};
 
     initTemplatePath(".");

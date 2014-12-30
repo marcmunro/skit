@@ -56,13 +56,13 @@
 
     <xsl:for-each select="result">
       <xsl:call-template name="TypeDep">
-	<xsl:with-param name="ignore" select="../handler-for-type"/>
+	<xsl:with-param name="handler_for" select="../handler-for-type"/>
       </xsl:call-template>
     </xsl:for-each>
 
     <xsl:for-each select="params/param">
       <xsl:call-template name="TypeDep">
-	<xsl:with-param name="ignore" select="../../handler-for-type"/>
+	<xsl:with-param name="handler_for" select="../../handler-for-type"/>
       </xsl:call-template>
     </xsl:for-each>
 

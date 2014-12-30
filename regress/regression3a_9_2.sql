@@ -1024,5 +1024,9 @@ create type myint8_range as range (
     subtype = int8);
 
 
+-- Shell Types
+create type shell1;
+
+
 
 DBEOF

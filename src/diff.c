@@ -1375,7 +1375,7 @@ depIsOnRebuild(xmlNode *depnode, Hash *hash)
     boolean result = FALSE;
 
     if (fqn) {
-	/* We only follow fqn dependencies for the purpose of rbuild
+	/* We only follow fqn dependencies for the purpose of rebuild
 	 * promotion. */
 	if (dagnode = (DagNode *) 
 	    dereference(hashGet(hash, (Object *) fqn))) 
@@ -1389,12 +1389,31 @@ depIsOnRebuild(xmlNode *depnode, Hash *hash)
 }
 
 static boolean
+checkFollowedNode(DagNode *node, Hash *hash)
+{
+    String *follows = nodeAttribute(node->dbobject, "follow");
+    DagNode *followee;
+    boolean result = FALSE;
+
+    if (follows) {
+	if (followee = (DagNode *) dereference(hashGet(hash, 
+						       (Object *) follows))) 
+	{
+	    assertDagNode(followee);
+	    result = checkRebuild(followee, hash);
+	}
+
+	objectFree((Object *) follows, TRUE);
+    }
+    return result;
+}
+
+static boolean
 dependsOnRebuild(DagNode *node, Hash *hash)
 {
     xmlNode *dep = NULL;
     boolean result;
     boolean rebuild = FALSE;
-
     if (node->status == VISITING) {
 	/* Cyclic deps are possible here.  This should prevent it from
 	 * being a problem. */
@@ -1410,6 +1429,9 @@ dependsOnRebuild(DagNode *node, Hash *hash)
 	    }
 	    rebuild |= result;
 	}
+    }
+    if (!rebuild) {
+	rebuild = checkFollowedNode(node, hash);
     }
     node->status = UNVISITED;
     return rebuild;

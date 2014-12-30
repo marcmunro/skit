@@ -160,4 +160,12 @@
       </xsl:choose>
     </xsl:for-each>
   </xsl:template>
+
+  <!-- Shell types exist as dbobjects mostly to provide a complete
+       dependency graph.  This is the only ddl that is necessary for
+       such objects.  -->
+  <xsl:template match="shelltype" mode="build">
+    <xsl:value-of select="concat('&#x0A;create type ', ../@qname, ';&#x0A;')"/>
+  </xsl:template>
+
 </xsl:stylesheet>

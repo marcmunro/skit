@@ -4,8 +4,8 @@
 
 <!ENTITY % version SYSTEM "version.sgml">
 %version;
-<!ENTITY % docbookfiles SYSTEM "docbookfiles.sgml">
-%docbookfiles;
+<!ENTITY intro      SYSTEM "src/intro.sgml">
+<!ENTITY whatis     SYSTEM "src/whatis.sgml">
 
 ]>
 
@@ -15,10 +15,8 @@
  <bookinfo>
    <author>
     <personname>
-      <honorific>Mr</honorific>
       <firstname>Marc</firstname>
       <surname>Munro</surname>
-      <othername role='mi'>I</othername>
     </personname>
    </author>
   <productname>skit</productname>
@@ -26,5 +24,6 @@
  </bookinfo>
 
  &intro;
+ &whatis;
 
 </book>

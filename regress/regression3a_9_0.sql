@@ -983,4 +983,7 @@ create table circles (
 -- Language ownership
 create language plpythonu;
 
+-- Shell Types
+create type shell1;
+
 DBEOF

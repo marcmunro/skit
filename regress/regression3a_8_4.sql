@@ -965,4 +965,7 @@ create user mapping for public
     server kong
     options (user 'major', password 'problem');
 
+
+-- Shell Types
+create type shell1;
 DBEOF

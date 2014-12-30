@@ -47,15 +47,6 @@
 	 both.  Any ther non-nil value is equivalent to before. -->
     <option name='de*bug' type='flag' default='false'/>
 
-    <!-- This causes the context handling code that optimises context
-         switches, to be disabled.  The only context that we have right
-         now is for ownership, and the context arrival and departure
-         code causes "set authorization" and "reset authorization"
-         statements to be issued.  TODO: Figure out if ignore-contexts
-	 makes sense as a parameter (I think it is too hard to
-	 understand) -->
-    <option name='i*gnore-contexts' type='flag'/>
-
     <!-- This causes the simple, rather than smart, version of tsort to
          be used.  It is is possible that the smart tsort may be buggy
          or inefficient which is why this option exists. -->
