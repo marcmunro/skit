@@ -42,6 +42,7 @@ select a.attnum as colnum,
        a.attislocal as is_local,
        pg_catalog.pg_get_expr(d.adbin, d.adrelid) as default,
        nullif(a.attstattarget, -1) as stats_target,
+       a.attacl::text as privs,
        quote_literal(col_description(a.attrelid, a.attnum)) as comment
   from inheritence_set iset
  inner join pg_catalog.pg_attribute a

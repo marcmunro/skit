@@ -1043,4 +1043,12 @@ create table keys (
 
 create view secure_keys as
   select key1, key2 from keys where key1 > 1000;
+
+
+-- Column privileges
+create table cols (
+  col1 integer not null,
+  col2 integer not null
+);
+
 DBEOF

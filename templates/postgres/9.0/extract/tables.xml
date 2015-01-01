@@ -70,6 +70,14 @@
 	      <skit:attr name="is_local"/>
 	      <skit:attr name="default"/>
 	      <skit:attr name="stats_target"/>
+              <skit:attr name="privs"/>
+
+              <skit:exec_function name="grants_from_privs"
+                            privileges="(select column 'privs')"
+                            owner="(select table 'owner')"
+                            only_defined="t"
+                            automatic="nil"/>
+
 	      <skit:if test="(select column 'comment')">
 		<comment>
 		  <skit:text expr="(select column 'comment')"/>

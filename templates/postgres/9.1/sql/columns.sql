@@ -44,6 +44,7 @@ select a.attnum as colnum,
        nullif(a.attstattarget, -1) as stats_target,
        col.collname as collation_name,
        coln.nspname as collation_schema,
+       a.attacl::text as privs,
        quote_literal(col_description(a.attrelid, a.attnum)) as comment
   from inheritence_set iset
  inner join pg_catalog.pg_attribute a

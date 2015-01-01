@@ -1278,5 +1278,15 @@ language plpgsql leakproof;
 -- Security barrier view
 create view secure_keys with (security_barrier) as
   select key1, key2 from schema2.keys_table where key1 > 1000;
+
+
+-- Column privileges
+create table cols (
+  col1 integer not null,
+  col2 integer not null
+);
+
+grant select (col1) on cols to keep;
+
 DBEOF
 

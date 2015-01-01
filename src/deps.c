@@ -846,59 +846,29 @@ sortDepsets(volatile ResolverState *res_state)
 	  sizeof(Vector *), depsetcmp);
 }
 
-static boolean
+static void
 addFoundDeps(
-    DependencySet *depset, 
+    DependencySet *depset,
     Dependency *dep, 
-    Object *deps, 
-    boolean make_copy,
-    volatile ResolverState *res_state)
+    DagNode *depnode,
+    int elem)
 {
-    //Vector *vec;
-    //int i;
+    dep->dep = depnode;
 
-    if (deps->type == OBJ_VECTOR) {
-	dbgSexp(deps);
-	dbgSexp(depset);
-	RAISE(NOT_IMPLEMENTED_ERROR, newstr("UNTESTED"));
-#ifdef QQ
-	if (!depset) {
-	    RAISE(NOT_IMPLEMENTED_ERROR, 
-		  newstr("untested - vectors without depsets "
-			 "in addFoundDeps."));
-	    depset = dependencySetNew(node);
-	    vectorPush(res_state->dependency_sets, (Object *) depset);
-	}
-	vec = (Vector *) deps;
-	EACH(vec, i) {
-	    make_copy = addFoundDeps(depset, dep, ELEM(vec, i),
-				     make_copy, res_state);
-	}
-	objectFree((Object *) vec, FALSE);
-#endif
-	return TRUE;
+    if (dep->dep->is_fallback && !dep->is_forwards) {
+	/* This is a backwards dep on a dsfallback node, which should
+	 * not happen.  Instead we will make it a backwards dep
+	 * on the dsendfallback node.  When we later find this in
+	 * redirectDependencies(), we will add the correct
+	 * dependency to the dsfallback node. */
+	
+	dep->dep = dep->dep->mirror_node;
     }
-    else if (deps->type == OBJ_DAGNODE) {
-	dep->dep = (DagNode *) deps;
+    myVectorPush(&depset->definition_node->deps, (Object *) dep);
 
-	if (dep->dep->is_fallback && !dep->is_forwards) {
-	    /* This is a backwards dep on a dsfallback node, which should
-	     * not happen.  Instead we will make it a backwards dep
-	     * on the dsendfallback node.  When we later find this in
-	     * redirectDependencies(), we will add the correct
-	     * dependency to the dsfallback node. */
-
-	    dep->dep = dep->dep->mirror_node;
-	}
-	myVectorPush(&depset->definition_node->deps, (Object *) dep);
-	return TRUE;
-    }
-    else {
-	RAISE(TSORT_ERROR, 
-	      newstr("Unexpected object type (%d) in addFoundDeps()", 
-		     deps->type));
-    }
-    return make_copy;
+    /* Replace the dependency in the depset with a reference in order to
+     * prevent it from being freed multiple times. */
+    ELEM(depset->deps, elem) = (Object *) objRefNew((Object *) dep);
 }
 
 static void
@@ -906,8 +876,11 @@ depsetsIntoDeps(DependencySet *depset, volatile ResolverState *res_state)
 {
     int i;
     Dependency *dep;
-    boolean added;
     Object *found;
+    Vector *vec;
+    DagNode *depnode;
+    Vector *remaining = NULL;
+    int j;
 
     assertDependencySet(depset);
     if (depset->deps->elems) {
@@ -918,14 +891,23 @@ depsetsIntoDeps(DependencySet *depset, volatile ResolverState *res_state)
 		     * probably as part of fallback handling.  Since it
 		     * has already been set up, we have nothing more to
 		     * do. */
-		    return;
+		    break;
 		}
-		added = FALSE;
 		found = findNodesByQn(dep->qn, dep->qn_is_full, res_state);
 		if (found) {
 		    if ((found->type == OBJ_VECTOR)) {
 			found = getAppropriateDepsFromVector(
 			    (Vector *) found, dep);
+			if (found && (found->type == OBJ_VECTOR)) {
+			    vec = (Vector *) found;
+			    EACH(vec, j) {
+				if (j) { /* Ignore element 0 */
+				    myVectorPush(&remaining, ELEM(vec, j));
+				}
+			    }
+			    found = ELEM(vec, 0);
+			    objectFree((Object *) vec, FALSE);
+			}
 		    }
 		    else {
 			assertDagNode(found);
@@ -935,20 +917,25 @@ depsetsIntoDeps(DependencySet *depset, volatile ResolverState *res_state)
 		    }
 		}
 		if (found) {
-		    added = addFoundDeps(depset, dep, found, FALSE, res_state);
-		}
-		if (added) {
-		    /* Replace the dependency in the depset with a
-		     * reference in order to prevent it from being freed
-		     * multiple times. */
-		    ELEM(depset->deps, i) = (Object *) 
-			objRefNew((Object *) dep);
+		    addFoundDeps(depset, dep, (DagNode *) found, i);
 		}
 	    }
 	    if (depset->deactivated) {
 		depset->chosen_dep = i;
 		break;
 	    }
+	}
+	if (remaining) {
+	    /* Add any depnodes from remaining into our depset. */
+	    EACH(remaining, i) {
+		depnode = (DagNode *) ELEM(remaining, i);
+		assertDagNode(depnode);
+		dep = dependencyNew(stringNew(depnode->fqn->value), TRUE,
+				    depset->direction_is_forwards);
+		dep->dep = depnode;
+		vectorPush(depset->deps, (Object *) dep);
+	    }
+	    objectFree((Object *) remaining, FALSE);
 	}
     }
 }

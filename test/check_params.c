@@ -701,14 +701,14 @@ END_TEST
 START_TEST(generate)
 {
     char *args[] = {"./skit", "--generate", "--drop", 
-		    "regress/scratch/regressdb_dump4b.xml",
+		    "regress/scratch/regressdb_dump1a.xml",
 		    //"regress/scratch/dbdump/cluster.xml",
 		    //"x",
 		    "--print", "--all"};
 
     initTemplatePath(".");
-    //showMalloc(6510);
-    //showFree(3549);
+    //showMalloc(32000);
+    //showFree(104249);
 
     BEGIN {
 	process_args2(5, args);

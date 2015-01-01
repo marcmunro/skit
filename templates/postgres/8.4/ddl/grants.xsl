@@ -29,18 +29,29 @@
   </xsl:template>
 
   <xsl:template name="build_objectgrant">
-    <xsl:value-of select="concat('grant ', @priv, ' on ')"/>
     <xsl:choose>
-      <xsl:when test="../@subtype = 'view'">
-	<xsl:text>table</xsl:text>
+      <xsl:when test="../@subtype = 'column'">
+	<xsl:value-of select="concat('grant ', @priv, ' (', 
+			             ../@on, ') on table ',
+				     skit:dbquote(../@schema, ../@table),
+				     ' to ', skit:dbquote(@to))"/>
       </xsl:when>
       <xsl:otherwise>
-	<xsl:call-template name="dbobject-typename">
-	  <xsl:with-param name="typename" select="../@subtype"/>
-	</xsl:call-template>
+	<xsl:value-of select="concat('grant ', @priv, ' on ')"/>
+	<xsl:choose>
+	  <xsl:when test="../@subtype = 'view'">
+	    <xsl:text>table</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:call-template name="dbobject-typename">
+	      <xsl:with-param name="typename" select="../@subtype"/>
+	    </xsl:call-template>
+	  </xsl:otherwise>
+	</xsl:choose>
+	<xsl:value-of select="concat(' ', ../@on, 
+			             ' to ', skit:dbquote(@to))"/>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:value-of select="concat(' ', ../@on, ' to ', skit:dbquote(@to))"/>
     <xsl:if test="@with_grant = 'yes'">
       <xsl:text> with grant option</xsl:text>
     </xsl:if>
@@ -56,28 +67,36 @@
     </xsl:variable>
     <xsl:variable name="objecttype">
       <xsl:choose>
-	<xsl:when test="../@subtype = 'view'">
+	<xsl:when test="../@subtype = 'view' or ../@subtype = 'column'">
 	  <xsl:text>table</xsl:text>
 	</xsl:when>
 	<xsl:otherwise>
-	  <xsl:value-of select="../@subtype"/>
+	  <xsl:call-template name="dbobject-typename">
+	    <xsl:with-param name="typename" select="../@subtype"/>
+	  </xsl:call-template>
 	</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-
+    <xsl:variable name="on">
+      <xsl:choose>
+	<xsl:when test="../@subtype = 'column'">
+	  <xsl:value-of select="skit:dbquote(../@schema, ../@table)"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="../@on"/>
+	</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="colname">
+      <xsl:if test="../@subtype = 'column'">
+	<xsl:value-of select="concat('(', ../@on, ') ')"/>
+      </xsl:if>
+    </xsl:variable>
     <xsl:value-of select="concat('revoke ', $grantoption-text, @priv, 
-			  ' on ', $objecttype, ' ', ../@on, ' from ', 
+			  ' on ', $objecttype, ' ', 
+			  $on, ' from ', 
 			  skit:dbquote(@to), ';&#x0A;')"/>
   </xsl:template>
-
-  <!-- Currently unused - may be useful later.
-  <xsl:template name="ownership-has-changed">
-    <xsl:variable name="objname" select="@on"/>
-    <xsl:variable name="type" select="@subtype"/>
-    <xsl:if test="//dbobject[@type=$type and @name=$on]/
-		  element[@type='owner']">YES</xsl:if>
-  </xsl:template>
-  -->
 
   <xsl:template match="grant" mode="build">
     <xsl:choose>
@@ -190,30 +209,14 @@
   <xsl:template match="grant" mode="drop">
     <xsl:choose>
       <xsl:when test="../@subtype='role'">
-	<xsl:value-of 
-	    select="concat('&#x0A;revoke ', skit:dbquote(@priv),
-		           ' from ', skit:dbquote(@to), ';&#x0A;')"/>
+	<xsl:call-template name="revoke_rolegrant"/>
       </xsl:when>
       <xsl:otherwise>
 	<xsl:if test="../@diff or not (@automatic='yes')">
 	  <!-- Don't explicitly revoke privs that were automatically
 	       generated. --> 
 
-	  <xsl:value-of 
-	      select="concat('&#x0A;revoke ', @priv, ' on ')"/>
-	  <xsl:choose>
-	    <xsl:when test="../@subtype = 'view'">
-	      <xsl:text>table</xsl:text>
-	    </xsl:when>
-	    <xsl:otherwise>
-	      <xsl:call-template name="dbobject-typename">
-		<xsl:with-param name="typename" select="../@subtype"/>
-	      </xsl:call-template>
-	    </xsl:otherwise>
-	  </xsl:choose>
-	  <xsl:value-of 
-	      select="concat(' ', ../@on, ' from ',
-		      skit:dbquote(@to), ';&#x0A;')"/>
+	  <xsl:call-template name="revoke_objectgrant"/>
 	</xsl:if>
       </xsl:otherwise>
     </xsl:choose>

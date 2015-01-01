@@ -993,4 +993,13 @@ create type shell1;
 create function myrank() returns integer as 'window_rank'
 language internal window;
 
+
+-- Column privileges
+create table cols (
+  col1 integer not null,
+  col2 integer not null
+);
+
+grant select (col1) on cols to keep;
+
 DBEOF

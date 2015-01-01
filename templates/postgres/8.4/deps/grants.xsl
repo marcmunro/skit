@@ -141,6 +141,10 @@
 	    </xsl:choose>	
 	  </xsl:attribute>
 	</param>
+	<xsl:if test="name(..)='column'">
+	  <param name="table" value="{../../@name}"/>
+	  <param name="schema" value="{../../@schema}"/>
+	</xsl:if>
       </xsl:with-param>
     </xsl:apply-templates>
   </xsl:template>
@@ -158,8 +162,16 @@
       <dependency fqn="{concat('role.', @from)}"/>
     </xsl:if>
 
+    <xsl:if test="name(..)='column'">
+      <!-- For column grants we depend on the table as well as the
+	   column. --> 
+      <dependency fqn="{concat('table.', ancestor::database/@name, '.',
+		               ancestor::schema/@name, '.', 
+			       ancestor::table/@name)}"/>
+    </xsl:if>
+
     <!-- Dependencies on usage of schema. -->
-    <xsl:if test="../@schema">
+    <xsl:if test="../@schema or ../../@schema">
       <dependency-set priority="1"
 	  fallback="{concat('privilege.role.', @from, '.superuser')}"
 	  parent="ancestor::dbobject[database]">
@@ -184,11 +196,16 @@
 	<!-- No dependency if the role is granted from the owner
 	     of the object -->
       </xsl:when>
+      <xsl:when test="name(../..)='table' and @from=../../@owner">
+	<!-- Ditto for column privs.  -->
+      </xsl:when>
       <xsl:when 
 	  test="//cluster/role[@name=$grantor]/privilege[@priv='superuser']">
 	<!-- No dependency if the role is granted from a superuser -->
       </xsl:when>
       <xsl:otherwise>  
+	<!-- Hmmm.  This is wrong.  I'm leaving it for noe as at least
+	     this causes an error at run-time.  -->	
 	<xsl:call-template name="pqn-dep">
 	  <xsl:with-param name="to" select="@from"/>
 	</xsl:call-template>

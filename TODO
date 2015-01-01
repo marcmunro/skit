@@ -2,21 +2,22 @@ NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
 Also config for the same
 
 
-
-column privs
-
-security barrier views
+TODO:
+large object privs?
 
 
 deferable constraints? 9.0 onwards
 
 
-Properly handle phony targets in GNUMakefiles
+Properly handle phony targets in GNUMakefiles?
 
 eliminate all ignore-contexts code
 
 
-
+make xml-versioning specific to each database type
+add --upgrade option to set of supported commands
+add xml version checks to existing commands
+make directory a mandatory parameter for scatter
 
 
 

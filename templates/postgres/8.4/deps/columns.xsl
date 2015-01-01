@@ -17,13 +17,8 @@
     <!-- Make a second copy of the column (outside of the dbobject
 	 element.  This is so that the table element will directly
 	 contain the columns, which is necessary for ddl generation. -->
-    <xsl:copy>
-      <xsl:copy-of select="@*"/>
-      <xsl:apply-templates>
-	<xsl:with-param name="parent_core" 
-			select="concat($parent_core, '.', @name)"/>
-      </xsl:apply-templates>
-    </xsl:copy>
+    
+    <xsl:apply-templates select="." mode="copy"/>
   </xsl:template>
 
   <xsl:template match="table/column" mode="dependencies">

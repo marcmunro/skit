@@ -40,9 +40,15 @@
 	<skit:parameter name="privileges"/>
 	<skit:parameter name="automatic"/>
 	<skit:parameter name="owner"/>
+	<skit:parameter name="only_defined" default="nil"/>
 
-	<skit:if test="(not privileges)">
-	  <!-- If no privs, then generate the default, automatic grants -->
+	<skit:if test="(and (not only_defined) (not privileges))">
+	  <!-- If no privs, then generate the default, automatic,
+	       grants.  These are needed primarily for the purpose of
+	       ensuring that object owners have the necessary rights to
+	       perform various tasks (ie, we need them for dependency
+	       resolution).  Setting the only_defined parameter to t
+	       prevents these grants from being generated.  -->
 	  <skit:foreach from="automatic" var="this">
 	    <skit:var name="privs" expr="(cdr this)"/>
 	    <skit:foreach from="privs" var="priv">
