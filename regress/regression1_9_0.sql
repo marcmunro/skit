@@ -1220,5 +1220,6 @@ create table cols (
 
 grant select (col1) on cols to keep;
 
+
 DBEOF
 

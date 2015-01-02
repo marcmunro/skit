@@ -6,8 +6,6 @@ TODO:
 large object privs?
 
 
-deferable constraints? 9.0 onwards
-
 
 Properly handle phony targets in GNUMakefiles?
 
