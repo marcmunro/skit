@@ -633,9 +633,11 @@ execRunsql(xmlNode *template_node, xmlNode *parent_node, int depth)
 			    template_node, parent_node, depth);
 	}
     }
-    EXCEPTION(ex) {
-	objectFree((Object *) cursor, TRUE);
-	cursor = NULL;
+    EXCEPTION(ex);
+    WHEN(SQL_ERROR) {
+	RAISE(XML_PROCESSING_ERROR, 
+	      newstr("SQL Error encountered when processing \"%s\"\n%s", 
+		     filename->value, ex->text));
     }
     FINALLY {
 	if (!varname) {

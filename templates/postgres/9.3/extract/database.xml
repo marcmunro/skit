@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+   <database>	
+     <skit:attr name="name"/>
+     <skit:attr name="owner"/>
+     <skit:attr name="encoding"/>
+     <skit:attr name="tablespace"/>
+     <skit:attr name="connections"/>
+     <skit:if test="(select dbinfo 'comment')">
+       <comment>
+	 <skit:text expr="(select dbinfo 'comment')"/>
+       </comment>
+     </skit:if>
+     <skit:let>
+       <!-- <skit:exception text="EXCEPTION TEST IN database.xml"/> -->
+      <skit:exec_function name="grants_from_privs"
+  			  privileges="(select tuple 'privs')"
+			  owner="(select tuple 'owner')"
+			  automatic="&lt; 
+			     ((select tuple 'owner') . 
+			         (list 'connect' 'temporary'))
+			      ('public' . 
+			         (list 'create' 'connect' 'temporary'))&gt;"/>
+     </skit:let>	
+
+     <skit:let>
+       <skit:runsql to="alltypes" file="sql/alltypes.sql" hash="oid"/>
+       <skit:runsql to="basetypes" file="sql/basetypes.sql" hash="oid"/>
+       <skit:runsql to="comptypes" file="sql/comptypes.sql"/>
+       <skit:runsql to="rangetypes" file="sql/range_types.sql" hash="oid"/>
+       <skit:runsql to="domains" file="sql/domains.sql"/>
+       <skit:runsql to="enums" file="sql/enums.sql"/>
+       <skit:runsql to="constraints" file="sql/constraints.sql"/>
+       <skit:runsql to="functions" file="sql/functions.sql" hash="oid"/>
+       <skit:runsql to="operators" file="sql/operators.sql" hash="oid"/>
+       <skit:runsql to="operator_families"
+		    file="sql/operator_families.sql" hash="oid"/>
+       <skit:runsql to="operator_classes"
+		    file="sql/operator_classes.sql" hash="oid"/>
+       <skit:runsql to="opclass_opers" file="sql/opclass_opers.sql"/>
+       <skit:runsql to="opclass_funcs" file="sql/opclass_funcs.sql"/>
+       <skit:runsql to="aggregates" file="sql/aggregates.sql"/>
+       <skit:runsql to="sequences" file="sql/sequences.sql"/>
+       <skit:runsql to="tables" file="sql/tables.sql" hash="oid"/>
+       <skit:runsql to="triggers" file="sql/triggers.sql"/>
+       <skit:runsql to="rules" file="sql/rules.sql"/>
+       <skit:runsql to="views" file="sql/views.sql" hash="oid"/>
+       <skit:runsql to="matviews" file="sql/matviews.sql" hash="oid"/>
+       <skit:runsql to="conversions" file="sql/conversions.sql"/>
+       <skit:runsql to="tsconfigs" file="sql/tsconfigs.sql"/>
+       <skit:runsql to="tsconfig_maps" file="sql/tsconfig_maps.sql"/>
+       <skit:runsql to="tsconfig_mappings" file="sql/tsconfig_mappings.sql"/>
+       <skit:runsql to="ts_parsers" file="sql/ts_parsers.sql"/>
+       <skit:runsql to="tsdictionaries" file="sql/ts_dicts.sql"/>
+       <skit:runsql to="tstemplates" file="sql/ts_templates.sql"/>
+       <skit:runsql to="collations" file="sql/collations.sql" hash="oid"/>
+
+       <xi:include href="skitfile:extract/function_sigs.xml"/>
+       <xi:include href="skitfile:extract/languages.xml"/>
+       <xi:include href="skitfile:extract/casts.xml"/>
+       <xi:include href="skitfile:extract/fdws.xml"/>
+       <xi:include href="skitfile:extract/foreign_servers.xml"/>
+       <xi:include href="skitfile:extract/user_mappings.xml"/>
+       <xi:include href="skitfile:extract/extensions.xml"/>
+       <xi:include href="skitfile:extract/schema.xml"/>
+     </skit:let>
+   </database>
+</skit:inclusion>  
+

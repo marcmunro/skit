@@ -97,13 +97,13 @@
 			           (re (select privchars actual)) granted))">
 		
 		<!--
+		<skit:exec expr="(debug 'PRIVCHARS' privchars)"/>
+		<skit:exec expr="(debug 'ACTUAL' actual)"/>
+		<skit:exec expr="(debug 'GRANTED' granted)"/>
 		<skit:exec expr="(debug 'AUTOMATIC' automatic)"/>
 		<skit:exec expr="(debug 'PRIVILEGES' privileges)"/>
 		<skit:exec expr="(debug 'PRIVS_LIST' privs_list)"/>
 		<skit:exec expr="(debug 'PRIVSET' privset)"/>
-		<skit:exec expr="(debug 'PRIVCHARS' privchars)"/>
-		<skit:exec expr="(debug 'ACTUAL' actual)"/>
-		<skit:exec expr="(debug 'GRANTED' granted)"/>
 		-->
 		<grant>
 		  <skit:attr name="from" expr="owner"/>

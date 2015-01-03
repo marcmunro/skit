@@ -2,8 +2,22 @@ NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
 Also config for the same
 
 
-TODO:
+
+9.3
+materialized views  - DONE
+auto-updatable views
+
+foreign data wrappers support for writes (inserts/updates/deletes) on foreign tables
+
+event triggers
+
+
+Missing stuff:
 large object privs?
+disabled triggers/constraints?
+
+
+
 
 
 

@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:foreach var="matview" from="matviews" 
+		filter="(string= (select matview 'schema')
+			         (select schema 'name'))">
+    <materialized_view>
+      <skit:let>
+	<skit:attr name="name"/>
+	<skit:attr name="schema"/>
+	<skit:attr name="owner"/>
+	<skit:attr name="is_populated"/>
+	<skit:attr name="tablespace"/>
+	<skit:attr name="tablespace_is_default"/>
+	<skit:attr name="privs"/>
+	<skit:exec_function name="extract_options"
+			    options="(select tuple 'options')"/>
+	<skit:attr name="extension"/>
+
+	<skit:runsql to="columns" file="sql/columns.sql"
+		     params="(select matview 'oid')"/>
+
+	<!-- Identify other objects on which we depend -->
+	<skit:runsql var="dependency" file="sql/getdeps.sql"
+		     params='(list (select tuple "rewrite_oid") 
+			     "pg_rewrite" 
+			     "(&apos;pg_class&apos;,&apos;pg_proc&apos;)")'>
+	  <skit:if test="(not (string= (select tuple 'objoid') 
+			               (select matview 'oid')))">
+	    <!-- Dependency is not on the matview itself. -->
+	    <skit:if test="(not (string= (select view 'oid')
+			                 (select tuple 'objoid')))">
+	      <!-- Dependency is not on ourself -->
+	      <skit:var name="table" 
+			expr="(select tables (select tuple 'objoid'))"/>
+	      <skit:var name="depview" 
+			expr="(select views (select tuple 'objoid'))"/>
+	      <skit:var name="proc" 
+			expr="(select function_sigs (select tuple 'objoid'))"/>
+	      
+	      <depends>
+		<skit:if test="depview">
+		  <skit:attr name="schema" expr="(select depview 'schema')"/>
+		  <skit:attr name="view" expr="(select depview 'name')"/>
+		</skit:if>
+		<skit:if test="table">
+		  <skit:attr name="schema" expr="(select table 'schema')"/>
+		  <skit:attr name="table" expr="(select table 'name')"/>
+		</skit:if>	
+		<skit:if test="proc">
+		  <skit:attr name="function" expr="proc"/>
+		</skit:if>
+	      </depends>
+	    </skit:if>
+	  </skit:if>
+	</skit:runsql>
+
+	<source>
+	  <skit:text expr="(select matview 'viewdef')"/>
+	</source>
+
+	<skit:foreach var="column" from="columns">
+	  <!-- Should you ever want to debug the extract, this is a good 
+	       technique:
+	    <skit:exec 
+		expr="(debug 'EXPR: ' (select column 'is_inherited'))"/>
+	  -->
+
+	  <skit:if test="(not (string= 't' (select column 'is_inherited')))">
+	    <column>
+	      <skit:attr name="colnum"/>
+	      <skit:attr name="name"/>
+	      <skit:attr name="type"/>
+	      <skit:attr name="type_schema"/>
+	      <skit:attr name="size"/>
+	      <skit:attr name="precision"/>
+	      <skit:attr name="nullable"/>
+	      <skit:attr name="dimensions"/>
+	      <skit:attr name="typstorage"/>
+	      <skit:attr name="storage_policy"/>
+	      <skit:attr name="is_local"/>
+	      <skit:attr name="default"/>
+	      <skit:attr name="stats_target"/>
+	      <skit:attr name="is_foreign"
+			 expr="(select table 'is_foreign')"/>
+	      <skit:attr name="extension"
+			 expr="(select table 'extension')"/>
+	      <skit:attr name="collation_name"/>
+	      <skit:attr name="collation_schema"/>
+              <skit:attr name="privs"/>
+ 
+              <skit:exec_function name="grants_from_privs"
+                            privileges="(select column 'privs')"
+                            owner="(select table 'owner')"
+                            only_defined="t"
+                            automatic="nil"/>
+ 
+	      <skit:if test="(select column 'comment')">
+		<comment>
+		  <skit:text expr="(select column 'comment')"/>
+		</comment>
+	      </skit:if>
+	    </column>
+	  </skit:if>
+	</skit:foreach>
+
+	<skit:runsql var="constraint" file="sql/table_constraints.sql"
+		     params="(select matview 'oid')">
+	  <constraint>
+	    <skit:var name="colnums" 
+		      expr="(split (select tuple 'columns') ',')"/>
+	    <skit:attr name="type" field="constraint_type"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="schema"/>
+	    <skit:attr name="deferred"/>
+	    <skit:attr name="deferrable"/>
+	    <skit:attr name="source"/>
+	    <skit:attr name="tablespace"/>
+	    <skit:attr name="owner"/>
+	    <skit:attr name="access_method"/>
+	    <skit:attr name="reftable"/>
+	    <skit:attr name="refschema"/>
+	    <skit:attr name="confmatchtype"/>
+	    <skit:attr name="confupdtype"/>
+	    <skit:attr name="confdeltype"/>
+	    <skit:attr name="is_local"/>
+	    <skit:attr name="indexdef"/>
+	    <skit:attr name="predicate"/>
+	    <skit:attr name="colexprs"/>
+	    <skit:attr name="operators"/>
+	    <skit:attr name="extension"
+		       expr="(select table 'extension')"/>
+	    <skit:exec_function name="extract_options"
+				options="(select tuple 'options')"/>
+
+	    <skit:if test="(select tuple 'refoid')">
+	      <reftable>
+		<skit:var name="refcolnums" 
+			  expr="(split (select tuple 'refcolumns') ',')"/>
+		<skit:attr name="reftable"/>
+		<skit:attr name="refschema"/>
+		<skit:attr name="refconstraintname"/>
+		<skit:attr name="refindexname"/>
+		<skit:attr name="refindexschema"/>
+		<skit:runsql to="refcolumns" file="sql/columns.sql"
+			     params="(select tuple 'refoid')"/>
+		<skit:foreach from="refcolnums" var="refcolnum">
+		  <column>
+		    <skit:attr name="name" 
+			       expr="(select refcolumns (try-to-int refcolnum) 
+				             'name')"/>
+		  </column>
+		</skit:foreach>
+	      </reftable>
+	    </skit:if>
+
+	    <!-- <skit:exec expr="(debug 'XX' (try-to-int '1'))"/> -->
+	    <skit:if test="(select tuple 'operators')">
+	      <skit:var name="operatorlist" 
+			expr="(split (select tuple 'operators') ',')"/>
+	      <skit:var name="opclass_schemata" 
+			expr="(split (select tuple 'opclass_schemata') 
+			             ',')"/>
+	      <skit:var name="opclasses" 
+			expr="(split (select tuple 'opclass_names') ',')"/>
+	    </skit:if>
+
+	    <skit:foreach from="colnums" var="colnum" index="colidx">
+	      <column>
+		<skit:attr name="name" 
+			   expr="(select columns (try-to-int colnum) 'name')"/>
+		<skit:if test="(select constraint 'operators')">
+		  <skit:attr name="operator" 
+			     expr="(select operatorlist (- colidx 1))"/>
+		  <skit:attr name="opclass_schema" 
+			     expr="(replace 
+				    (select opclass_schemata (- colidx 1))
+				    /&quot;/ '')"/>
+		  <skit:attr name="opclass_name" 
+			     expr="(replace 
+				    (select opclasses (- colidx 1))
+				    /&quot;/ '')"/>
+		</skit:if>
+	      </column>	
+	    </skit:foreach>
+
+	    <!-- Identify functions/casts on which we depend -->
+	    <skit:runsql var="dependency" file="sql/getdeps.sql"
+		         params='(list (select tuple "oid") 
+				         "pg_constraint" 
+					 "(&apos;pg_proc&apos;)")'>
+	      <depends>
+		<skit:attr name="cast" 
+			   expr="(select cast_sigs (select tuple 'objoid'))"/> 
+		<skit:attr name="function"
+			   expr="(select function_sigs 
+				         (select tuple 'objoid'))"/>
+	      </depends>
+	    </skit:runsql>
+
+	    <skit:if test="(select tuple 'comment')">
+	      <comment>
+		<skit:text expr="(select tuple 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </constraint>
+	</skit:runsql>
+
+	<skit:runsql var="indices" file="sql/indices.sql"
+		     params="(select matview 'oid')">
+	  <index>
+	    <skit:var name="colnums" 
+		      expr="(split (select tuple 'colnums') ' ')"/>
+	    <skit:var name="opclass"/> 
+	    <skit:var name="opclasses" 
+		      expr="(split (select tuple 'operator_classes') ' ')"/>
+	    <skit:attr name="name"/>
+	    <skit:attr name="owner"/>
+	    <skit:attr name="tablespace"/>
+	    <skit:attr name="index_am"/>
+	    <skit:attr name="unique"/>
+	    <skit:attr name="clustered"/>
+	    <skit:attr name="valid"/>
+	    <skit:attr name="indexdef"/>
+	    <skit:attr name="indexprs"/>
+	    <skit:attr name="indpred"/>
+	    <skit:attr name="extension"
+		       expr="(select matview 'extension')"/>
+
+	    <skit:foreach from="colnums" var="colnum" index="idx"
+			  filter="(not (string= colnum '0'))">
+	      <column>
+		<skit:attr name="name" 
+			   expr="(select columns (try-to-int colnum) 
+				                   'name')"/>
+		<skit:attr name="colnum" expr="idx"/>
+	      </column>	
+	    </skit:foreach>
+
+	    <skit:foreach from="colnums" var="colnum" index="idx">
+	      <skit:let>
+		<skit:var name="opclass" 
+			  expr="(select operator_classes 
+				(select opclasses (- idx 1)))"/>
+		<skit:if test="opclass">
+		  <depends>
+		    <skit:attr name="type" expr="'operator class'"/>
+		    <skit:attr name="name"
+			       expr="(concat
+				       (dbquote (select opclass 'schema')
+				                (select opclass 'name'))
+				       '(' (select opclass 'method') ')')"/>
+		  </depends>
+		</skit:if>
+	      </skit:let>	
+	    </skit:foreach>
+
+	    <skit:runsql var="dependency" file="sql/getdeps.sql"
+		         params='(list (select tuple "oid") 
+				         "pg_class" 
+					 "(&apos;pg_proc&apos;)")'>
+	      <skit:exec expr="(debug 'DEP' dependency)"/>
+	      <depends>
+		<skit:attr name="type" expr="'function'"/>
+		<skit:attr name="name"
+			   expr="(select function_sigs 
+				         (select dependency 'objoid'))"/>
+	      </depends>
+	    </skit:runsql>
+
+	    <skit:if test="(select tuple 'comment')">
+	      <comment>
+		<skit:text expr="(select tuple 'comment')"/>
+	      </comment>
+	    </skit:if>
+	  </index>
+	</skit:runsql>
+
+	<skit:if test="(select matview 'comment')">
+	  <comment>
+	    <skit:text expr="(select matview 'comment')"/>
+	  </comment>
+	</skit:if>
+
+	<skit:exec_function name="grants_from_privs"
+			    privileges="(select tuple 'privs')"
+			    owner="(select tuple 'owner')"
+			    automatic="&lt; 
+				       ((select tuple 'owner') . 
+				        (list 'insert' 'select' 'update'
+				        'delete' 'truncate' 'references' 
+					'trigger'))&gt;"/>
+      </skit:let>
+      <xi:include href="skitfile:extract/triggers.xml"/>
+      <xi:include href="skitfile:extract/rules.xml"/>
+    </materialized_view>
+  </skit:foreach>
+</skit:inclusion>  
+
