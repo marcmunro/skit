@@ -107,6 +107,7 @@
   <xsl:include href="skitfile:deps/user_mappings.xsl"/>
   <xsl:include href="skitfile:deps/extensions.xsl"/>
   <xsl:include href="skitfile:deps/collations.xsl"/>
+  <xsl:include href="skitfile:deps/event_triggers.xsl"/>
 
 </xsl:stylesheet>
 

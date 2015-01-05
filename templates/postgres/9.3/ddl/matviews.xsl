@@ -40,17 +40,6 @@
 	select="concat('&#x0A;drop materialized view ', ../@qname, ';&#x0A;')"/>
   </xsl:template>
 
-  <xsl:template match="xxxview" mode="diffprep">
-    <xsl:if test="../attribute[@name='owner']">
-      <do-print/>
-      <xsl:for-each select="../attribute[@name='owner']">
-	<xsl:value-of 
-	    select="concat('&#x0A;alter view ', ../@qname,
-		           ' owner to ', skit:dbquote(@new), ';&#x0A;')"/>
-      </xsl:for-each>
-    </xsl:if>
-  </xsl:template>
-
   <xsl:template match="materialized_view" mode="diffprep">
     <xsl:if test="../attribute[@name='owner']">
       <do-print/>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="database" key="type">
+    <attribute name="encoding"/>
+    <attribute name="connections"/>
+    <attribute name="lc_collate"/>
+    <attribute name="lc_ctype"/>
+    <attribute name="owner">
+      <dependency-set 
+	  fallback="grant.role.{old.owner}.{new.owner}"
+	  parent="ancestor::dbobject[database]">
+	<dependency fqn="privilege.role.{old.owner}.superuser"/>
+	<dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+      </dependency-set>
+    </attribute>
+    <element type="setting" key="name">
+      <attribute name="setting"/>
+      <attribute name="sourcefile"/>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+
+    <dbobject type="fallbacks" key="type"/>
+    <xi:include href="skitfile:diff/schemata.xml"/>
+  </dbobject>
+
+  <dbobject type="dbincluster" key="type">
+    <attribute name="tablespace"/>
+  </dbobject>
+
+  <xi:include href="skitfile:diff/casts.xml"/>
+  <xi:include href="skitfile:diff/operators.xml"/>
+  <xi:include href="skitfile:diff/operator_classes.xml"/>
+  <xi:include href="skitfile:diff/operator_families.xml"/>
+  <xi:include href="skitfile:diff/fdws.xml"/>
+  <xi:include href="skitfile:diff/foreign_servers.xml"/>
+  <xi:include href="skitfile:diff/user_mappings.xml"/>
+  <xi:include href="skitfile:diff/event_triggers.xml"/>
+  <xi:include href="skitfile:diff/extensions.xml"/>
+</skit:inclusion>  

@@ -292,5 +292,6 @@
   <xsl:include href="skitfile:ddl/user_mappings.xsl"/>
   <xsl:include href="skitfile:ddl/extensions.xsl"/>
   <xsl:include href="skitfile:ddl/collations.xsl"/>
+  <xsl:include href="skitfile:ddl/event_triggers.xsl"/>
   <xsl:include href="skitfile:ddl/fallback.xsl"/>
 </xsl:stylesheet>

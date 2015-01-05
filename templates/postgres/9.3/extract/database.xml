@@ -65,6 +65,7 @@
        <xi:include href="skitfile:extract/foreign_servers.xml"/>
        <xi:include href="skitfile:extract/user_mappings.xml"/>
        <xi:include href="skitfile:extract/extensions.xml"/>
+       <xi:include href="skitfile:extract/event_triggers.xml"/>
        <xi:include href="skitfile:extract/schema.xml"/>
      </skit:let>
    </database>

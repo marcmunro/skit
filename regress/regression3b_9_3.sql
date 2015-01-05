@@ -1071,4 +1071,24 @@ create materialized view wibbly_mv2(col1, col2, col3, col4)
   with no data;
 
 
+-- Event trigger
+create 
+function ddl_notice() returns event_trigger as
+$$
+begin
+  raise notice 'DDL!!!!!!';
+end;
+$$
+language plpgsql;
+
+
+create event trigger ddl_notice on ddl_command_start
+    execute procedure ddl_notice();
+
+alter event trigger ddl_notice enable always;
+
+create event trigger ddl_notice2 on ddl_command_end
+    execute procedure ddl_notice();
+
+alter event trigger ddl_notice2 enable replica;
 DBEOF

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <skit:runsql var="event_trigger" file="sql/event_triggers.sql">
+    <event_trigger>
+      <skit:attr name="name"/>
+      <skit:attr name="owner"/>
+      <skit:attr name="event_name"/>
+      <skit:attr name="function"
+		 expr="(select function_sigs 
+			  (select event_trigger 'fn_oid'))"/>
+      
+      <skit:attr name="enabled"/>
+      <skit:attr name="event_tags"/>
+      <skit:attr name="extension"/>
+      <skit:if test="(select tuple 'comment')">
+	<comment>
+	  <skit:text expr="(select tuple 'comment')"/>
+	</comment>
+      </skit:if>
+    </event_trigger>
+  </skit:runsql>
+</skit:inclusion>
+

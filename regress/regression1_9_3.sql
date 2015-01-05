@@ -1302,8 +1302,27 @@ comment on materialized view wibbly_mv is
 
 grant select on table wibbly_mv to keep;
 
--- TODO: indexes, keys, etc on matviews (what about rules, constraints,
--- triggers, etc?) 
+
+
+-- Event trigger
+create 
+function ddl_notice() returns event_trigger as
+$$
+begin
+  raise notice 'DDL!!!!!!';
+end;
+$$
+language plpgsql;
+
+
+create event trigger ddl_notice on ddl_command_start
+    when tag in ('DROP FUNCTION')
+    execute procedure ddl_notice();
+
+alter event trigger ddl_notice disable;
+
+--comment on event trigger ddl_notice is
+--'an event trigger';
 
 DBEOF
 
