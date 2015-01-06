@@ -4,6 +4,8 @@ select rw.oid as oid,
        rw.rulename as name,
        t.relname as table,
        n.nspname as schema,
+       rw.ev_enabled as enabled,
+       rw.is_instead as is_instead,
        pg_get_ruledef(rw.oid) as definition,
        r.rolname as table_owner,
        quote_literal(obj_description(rw.oid, 'pg_rewrite')) as comment

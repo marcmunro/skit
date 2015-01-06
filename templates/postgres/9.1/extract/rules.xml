@@ -13,6 +13,8 @@
 	<skit:attr name="name"/>
 	<skit:attr name="table"/>
 	<skit:attr name="schema"/>
+        <skit:attr name="enabled"/>
+        <skit:attr name="is_instead"/>
 	<skit:attr name="table_owner"/>
 	<skit:attr name="extension"
 		   expr="(select table 'extension')"/>

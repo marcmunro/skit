@@ -6,9 +6,21 @@
    xmlns:skit="http://www.bloodnok.com/xml/skit"
    version="1.0">
 
+  <xsl:template name="alter_rule_enablement">
+    <xsl:value-of 
+	select="concat('alter table ', skit:dbquote(@schema, @table),
+		       '&#x0A;   ')"/>
+    <xsl:call-template name="alter_enablement"/>
+    <xsl:value-of 
+	select="concat(' rule ', ../@qname, ';&#x0A;')"/>
+  </xsl:template>
+
   <xsl:template match="rule" mode="build">
     <xsl:value-of 
 	select="concat(source/text(), ';&#x0A;')"/>
+    <xsl:if test="@enabled!='O'">
+      <xsl:call-template name="alter_rule_enablement"/>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="rule" mode="drop">

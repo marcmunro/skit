@@ -1314,5 +1314,21 @@ for each row execute procedure public.trigger1();
 
 alter table schema2.keys2 disable trigger mytrigger4;
 
+
+-- Disable/Enable rules
+create or replace rule cols_rule1 as on insert to cols
+do also insert into 
+   schema2.keys2(key1, key2, key3, key4)
+   values (new.col1, new.col1, new.col1, new.col1);
+
+alter table cols disable rule cols_rule1;
+
+create or replace rule cols_rule2 as on insert to cols
+do also insert into 
+   schema2.keys2(key1, key2, key3, key4)
+   values (new.col1, new.col1, new.col1, new.col1);
+
+alter table cols enable replica rule cols_rule2;
+
 DBEOF
 

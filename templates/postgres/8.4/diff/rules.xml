@@ -8,6 +8,7 @@
     <attribute name="name" rebuild="true"/>
     <attribute name="table" rebuild="true"/>
     <attribute name="schema" rebuild="true"/>
+    <attribute name="enabled" rebuild="true"/>
     <attribute name="table_owner" rebuild="true"/>
     <element type="source" rebuild="true">
       <text/>
