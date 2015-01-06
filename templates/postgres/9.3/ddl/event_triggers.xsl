@@ -8,23 +8,10 @@
 
 
   <xsl:template name="alter_event_trigger">
-    <xsl:choose>
-      <xsl:when test="@enabled='D'">
-	<xsl:value-of 
-	    select="concat('alter event trigger ', ../@qname,
-		           ' disable;&#x0A;')"/>
-      </xsl:when>
-      <xsl:when test="@enabled='A'">
-	<xsl:value-of 
-	    select="concat('alter event trigger ', ../@qname,
-		           ' enable always;&#x0A;')"/>
-      </xsl:when>
-      <xsl:when test="@enabled='R'">
-	<xsl:value-of 
-	    select="concat('alter event trigger ', ../@qname,
-		           ' enable replica;&#x0A;')"/>
-      </xsl:when>
-    </xsl:choose>
+    <xsl:value-of 
+	select="concat('alter event trigger ', ../@qname)"/>
+    <xsl:call-template name="alter_enablement"/>
+    <xsl:text>;&#x0A;</xsl:text>
   </xsl:template>
 
   <xsl:template match="event_trigger" mode="build">
@@ -39,7 +26,9 @@
 	select="concat('&#x0A;  execute procedure ', @function)"/>
     <xsl:text>;&#x0A;</xsl:text>
 
-    <xsl:call-template name="alter_event_trigger"/>
+    <xsl:if test="@enabled!='O'">
+      <xsl:call-template name="alter_event_trigger"/>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="event_trigger" mode="drop">

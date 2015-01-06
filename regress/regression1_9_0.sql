@@ -1221,5 +1221,24 @@ create table cols (
 grant select (col1) on cols to keep;
 
 
+-- Disable/Enable triggers
+create trigger mytrigger2 
+before insert or update on schema2.keys2
+for each row execute procedure public.trigger1();
+
+alter table schema2.keys2 enable always trigger mytrigger2;
+
+create trigger mytrigger3 
+before insert or update on schema2.keys2
+for each row execute procedure public.trigger1();
+
+alter table schema2.keys2 enable replica trigger mytrigger3;
+
+create trigger mytrigger4
+before insert or update on schema2.keys2
+for each row execute procedure public.trigger1();
+
+alter table schema2.keys2 disable trigger mytrigger4;
+
 DBEOF
 
