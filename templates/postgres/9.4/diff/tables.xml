@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<skit:inclusion
+   xmlns:skit="http://www.bloodnok.com/xml/skit"
+   xmlns:xi="http://www.w3.org/2003/XInclude">
+
+  <dbobject type="replica_ident" key="fqn">
+    <attribute name="replica_ident"/>
+    <attribute name="replica_index"/>
+  </dbobject>
+
+  <dbobject type="table" key="fqn">
+    <attribute name="owner">
+      <!-- See comment in tablespaces.xml for an explanation of this. -->
+     <dependencies
+	 applies="backwards"
+	 condition="//dbobject[@fqn='role.{new.owner}' and @diff='new']">
+       <dependency fqn="role.{new.owner}"
+		   direction="forwards"/>
+       <dependency-set
+	   fallback="grant.role.{old.owner}.{new.owner}"
+	   parent="//dbobject[database]"
+	   direction="forwards">
+	 <dependency pqn="grant.role.{old.owner}.{new.owner}"/>
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+     </dependencies>
+    </attribute>
+
+    <attribute name="tablespace">
+      <dependencies
+	  applies="backwards">
+	<dependency direction="forwards" fqn="tablespace.{new.tablespace}"/>
+	<dependency-set
+	    direction="forwards"
+	    fallback="privilege.role.{new.owner}.superuser" 
+	    parent="ancestor::dbobject[cluster]">
+	  <dependency fqn="privilege.role.{new.owner}.superuser"/>
+	</dependency-set>
+      </dependencies>
+
+      <dependencies direction="backwards">
+       <dependency-set
+	   fallback="privilege.role.{old.owner}.superuser" 
+	   parent="ancestor::dbobject[cluster]">
+	 <dependency fqn="privilege.role.{old.owner}.superuser"/>
+       </dependency-set>
+      </dependencies>
+    </attribute>
+    <attribute name="extension"/>
+
+    <attribute name="is_unlogged" rebuild="true"/>
+
+    <attribute name="with_oids"/>
+    <element type="option" key="name">
+      <attribute name="value"/>
+    </element>
+
+    <element type="inherits" key="inherit_order">
+      <attribute name="schema"/>
+      <attribute name="name"/>
+      <element type="inherited-column" key="name">
+	<attribute name="storage-policy"/>
+      </element>
+    </element>
+    <element type="comment">
+      <text/>
+    </element>
+
+    <xi:include href="skitfile:diff/columns.xml"/>
+    <xi:include href="skitfile:diff/constraints.xml"/>
+    <xi:include href="skitfile:diff/indexes.xml"/>
+    <xi:include href="skitfile:diff/rules.xml"/>
+    <xi:include href="skitfile:diff/triggers.xml"/>
+
+  </dbobject>	
+
+</skit:inclusion>  

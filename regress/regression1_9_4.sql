@@ -1366,5 +1366,22 @@ do also insert into
 
 alter table cols enable replica rule cols_rule2;
 
+
+-- Replica identity stuff
+alter table cols
+  replica identity nothing;
+
+
+create table cols2 (
+  col1 integer not null,
+  col2 integer not null,
+  cols seg
+);
+
+alter table cols2 add constraint cols2__pk
+  primary key(col1, col2);
+
+alter table cols2
+  replica identity using index cols2__pk;
 DBEOF
 

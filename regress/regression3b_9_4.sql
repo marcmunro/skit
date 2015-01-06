@@ -1098,4 +1098,27 @@ create table unlogged (
   col1   text
 );
 
+
+-- Replica identity stuff
+create table cols3 (
+  col1 integer not null,
+  col2 integer not null,
+  col3 text
+);
+
+alter table cols3
+  replica identity default;
+
+create table cols2 (
+  col1 integer not null,
+  col2 integer not null,
+  col3 text
+);
+
+create unique index cols2__uk on cols2(col1);
+
+alter table cols2
+  replica identity using index cols2__uk;
+
+
 DBEOF
