@@ -2,26 +2,21 @@ NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
 Also config for the same
 
 
+
+8.4 (alter table statement stuff)
+enable/disable triggers and rules
+
+
+
+
 9.4
-auto-updatable views ([ WITH [ CASCADED | LOCAL ] CHECK OPTION ])
+replica identify stuff in tables
 
 
-9.3
-materialized views  - DONE
-recursive view	    - N/A
-auto-updatable views ([ WITH [ CASCADED | LOCAL ] CHECK OPTION ])
-                    - Looks like with check option is not actually implemented
-
-
-foreign data wrappers support for writes - N/A
-
-event triggers
 
 
 Missing stuff:
 large object privs?
-
-
 
 
 

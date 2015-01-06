@@ -44,6 +44,8 @@
     </attribute>
     <attribute name="extension"/>
 
+    <attribute name="is_unlogged" rebuild="true"/>
+
     <attribute name="with_oids"/>
     <element type="option" key="name">
       <attribute name="value"/>

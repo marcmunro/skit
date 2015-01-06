@@ -1060,4 +1060,10 @@ create table cols (
 
 grant select (col1) on cols to keep;
 
+
+-- Unlogged tables
+create unlogged table unlogged (
+  col1   text
+);
+
 DBEOF

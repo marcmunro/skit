@@ -27,6 +27,9 @@
 
   <xsl:template match="table" mode="build">
     <xsl:text>create </xsl:text>
+    <xsl:if test="@is_unlogged='t'">
+      <xsl:text>unlogged </xsl:text>
+    </xsl:if>
     <xsl:if test="@is_foreign='t'">
       <xsl:text>foreign </xsl:text>
     </xsl:if>

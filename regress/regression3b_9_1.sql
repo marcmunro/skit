@@ -1008,4 +1008,10 @@ create table cols (
   col2 integer not null
 );
 
+
+-- Unlogged tables
+create table unlogged (
+  col1   text
+);
+
 DBEOF
