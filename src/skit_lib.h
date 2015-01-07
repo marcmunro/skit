@@ -21,13 +21,15 @@
 #include <libxslt/xsltInternals.h>
 #include <libxml/xpath.h>
 
-/* Bump this whenever we make any structural changes to the skit xml
- * namespace.
+/* The xml versions are bumped when changes are made to xml file formats
+ * other than the introuduction of new elements and attributes.  This
+ * will allow incompatible file formats to be identified so that they
+ * may be transformed.
+ *
  * XML versions history:
- * 0.1    Initial development version
+ * pg   0.1    Initial development version
  */
-#define SKIT_VERSION "0.1"
-#define SKIT_XML_VERSION "0.1"
+#define SKIT_XML_VERSIONS "<('pg' . '0.1')>"
 
 #define DIR_SEPARATOR '/'
 

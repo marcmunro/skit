@@ -895,6 +895,19 @@ fnUsername(Object *obj)
     return (Object *) username();
 }
 
+static Object *
+fnXmlVersion(Object *obj)
+{
+    Cons *cons = (Cons *) obj;
+    Object* dbtype = nextParam("xml-version", &cons, OBJ_STRING, 
+			       TRUE, TRUE, 1);
+    Hash *versions = (Hash *) symbolGet("skit_xml_versions")->svalue;
+    Object *result = objectCopy(hashGet(versions, dbtype));
+
+    objectFree(dbtype, TRUE);
+    return result;
+}
+
 static void
 defineVar(char *name, Object *obj)
 {
@@ -907,7 +920,7 @@ initBaseSymbols()
 {
     static Symbol symbol_t = {OBJ_SYMBOL, "t", NULL, (Object *) &symbol_t};
     Hash *dbhash = hashNew(TRUE);
-    String *xml_version = stringNew(SKIT_XML_VERSION);
+    Hash *xml_versions =  (Hash *) objectFromStr(SKIT_XML_VERSIONS);
 
     (void) symbolCopy(&symbol_t);
 
@@ -941,7 +954,7 @@ initBaseSymbols()
     symbolCreate("replace", &fnReplace, NULL);
     symbolCreate("select", &fnSelect, NULL);
     symbolCreate("setq", &fnSetq, NULL);
-    symbolCreate("skit_xml_version", NULL, (Object *) xml_version);
+    symbolCreate("skit_xml_versions", NULL, (Object *) xml_versions);
     symbolCreate("string=", &fnStringEq, NULL);                 /*XX*/
     symbolCreate("string-match", &fnStringMatch, NULL);         /*XX*/
     symbolCreate("split", &fnSplit, NULL);
@@ -950,6 +963,7 @@ initBaseSymbols()
     symbolCreate("tuplestack", NULL, NULL);
     symbolCreate("username", &fnUsername, NULL);
     symbolCreate("version", &fnVersion, NULL);
+    symbolCreate("xml-version", &fnXmlVersion, NULL);         /*XX*/
 
 
     defineVar("dbtype", (Object *) stringNew("postgres"));

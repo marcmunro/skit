@@ -1,11 +1,4 @@
 
-NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
-Also config for the same
-
-
-
-
-
 Properly handle phony targets in GNUMakefiles?
 
 eliminate all ignore-contexts code

@@ -1,5 +1,5 @@
 <skit:stylesheet xmlns:skit="http://www.bloodnok.com/xml/skit" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <cluster type="postgres" name="localhost:54329" skit_version="0.1" skit_xml_version="0.1" version="8.1.4">
+  <cluster type="postgres" name="localhost:54329" skit_version="0.1" skit_xml_type="pg" skit_xml_version="0.1" version="8.1.4">
     <role name="keep" login="y" password="md5a6e3dfe729e3efdf117eeb1059051f77" max_connections="-1"/>
     <role name="keep2" login="y" password="md5dd9b387fa54744451a97dc9674f6aba2" max_connections="-1"/>
     <role name="lose" login="y" password="md5c62bc3e38bac4209132682f13509ba96" max_connections="-1">

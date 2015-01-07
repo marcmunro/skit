@@ -217,7 +217,8 @@
       <skit:attr name="port" expr="port"/>
       <skit:attr name="version"/>
       <skit:attr name="host" expr="host"/>
-      <skit:attr name="skit_xml_version" expr="skit_xml_version"/>
+      <skit:attr name="skit_xml_type" expr="'pg'"/>
+      <skit:attr name="skit_xml_version" expr="(xml-version 'pg')"/>
 
       <skit:runsql file="sql/dbinfo.sql" var="dbinfo">
 	<skit:attr name="username"/>

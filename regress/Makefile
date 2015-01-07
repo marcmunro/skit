@@ -51,12 +51,12 @@ $(REGRESS_DIR)/tmp_pg:
 	    cp $(REGRESS_DIR)/extensions/* \
 	        $(REGRESS_DIR)/tmp_pg/$(PGSHARE)/extension; fi
 
-check_tmp_pg:
+check_tmp_pg: $(REGRESS_DIR)/tmp_pg
 	@cmp $(PGBIN)/postmaster \
 	       $(REGRESS_DIR)/tmp_pg/$(PGBIN)/postmaster 2>/dev/null || ( \
 	    echo local copy of postgres is incorrect; \
-	    $(MAKE) tmp_pg_clean; \
-	    $(MAKE) tmp_pg \
+	    $(MAKE) --no-print-directory tmp_pg_clean; \
+	    $(MAKE) --no-print-directory tmp_pg \
 	)
 
 tmp_pg:	$(REGRESS_DIR)/tmp_pg

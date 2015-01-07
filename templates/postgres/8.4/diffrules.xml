@@ -13,6 +13,8 @@
        they may have different names. -->
 
   <dbobject type="cluster" key="type">
+    <attribute name="skit_xml_type" fail="true"
+	       msg="Cannot reconcile database type diffs between %s and %s"/>
     <attribute name="skit_xml_version" fail="true"
 	       msg="Cannot reconcile xml format diffs between %s and %s"/>
 

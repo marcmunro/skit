@@ -9,7 +9,7 @@
 #      License: GPL V3
 #
 
-directory       = '/home/marc/proj/skit/regress/extensions'
+module_pathname = '$libdir/skit_test'
 default_version = '1.0'
 superuser       = true
 relocatable     = false
