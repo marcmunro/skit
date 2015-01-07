@@ -459,6 +459,12 @@ pgbin()
     fi
     # can't find pg_config, we'll just have to assume the bin is where
     # psql lives
+    if ( file `which psql` | grep symbolic >/dev/null ); then
+	# It looks like this is a Debian-like installation which may have
+	# multiple versions of postgres installed.  This can be problematic
+	# if postgresql-server-dev-X.Y is not installed.
+	echo "WARNING: pg_config not found - skit may be in trouble" 1>&2
+    fi
     which psql | sed -e 's!/psql$!!'
 }
 
