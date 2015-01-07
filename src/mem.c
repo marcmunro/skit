@@ -1,7 +1,7 @@
 /**
  * @file   mem.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -18,6 +18,9 @@
 #include "skit_lib.h"
 #include "exceptions.h"
 
+
+#ifdef MEM_DEBUG
+
 static int chunks_in_use = 0;
 static int chunk_number = 0;
 static int free_number = 0;
@@ -28,9 +31,6 @@ static void *track_chunk = NULL;
 
 static GHashTable *hash_chunks = NULL;
 static GHashTable *hash_frees = NULL;
-
-
-#ifdef MEM_DEBUG
 
 /**
  * For debugging purposes.  Add a call to this from wherever you need 

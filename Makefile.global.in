@@ -3,20 +3,29 @@
 # 
 #       Autoconf input file for Makefile.global
 # 
-#       Copyright (c) 2008 - 2014 Marc Munro
+#       Copyright (c) 2008 - 2015 Marc Munro
 #       Author:  Marc Munro
 # 	License: GLP V3
 #  
 #  ----------
 #
 
-#location substitutions
-
+# Version information
 PACKAGE_NAME=		@PACKAGE_NAME@
 VERSION=		@PACKAGE_VERSION@
 MAJOR_VERSION=          @MAJOR_VERSION@
-XML_VERSION=            @XML_VERSION@ 
+
+# Debug, memory checking, etc
 DEBUG=                  @DEBUG@
+CASSERT=                @CASSERT@
+MEMDEBUG=               @MTRACK@
+
+#location substitutions
+prefix=			@prefix@
+exec_prefix=	        @exec_prefix@
+datarootdir=            @datarootdir@
+BINDIR=	                @bindir@
+DATADIR=                @datadir@/skit
 
 #build tools
 CC=			gcc
@@ -24,15 +33,20 @@ CC=			gcc
 #build tool flags
 
 ifeq ($(DEBUG),yes)
-# Debug settings for flags
-CFLAGS=			-ggdb3 -O0
-LDFLAGS=		-ggdb3 -O0
-DBGSYM=                 -DDEBUG
+    # Debug settings for flags
+    CFLAGS  =		-ggdb3 -O0
+    LDFLAGS =		-ggdb3 -O0
+    DBGSYM  =           -DDEBUG -DWITH_CASSERT -DMEM_DEBUG
 else
-# Non-debug settings for flags
-CFLAGS=			-g -O2
-LDLAGS=			-g -O2
-DBGSYM=                 -DDEBUG
+    # Non-debug settings for flags
+    CFLAGS =		-g -O2
+    LDLAGS =		-g -O2
+    ifeq ($(CASSERT),yes)
+        DBGSYM =            -DWITH_CASSERT
+    endif
+    ifeq ($(MEMDEBUG),yes)
+        DBGSYM :=           $(DBGSYM) -DMEM_DEBUG
+    endif
 endif
 
 

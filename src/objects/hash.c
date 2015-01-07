@@ -1,7 +1,7 @@
 /**
  * @file   hash.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -55,11 +55,6 @@ freeHashKey(gpointer key)
     skfree((void *) key);
 }
 
-static boolean
-isHash(Hash *hash)
-{
-    return hash->type == OBJ_HASH;
-}
 
 /* Create a skit hash object.  The boolean use_skalloc parameter allows
  * hashes to be created by the memory checking subsystem (in mem.c)
@@ -112,7 +107,7 @@ hashAdd(Hash *hash_in, Object *key, Object *contents)
 	hash = hash_in;
     }
 
-    assert(isHash(hash), "hashAdd: hash is not a Hash");
+    assertHash(hash);
     assert(isObject(key), "hashAdd: key is not an object");
     if (contents) {
 	assert(isObject(contents), "hashAdd: contents is not an object");

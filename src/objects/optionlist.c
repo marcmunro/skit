@@ -1,7 +1,7 @@
 /**
  * @file   optonlist.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -44,6 +44,13 @@ optionlistNew()
     return optionlist;
 }
 
+#ifdef WITH_CASSERT
+static boolean
+isHash(Hash *hash)
+{
+    return (hash && (hash->type == OBJ_HASH));
+}
+
 /* Predicate to determine whether an object is a true boolean.  Valid
  * values are the symbol 't' and the value NULL.  */
 static boolean
@@ -56,19 +63,9 @@ isBool(Object *obj)
     return TRUE;
 }
 
-
-/* Predicate to determine whether an object is a hash.
-* QUESTIONS: should the arg type be object?  Should this be moved into
-* hash.c and made extern?  */
-static boolean
-isHash(Hash *hash)
-{
-    return (hash && (hash->type == OBJ_HASH));
-}
-
 /* Predicate to determine whether an object is an optionlist.  Note
  * that an optionlist is a compound object so the test is relatively
- * complex.  The rule here is that if it looks like an optionlist, ten
+ * complex.  The rule here is that if it looks like an optionlist, then
  * it is.  */
 static boolean
 isOptionlist(Cons *optionlist)
@@ -95,6 +92,8 @@ isOptionlist(Cons *optionlist)
 	    isHash((Hash *) cons2->car) &&
 	    isHash((Hash *) cons3->car));
 }
+#endif
+
 
 /* Set the complete flag in the optionlist to false.  */
 static void

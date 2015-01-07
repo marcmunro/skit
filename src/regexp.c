@@ -1,7 +1,7 @@
 /**
  * @file   regexp.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Author:       Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro

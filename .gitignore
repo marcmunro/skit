@@ -24,6 +24,9 @@ configure.scan
 # Automake cache directory
 autom4te.cache/
 
+# Auto-generated header
+src/skit_environment.h
+
 # Make-generated dependency files
 *.d
 *.dep

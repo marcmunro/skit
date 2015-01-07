@@ -1,7 +1,7 @@
 /**
  * @file   system.c
  * \code
- *     Copyright (c) 2014 Marc Munro
+ *     Copyright (c) 2014 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -27,4 +27,13 @@ username(void)
     passwd = getpwuid(getuid()); 
 
     return stringNew(passwd->pw_name);    
+}
+
+String *
+homedir(void)
+{
+    struct passwd *passwd;
+    passwd = getpwuid(getuid()); 
+
+    return stringNew(passwd->pw_dir);    
 }

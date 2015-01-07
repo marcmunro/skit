@@ -1,7 +1,7 @@
 /**
  * @file   skit_lib.h
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -20,6 +20,7 @@
 #include <libxml/xmlreader.h>
 #include <libxslt/xsltInternals.h>
 #include <libxml/xpath.h>
+
 
 /* The xml versions are bumped when changes are made to xml file formats
  * other than the introuduction of new elements and attributes.  This
@@ -365,11 +366,6 @@ typedef struct TokenStr {
 } TokenStr;
 
 
-// TODO: Make this stuff configurable within the build
-#define WITH_CASSERT
-#define MEM_DEBUG
-#undef MEM_DEBUG
-
 #ifdef WITH_CASSERT
 #define assert(cond,...)						\
     do { if (!(cond)) { RAISE(ASSERTION_FAILURE, newstr(__VA_ARGS__));} \
@@ -586,7 +582,6 @@ extern char *tokenTypeName(TokenType tt);
 extern char *strEval(char *instr);
 
 //mem.c
-#define MEM_DEBUG TRUE
 #ifdef MEM_DEBUG
 
 #define MEMPRINTF printf
@@ -607,15 +602,14 @@ extern void *getChunk(intptr_t chunk_id);
 #else 
 
 #define MEMPRINTF 
-#define memchunks_incr(x)
+#define memchunks_incr(x) x
 #define memchunks_in_use() 0
 #define showChunks()
-#define checkChunk(x)
+#define checkChunk(x,y) TRUE
 #define memShutdown()
 #define showFree(x)
 #define showMalloc(x)
 #define trackMalloc(x)
-#define checkChunk(x)
 #define chunkInfo(x)
 
 #define newstr(...)  g_strdup_printf(__VA_ARGS__)
@@ -801,3 +795,4 @@ extern xmlNode *doDiff(String *diffrules, boolean swap);
 
 // system.c
 extern String *username(void);
+extern String *homedir(void);

@@ -1,7 +1,7 @@
 /**
  * @file   xmlfile.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -380,7 +380,7 @@ elementFn(xmlNode *template_node, xmlNode *parent_node, int depth)
     String *volatile expr = nodeAttribute(template_node, "expr");
     String *volatile name;
     xmlNode *elem;
-    xmlNode *child;
+    xmlNode *child = NULL;
 
     UNUSED(depth);
 

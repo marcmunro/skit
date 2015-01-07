@@ -169,6 +169,7 @@ AC_MSG_CHECKING(whether to enable debugging)
 debug_default="yes"
 AC_ARG_ENABLE(debug, [  --enable-debug=[no/yes] turn on debugging
                        [default=$debug_default]],, enable_debug=$debug_default)
+
 dnl Yes, DEBUG symbol will be defined
 if test "x$enable_debug" = "xyes"; then
         AC_SUBST(DEBUG, "yes")
@@ -177,6 +178,36 @@ else
         AC_SUBST(DEBUG)
 	AC_MSG_RESULT(no)
 fi
+
+AC_MSG_CHECKING(whether to enable c assertions)
+cassert_default="no"
+AC_ARG_ENABLE(cassert, [  --enable-cassert=[no/yes] turn on c assertions
+                  [default=cassert_default]],, enable_cassert=$cassert_default)
+
+dnl Yes, CASSERT symbol will be defined
+if test "x$enable_cassert" = "xyes"; then
+        AC_SUBST(CASSERT, "yes")
+	AC_MSG_RESULT(yes)
+else
+        AC_SUBST(CASSERT)
+	AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING(whether to enable memory tracking)
+mtrack_default="yes"
+AC_ARG_ENABLE(mtrack, [  --enable-mtrack=[no/yes] turn on memory tracking
+                       [default=$mtrack_default]],, enable_mtrack=$mtrack_default)
+
+dnl Yes, MTRACK symbol will be defined
+if test "x$enable_mtrack" = "xyes"; then
+        AC_SUBST(MTRACK, "yes")
+	AC_MSG_RESULT(yes)
+else
+        AC_SUBST(MTRACK)
+	AC_MSG_RESULT(no)
+fi
+
+
 
 
 AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
@@ -193,6 +224,7 @@ AC_SUBST(XML_VERSION, esyscmd([grep 'XML_VERSION ' src/skit_lib.h | \
 #PGAC_PATH_DOCBOOK_STYLESHEETS
 #PGAC_PATH_COLLATEINDEX
 AC_CHECK_PROGS(XSLTPROC, xsltproc)
+
 
 
 AC_CONFIG_FILES([Makefile.global])

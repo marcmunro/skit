@@ -1,7 +1,7 @@
 /**
  * @file   params.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -17,6 +17,7 @@
 #include "skit_lib.h"
 #include "exceptions.h"
 #include "skit_param.h"
+#include "skit_environment.h"
 
 
 static Cons *arglist = NULL;
@@ -157,15 +158,24 @@ nextAction()
     return NULL;
 }
 
-/* This probably needs to be modified based on reading a config file or
- * something */
+/* Provide a list of places to look for templates, starting from arg and
+ * ending with the system's installed templates directory.  
+ */
 void
 initTemplatePath(char *arg)
 {
     String *path = stringNew(arg);
     Symbol *sym = symbolNew("template-paths");
     Vector *v = vectorNew(10);
+    String *tmp;
     vectorPush(v, (Object *) path);
+    tmp = homedir();
+    path = stringNewByRef(newstr("%s/%s", tmp->value, "skit"));
+    objectFree((Object *) tmp, TRUE);
+    vectorPush(v, (Object *) path);
+    path = stringNewByRef(newstr(DATA_DIR));
+    vectorPush(v, (Object *) path);
+
     sym->svalue = (Object *) v;
 }
 

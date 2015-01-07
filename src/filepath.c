@@ -1,7 +1,7 @@
 /**
  * @file   filepath.c
  * \code
- *     Copyright (c) 2009 - 2014 Marc Munro
+ *     Copyright (c) 2009 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
@@ -187,8 +187,8 @@ versionFromMatch(char *filepath, char *filename)
 //    root/templatedir
 //    root/templatedir/dbdir
 //    root/templatedir/dbdir/version
-// If more than one is found in root/sub/version, then the match
-// is on the match with the lowest version >= version
+// If more than one is found in root/sub/version, then we return 
+// the match with the highest version <= our version parameter
 char *
 pathToFile(Vector *roots, String *templatedir, String *dbdir, 
 	   Object *version, String *filename)
@@ -208,7 +208,8 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 	if (matches = locateFile(root->value, templatedir->value,
 				 dbdir->value, filename->value)) {
 	    if (matches == -1) {
-		return newstr("%s", next_match());
+		best_match_str = newstr("%s", next_match());
+		return best_match_str;
 	    }
 
 	    // Any matches must be from versioned subdirectories.  Check
@@ -225,7 +226,10 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 		    // This is a perfect match.  No need to look any
 		    // further.
 		    objectFree(match_version, TRUE);
-		    best_match_str = match;
+		    if (best_match_str) {
+			skfree(best_match_str);
+		    }
+		    best_match_str = newstr(match);
 		    break;
 		}
 		else if (cmp < 0) {
@@ -239,7 +243,10 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 			    // The new match is better than the old
 			    objectFree(best_match, TRUE);
 			    best_match = match_version;
-			    best_match_str = match;
+			    if (best_match_str) {
+				skfree(best_match_str);
+			    }
+			    best_match_str = newstr(match);
 			}
 			else {
 			    objectFree(match_version, TRUE);
@@ -247,7 +254,10 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 		    }
 		    else {
 			best_match = match_version;
-			best_match_str = match;
+			if (best_match_str) {
+			    skfree(best_match_str);
+			}
+			best_match_str = newstr(match);
 		    }
 		}
 		else {
@@ -260,13 +270,13 @@ pathToFile(Vector *roots, String *templatedir, String *dbdir,
 	if (best_match) {
 	    objectFree(best_match, TRUE);
 	}
-	return newstr("%s", best_match_str);
+	return best_match_str;
     }
     return NULL;
 }
 
-// Simpler interface to above, using built-in symbols to provide the
-// fixed(-ish) parameters.
+/* Simpler interface to above, using built-in symbols to provide the
+ * fixed(-ish) parameters. */
 String *
 findFile(String *filename)
 {
@@ -276,7 +286,6 @@ findFile(String *filename)
     Object *ver = symbolGetValue("dbver");
     char   *path;
     String *result;
-
     if (!ver) {
 	ver = symbolGetValue("dbver-from-source");
     }

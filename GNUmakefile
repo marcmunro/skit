@@ -1,7 +1,7 @@
 # ----------
 # GNUmakefile
 #
-#      Copyright (c) 2009 - 2014 Marc Munro
+#      Copyright (c) 2009 - 2015 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -50,13 +50,27 @@ CCNAME := $(shell echo $(CC) | tr '[a-z]' '[A-Z]')
 #	@$(CC) -M -MT $*.o $(CPPFLAGS) $< >$@
 
 check: skit
-	./skit -t list.xml x.xml
+	./skit -t list.xml test/data/depdiffs_1a.xml
 
 distclean: clean $(SUBDIRS:%=%_distclean)
 	@rm -f ./configure config.log Makefile.global
 
-clean: $(SUBDIRS:%=%_clean)
+clean: $(SUBDIRS:%=%_clean) templates_clean
 	@rm -f $(garbage) test.log
+
+templates_clean:
+	@find templates -name '*~' -exec rm {} \;
+
+install: templates_clean
+	@echo Installing skit in $(BINDIR)
+	@cp -f skit $(BINDIR)
+	@echo Installing skit templates in $(DATADIR)
+	@if [ ! -d "$(DATADIR)" ]; then mkdir -p "$(DATADIR)"; fi
+	@cp -r templates "$(DATADIR)"
+
+uninstall:
+	rm "$(BINDIR)"/skit
+	rm -r "$(DATADIR)"
 
 
 # Provide a list of the targets buildable by this makefile.
@@ -64,7 +78,9 @@ do_help: $(SUBDIRS:%=%_help)
 	@echo "help             - list major makefile targets"
 	@echo "check            - perform a simple interactive test run of skit"
 	@echo "clean            - remove all intermediate, backup and target files"
-	@echo "disctclean       - as clean but also remove all auto-generated files"
+	@echo "distclean        - as clean but also remove all auto-generated files"
+	@echo "install          - install skit (as superuser)"
+	@echo "uninstall        - deinstall skit (as superuser)"
 
 help:
 	@echo "Major targets of this makefile:"

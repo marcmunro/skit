@@ -1,6 +1,6 @@
 #      Makefile for skit test data files
 #
-#      Copyright (c) 2014 Marc Munro
+#      Copyright (c) 2014 - 2015 Marc Munro
 #      Fileset:	skit - a database schema management toolset
 #      Author:  Marc Munro
 #      License: GPL V3
@@ -54,7 +54,7 @@ data_clean:
 	@echo Purging test/data...
 	@rm -f $(DATA_TARGETS)
 
-test_data_clean:
+test/data_distclean test_data_clean:
 
 # Describe what this makefile can build
 test_data_help:

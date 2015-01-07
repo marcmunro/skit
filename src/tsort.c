@@ -1,7 +1,7 @@
 /**
  * @file   tsort.c
  * \code
- *     Copyright (c) 2010 - 2014 Marc Munro
+ *     Copyright (c) 2010 - 2015 Marc Munro
  *     Fileset:	skit - a database schema management toolset
  *     Author:  Marc Munro
  *     License: GPL V3
