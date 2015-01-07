@@ -46,6 +46,8 @@ src/skit_environment.h: configure
 -include $(SRC_DEPS) 
 
 
+src/params.o: src/skit_environment.h
+
 # Build skit from sources.
 skit:	$(SKIT_OBJECTS) 
 	@echo "  LINK" $@

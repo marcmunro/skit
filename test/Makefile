@@ -46,7 +46,7 @@ VALGRIND_OPTIONS = $(VALGRIND_BASIC_OPTIONS) $(MEMCHECK_SUPPRESSIONS)
 # Also create the alltests.dep Makefile.  This identifies all of the
 # components of the grind and skgrind targets, which are used to run
 # individual grind and skgrind tests.
-skit_test:	$(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST)
+skit_test:	$(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST) 
 	@echo "  LINK" $@
 	@$(CC) $(LDFLAGS) $(TEST_OBJECTS) $(SKIT_OBJECTS_FOR_TEST) \
 		$(LIBCHECK) -o $@
