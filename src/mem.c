@@ -237,14 +237,14 @@ chunkInfo(void *chunk)
     if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 				     &key, &contents)) {
 	fprintf(stderr, "Chunk %p is malloc'd  as number %d\n", 
-		chunk, (int) contents);
+		chunk, (int) (long) contents);
     }
     else {
 	hash = freeTable();
 	if (g_hash_table_lookup_extended(hash, (gpointer) keystr,
 					 &key, &contents)) {
 	    fprintf(stderr, "Chunk %p was freed as number %d\n", 
-		    chunk, (int) contents);
+		    chunk, (int) (long) contents);
 	    memdebug("in chunkinfo");
 	}
 	else {
@@ -362,7 +362,7 @@ showChunk(
     UNUSED(param);
 
     fprintf(stderr, "Chunk %d not freed: %s.", 
-	    (int) contents, (char *) key);
+	    (int) (long) contents, (char *) key);
     ptr = toPtr((char *) key);
 
     printObj((Object *) ptr);
