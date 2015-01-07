@@ -62,6 +62,9 @@ test/data/gendiffs_*.xml
 # The contents of the regress/tmp subdirectory
 /regress/tmp
 
+# The local pg installation
+/regress/tmp_pg
+
 # Suppression files
 valgrind/*suppressions
 

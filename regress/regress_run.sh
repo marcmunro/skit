@@ -474,6 +474,11 @@ if [ "x$1" = "xpglib" ]; then
     exit
 fi
 
+if [ "x$1" = "xpgshare" ]; then
+    `pgbin`/pg_config --sharedir
+    exit
+fi
+
 if [ "x$1" = "xpgconfig" ]; then
     `pgbin`/pg_config
     exit

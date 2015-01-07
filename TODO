@@ -1,16 +1,6 @@
+
 NEED PROPER INSTALLATION MECHANISM FOR skit_test.control
 Also config for the same
-
-
-
-9.4
-replica identify stuff in tables
-
-
-
-
-Missing stuff:
-large object privs?
 
 
 
@@ -26,38 +16,6 @@ add --upgrade option to set of supported commands
 add xml version checks to existing commands
 make directory a mandatory parameter for scatter
 
-
-
-components in extensions:
-  languages                yes
-  casts			   yes
-  conversions		   yes
-  functions		   yes
-  aggregates		   yes
-  operators		   yes    
-  operator_families        yes
-  operator_classes	   yes
-  tables		   yes
-  constraints		   yes
-  indexes		   yes
-  rules			   yes
-  triggers		   yes
-  sequences		   yes
-  comptypes		   yes
-  types			   yes
-  domains		   yes
-  schemata		   yes
-  text search config	   yes
-  text search template	   yes
-  text search dictionary   yes
-  text search parser	   yes
-  foreign data wrapper	   yes
-  foreign data server	   yes
-  user mapping		   yes
-  foreign table		   yes
-  collations		   yes
-
-  
 
 generate:
   - ensure vertical spacing is good in code generated for diffs

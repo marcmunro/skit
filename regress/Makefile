@@ -18,7 +18,8 @@
 
 .PHONY: regress regress_cluster cluster_is_up rdbstart wait_for_rdb \
 	wait_while_proc rdbstop drop_regress_cluster regression_test1 \
-	regression_test2 regression_test3 prep regress_rmlog
+	regression_test2 regression_test3 prep regress_rmlog tmp_pg \
+	tmp_pg_clean check_tmp_pg
 
 
 REGRESS_DIR = regress
@@ -31,9 +32,37 @@ REGRESSDB_HOST = /var/run/postgresql
 
 PGBIN = $(shell $(REGRESS_RUN) pgbin)
 PGLIB = $(shell $(REGRESS_RUN) pglib)
+PGSHARE = $(shell $(REGRESS_RUN) pgshare)
 PSQL = psql -p $(REGRESSDB_PORT) -h $(REGRESSDB_HOST) -v home=$(top_builddir) 
 PG_DUMP = pg_dump -p $(REGRESSDB_PORT)
 
+
+# Create a local copy of some of the postgres environment.  This allows
+# us to create local extension packages.
+$(REGRESS_DIR)/tmp_pg:
+	@echo Creating local copy of postgres installation from $(PGBIN)...
+	@mkdir -p $(REGRESS_DIR)/tmp_pg/$(PGBIN)
+	@cp $(PGBIN)/postmaster $(REGRESS_DIR)/tmp_pg/$(PGBIN)
+	@mkdir -p $(REGRESS_DIR)/tmp_pg/$(PGLIB)
+	@cp -R $(PGLIB)/* $(REGRESS_DIR)/tmp_pg/$(PGLIB)
+	@mkdir -p $(REGRESS_DIR)/tmp_pg/$(PGSHARE)
+	@cp -R $(PGSHARE)/* $(REGRESS_DIR)/tmp_pg/$(PGSHARE)
+	@if [ -d "$(REGRESS_DIR)/tmp_pg/$(PGSHARE)/extension" ]; then \
+	    cp $(REGRESS_DIR)/extensions/* \
+	        $(REGRESS_DIR)/tmp_pg/$(PGSHARE)/extension; fi
+
+check_tmp_pg:
+	@cmp $(PGBIN)/postmaster \
+	       $(REGRESS_DIR)/tmp_pg/$(PGBIN)/postmaster 2>/dev/null || ( \
+	    echo local copy of postgres is incorrect; \
+	    $(MAKE) tmp_pg_clean; \
+	    $(MAKE) tmp_pg \
+	)
+
+tmp_pg:	$(REGRESS_DIR)/tmp_pg
+
+tmp_pg_clean:
+	@rm -rf $(REGRESS_DIR)/tmp_pg
 
 # Check state of regression test database cluster.
 cluster_is_up:
@@ -54,7 +83,8 @@ wait_while_proc:
 # Start up the regression test database
 rdbstart:
 	@echo ...Starting postmaster...
-	@$(PGBIN)/postmaster -D $(REGRESS_DIR)/REGRESSDB -p $(REGRESSDB_PORT)\
+	@$(REGRESS_DIR)/tmp_pg/$(PGBIN)/postmaster \
+	    -D $(REGRESS_DIR)/REGRESSDB -p $(REGRESSDB_PORT)\
 		>$(REGRESS_DIR)/postgresql.log 2>&1 &
 	@echo ...Waiting for database startup...
 	@$(MAKE) --no-print-directory wait_for_rdb || \
@@ -84,7 +114,7 @@ check_pglibs:
 
 
 # Regression test targets.
-regress_cluster: check_pglibs
+regress_cluster: check_pglibs check_tmp_pg
 	@if [ -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    $(MAKE) --silent drop_regress_cluster; fi
 	@echo Creating new cluster for regression tests...
@@ -120,7 +150,7 @@ regression_env:
 	 export PGPORT=$(REGRESSDB_PORT); \
 	 export PG_DUMP=\"$(PG_DUMP)\"; "
 
-regression_test_precond: regress_rmlog
+regression_test_precond: regress_rmlog check_tmp_pg
 	@if [ ! -d $(REGRESS_DIR)/REGRESSDB ]; then \
 	    $(MAKE) --no-print-directory regress_cluster; \
 	fi
@@ -185,7 +215,7 @@ regress: skit regress_cluster regression_test1 regression_test2 \
 regress_rmlog:
 	@rm -f $(REGRESS_DIR)/*.log
 
-regress_clean: drop_regress_cluster
+regress_clean: drop_regress_cluster tmp_pg_clean
 	@echo Cleaning regress...
 	@rm -rf $(REGRESS_DIR)/scratch
 	@rm -f $(REGRESS_DIR)/*.log
