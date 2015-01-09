@@ -79,7 +79,6 @@ valgrind/out
 dbdump/
 
 # Generated stuff in the doc directory.
-doc/version.sgml
-doc/skit.xml
+doc/version.xml
 doc/html
 doc/man

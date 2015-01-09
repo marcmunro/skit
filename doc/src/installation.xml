@@ -1,0 +1,43 @@
+<!-- doc/src/installation.xml -->
+
+<chapter>
+  <title>Installing Skit</title>
+  <section>
+    <title>Binary Packages</title>
+    <para>
+      Skit is currently not available as pre-built binaries.  It must be
+      built from source code.
+    </para>
+  </section>
+  <section>
+    <title>Building From Source</title>
+    <section>
+      <title>Obtaining the Source Code</title>
+    </section>
+    <para>
+      The skit source code can be downloaded as a tarball from
+      <ulink url="http://pgfoundry.org">pgfoundry</ulink>, or can be
+      obtained using git from 
+    </para>
+    <section>
+      <title>From Pgfoundry</title>
+      <para>
+	The tarball is available from <ulink
+	url="http://pgfoundry.org/projects/skit">pgfoundry</ulink> by
+	clicking the download link.
+      </para>
+      <para>
+	Unpack the tarball using <command>tar</command>:
+	<programlisting>
+$ tar xvzf skit_<replaceable>version</replaceable>.tgz
+	</programlisting>
+      </para>
+    </section>
+    <section>
+      <title>Using Git</title>
+      <para>
+	
+      </para>
+    </section>
+  </section>
+</chapter>

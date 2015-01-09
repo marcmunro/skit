@@ -7,7 +7,10 @@ m4_define([SKIT_VERSION],
             cut -d\" -f2 | tr -d '\n']))
 
 AC_INIT(skit, SKIT_VERSION, skit-general@pgfoundry.org)
-
+AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+            cut -d\" -f2 | cut -d. -f1 | tr -d '\n']))
+AC_SUBST(MINOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+            cut -d\" -f2 | cut -d. -f2 | cut -d\  -f1 | tr -d '\n']))
 
 AC_CONFIG_SRCDIR([test/check_filepath.c])
 
@@ -31,7 +34,7 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([dup2 memmove memset regcomp strchr strcspn strpbrk])
+AC_CHECK_FUNCS([memmove memset regcomp strchr strcspn strpbrk])
 
 AC_DEFUN(PKG_CHECK_MODULES, [
   succeeded=no
@@ -209,11 +212,6 @@ fi
 
 
 
-
-AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
-            cut -d\" -f2 | cut -d. -f1 | tr -d '\n']))
-AC_SUBST(XML_VERSION, esyscmd([grep 'XML_VERSION ' src/skit_lib.h | \
-            cut -d\" -f2 | tr -d '\n']))
 
 
 # Docbook

@@ -1,0 +1,62 @@
+<?xml version='1.0'?>
+
+<!DOCTYPE book [
+
+<!ENTITY % sgml.features "IGNORE">
+<!ENTITY % xml.features "INCLUDE">
+<!ENTITY % dbcent PUBLIC "-//OASIS//ENTITIES DocBook Character Entities V4.5//EN"
+   "/usr/local/docbook/dbcentx.mod">
+%dbcent;
+
+<!ENTITY % version SYSTEM "version.xml">
+%version;
+<!ENTITY version       SYSTEM "version.xml">
+<!ENTITY intro	       SYSTEM "src/intro.xml">
+<!ENTITY whatis	       SYSTEM "src/whatis.xml">
+<!ENTITY overview      SYSTEM "src/overview.xml">
+<!ENTITY compatibility SYSTEM "src/compatibility.xml">
+<!ENTITY installation  SYSTEM "src/installation.xml">
+<!ENTITY architecture  SYSTEM "src/architecture.xml">
+<!ENTITY license       SYSTEM "src/license.xml">
+
+]>
+
+<book id="skit">
+ <title>Skit &version; Documentation</title>
+
+ <bookinfo>
+   <author>
+    <personname>
+      <firstname>Marc</firstname>
+      <surname>Munro</surname>
+    </personname>
+   </author>
+  <productname>skit</productname>
+  <productnumber>&version;</productnumber>
+ </bookinfo>
+
+ &intro;
+ <part label="I">
+   <title>Skit User Guide</title>
+   &whatis;
+   &overview;
+   &compatibility;
+   &installation;
+<!--
+    &usage;
+    &man;
+    &feedback;
+-->
+ </part>
+<!--
+ <part label="II">
+   <title>Skit Developer's Guide></title>
+   &architecture;
+   &skit_xml;
+   &policy;
+ </part>
+-->
+ <part label="III - Appendices">
+   &license;
+ </part>
+</book>

@@ -19,35 +19,25 @@
 .PHONY: html man doc_version
 
 DOC_DIR = doc
-DOC_VERSION = $(DOC_DIR)/version.sgml
-DOC_SOURCES = $(DOC_DIR)/skit.sgml $(DOC_VERSION) \
-		$(wildcard $(DOC_DIR)/src/*.sgml) 
+DOC_VERSION = $(DOC_DIR)/version.xml
+DOC_SOURCES = $(DOC_DIR)/skit.xml $(DOC_VERSION) \
+		$(wildcard $(DOC_DIR)/src/*.xml) 
 HTMLDIR = $(DOC_DIR)/html
 HTMLINDEX = $(HTMLDIR)/index.html
 
 # TODO: Get configure to find this
 XHTML_CHUNKS = file:///usr/share/xml/docbook/stylesheet/nwalsh/xhtml/chunk.xsl
-XHTML = /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/chunk.xsl
+#XHTML = /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/chunk.xsl
+XHTML = $(DOC_DIR)/skit_customlayer.xsl
 
-XSLTPROCFLAGS = --xinclude --stringparam  section.autolabel 1 \
-		--stringparam chunk.section.depth 2 \
+XSLTPROCFLAGS = --xinclude 
 
 # Create entities for the various bits of version information needed.
-doc_version: $(DOC_VERSION)
-$(DOC_VERSION): configure
+doc_version $(DOC_VERSION): configure
 	{ \
 	  echo "<!ENTITY version \"$(VERSION)\">"; \
 	  echo "<!ENTITY majorversion \"$(MAJOR_VERSION)\">"; \
-	  echo "<!ENTITY xmlversion \"$(XML_VERSION)\">"; \
 	} > $@
-
-# Create an xml version of the docs from the sgml sources.
-$(DOC_DIR)/skit.xml: $(DOC_DIR)/skit.sgml $(DOC_SOURCES)
-	osx -D. -x lower $< >skit.xmltmp
-	perl -p -e 's/\[(amp|copy|egrave|gt|lt|mdash|nbsp|ouml|pi|quot|uuml) *\]/\&\1;/g;' \
-	           -e '$$_ .= qq{<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">\n} if $$. == 1;' \
-	  <skit.xmltmp > $@
-	rm skit.xmltmp
 
 # Create html docs.
 html:	$(HTMLINDEX) 
@@ -55,15 +45,9 @@ html:	$(HTMLINDEX)
 	@echo VERSION: $(DOC_VERSION) 
 
 # Create html docs
-$(HTMLINDEX): $(DOC_DIR)/skit.xml
+$(HTMLINDEX): $(DOC_SOURCES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ $(XHTML) $(DOC_DIR)/skit.xml
-#
-#
-#GENERATED_SGML = bookindex.sgml version.sgml \
-#	features-supported.sgml features-unsupported.sgml errcodes-table.sgml
-#
-#ALLSGML := $(wildcard $(srcdir)/*.sgml $(srcdir)/ref/*.sgml) $(GENERATED_SGML)
-#
+
 #man:	$(DOC_DIR)/man_stamp
 #
 #$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_DIR)/skit.xml

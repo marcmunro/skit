@@ -253,7 +253,6 @@
 		         params='(list (select tuple "oid") 
 				         "pg_class" 
 					 "(&apos;pg_proc&apos;)")'>
-	      <skit:exec expr="(debug 'DEP' dependency)"/>
 	      <depends>
 		<skit:attr name="type" expr="'function'"/>
 		<skit:attr name="name"

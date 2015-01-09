@@ -1,0 +1,21 @@
+<!-- doc/src/intro.xml -->
+
+<preface id="preface">
+ <title>Preface</title>
+ <para>
+  This book is the official documentation for skit.  It is currently in
+  an early embryonic and minimal form.
+ </para>
+ <para>
+   Note that this is a very early (alpha) release and although it has
+   been extensively tested, you may encounter bugs.  If so, please
+   report them XXXX so that skit may be improved and eveyone's experience
+   enhanced.
+ </para>
+ <para>
+   Skit is free software licensed under version 3 of the
+   <acronym>GNU</acronym> General Public License.  See: <xref
+   linkend="gpl"/>.
+ </para>
+</preface>
+

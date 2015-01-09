@@ -1,0 +1,32 @@
+<!-- doc/src/whatis.xml -->
+
+<chapter>
+  <title>What is skit?</title>
+  <para> 
+    Skit is a command-line tool for managing database development. Its
+    purpose is to allow database definitions to be managed using a
+    Source Code Management system, and to provide the means to upgrade
+    and patch databases in a similar way to that done for source code.
+  </para>
+  <para>
+    It provides the means to identify and examine all of the objects in
+    a database, to identify differences between databases, and to
+    generate and regenerate code to recreate and modify those databases.
+  </para>
+  <para>
+    Finally, it also provides a general-purpose mechanism for creating,
+    manipulating and validating database objects programmatically.
+  </para>
+  <para>
+    The current implementation (&version;) supports only PostgreSQL but
+    the underlying engine is designed to be database-agnostic.  Adding
+    support for other databases is intended to be relatively
+    straightforward.
+  </para>
+  <para>
+    Note that <application>skit</application> currently deals only with
+    database objects and not with data.  If you have Meta-data to
+    manage, it will have to be managed independently
+    of <application>skit</application>.
+  </para>
+</chapter>

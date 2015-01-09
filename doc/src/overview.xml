@@ -1,0 +1,146 @@
+<!-- doc/src/overview.xml -->
+<chapter>
+  <title><application>Skit</application> Command Overview</title>
+  <para>
+    This section provides an overview
+    of <application>skit</application>'s built-in commands.
+    Internally <application>skit</application> manages a stack of xml
+    streams, with each command potentially adding to, or removing
+    streams from this stack.  When a command
+    takes <acronym>XML</acronym> streams as input, these streams can
+    either be provided as parameters or will come directly from the
+    stack.  If at the end of a <application>skit</application> command
+    run there is exactly one stream left on the stack, an implicit print
+    command will be issued.
+  </para>
+  <para> 
+    <application>Skit</application> provides the following built-in
+    commands:
+    <itemizedlist>
+      <listitem>
+	<para>
+	  extract
+	</para>
+	<para>
+	  Connects to a database and extracts definitions for all
+	  database objects, placing an <acronym>XML</acronym> stream
+	  onto the stack.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  scatter
+	</para>
+	<para>
+	  Takes an <acronym>XML</acronym> stream and scatters it into
+	  the directory tree specified by a parameter.  This creates one
+	  file per major database object in a directory hierarchy that
+	  reflects the database object hierarchy (eg, files representing
+	  tables are in a directory representing the schema in which
+	  they are defined).  This directory system can be placed under
+	  the control of a Source Code Management System.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  diff
+	</para>
+	<para>
+	  Takes two <acronym>XML</acronym> streams, as created by
+	  extract, and generates a diffstream identifying what has
+	  changed.  Note that this diffstream contains dependency
+	  elements as added by the adddeps command.
+	  The <acronym>XML</acronym> diff stream is added to the stack.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  generate
+	</para>
+	<para>
+	  Takes an <acronym>XML</acronym> stream and generates an
+	  <acronym>XML</acronym> print stream containg
+	  <acronym>DDL</acronym>.  If the stream was from an extract,
+	  the <acronym>DDL</acronym> will be the complete
+	  <acronym>DDL</acronym> required to build (or optionally drop)
+	  the database.  If the stream was a diff stream, it will build
+	  the <acronym>DDL</acronym> to bring one database into line
+	  with the other.  The <acronym>XML</acronym> print stream is
+	  placed on the stack.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  list
+	</para>
+	<para>
+	  This takes an <acronym>XML</acronym> stream and creates
+	  an <acronym>XML</acronym> print stream containing a summary of
+	  the database objects in the source stream.  For diff streams,
+	  it also identifies the diff status of each object.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  adddeps
+	</para>
+	<para>
+	  This taks an <acronym>XML</acronym> stream and wraps each
+	  database object in <tag>&lt;dbobject&gt;</tag> elements
+	  containing dependency and context information.  This is
+	  normally an operation that is performed automatically
+	  when <acronym>XML</acronym> streams are read.  This command is
+	  intended for use primarily for
+	  debugging <application>skit</application>.  The dependency
+	  elements added by this command are used by the generate
+	  command in order to properly order the <acronym>DDL</acronym>
+	  produced.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  template
+	</para>
+	<para>
+	  This takes a named <acronym>XML</acronym> template file as a
+	  parameter and processes it using
+	  the <application>skit</application> engine.  Such template
+	  files can connect to databases, perform queries, and generate
+	  and manipulate <acronym>XML</acronym> streams.  They can also
+	  define and manage the handling of command line parameters.
+	  Most of <application>skit</application>'s build-in commands
+	  are implemented using template files, and the following
+	  two <application>skit</application> invocations are
+	  equivalent:
+	</para>
+	<programlisting>
+$ <application>skit</application> --generate --build mydb.xml
+
+$ <application>skit</application> --template generate.xml --build mydb.xml
+	</programlisting>
+	<para>
+	  Both cause the <filename>generate.xml</filename> template to
+	  be evaluated by the <application>skit</application> engine.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  print
+	</para>
+	<para>
+	  This takes an <acronym>XML</acronym> stream and prints it to
+	  standard output.
+	</para>
+	<para>
+	  If it is a print stream, the <acronym>XML</acronym> is
+	  removed, leaving only the contained text.
+	</para>
+	<para>
+	  If it is a non-diff <acronym>XML</acronym> stream, the 
+	  <tag>&lt;dbobject&gt;</tag> elements will be stripped (by
+	  the <filename>rm_deps.xsl</filename> stylesheet).
+	</para>
+      </listitem>
+    </itemizedlist>
+  </para>
+</chapter>
