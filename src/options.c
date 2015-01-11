@@ -29,23 +29,21 @@ coreOptions()
 {
     char *str = newstr(
 	"(('add*deps' 'a')"
-	"('c*onnect')"
 	"('d*iff')"
 	"('db*type')"
 	"('e*xtract')"
-	"('ga*ther')"
-	"('ge*nerate' 'n')"
-	"('g*rep')"
+	"('g*enerate' 'n')"
+	/*	"('gr*ep')" */
 	"('l*ist')"
-	"('m*erge')"
 	"('p*rint')"
 	"('printf*ull' 'f*ull' 'pf*ull')"
 	"('printx*xml' 'x*ml' 'px*ml')"
 	"('s*catter')"
 	"('t*emplate')"
 	"('u*sage')"
-	"('ve*rsion')"
-	"('v*grep'))");
+	"('v*ersion')"
+	/*	"('vg*rep')" */
+	")");
     TokenStr token_str = {str, '\0', NULL};
     Cons *options = (Cons *) objectRead(&token_str);
     char *str2 = objectSexp((Object *) options);

@@ -1,0 +1,17 @@
+<!-- doc/src/usage.xml -->
+
+<chapter id="usage">
+  <title>Skit Commands</title>
+  <section id="extract">
+    <title>Extract</title>
+    <para>
+      The skit <command>extract</command> command connects to a database
+      and generates an <acronym>XML</acronym> stream describing all of
+      the database's objects.
+    </para>
+    <para>
+      The bevaviour of <command>extract</command> is defined by the
+      template file <filename>extract.xml</filename>.
+    </para>
+  </section>
+</chapter>

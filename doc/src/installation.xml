@@ -1,6 +1,6 @@
 <!-- doc/src/installation.xml -->
 
-<chapter>
+<chapter id="installing">
   <title>Installing Skit</title>
   <section>
     <title>Binary Packages</title>
@@ -13,30 +13,132 @@
     <title>Building From Source</title>
     <section>
       <title>Obtaining the Source Code</title>
-    </section>
-    <para>
-      The skit source code can be downloaded as a tarball from
-      <ulink url="http://pgfoundry.org">pgfoundry</ulink>, or can be
-      obtained using git from 
-    </para>
-    <section>
-      <title>From Pgfoundry</title>
       <para>
-	The tarball is available from <ulink
-	url="http://pgfoundry.org/projects/skit">pgfoundry</ulink> by
-	clicking the download link.
+	The skit source code can be downloaded as a tarball from <ulink
+	url="http://pgfoundry.org">pgfoundry</ulink>, or can be obtained
+	using <command>git</command>.
+      </para>	
+      <section>	
+	<title>From Pgfoundry</title>
+	<para>
+	  The tarball is available from <ulink
+	  url="http://pgfoundry.org/projects/skit">pgfoundry</ulink> by
+	  clicking the download link.
+	</para>
+	<para>
+	  Unpack the tarball using <command>tar</command>:
+	  <programlisting>
+$ tar xvzf skit_<replaceable>version</replaceable>.tgz
+	  </programlisting>
+	</para>
+      </section>
+      <section>
+	<title>Using Git</title>
+	<para>
+	  To checkout from git, create a suitable directory and do:
+	  <programlisting>
+$ git clone git://github.com/marcmunro/skit.git
+	  </programlisting>
+	</para>
+	<para>
+	  An alternative repository is available at
+	  <filename>git@bloodnok.com:skit.git</filename>
+	</para>
+      </section>
+    </section>
+    <section>
+      <title>Prerequisites for Building Skit</title>
+      <para>
+	In addition to the usual build tools such as
+	<command>gcc</command> and <command>make</command>, you will
+	need development versions of the following packages in order to
+	build skit:
+	<itemizedlist spacing="compact">
+	  <listitem><para>postgresql</para></listitem>
+	  <listitem><para>libxml2</para></listitem>
+	  <listitem><para>libxslt</para></listitem>
+	</itemizedlist>
       </para>
       <para>
-	Unpack the tarball using <command>tar</command>:
+	Should you wish to run unit tests you will also need:
+	<itemizedlist>
+	  <listitem>
+	    <para>check</para>
+	    <para>
+	      This is a unit test framework for C.
+	    </para>
+	  </listitem>
+	</itemizedlist>
+      </para>
+      <para>
+	And to build and run the regression tests you will need:
+	<itemizedlist spacing="compact">
+	  <listitem><para>postgresql-contrib</para></listitem>
+	  <listitem><para>postgresql-plpython</para></listitem>
+	</itemizedlist>
+      </para>
+    </section>
+    <section>
+      <title>Compiling</title>
+      <para>
+	To build skit, move into the skit directory and type the
+	following commands:
 	<programlisting>
-$ tar xvzf skit_<replaceable>version</replaceable>.tgz
+$ ./configure
+$ make skit
+$ make check
+	</programlisting>  
+	That last command runs a simple skit test and should produce
+	output looking something like:
+	<programlisting>
+/skit -t list.xml test/data/depdiffs_1a.xml
+cluster=cluster|cluster
+  role=marc|role.marc
+  role=r1|role.r1
+  role=r2|role.r2
+  role=rs|role.rs
+  tablespace=pg_default|tablespace.pg_default
+  dbincluster=regressdb|dbincluster.regressdb
+database=regressdb|database.regressdb
+    language=plpgsql|language.regressdb.plpgsql
+    extension=plpgsql|extension.regressdb.plpgsql
+    schema=public|schema.regressdb.public
+    schema=n1|schema.regressdb.n1
+      sequence=s1|sequence.regressdb.n1.s1
+      sequence=s1a|sequence.regressdb.n1.s1a
+    schema=n2|schema.regressdb.n2
+      sequence=s2|sequence.regressdb.n2.s2
+      sequence=s2a|sequence.regressdb.n2.s2a
+    schema=n3|schema.regressdb.n3
+      sequence=s3|sequence.regressdb.n3.s3
+$ 
 	</programlisting>
       </para>
+      <para>
+	Should you wish to run more tests, you can use:
+	<programlisting>
+$ make unit
+	</programlisting>  
+	to run the skit unit tests, and:
+	<programlisting>
+$ make regress
+	</programlisting>  
+	to run the regression tests.
+      </para>
     </section>
     <section>
-      <title>Using Git</title>
+      <title>Installing</title>
       <para>
-	
+	To install skit, you will need root (or similar) privileges.  Run:
+	<programlisting>
+$ sudo make install
+	</programlisting>  
+      </para>
+      <para>
+	To de-install:
+	<programlisting>
+$ sudo make uninstall
+	</programlisting>  
       </para>
     </section>
   </section>

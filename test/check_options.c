@@ -89,11 +89,11 @@ START_TEST(get_option1)
     // Simply test that creation and destruction appears to go according
     // to plan.
     Hash *option_hash = coreOptionHash();
-    String *param = stringNew("con");
+    String *param = stringNew("db");
     String *option = (String *) hashGet(option_hash, (Object *) param);
     fail_if(option == NULL, "Option not found");
     fail_unless(option->type == OBJ_STRING, "Incorrect type for option");
-    fail_unless(streq(option->value, "connect"), 
+    fail_unless(streq(option->value, "dbtype"), 
 		"Incorrect option value: \"%s\"", option->value);
     objectFree((Object *) param, TRUE);
     freeOptions();

@@ -21,9 +21,6 @@
 	Add echo statements to the drop and build scripts that show
 	progress when run through sql TODO: check this works
 
-        \-\-i[gnore-contexts]
-	TODO: check this works, and create the comment if it makes sense
-
         \-\-de[bug]
 	TODO: check this works, and create the comment if it makes sense
 

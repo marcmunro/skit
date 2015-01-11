@@ -1,6 +1,12 @@
 
 Properly handle phony targets in GNUMakefiles?
 
+complete manpage work (diff has just been documented)
+
+
+check usage/status of echoes arg to generate - maybe update documentation.
+eliminate template option to scatter (check out the C code for scatter).
+
 eliminate all ignore-contexts code
 
 

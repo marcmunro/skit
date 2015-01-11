@@ -22,13 +22,12 @@ DOC_DIR = doc
 DOC_VERSION = $(DOC_DIR)/version.xml
 DOC_SOURCES = $(DOC_DIR)/skit.xml $(DOC_VERSION) \
 		$(wildcard $(DOC_DIR)/src/*.xml) 
+
 HTMLDIR = $(DOC_DIR)/html
 HTMLINDEX = $(HTMLDIR)/index.html
 
-# TODO: Get configure to find this
-XHTML_CHUNKS = file:///usr/share/xml/docbook/stylesheet/nwalsh/xhtml/chunk.xsl
-#XHTML = /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/chunk.xsl
-XHTML = $(DOC_DIR)/skit_customlayer.xsl
+XHTML_XSL = $(DOC_DIR)/skit_customlayer.xsl
+MAN_XSL = $(DOC_DIR)/stylesheet_man.xsl
 
 XSLTPROCFLAGS = --xinclude 
 
@@ -39,25 +38,22 @@ doc_version $(DOC_VERSION): configure
 	  echo "<!ENTITY majorversion \"$(MAJOR_VERSION)\">"; \
 	} > $@
 
-# Create html docs.
-html:	$(HTMLINDEX) 
-	@echo SOURCES: $(DOC_SOURCES) 
-	@echo VERSION: $(DOC_VERSION) 
-
 # Create html docs
-$(HTMLINDEX): $(DOC_SOURCES)
-	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ $(XHTML) $(DOC_DIR)/skit.xml
+html : $(HTMLINDEX)
 
-#man:	$(DOC_DIR)/man_stamp
-#
-#$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_DIR)/skit.xml
-#	$(XSLTPROC) $(XSLTPROCFLAGS) $(DOC_DIR)/stylesheet_man.xsl \
-#	    $(DOC_DIR)/skit.xml
-#	touch $@
-#
+$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)
+	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ \
+		$(XHTML_XSL) $(DOC_DIR)/skit.xml
 
-# Remove all generated/intermediate files
-doc_clean: 
+
+man : $(DOC_DIR)/man_stamp
+
+$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_DIR)/skit.xml
+	$(XSLTPROC) $(XSLTPROCFLAGS) $(MAN_XSL) $(DOC_DIR)/skit.xml
+	touch $@
+
+
+# Remove all generated/intermediate filedoc_clean: 
 	@rm -rf $(DOC_VERSION) $(HTMLDIR)
 
 doc_distclean: 

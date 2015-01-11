@@ -105,20 +105,6 @@ START_TEST(check_deps)
 }
 END_TEST
 
-START_TEST(check_connect)
-{
-    int result;
-
-    initTemplatePath(".");
-
-    result = validate("connect.xml", "template.rng");
-    fail_if(result != 0,
-	    "check_connect: connect.xml fails to validate");
-
-    FREEMEMWITHCHECK;
-}
-END_TEST
-
 Suite *
 relaxng_suite(void)
 {
@@ -128,7 +114,6 @@ relaxng_suite(void)
     TCase *tc_core = tcase_create("RelaxNGx");
     ADD_TEST(tc_core, check_list);
     ADD_TEST(tc_core, check_deps);
-    ADD_TEST(tc_core, check_connect);
 				
     suite_add_tcase(s, tc_core);
 

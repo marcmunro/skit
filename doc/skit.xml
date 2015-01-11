@@ -15,9 +15,11 @@
 <!ENTITY whatis	       SYSTEM "src/whatis.xml">
 <!ENTITY overview      SYSTEM "src/overview.xml">
 <!ENTITY compatibility SYSTEM "src/compatibility.xml">
+<!ENTITY usage         SYSTEM "src/usage.xml">
 <!ENTITY installation  SYSTEM "src/installation.xml">
 <!ENTITY architecture  SYSTEM "src/architecture.xml">
 <!ENTITY license       SYSTEM "src/license.xml">
+<!ENTITY man           SYSTEM "src/man.xml">
 
 ]>
 
@@ -42,9 +44,8 @@
    &overview;
    &compatibility;
    &installation;
+   &usage;
 <!--
-    &usage;
-    &man;
     &feedback;
 -->
  </part>
@@ -58,5 +59,6 @@
 -->
  <part label="III - Appendices">
    &license;
+   &man;
  </part>
 </book>

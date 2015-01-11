@@ -19,7 +19,7 @@
     <itemizedlist>
       <listitem>
 	<para>
-	  extract
+	  <link linkend="extract">extract</link>
 	</para>
 	<para>
 	  Connects to a database and extracts definitions for all

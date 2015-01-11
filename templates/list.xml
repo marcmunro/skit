@@ -26,8 +26,8 @@
   xmlns:skit="http://www.bloodnok.com/xml/skit">
   
   <skit:options>
-    <option name='g*rants' type='flag'/>
-    <option name='con*texts' type='flag'/>
+    <option name='gra*nts' type='flag'/>
+    <option name='c*ontexts' type='flag'/>
     <option name='f*allbacks' type='flag'/>
     <option name='a*ll' type='flag'/>
     <!-- Ensure add_deps.xsl is run before anything else is done -->
