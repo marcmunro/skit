@@ -48,7 +48,7 @@ $(HTMLINDEX): $(DOC_SOURCES) $(XHTML)
 
 man : $(DOC_DIR)/man_stamp
 
-$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_DIR)/skit.xml
+$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) $(MAN_XSL) $(DOC_DIR)/skit.xml
 	touch $@
 

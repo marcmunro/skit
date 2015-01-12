@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <libxml/xinclude.h>
-#include "../skit_lib.h"
+#include "../skit.h"
 #include "../exceptions.h"
 
 static String boolean_str = {OBJ_STRING, "boolean"};

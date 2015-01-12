@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../skit_lib.h"
+#include "../skit.h"
 #include "../exceptions.h"
 
 static Hash *symbols = NULL;

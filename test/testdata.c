@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include "../src/skit_lib.h"
+#include "../src/skit.h"
 #include "../src/exceptions.h"
 #include "../src/sql.h"
 #include "version.sql"

@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
-#include "../src/skit_lib.h"
+#include "../src/skit.h"
 #include "../src/exceptions.h"
 #include "suites.h"
 

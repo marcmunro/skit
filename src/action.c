@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "skit_param.h"
 #include "exceptions.h"
 

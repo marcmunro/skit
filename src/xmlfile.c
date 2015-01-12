@@ -17,7 +17,7 @@
 #include <ctype.h>
 #include <glob.h>
 #include <libgen.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 #include <libxml/xmlreader.h>
 #include <libxml/tree.h>

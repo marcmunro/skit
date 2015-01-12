@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
-#include "skit_lib.h"
+#include "skit.h"
 
 String *
 username(void)

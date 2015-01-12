@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "../skit_lib.h"
+#include "../skit.h"
 #include "../exceptions.h"
 #include <regex.h>
 

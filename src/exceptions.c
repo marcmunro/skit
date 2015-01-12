@@ -15,7 +15,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdarg.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 
 static Exception *cur_exception_handler = NULL;

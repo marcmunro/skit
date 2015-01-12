@@ -16,7 +16,7 @@
 #include <string.h>
 #include <regex.h>
 #include "skit_param.h"
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 
 /* Return the home directory for skit.  This is where the templates dir

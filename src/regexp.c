@@ -13,7 +13,7 @@
  *
  */
 
-#include "skit_lib.h"
+#include "skit.h"
 #include <stdio.h>
 #include <string.h>
  

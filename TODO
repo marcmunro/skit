@@ -1,7 +1,10 @@
 
 Properly handle phony targets in GNUMakefiles?
 
-complete manpage work (diff has just been documented)
+
+add handling for --version
+make --usage do the right thing.
+
 
 
 check usage/status of echoes arg to generate - maybe update documentation.

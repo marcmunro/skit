@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <check.h>
-#include "../src/skit_lib.h"
+#include "../src/skit.h"
 #include "suites.h"
 #include <sys/types.h>
 #include <sys/wait.h>

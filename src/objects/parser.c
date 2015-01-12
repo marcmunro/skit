@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "../skit_lib.h"
+#include "../skit.h"
 
 static char *
 skipWhiteSpace(char *str)

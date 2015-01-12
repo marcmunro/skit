@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <libpq-fe.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 #include "sql.h"
 

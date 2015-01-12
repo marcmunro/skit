@@ -13,7 +13,7 @@
  */
 
 #include <stdio.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "sql.h"
 #include "exceptions.h"
 

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../skit_lib.h"
+#include "../skit.h"
 #include "../exceptions.h"
 
 /* Create a new optionlist.  Note that it does this by generating from 

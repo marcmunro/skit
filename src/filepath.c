@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fnmatch.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 #include <glob.h>
 #include <errno.h>

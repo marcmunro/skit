@@ -19,7 +19,7 @@
 #include <signal.h>
 #include <check.h>
 #include <regex.h>
-#include "../src/skit_lib.h"
+#include "../src/skit.h"
 #include "../src/exceptions.h"
 #include "suites.h"
 

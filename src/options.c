@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "skit_lib.h"
+#include "skit.h"
 #include "exceptions.h"
 #include "skit_param.h"
 
@@ -40,7 +40,7 @@ coreOptions()
 	"('printx*xml' 'x*ml' 'px*ml')"
 	"('s*catter')"
 	"('t*emplate')"
-	"('u*sage')"
+	"('u*sage' 'h*elp')"
 	"('v*ersion')"
 	/*	"('vg*rep')" */
 	")");
