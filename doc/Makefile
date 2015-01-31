@@ -16,12 +16,13 @@
 # attempt, possibly misguided, to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
 
-.PHONY: html man doc_version
+.PHONY: html man doc_version usage
 
 DOC_DIR = doc
-DOC_VERSION = $(DOC_DIR)/version.xml
+DOC_VERSION = $(DOC_DIR)/version.sgml
 DOC_SOURCES = $(DOC_DIR)/skit.xml $(DOC_VERSION) \
-		$(wildcard $(DOC_DIR)/src/*.xml) 
+		$(wildcard $(DOC_DIR)/src/*.xml) \
+		$(wildcard $(DOC_DIR)/src/*.sgml) 
 
 HTMLDIR = $(DOC_DIR)/html
 HTMLINDEX = $(HTMLDIR)/index.html
@@ -32,28 +33,35 @@ MAN_XSL = $(DOC_DIR)/stylesheet_man.xsl
 XSLTPROCFLAGS = --xinclude 
 
 # Create entities for the various bits of version information needed.
-doc_version $(DOC_VERSION): configure
+doc_version: $(DOC_VERSION)
+
+$(DOC_VERSION): configure
 	{ \
 	  echo "<!ENTITY version \"$(VERSION)\">"; \
 	  echo "<!ENTITY majorversion \"$(MAJOR_VERSION)\">"; \
-	} > $@
+	} > $(DOC_VERSION)
 
 # Create html docs
-html : $(HTMLINDEX)
+html : $(HTMLINDEX) $(DOC_VERSION)
 
-$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)
+$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)  $(DOC_VERSION)
 	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ \
 		$(XHTML_XSL) $(DOC_DIR)/skit.xml
 
 
-man : $(DOC_DIR)/man_stamp
+man : skit.1 $(DOC_VERSION)
 
-$(DOC_DIR)/man_stamp: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
+skit.1: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) $(MAN_XSL) $(DOC_DIR)/skit.xml
-	touch $@
 
+usage: templates/usage_dbtype.txt man
+
+templates/usage_dbtype.txt: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES) 
+	man -l skit.1 >skit_man.txt 2>/dev/null
+	doc/extract_usage.sh skit_man.txt
 
 # Remove all generated/intermediate filedoc_clean: 
+doc_clean:
 	@rm -rf $(DOC_VERSION) $(HTMLDIR)
 
 doc_distclean: 

@@ -641,8 +641,8 @@ extern Cons *optionKeyList(String *name);
 
 // params.c
 extern void record_args(int argc, char *argv[]);
-extern char *usage_msg(void);
-extern void show_usage(FILE *dest);
+extern String *usage_msg(String *usage_for);
+extern void show_usage(FILE *dest, String *usage_for);
 extern String *read_arg(void);
 extern void unread_arg(String *arg, boolean is_option);
 extern String *nextArg(String **p_arg, boolean *p_option);

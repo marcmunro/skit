@@ -91,7 +91,7 @@ $ make check
 	That last command runs a simple skit test and should produce
 	output looking something like:
 	<programlisting>
-/skit -t list.xml test/data/depdiffs_1a.xml
+$ skit -t list.xml test/data/depdiffs_1a.xml
 cluster=cluster|cluster
   role=marc|role.marc
   role=r1|role.r1

@@ -29,7 +29,7 @@
       </listitem>
       <listitem>
 	<para>
-	  scatter
+	  <link linkend="scatter">scatter</link>
 	</para>
 	<para>
 	  Takes an <acronym>XML</acronym> stream and scatters it into
@@ -43,7 +43,7 @@
       </listitem>
       <listitem>
 	<para>
-	  diff
+	  <link linkend="diff">diff</link>
 	</para>
 	<para>
 	  Takes two <acronym>XML</acronym> streams, as created by
@@ -55,7 +55,7 @@
       </listitem>
       <listitem>
 	<para>
-	  generate
+	  <link linkend="generate">generate</link>
 	</para>
 	<para>
 	  Takes an <acronym>XML</acronym> stream and generates an
@@ -71,7 +71,7 @@
       </listitem>
       <listitem>
 	<para>
-	  list
+	  <link linkend="list">list</link>
 	</para>
 	<para>
 	  This takes an <acronym>XML</acronym> stream and creates
@@ -82,10 +82,10 @@
       </listitem>
       <listitem>
 	<para>
-	  adddeps
+	  <link linkend="adddeps">adddeps</link>
 	</para>
 	<para>
-	  This taks an <acronym>XML</acronym> stream and wraps each
+	  This takes an <acronym>XML</acronym> stream and wraps each
 	  database object in <tag>&lt;dbobject&gt;</tag> elements
 	  containing dependency and context information.  This is
 	  normally an operation that is performed automatically
@@ -99,7 +99,7 @@
       </listitem>
       <listitem>
 	<para>
-	  template
+	  <link linkend="template">template</link>
 	</para>
 	<para>
 	  This takes a named <acronym>XML</acronym> template file as a
@@ -125,7 +125,7 @@ $ <application>skit</application> --template generate.xml --build mydb.xml
       </listitem>
       <listitem>
 	<para>
-	  print
+	  <link linkend="print">print</link>
 	</para>
 	<para>
 	  This takes an <acronym>XML</acronym> stream and prints it to
@@ -136,7 +136,7 @@ $ <application>skit</application> --template generate.xml --build mydb.xml
 	  removed, leaving only the contained text.
 	</para>
 	<para>
-	  If it is a non-diff <acronym>XML</acronym> stream, the 
+	  If it is a non-diff <acronym>XML</acronym> stream, the
 	  <tag>&lt;dbobject&gt;</tag> elements will be stripped (by
 	  the <filename>rm_deps.xsl</filename> stylesheet).
 	</para>

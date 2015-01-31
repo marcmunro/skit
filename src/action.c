@@ -332,7 +332,7 @@ checkUnprovidedValue(Cons *entry, Object *params)
 	value = hashGet((Hash *) params, (Object *) key);
 	if (!value) {
 	    RAISE(PARAMETER_ERROR, 
-		  newstr("getOptionlistArgs: required arg "
+		  newstr("checkUnprovidedValue: required arg "
 			 "\"%s\" not provided", ((String *) key)->value));
 	}
     }
@@ -474,6 +474,11 @@ parseTemplate(Object *obj)
 
     BEGIN {
 	filename = read_arg();
+	if (!filename) {
+	    RAISE(PARAMETER_ERROR, 
+		  newstr("template filename must be provided"));
+	    
+	}
 
 	action_info = doParseTemplate(filename);
     }
@@ -502,6 +507,90 @@ execParseTemplate(char *name)
 	objectFree((Object *) filename, TRUE);
     }
     END;
+
+    return action_info;
+}
+
+/* Set the "global" element in hash to t.  This will cause variables
+ * defined for this action to be made global rather than in-scope only
+ * for the current action.
+ */
+static void
+makeGlobal(Hash *hash)
+{
+    Symbol *t = symbolGet("t");
+    (void) hashAdd(hash, (Object *) stringNew("global"), (Object *) t);
+}
+
+/* Get, and delete, the "global" element in hash.  If t, then variables
+ * for this action will be made global rather than in-scope only
+ * for the current action.
+ */
+static boolean
+getGlobal(Hash *hash)
+{
+    Object *global = hashDel(hash, (Object *) &global_str);
+    return global != NULL;
+}
+
+
+static Object *
+parseDbtype(Object *obj)
+{
+    String *key;
+    String *dbtype = read_arg();
+    char *str;
+    Hash *result;
+
+    UNUSED(obj);
+    if (!dbtype) {
+	RAISE(PARAMETER_ERROR,
+	      newstr("dbtype requires an argument"));    
+    }
+    if (checkDbtypeIsRegistered(dbtype)) {
+	result = hashNew(TRUE);
+	key = stringNew("dbtype");
+	(void) hashAdd(result, (Object *) key, (Object *) dbtype);
+	makeGlobal(result);
+	return (Object *) result;
+    }
+    else {
+	str = newstr("dbtype \"%s\" is not known to skit\n", dbtype->value);
+	objectFree((Object *) dbtype, TRUE);
+	RAISE(PARAMETER_ERROR, str);
+	return NULL;
+    }
+}
+
+
+static Object *
+parseUsage(Object *obj)
+{
+    Object *action_info;
+    String *action = nextAction();
+    Object *symbol_value;
+    String *key;
+    String *value;
+
+    if (action && streq(action->value, "dbtype")) {
+	action_info = parseDbtype(obj);
+	action = nextAction();
+    }
+    else {
+	action_info = (Object *) hashNew(TRUE);
+	key = stringNew("dbtype");
+	symbol_value = symbolGetValue(key->value);
+
+	value = stringNew(((String *) symbol_value)->value);
+	(void) hashAdd((Hash *) action_info, (Object *) key, 
+		       (Object *) value);
+    }
+
+    if (action) {
+	key = stringNew("help_for");
+	action = stringNew(action->value);
+	(void) hashAdd((Hash *) action_info, (Object *) key, (Object *) action);
+    }
 
     return action_info;
 }
@@ -535,10 +624,10 @@ parseGenerate(Object *obj)
 }
 
 static Object *
-parseConnect(Object *obj)
+parseVersion(Object *obj)
 {
     UNUSED(obj);
-    return execParseTemplate("connect.xml");
+    return (Object *) hashNew(TRUE);
 }
 
 static Object *
@@ -575,58 +664,6 @@ parseList(Object *obj)
     return params;
 }
 
-/* Set the "global" element in hash to t.  This will cause variables
- * defined for this action to be made global rather than in-scope only
- * for the current action.
- */
-static void
-makeGlobal(Hash *hash)
-{
-    Symbol *t = symbolGet("t");
-    (void) hashAdd(hash, (Object *) stringNew("global"), (Object *) t);
-}
-
-/* Get, and delete, the "global" element in hash.  If t, then variables
- * for this action will be made global rather than in-scope only
- * for the current action.
- */
-static boolean
-getGlobal(Hash *hash)
-{
-    Object *global = hashDel(hash, (Object *) &global_str);
-    return global != NULL;
-}
-
-static Object *
-parseDbtype(Object *obj)
-{
-    String *key;
-    String *dbtype = read_arg();
-    char *str;
-    Hash *result;
-
-    UNUSED(obj);
-    if (!dbtype) {
-	RAISE(PARAMETER_ERROR,
-	      newstr("dbtype requires an argument"));    
-    }
-    if (checkDbtypeIsRegistered(dbtype)) {
-	result = hashNew(TRUE);
-	key = stringNew("dbtype");
-	(void) hashAdd(result, (Object *) key, (Object *) dbtype);
-	makeGlobal(result);
-	return (Object *) result;
-    }
-    else {
-	str = newstr("dbtype \"%s\" is not known to skit\n", dbtype->value);
-	objectFree((Object *) dbtype, TRUE);
-	RAISE(PARAMETER_ERROR, str);
-	return NULL;
-    }
-}
-
-
-
 static void
 defineActionSymbol(char *name, ObjectFn *fn)
 {
@@ -641,15 +678,16 @@ defineActionParsers()
     static boolean done = FALSE;
     if (!done) {
 	defineActionSymbol("parse_extract", &parseExtract);
+	defineActionSymbol("parse_usage", &parseUsage);
 	defineActionSymbol("parse_generate", &parseGenerate);
 	defineActionSymbol("parse_template", &parseTemplate);
-	defineActionSymbol("parse_connect", &parseConnect);
 	defineActionSymbol("parse_print", &parsePrint);
 	defineActionSymbol("parse_adddeps", &parseAdddeps);
 	defineActionSymbol("parse_dbtype", &parseDbtype);
 	defineActionSymbol("parse_list", &parseList);
 	defineActionSymbol("parse_scatter", &parseScatter);
 	defineActionSymbol("parse_diff", &parseDiff);
+	defineActionSymbol("parse_version", &parseVersion);
     }
     done = TRUE;
 }
@@ -826,23 +864,24 @@ executeDoNothing(Object *params)
 }
 
 static Object *
-executeConnect(Object *params)
+executeUsage(Object *params)
 {
-    String *arg = (String *) symbolGetValue("arg");
-    Symbol *connect = symbolNew("connect");
-    UNUSED(params);
+    String *key = stringNew("help_for");
+    String *usage_for = (String *) hashGet((Hash *) params, (Object *) key);
 
-    if (arg) {
-	symSet(connect, (Object *) stringNew(arg->value));
-    }
-    else {
-	symSet(connect, (Object *) stringNew(""));
-    }
+    show_usage(stderr, usage_for);
+    objectFree((Object *) key, TRUE);
 
-    (void) sqlConnect();
     return NULL;
 }
 
+static Object *
+executeVersion(Object *params)
+{
+    fprintf(stdout, "Skit %s\n", SKIT_VERSION);
+
+    return NULL;
+}
 
 static void
 defineActionExecutors()
@@ -854,11 +893,12 @@ defineActionExecutors()
 	defineActionSymbol("execute_template", &executeTemplate);
 	defineActionSymbol("execute_print", &executePrint);
 	defineActionSymbol("execute_dbtype", &executeDoNothing);
-	defineActionSymbol("execute_connect", &executeConnect);
 	defineActionSymbol("execute_list", &executeTemplate);
 	defineActionSymbol("execute_generate", &executeTemplate);
 	defineActionSymbol("execute_scatter", &executeTemplate);
 	defineActionSymbol("execute_diff", &executeTemplate);
+	defineActionSymbol("execute_usage", &executeUsage);
+	defineActionSymbol("execute_version", &executeVersion);
     }
     done = TRUE;
 }

@@ -14,4 +14,6 @@ book      toc,title,figure,table,example,equation
 part      toc,title
 </xsl:param>
 
+<xsl:param name="toc.section.depth">1</xsl:param>
+
 </xsl:stylesheet>

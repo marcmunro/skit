@@ -2,10 +2,7 @@
 Properly handle phony targets in GNUMakefiles?
 
 
-add handling for --version
-make --usage do the right thing.
-
-
+Fix build error for make html
 
 check usage/status of echoes arg to generate - maybe update documentation.
 eliminate template option to scatter (check out the C code for scatter).

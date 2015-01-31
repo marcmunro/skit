@@ -81,10 +81,13 @@ START_TEST(usage)
 {
     // Test that a string providing an option name is correctly 
     // converted into a list of keys for that option.
-    char *usage = usage_msg();
+    String *usage;
 
-    fail_unless(contains(usage, "add.deps"),
-		"No mention of adddeps");
+    initTemplatePath(".");
+    usage = usage_msg(NULL);
+    fail_unless(contains(usage->value, "--dbtype"),
+		"No mention of dbytype");
+    objectFree((Object *) usage, TRUE);
     FREEMEMWITHCHECK;
 }
 END_TEST
@@ -517,11 +520,12 @@ END_TEST
 START_TEST(option_usage)
 {
     char *out = NULL;
+    initTemplatePath(".");
     redirect_stdout("option_usage2");
     BEGIN {
-	show_usage(stdout);
+	show_usage(stdout, NULL);
 	out = readfrom_stdout();
-	fail_unless_contains("stdout", out, "--add\\[deps\\]", NULL);
+	fail_unless_contains("stdout", out, "--dbtype", NULL);
     }
     EXCEPTION(ex);
     WHEN_OTHERS {

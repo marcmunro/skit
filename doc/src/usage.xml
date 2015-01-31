@@ -2,16 +2,571 @@
 
 <chapter id="usage">
   <title>Skit Commands</title>
+  <para>
+    Skit can run multiple commands in a single invocation.  Each command
+    may add or remove entries from skit&apos;s internal stack.  If, once
+    all commands have been processed, there is exactly one element left
+    on the stack, an implicit <command>print</command> is issued.
+  </para>
   <section id="extract">
     <title>Extract</title>
     <para>
       The skit <command>extract</command> command connects to a database
       and generates an <acronym>XML</acronym> stream describing all of
-      the database's objects.
+      the database's objects.  This is added to the stack. 
+    </para>
+    <para>
+      It is usual for an <command>extract</command> to be followed by
+      <command>scatter</command>, <command>generate</command> or
+      <command>list</command>.
     </para>
     <para>
       The bevaviour of <command>extract</command> is defined by the
       template file <filename>extract.xml</filename>.
     </para>
+    <section id="extract_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &extract_command;
+    </section>
+    <section id="extract_options">
+      <title>Options</title>
+      &extract_options;
+    </section>
+    <section id="extract_example">
+      <title>Example</title>
+      <programlisting>
+$ skit --extract --database regressdb >regresdb.xml
+      </programlisting>  
+      <para>
+	This connects to the database <literal>regressdb</literal> with
+	the current user&apos;s default username and password, and dumps the
+	extracted details to <filename>regressdb.xml</filename>, via the
+	implied <command>print</command> command.
+      </para>
+    </section>
+  </section>
+  <section id="scatter">
+    <title>Scatter</title>
+    <para>
+      <command>Scatter</command> takes the top element from skit&apos;s
+      stack and scatters it into a directory tree, creating one file per
+      major database object.  If the file already exists it is updated;
+      if not, it is created; and finally if there is a file for a
+      database object that does not exist, the file will be deleted.
+    </para>
+    <para>
+      An <acronym>XML</acronym> print stream is normally added to the
+      stack describing which files have been created, modified or
+      deleted.
+    </para>
+    <section id="scatter_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &scatter_command;
+    </section>
+    <section id="scatter_options">
+      <title>Options</title>
+      &scatter_options;
+    </section>
+    <section id="scatter_example">
+      <title>Example</title>
+      <programlisting>
+$ skit --extract --database regressdb --scatter --path regressdb --quiet
+      </programlisting>  
+      <para>
+	This takes the <acronym>XML</acronym> stream created by
+	<command>extract</command> and scatters it into the directory
+	tree below <filename>regressdb</filename>.
+      </para>
+      <para>
+	The directory tree created by this command will look something
+	like this:
+	<programlisting>
++---cluster
+|   +-- databases
+|   |   +-- regressdb
+|   |   |   +-- languages
+│   |   |   |   +-- plpgsql.xml
+|   |   |   +-- schemata
+|   |   |   +-- public
+|   |   |       +-- aggregates
+│   |   |       |   +-- mycount.xml
+|   |   |       |   +-- mymax.xml
+|   |   |       |   +-- mysum.xml
+|   |   |       +-- functions
+│   |   |       |   +-- wib_gt.xml
+|   |   |       |   +-- wib_in.xml
+|   |   |       |   +-- wib_lt.xml
+|   |   |       +-- sequences
+│   |   |       |   +-- thingy_id_seq.xml
+|   |   |       |   +-- wibble_seq.xml
+|   |   |       |   +-- wib_seq.xml
+|   |   |       |   +-- wubble_seq.xml
+│   |   |       |-- tables
+|   |   |       |   +-- additional.xml
+|   |   |       |   +-- casted
+|   |   |       |   |   +-- constraints
+│   |   |       |   |     +-- casted__cast_chk.xml
+|   |   |       |   +-- casted.xml
+|   |   |       |   +-- thing
+|   |   |       |   |   +-- constraints
+│   |   |       |   |     +-- thing__pk.xml
+|   |   |       |   +-- thing_1.xml
+|   |   |       |   +-- thing_2.xml
+|   |   |       |   +-- thing_3.xml
+|   |   |       +-- views
+|   |   |           +-- v1.xml
+|   |   |           +-- v2.xml
+│   │   +-- regressdb.xml
+|   +-- roles
+|   |   +-- keep.xml
+|   |   +-- lose.xml
+|   |   +-- marc.xml
+|   |   +-- regress.xml
+|   +-- tablespaces
+|       +-- pg_default.xml
++-- cluster.xml
+	</programlisting>
+      </para>
+      <note>
+	<para>	
+	  Note that there is no explicit <emphasis>gather</emphasis>
+	  operation.  Where skit commands take filenames as parameters,
+	  the <filename>cluster.xml</filename> file at the root of a
+	  scattered directory tree can be given, and the stream will
+	  automatically recombined.  If you want to simply recombine the
+	  elements of a scattered directory tree together, use something
+	  like this:
+	  <programlisting>
+$ skit --print regressdb/cluster.xml >regressdb.xml
+	  </programlisting>
+	</para>
+      </note>
+    </section>
+  </section>
+  <section id="diff">
+    <title>Diff</title>
+    <para>
+      This takes two <acronym>XML</acronym> streams, as originally
+      created by <command>extract</command>, compares them, and creates a
+      combined <acronym>XML</acronym> diff stream.  The resulting stream
+      should be passed to <command>generate</command> which would then
+      generate the code to bring the database for the second stream into
+      line with the first.
+    </para>
+    <section id="diff_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &diff_command;
+    </section>
+    <section id="diff_options">
+      <title>Options</title>
+      &diff_options;
+    </section>
+    <section id="diff_example">
+      <title>Example</title>
+      <para>
+	To create a script to bring database
+	<literal>regressdb</literal> into line with the scattered
+	directory tree under the directory
+	<filename>regressdb_repo</filename>:
+	<programlisting>
+$ skit --extract --database regressdb --diff --swap regressdb_repo/cluster.xml --generate >dbupdate.sql
+	</programlisting>
+      </para>
+      <para>
+	Note the use of the swap parameter.  Without this the produced
+	script would be intended to update the database defined in
+	<filename>regressdb_repo/cluster.xml</filename> rather than
+	<literal>regressdb</literal>. 
+      </para>
+    </section>
+  </section>
+
+  <section id="generate">
+    <title>Generate</title>
+    <para>
+      Takes a single <acronym>XML</acronym> stream, as originally
+      created by <command>extract</command> or <command>diff</command>,
+      and builds an <acronym>XML</acronym> print stream containing the
+      DDL necessary to build or drop the database, or in the case of a
+      diff stream, bring one database into line with the other.
+    </para>
+    <para>
+      The ddl script that is created by this command is actually a Unix
+      shell script.  This is likely to change in future versions of
+      skit, and will have to change if <application>skit</application>
+      is to be run on non-Unix operating systems.
+    </para>
+    <note>
+      <para>
+	The generated script should not be run without first inspecting
+	it.
+      </para>
+    </note>
+    <section id="generate_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &generate_command;
+    </section>
+    <section id="generate_options">
+      <title>Options</title>
+      &generate_options;
+    </section>
+    <section id="generate_example">
+      <title>Example</title>
+      <para>
+	The following command will generate the <acronym>DDL</acronym>
+	to drop and then rebuild the regressdb database:
+	<programlisting>
+$ skit --extract  --database regressdb --generate --build --drop >rebuild.sql
+	</programlisting>
+      </para>
+    </section>
+  </section>
+
+  <section id="list">
+    <title>List</title>
+    <para>
+      Takes a single <acronym>XML</acronym> stream and provides a
+      summary of its contents.
+    </para>
+    <para>
+      For different types of source stream, the resulting output will
+      show different details.
+    </para>
+    <para>
+      For a simple stream created by <command>extract</command>, the
+      output will show each object type, its name, and its fully
+      qualified name as used by <application>skit</application>.  The
+      list output will be indented to indicate which objects are defined
+      as children of other objects (eg columns are children of tables,
+      which are children of schemata).
+    </para>
+    <para>
+      For a stream created by <command>diff</command>, an extra field is
+      shown, indicating the diff type for the object.  The diff types
+      are:
+      <variablelist>
+	<varlistentry>
+	  <term>none</term>
+	  <listitem>
+	    <para>
+	      The object in both source streams is effectively identical.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>new</term>
+	  <listitem>
+	    <para>
+	      The object is new in the second stream (ie it does not
+	      appear in the first).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>gone</term>
+	  <listitem>
+	    <para>
+	      The object existed in the first stream but is not present
+	      in the second.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>diff</term>
+	  <listitem>
+	    <para>
+	      There are differences between the objects in the two streams.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>rebuild</term>
+	  <listitem>
+	    <para>
+	      There are differences between the objects in the two
+	      streams that will require the object to be rebuilt.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+    <para>
+      For a stream created by <command>generate</command>, an extra field is
+      shown, indicating the action taken by generate for this object.
+      Indentation is not shown, and objects may appear multiple times
+      with different actions.  The action field may contain:
+      <variablelist>
+	<varlistentry>
+	  <term>arrive</term>
+	  <listitem>
+	    <para>
+	      This describes the action of arriving at a context.
+	      The context may be the database in which an action is to
+	      be performed, or the owner for which it is to be
+	      performed.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>depart</term>
+	  <listitem>
+	    <para>
+	      This describes the action of departing a context.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>build</term>
+	  <listitem>
+	    <para>
+	      This node is to be built, ie code for building the object
+	      will be printed here.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>drop</term>
+	  <listitem>
+	    <para>
+	      This node is to be dropped, ie code for dropping the object
+	      will be printed here.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>diffprep</term>
+	  <listitem>
+	    <para>
+	      Sometimes diffs need to be performed in two stages.  This
+	      represents the first stage of the diff action.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>diff</term>
+	  <listitem>
+	    <para>
+	      This represents the completion of the diff action.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+
+    <section id="list_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &list_command;
+    </section>
+    <section id="list_options">
+      <title>Options</title>
+      &list_options;
+    </section>
+    <section id="list_example">
+      <title>Example</title>
+      <para>
+	The following provides a summary of the generate action
+	on a diff stream:
+	<programlisting>
+$ ./skit --diff regress/scratch/regressdb_dump3a.xml regress/scratch/regressdb_dump3b.xml  --generate --list 
+	</programlisting>
+      </para>
+      <para>
+	The output from this command will look something like this:
+	<programlisting>
+cluster=cluster|cluster|diff=diffkids|arrive
+  role=keep|role.keep|diff=diff|arrive
+  role=keep|role.keep|diff=diff|depart
+cluster=cluster|cluster|diff=diffkids|depart
+database=regressdb|database.regressdb|diff=diff|arrive
+  foreign_data_wrapper=mywrapper|foreign_data_wrapper.regressdb.mywrapper|diff=diffkids|arrive
+  foreign_data_wrapper=mywrapper|foreign_data_wrapper.regressdb.mywrapper|diff=diffkids|depart
+  schema=public|schema.regressdb.public|diff=diffkids|arrive
+  table=cols|table.regressdb.public.cols|diff=diffkids|arrive
+  column=col1|column.regressdb.public.cols.col1|diff=none|arrive
+  column=col1|column.regressdb.public.cols.col1|diff=none|depart
+  table=cols|table.regressdb.public.cols|diff=diffkids|depart
+  view=vi4|view.regressdb.public.vi4|diff=diff|arrive
+  view=vi4|view.regressdb.public.vi4|diff=diff|depart
+  schema=public|schema.regressdb.public|diff=diffkids|depart
+  schema=public|schema.regressdb.public|diff=diffkids|arrive
+  operator_family=seg_ops4|operator_family.regressdb.public.seg_ops4(btree)|diff=gone|arrive
+  operator_family=seg_ops4|operator_family.regressdb.public.seg_ops4(btree)|diff=gone|drop
+  schema=public|schema.regressdb.public|diff=diffkids|depart
+  schema=wibble|schema.regressdb.wibble|diff=diff|arrive
+. . .
+	</programlisting>
+      </para>
+    </section>
+  </section>
+
+  <section id="adddeps">
+    <title>Adddeps</title>
+    <para>
+      This command invokes the <filename>add_deps.xml</filename>
+      template, which wraps each database object from the source
+      <acronym>XML</acronym> stream in a <tag>dbobject</tag> element
+      within which it records dependencies and context information.
+    </para>
+    <para>
+      The <filename>add_deps.xml</filename> template is run
+      automatically by many of the other commands and explicit running
+      of it by this command is only of value for debugging
+      <application>skit</application>.
+    </para>
+    <para>
+      If the stream already contains <tag>dbobject</tag> elements, the
+      stream is simply copied verbatim.
+    </para>
+    <para>
+      The <command>print</command> command, by default, automatically
+      removes the <tag>dbobject</tag> elements, so in order to see the
+      effects of this command, it is necessary to invoke the
+      <command>print</command> command explicitly with the
+      <arg>--full</arg> flag.
+    </para>
+    <section id="adddeps_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &adddeps_command;
+    </section>
+    <section id="adddeps_example">
+      <title>Example</title>
+      <para>
+	<programlisting>
+$ skit --adddeps dumpfile.xml --print --full
+	</programlisting>
+      </para>
+    </section>
+  </section>
+
+  <section id="template">
+    <title>Template</title>
+    <para>	
+      This locates and executes a <literal>skit-xml</literal> template
+      file.  Such files specify the parameter handling for, and define
+      the processing of, a <application>skit</application> command.
+      Template files are used by <application>skit</application>
+      internally to implement all of
+      <application>skit</application>&apos;s more complex commands, and
+      can be used to implement rich functionality using the skit
+      engine.
+    </para>
+    <para>
+      Suggested uses for custom template files include:
+      <itemizedlist>
+	<listitem>
+	  creating audit triggers, shadow tables and other objects for
+	  each table; 
+	</listitem>
+	<listitem>
+	  validating a database standard by testing for comments, naming
+	  conventions, etc;
+	</listitem>
+	<listitem>
+	  creating secured views using a system like
+	  <application>Veil</application>.
+	</listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      <application>Skit</application> uses a somewhat complex search
+      path when looking for template and other files.  The following
+      paths are searched in this order:
+      <itemizedlist>
+	<listitem>
+	  the current directory;
+	</listitem>
+	<listitem>
+	  <filename>./templates;</filename>
+	</listitem>
+	<listitem>
+	  <filename>./templates/<replaceable>database type;</replaceable>
+	  </filename>
+	</listitem>
+	<listitem>
+	  <filename>./templates/<replaceable>database type</replaceable>/<replaceable>database version;</replaceable>
+	  </filename>
+	</listitem>
+	<listitem>
+	  <filename>$HOME/skit</filename>;
+	</listitem>
+	<listitem>
+	  <filename>$HOME/skit/templates</filename>;
+	</listitem>
+	<listitem>
+	  <filename>$HOME/skit/templates/<replaceable>database type;</replaceable></filename>
+	</listitem>
+	<listitem>
+	  <filename>.$HOME/templates/<replaceable>database type</replaceable>/<replaceable>database version.</replaceable>
+	  </filename>
+	</listitem>
+      </itemizedlist>
+
+    </para>
+    <para>
+      Implementing the search path in this way allows:
+      <itemizedlist>
+	<listitem>
+	  custom user-defined behaviour to override existing templates;
+	</listitem>
+	<listitem>
+	  support for new versions of a database to be done by only
+	  creating new versions of files for those objetcts where
+	  changes are needed.
+	</listitem>
+      </itemizedlist>
+    </para>
+    <section id="template_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &template_command;
+    </section>
+    <section id="template_example">
+      <title>Example</title>
+      <para>
+	<programlisting>
+$ skit --template coding_standards.xml dbdump.xml
+	</programlisting>
+      </para>
+      <para>
+	Where the <filename>coding_standards.xml</filename> template
+	defines that the command takes a single <acronym>XML</acronym>
+	stream as a parameter.
+      </para>
+    </section>
+  </section>
+
+  <section id="print">
+    <title>Print</title>
+    <para>	
+      Print an <acronym>XML</acronym> stream to standard output.  By
+      default, the stream is interpreted allowing print streams to
+      be printed as pure text.
+    </para>
+    <section id="print_syntax">
+      <title>Command Syntax</title>
+      <command>skit</command> &print_command;
+    </section>
+    <section id="print_options">
+      <title>Options</title>
+      &print_options;
+    </section>
+    <section id="print_shortcuts">
+      <title>Shortcuts</title>
+      <para>
+	<arg>--printfull</arg>, <arg>--pf</arg> or <arg>-f</arg> may
+	be used as a shortcut for <arg>--print</arg> <arg>--full</arg>.
+      </para>
+      <para>
+	<arg>--printxml</arg>, <arg>--px</arg> or <arg>-x</arg> may
+	be used as a shortcut for <arg>--print</arg> <arg>--xml</arg>.
+      </para>
+    </section>
+    <section id="print_example">
+      <title>Example</title>
+      <para>
+	<programlisting>
+$ skit --adddeps dumpfile.xml --print --full
+	</programlisting>
+      </para>
+    </section>
   </section>
 </chapter>

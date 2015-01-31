@@ -68,19 +68,37 @@ unread_arg(String *arg, boolean is_option)
     arglist = consNew((Object *) my_arg, (Object *) arglist);
 }
 
-char*
-usage_msg()
+String *
+usage_msg(String *usage_for)
 {
-    return "Usage: \n"
-	"skit [--add[deps] | -a]\n"
-	"\n";
+    String *filename;
+    String *path;
+    String *msg;
+
+    if (usage_for) {
+	filename = stringNewByRef(newstr("usage_%s.txt", usage_for->value));
+    }
+    else {
+	filename = stringNew("usage_synopsis.txt");
+    }
+    path = findFile(filename);
+
+    if (path) {
+	msg = readFile(path);
+    }
+
+    objectFree((Object *) filename, TRUE);
+    objectFree((Object *) path, TRUE);
+    return msg;
 }
 
 /* Display usage message to dest */
 void
-show_usage(FILE *dest)
+show_usage(FILE *dest, String *usage_for)
 {
-    fprintf(dest, usage_msg());
+    String *msg = usage_msg(usage_for);
+    fprintf(dest, msg->value);
+    objectFree((Object *) msg, TRUE);
 }
 
 /* Display error and usage message to stderr and then abort */
@@ -88,7 +106,7 @@ static void
 usage_abort(char *errmsg)
 {
     fprintf(stderr, "%s\n\n", errmsg);
-    fprintf(stderr, usage_msg());
+    show_usage(stderr, NULL);
     exit(1);
 }
 

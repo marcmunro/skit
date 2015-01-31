@@ -8,17 +8,21 @@
    "/usr/local/docbook/dbcentx.mod">
 %dbcent;
 
-<!ENTITY % version SYSTEM "version.xml">
+<!ENTITY % version SYSTEM "version.sgml">
 %version;
-<!ENTITY version       SYSTEM "version.xml">
 <!ENTITY intro	       SYSTEM "src/intro.xml">
 <!ENTITY whatis	       SYSTEM "src/whatis.xml">
 <!ENTITY overview      SYSTEM "src/overview.xml">
 <!ENTITY compatibility SYSTEM "src/compatibility.xml">
 <!ENTITY usage         SYSTEM "src/usage.xml">
+<!ENTITY feedback      SYSTEM "src/feedback.xml">
 <!ENTITY installation  SYSTEM "src/installation.xml">
 <!ENTITY architecture  SYSTEM "src/architecture.xml">
 <!ENTITY license       SYSTEM "src/license.xml">
+
+<!ENTITY % man_entities SYSTEM "src/man_entities.sgml">
+%man_entities;
+
 <!ENTITY man           SYSTEM "src/man.xml">
 
 ]>
@@ -32,6 +36,7 @@
       <firstname>Marc</firstname>
       <surname>Munro</surname>
     </personname>
+    <contrib>(Marc is skit&apos;s prime developer)</contrib>
    </author>
   <productname>skit</productname>
   <productnumber>&version;</productnumber>
@@ -45,9 +50,7 @@
    &compatibility;
    &installation;
    &usage;
-<!--
-    &feedback;
--->
+   &feedback;
  </part>
 <!--
  <part label="II">
