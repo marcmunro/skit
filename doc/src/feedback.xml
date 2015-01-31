@@ -1,0 +1,43 @@
+<!-- doc/src/feedback.xml -->
+
+<chapter id="feedback">
+  <title>Feedback and Getting Involved</title>
+  <section>
+    <title>Bug Reporting and Other Feedback</title>
+    <para>
+      The <application>skit</application> developers welcome feedback.
+    </para>
+    <para>
+      If <application>skit</application> fails to do what it claims,
+      that is a bug.  If it does something unexpected, and you don't
+      like it, that may also be a bug.  If it generates ugly or
+      poor-performing <acronym>DDL</acronym> that may be a bug.
+    </para>
+    <para>
+      If you find a bug, we want to hear from you.
+    </para>
+    <section>
+      <title>How to file a bug report</title>
+      <para>
+	By email to TODO
+      </para>
+    </section>
+    <section>
+      <title>What to include in a bug report</title>
+      <para>
+	Skit version.  A short description of the problem.  Any clues
+	you can provide based on your attempts to get around the issue.
+	A means of reproducing the problem (copies of the source xml
+	files, or a pg_dump, without data, of the source database would
+	be very useful).
+      </para>
+    </section>
+  </section>
+  <section>
+    <title>Getting Involved in the Development of Skit</title>
+    <para>
+      translations, implementations for other RDBMS or other systems,
+      involvement in discussion of features, bug fixes, enhancements, 
+    </para>
+  </section>
+</chapter>

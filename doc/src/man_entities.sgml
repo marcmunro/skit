@@ -1,0 +1,528 @@
+<!ENTITY dbtype_synopsis "
+<para>
+  Specify the type of database to which we will connect.  This governs
+  the search path used by the <application>skit</application> engine for
+  finding the appropriate version of the templates that will drive the
+  extract operation.  This defaults to <quote>postgres</quote>.
+</para>">
+
+<!ENTITY extract_command "
+<group choice='plain'>
+  <arg choice='plain'>-e</arg>
+  <arg choice='plain'>--extract</arg>
+</group>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>--db</arg>
+		<arg choice='plain'>--dbtype</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>dbtype-name</replaceable>
+</arg>
+
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'>--connect</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>connection-string</replaceable>
+</arg>
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-d</arg>
+    <arg choice='plain'>--database</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>database-name</replaceable>
+</arg>
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-h</arg>
+    <arg choice='plain'>--host</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>hostname</replaceable>
+</arg>
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-p</arg>
+    <arg choice='plain'>--port</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>port-number</replaceable>
+</arg>
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-u</arg>
+    <arg choice='plain'>--username</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>username</replaceable>
+</arg>
+<arg>
+  <group choice='plain'>
+    <arg choice='plain'>-p</arg>
+    <arg choice='plain'>--password</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>password</replaceable>
+</arg>
+">
+
+<!ENTITY extract_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>--db</arg></term>
+    <term><arg choice='plain'>--dbtype</arg></term>
+    <listitem>
+      &dbtype_synopsis;
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><arg choice='plain'>-c</arg></term>
+    <term><arg choice='plain'>--connect</arg></term>
+    <listitem>
+      <para>
+	Specify a database connection string.  This may be provided
+	instead of all of the individual details like database name,
+	host, etc.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><arg choice='plain'>-d</arg></term>
+    <term><arg choice='plain'>--database</arg></term>
+    <listitem>
+      <para>
+	Specify the name of the database to which we will connect.  This
+	can be provided instead of the connect option, or as well as.
+	If both are provided the database name is appended to whatever
+	value was given for connect.
+      </para>
+    </listitem>
+  </varlistentry>
+    
+  <varlistentry>
+    <term><arg choice='plain'>-h</arg></term>
+    <term><arg choice='plain'>--hostname</arg></term>
+    <listitem>
+      <para>
+	Specify the hostname for the database server to which we will
+	connect.  This may be a server name or an ip address.  This can
+	be provided instead of the connect option, or as well as.  If
+	both are provided the database name is appended to whatever
+	value was given for connect.
+      </para>
+    </listitem>
+  </varlistentry>
+    
+  <varlistentry>
+    <term><arg choice='plain'>-p</arg></term>
+    <term><arg choice='plain'>--port</arg></term>
+    <listitem>
+      <para>
+        Specify the port to which we will connect.  This can be provided
+        instead of the connect option, or as well as.  If both are
+        provided the database name is appended to whatever value was
+        given for connect.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><arg choice='plain'>-u</arg></term>
+    <term><arg choice='plain'>--username</arg></term>
+    <listitem>
+      <para>
+        Specify the username to be used for the database connection.
+        This can be provided instead of the connect option, or as well
+        as.  If both are provided the database name is appended to
+        whatever value was given for connect.  Note that
+        <application>postgres</application> allows the username to
+        default to the connected user, so this parameter is entirely
+        optional.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><arg choice='plain'>--pass</arg></term>
+    <term><arg choice='plain'>--password</arg></term>
+    <listitem>
+      <para>
+        Specify the password to be used for the database connection.
+        This can be provided instead of the connect option, or as well
+        as.  If both are provided the database name is appended to
+        whatever value was given for connect.  Note that
+        <application>postgres</application> allows some users to connect
+        without passwords, so this parameter is entirely optional.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
+
+
+<!ENTITY scatter_command "
+<group choice='plain'>
+  <arg choice='plain'>-s</arg>
+  <arg choice='plain'>--scatter</arg>
+</group>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-o</arg>
+    <arg choice='plain'>--path</arg>
+  </group>
+  <arg>=</arg>
+  <replaceable class='parameter'>directory-name</replaceable>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-v</arg>
+    <arg choice='plain'>--verbose</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>--ch</arg>
+    <arg choice='plain'>--checkonly</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-q</arg>
+    <arg choice='plain'>--quiet</arg>
+    <arg choice='plain'>--si</arg>
+    <arg choice='plain'>--silent</arg>
+  </group>
+</arg>
+<arg><option>filename</option></arg>
+">
+
+<!ENTITY scatter_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>-v</arg></term>
+    <term><arg choice='plain'>--verbose</arg></term>
+    <listitem>
+      <para>
+	Print, to the <acronym>XML</acronym> print stream, summary data
+	for <emphasis>all</emphasis> files rather than just those that
+	have been changed.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>--ch</arg></term>
+    <term><arg choice='plain'>--checkonly</arg></term>
+    <listitem>
+      <para>
+	Produce only the <acronym>XML</acronym> print stream, IE do not
+	write any output files.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>-q</arg></term>
+    <term><arg choice='plain'>--quiet</arg></term>
+    <term><arg choice='plain'>--si</arg></term>
+    <term><arg choice='plain'>--silent</arg></term>
+    <listitem>
+      <para>
+	Do not print summary data to the output stream.  These flags
+	take precedence over the <option>verbose</option> flags.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
+
+<!ENTITY diff_command "
+<group choice='plain'>
+  <arg choice='plain'>-d</arg>
+  <arg choice='plain'>--diff</arg>
+</group>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-s</arg>
+    <arg choice='plain'>--swap</arg>
+  </group>
+</arg>
+<arg>
+  <option>filename1</option>
+  <arg>
+    <option>filename2</option>
+  </arg>
+</arg>
+">
+
+<!ENTITY diff_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>-s</arg></term>
+    <term><arg choice='plain'>--swap</arg></term>
+    <listitem>
+      <para>
+	Invert the order of the two input streams.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
+
+
+<!ENTITY generate_command "
+<group choice='plain'>
+  <arg choice='plain'>-g</arg>
+  <arg choice='plain'>-n</arg>
+  <arg choice='plain'>--generate</arg>
+</group>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-b</arg>
+    <arg choice='plain'>--build</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-d</arg>
+    <arg choice='plain'>--drop</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>--de</arg>
+    <arg choice='plain'>--debug</arg>
+  </group>
+</arg>
+<arg><option>filename</option></arg>
+">
+
+<!ENTITY generate_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>-d</arg></term>
+    <term><arg choice='plain'>--drop</arg></term>
+    <listitem>
+      <para>
+	Generate <acronym>DDL</acronym> statements to drop all objects
+	in the source stream.
+      </para>
+      <note>
+	<para>
+	  If the source stream is a diff stream, this flag is ignored.
+	</para>
+      </note>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>-b</arg></term>
+    <term><arg choice='plain'>--build</arg></term>
+    <listitem>
+      <para>
+	Generate <acronym>DDL</acronym> statements to build all objects
+	in the source stream.  This can be combined with
+	<option>--drop</option> to create a script that drops and then
+	rebuilds the database.  This is the default option for the
+	<application>skit</application> <command>generate</command>
+	command so is unnecessary uxcept in combination with 
+        <option>--drop</option>.
+      </para>
+      <note>
+	<para>
+	  If the source stream is a diff stream, this flag is ignored.
+	</para>
+      </note>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>--de</arg></term>
+    <term><arg choice='plain'>--debug</arg></term>
+    <listitem>
+      <para>
+	This causes the raw <acronym>XML</acronym> produced by the
+	skit:tsort action to be written to stdout.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
+
+
+<!ENTITY list_command "
+<group choice='plain'>
+  <arg choice='plain'>-l</arg>
+  <arg choice='plain'>--list</arg>
+</group>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>--gra</arg>
+    <arg choice='plain'>--grants</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'>--contexts</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-f</arg>
+    <arg choice='plain'>--fallbacks</arg>
+  </group>
+</arg>
+<arg> 
+  <group choice='plain'>
+    <arg choice='plain'>-a</arg>
+    <arg choice='plain'>--all</arg>
+  </group>
+</arg>
+<arg><option>filename</option></arg>
+">
+
+<!ENTITY list_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>--gra</arg></term>
+    <term><arg choice='plain'>--grants</arg></term>
+    <listitem>
+      <para>
+	Add details of grants to the list output.  By default grants are
+	not shown because they are considered generally uninteresting.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>-c</arg></term>
+    <term><arg choice='plain'>--contexts</arg></term>
+    <listitem>
+      <para>
+	Add details of contexts to the list output.  Contexts are
+	relevant only when <command>list</command> is run on a stream
+	created by <command>generate</command>.  Context entries show
+	where the generated script switches the effective user before
+	performing an operation, ie the context describes the user that
+	performs <acronym>DDL</acronym> operations.
+      </para>
+      <para>
+	By default context is not shown because it is an artefact of the
+	generated <acronym>DDL</acronym> script and not part of the
+	resulting database.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>-f</arg></term>
+    <term><arg choice='plain'>--fallbacks</arg></term>
+    <listitem>
+      <para>
+	Add details of fallbacks to the list output.  Fallbacks are
+	relevant only when <command>list</command> is run on a stream
+	created by <command>generate</command>.  Fallback entries show
+	where the generated script temporarily provides extra privileges
+	to a role before performing an operation.
+      </para>
+      <para>
+	By default fallbacks are not shown because they are artefacts of
+	the generated <acronym>DDL</acronym> script and not part of the
+	resulting database.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
+
+<!ENTITY adddeps_command "
+<group choice='plain'>
+  <arg choice='plain'>-a</arg>
+  <arg choice='plain'>--adddeps</arg>
+</group>
+<arg><option>filename</option></arg>
+">
+
+
+<!ENTITY template_command "
+<group choice='plain'>
+  <arg choice='plain'>-t</arg>
+  <arg choice='plain'>--template</arg>
+</group>
+<option>filename</option>
+<group rep='repeat'>
+  <arg choice='plain'>optional-args</arg>
+  <arg><option>optional-parameters</option></arg>
+</group>
+">
+
+
+<!ENTITY print_command "
+<group choice='plain'>
+  <arg choice='plain'>
+    <group>
+      <arg choice='plain'>-p</arg>
+      <arg choice='plain'>--print</arg>
+    </group>
+    <arg>
+      <group>
+	<arg choice='plain'>-x</arg>
+	<arg choice='plain'>--xml</arg>
+      </group>
+    </arg>
+    <arg>
+      <group>
+	<arg choice='plain'>-d</arg>
+	<arg choice='plain'>--full</arg>
+      </group>
+    </arg>
+  </arg>
+  <arg choice='plain'>
+    <group>
+      <arg choice='plain'>-f</arg>
+      <arg choice='plain'>--pf</arg>
+      <arg choice='plain'>--printfull</arg>
+    </group>
+  </arg>
+  <arg choice='plain'>
+    <group>
+      <arg choice='plain'>-x</arg>
+      <arg choice='plain'>--px</arg>
+      <arg choice='plain'>--printxml</arg>
+    </group>
+  </arg>
+</group>
+<arg><option>filename</option></arg>
+">
+
+<!ENTITY print_options "
+<variablelist>
+  <varlistentry>
+    <term><arg choice='plain'>-x</arg></term>
+    <term><arg choice='plain'>--xml</arg></term>
+    <listitem>
+      <para>
+	Print the output as a pure <acronym>XML</acronym> stream without
+	interpretation.  This is only useful for examining the contents
+	of print streams.  Applying this option to any other sort
+	of <acronym>XML</acronym> stream will have no effect.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><arg choice='plain'>-f</arg></term>
+    <term><arg choice='plain'>--full</arg></term>
+    <listitem>
+      <para>
+	Print the output as a pure <acronym>XML</acronym> stream and
+	also leave any <tag>&lt;dbobject&gt;</tag> elements added
+	by <command>adddeps</command> commands, in place.  Note that for
+	diff streams
+	<tag>&lt;dbobject&gt;</tag> elements are always left in
+	place, so this option will have no effect.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+">
