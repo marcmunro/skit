@@ -1,0 +1,35 @@
+       -l, --list
+
+           --gra, --grants
+               Add details of grants to the list output. By default grants are
+               not shown because they are considered generally uninteresting.
+
+           -c, --contexts
+               Add details of contexts to the list output. Contexts are
+               relevant only when list is run on a stream created by generate.
+               Context entries show where the generated script switches the
+               effective user before performing an operation, ie the context
+               describes the user that performs DDL operations.
+
+               By default context is not shown because it is an artefact of
+               the generated DDL script and not part of the resulting
+               database.
+
+           -f, --fallbacks
+               Add details of fallbacks to the list output. Fallbacks are
+               relevant only when list is run on a stream created by generate.
+               Fallback entries show where the generated script temporarily
+               provides extra privileges to a role before performing an
+               operation.
+
+               By default fallbacks are not shown because they are artefacts
+               of the generated DDL script and not part of the resulting
+               database.
+
+           Takes an input stream and generates an XML print stream, which
+           summarises its contents. The source stream can be a stream produced
+           by extract, diff, or generate.
+
+           If a filename is provided to this command, the file will be read
+           and added to the stack before processing.
+

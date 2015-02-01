@@ -1,0 +1,38 @@
+       -g, -n, --generate
+
+           -d, --drop
+               Generate DDL statements to drop all objects in the source
+               stream.
+
+                   Note
+                   If the source stream is a diff stream, this flag is
+                   ignored.
+
+           -b, --build
+               Generate DDL statements to build all objects in the source
+               stream. This can be combined with --drop to create a script
+               that drops and then rebuilds the database. This is the default
+               option for the skitgenerate command so does not need to be
+               provided.
+
+                   Note
+                   If the source stream is a diff stream, this flag is
+                   ignored.
+
+           --de, --debug
+               This causes the raw XML produced by the skit:tsort action to be
+               written to stdout.
+
+           Takes an input stream and generates DDL to create, build or drop a
+           database. If the input is a diff stream (from the skit diff
+           command, generate DDL to bring the one database into line with the
+           other.
+
+           The DDL is generated an an XML print stream which can be printed as
+           text using the skit print command.
+
+           The output is in the form of an executable shell script, though
+           this may change in future versions. You should not execute this
+           script directly, but should examine it carefully to ensure that it
+           does what you expect.
+

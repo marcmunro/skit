@@ -1,0 +1,15 @@
+       -t, --template
+           This command evaluates a skit XML template file. Such template
+           files can perform any action of which skit is capable, including
+           reading from databases.
+
+           This command is actually the basis for almost all of skit's
+           built-in commands, and the following shell commands are entirely
+           equivalent:
+
+               $ skit --generate --build mydb.xml
+
+               $ skit --template generate.xml --build mydb.xml
+
+
+

@@ -1,0 +1,17 @@
+<!-- doc/src/dev_intro.xml -->
+
+<chapter id="dev_intro">
+  <title>Introduction</title>
+  <para>
+    This section of the manual is aimed at those who wish to enhance
+    skit and/or develop new features.  In time it will describe the
+    overall skit architecture, provide a reference for
+    <literal>skit-xml</literal> and skit's <literal>babylisp</literal>
+    expression language.  It will describe debugging techniques, and
+    explain how to create skit template files to create custom
+    functionality.
+  </para>
+  <para>
+    Right now though, it doesn&apos;t.
+  </para>
+</chapter>

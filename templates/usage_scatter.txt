@@ -1,0 +1,33 @@
+       -s, --scatter
+
+           -v, --verbose
+               Print, to the XML print stream, summary data for all files
+               rather than just those that have been changed.
+
+           --ch, --checkonly
+               Produce only the XML print stream, IE do not write any output
+               files.
+
+           -q, --quiet, --si, --silent
+               Do not print summary data to the output stream. These flags
+               take precedence over the verbose flags.
+
+           Scatters the contents of an XML stream into a directory tree with
+           one file per major database object. The resulting directory
+           hierarchy is suitable for inclusion into a repository managed by a
+           Source Code Management (SCM) system.
+
+           The rootmost entry of the scattered directory tree is always called
+           cluster.xml. If this file is provided a parameter to any skit
+           command, the entire directory tree will be read. IE, for skit's
+           purposes there is no difference between a file containing an XML
+           stream, and the root file of a scattered directory tree.
+
+           If a filename is provided to this command, the file will be read
+           and added to the stack.
+
+               Note
+               Unless one of the quiet flags is provided, an XML print stream
+               will be generated which will provide a summary of files created
+               and/or modified.
+

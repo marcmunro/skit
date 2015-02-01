@@ -1,0 +1,26 @@
+       -p, --print
+
+           -x, --xml
+               Print the output as a pure XML stream without interpretation.
+               This is only useful for examining the contents of print
+               streams. Applying this option to any other sort of XML stream
+               will have no effect.
+
+           -f, --full
+               Print the output as a pure XML stream and also leave any
+               <dbobject> elements added by adddeps commands, in place. Note
+               that for diff streams <dbobject> elements are always left in
+               place, so this option will have no effect.
+
+           Print an XML stream to standard output. By default, the stream is
+           interpreted allowing print streams to be printed as pure text.
+
+           If a filename is provided to this command, the file will be read
+           and added to the stack before processing.
+
+       -pf, --printfull
+           As --print --full.
+
+       -x, --px, --printxml
+           As --print --xml.
+

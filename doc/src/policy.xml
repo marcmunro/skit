@@ -1,0 +1,44 @@
+<!-- doc/src/policy.xml -->
+
+<chapter id="architecture">
+  <title>Skit Policies</title>
+  <para>
+    This will describe various development policies within skit.  In
+    particular, the intent with regard to generated
+    <acronym>DDL</acronym>, the strange use of make and the Makefile
+    hierarchy, coding standards, etc.  The intent is that this is not an
+    onerous, prescriptive section, but rather one that explains where
+    the developers are coming from.
+  </para>
+  <section id="why-gpl">
+    <title>Why the GPL?</title>
+    <para>
+      The choice of licence for a project can be contentious.  It is not
+      an easy choice.
+    </para>
+    <para>
+      The GPL was chosen for a number of reasons, all seriously
+      considered.  Marc believes that Free Software is important, and
+      that the GPL best ensures the freedom of the users of that
+      software.  Although other licenses may be more liberal, by
+      explictly allowing commercialisation of the software, doing so
+      takes away the freedom to use derivative works from the world at
+      large.   It grants a freedom to a small self-interested group, at
+      the expense of the larger community.
+    </para>
+    <para>
+      You may disagree with this belief, but please respect the choice
+      of license that has been made.  Skit represents many hundreds of
+      man hours of development and is being freely given to the
+      community.
+    </para>
+    <section id="commercial">
+      <title>But I want to incorporate skit into XXXX</title>
+      <para>
+	If you want a commercial license, please get in touch with
+	Marc.  If it is for a product derived from PostgreSQL you will
+	find a sympathetic ear, and a willingness to help.
+      </para>
+    </section>
+  </section>
+</chapter>

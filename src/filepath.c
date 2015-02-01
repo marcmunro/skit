@@ -111,7 +111,7 @@ searchdir(Hash *hash, char *path, char *pattern)
 
 // Try finding filename in path/filename, path/dbdir/filename and
 // path/dbdir/*/filename.  Return -1 if the file was found in one of the
-// two simple (non-wildcarded) paths, count otherwise.
+// simple (non-wildcarded) paths, count otherwise.
 static int
 locateFile(char *path, char *templatedir, char *dbdir, char *filename)
 {

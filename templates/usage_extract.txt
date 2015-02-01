@@ -1,0 +1,48 @@
+       -e, --extract
+
+           --db, --dbtype
+               This is the same as the outermost dbtype option.
+
+           -c, --connect
+               Specify a database connection string. This may be provided
+               instead of all of the individual details like database name,
+               host, etc.
+
+           -d, --database
+               Specify the name of the database to which we will connect. This
+               can be provided instead of the connect option, or as well as.
+               If both are provided the database name is appended to whatever
+               value was given for connect.
+
+           -h, --hostname
+               Specify the hostname for the database server to which we will
+               connect. This may be a server name or an ip address. This can
+               be provided instead of the connect option, or as well as. If
+               both are provided the database name is appended to whatever
+               value was given for connect.
+
+           -p, --port
+               Specify the port to which we will connect. This can be provided
+               instead of the connect option, or as well as. If both are
+               provided the database name is appended to whatever value was
+               given for connect.
+
+           -u, --username
+               Specify the username to be used for the database connection.
+               This can be provided instead of the connect option, or as well
+               as. If both are provided the database name is appended to
+               whatever value was given for connect. Note that postgres allows
+               the username to default to the connected user, so this
+               parameter is entirely optional.
+
+           --pass, --password
+               Specify the password to be used for the database connection.
+               This can be provided instead of the connect option, or as well
+               as. If both are provided the database name is appended to
+               whatever value was given for connect. Note that postgres allows
+               some users to connect without passwords, so this parameter is
+               entirely optional.
+
+           Connect to the specified database and generate an XML stream
+           describing each database object.
+

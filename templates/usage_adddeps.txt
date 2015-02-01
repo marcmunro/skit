@@ -1,0 +1,21 @@
+       -a, --adddeps
+           Takes an XML stream as created by extract and wraps each database
+           object in <dbobject> elements containing dependency and context
+           information. This is normally an operation that is performed
+           automatically when XML streams are read. This command is intended
+           for use primarily for debugging skit. The dependency elements added
+           by this command are used by the generate command in order to
+           properly order the DDL produced.
+
+           If the input stream already contains <dbobject> elements, this
+           command leave the XML stream unaffected.
+
+           If a filename is provided to this command, the file will be read
+           and added to the stack before processing.
+
+               Note
+               By default, the print performs a remove deps operation before
+               producing output so if you want to see the transformation
+               created by this command, you will need to use the --full of
+               print.
+

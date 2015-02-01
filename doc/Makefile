@@ -23,6 +23,7 @@ DOC_VERSION = $(DOC_DIR)/version.sgml
 DOC_SOURCES = $(DOC_DIR)/skit.xml $(DOC_VERSION) \
 		$(wildcard $(DOC_DIR)/src/*.xml) \
 		$(wildcard $(DOC_DIR)/src/*.sgml) 
+MANPAGES    = skit.1
 
 HTMLDIR = $(DOC_DIR)/html
 HTMLINDEX = $(HTMLDIR)/index.html
@@ -44,12 +45,16 @@ $(DOC_VERSION): configure
 # Create html docs
 html : $(HTMLINDEX) $(DOC_VERSION)
 
-$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)  $(DOC_VERSION)
-	$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ \
-		$(XHTML_XSL) $(DOC_DIR)/skit.xml
+$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)  $(DOC_VERSION) $(XHTML_XSL)
+	-$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ \
+		$(XHTML_XSL)  $(DOC_DIR)/skit.xml
+	@# There is a problem with our use of custom.css.source which
+	@# causes errors above.  We deliberately ignore them and manually
+	@# copy the css file to HTMLDIR
+	cp -f $(DOC_DIR)/skit_docbook.css $(HTMLDIR)
 
 
-man : skit.1 $(DOC_VERSION)
+man : $(MANPAGES) $(DOC_VERSION)
 
 skit.1: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) $(MAN_XSL) $(DOC_DIR)/skit.xml

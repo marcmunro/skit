@@ -1,0 +1,18 @@
+<!-- doc/src/building.xml -->
+
+<chapter id="building">
+  <title>Build options and performance</title>
+  <para>
+    As skit is currently in an alpha-testing phase, a number of debug
+    options enabled by default.  These can have a significant impact on
+    performance.
+  </para>
+  <para>
+    In particular the default skit build includes a  memory tracking
+    subsystem, which records each malloc call in a hash so that we can
+    ensure that it is subsequently freed.  This adds a significant
+    overhead.  To disable memory tracking, add
+    <arg>--enable-mtrack=np</arg> to the <command>configure</command>
+    when building skit.
+  </para>
+</chapter>

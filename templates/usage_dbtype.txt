@@ -1,0 +1,6 @@
+       --db, --dbtype
+           Specify the type of database to which we will connect. This governs
+           the search path used by the skit engine for finding the appropriate
+           version of the templates that will drive the extract operation.
+           This defaults to “postgres”.
+

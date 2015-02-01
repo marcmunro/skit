@@ -61,16 +61,24 @@ clean: $(SUBDIRS:%=%_clean) templates_clean
 templates_clean:
 	@find templates -name '*~' -exec rm {} \;
 
-install: templates_clean
+install: templates_clean skit install_man
 	@echo Installing skit in $(BINDIR)
 	@cp -f skit $(BINDIR)
 	@echo Installing skit templates in $(DATADIR)
 	@if [ ! -d "$(DATADIR)" ]; then mkdir -p "$(DATADIR)"; fi
 	@cp -r templates "$(DATADIR)"
 
-uninstall:
-	rm "$(BINDIR)"/skit
-	rm -r "$(DATADIR)"
+install_man: man
+	@echo Install man pages in $(MANDIR)
+	[ -d $(MANDIR)/man1 ] || mkdir $(MANDIR)/man1
+	@cp -f $(MANPAGES) $(MANDIR)/man1
+
+uninstall_man:
+	cd $(MANDIR)/man1/ && rm -f $(MANPAGES)
+
+uninstall: uninstall_man
+	rm -f "$(BINDIR)"/skit
+	rm -rf "$(DATADIR)"
 
 
 # Provide a list of the targets buildable by this makefile.

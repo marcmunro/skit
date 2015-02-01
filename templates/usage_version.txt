@@ -1,0 +1,3 @@
+       -v, --version
+           Provide the version number of the skit application.
+

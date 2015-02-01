@@ -1,0 +1,90 @@
+<!-- doc/src/roadmap.xml -->
+
+<chapter id="roadmap">
+  <title>The Development Road Map</title>
+  <para>
+    This section needs to be fleshed-out, but here is a list of things
+    that need to be done:
+    <itemizedlist>
+      <listitem>
+	<para>
+	  improved documentation;
+	</para>
+	<para>
+	  Particularly this, the developer&apos;s guide.  Also
+	  documentation in other formats.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  grouping tsort for generate;
+	</para>
+	<para>
+	  We want to add a different, optional, tsort algorithm that
+	  orders its results so that related items are as close as
+	  possible to each other.  This would mean that all tables in one
+	  schema would be generated before the tables in another, and
+	  that all cluster objects (roles, tablespaces) would be dealt
+	  with before dealing with non-schema objects.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  grep command;
+	</para>
+	<para>
+	  A regular expression-based filter to allow subsets of an
+	  <acronym>XML</acronym> stream to be selected and processed
+	  independently of the rest of the stream.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  improved code comments and doxygen;
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  optimise the generated <acronym>DDL</acronym>;
+	</para>
+	<para>
+	  There are occasions when unecessary temporary grants are
+	  issued, and for drops, skit issues explicit, redundant drops
+	  for the descendant objects of objects being dropped (eg grants
+	  on tables are revoked before dropping the table even though
+	  this is superfluous.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  shout option for generate;
+	</para>
+	<para>
+	  This would create <acronym>DDL</acronym> in upper case.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  allow upgrades of extensions to be done by directly modifying
+	  the objects within the extension;
+	</para>
+	<para>
+	  This might be useful, or it might not.  It won't be a priority
+	  unless someone asks for it.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  improved performance.
+	</para>
+	<para>
+	  Some operations are way slower than they should be.
+	</para>
+      </listitem>
+    </itemizedlist>
+  </para>
+  <para>
+    This is not in any particular order.  If there is something you
+    want, then lobby for it or, better still, offer to help.
+  </para>
+</chapter>

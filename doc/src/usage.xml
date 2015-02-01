@@ -132,7 +132,7 @@ $ skit --extract --database regressdb --scatter --path regressdb --quiet
 	  Note that there is no explicit <emphasis>gather</emphasis>
 	  operation.  Where skit commands take filenames as parameters,
 	  the <filename>cluster.xml</filename> file at the root of a
-	  scattered directory tree can be given, and the stream will
+	  scattered directory tree can be given, and the stream will be
 	  automatically recombined.  If you want to simply recombine the
 	  elements of a scattered directory tree together, use something
 	  like this:

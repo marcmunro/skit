@@ -17,7 +17,11 @@
 <!ENTITY usage         SYSTEM "src/usage.xml">
 <!ENTITY feedback      SYSTEM "src/feedback.xml">
 <!ENTITY installation  SYSTEM "src/installation.xml">
+<!ENTITY dev_intro     SYSTEM "src/dev_intro.xml">
+<!ENTITY building      SYSTEM "src/building.xml">
 <!ENTITY architecture  SYSTEM "src/architecture.xml">
+<!ENTITY policy        SYSTEM "src/policy.xml">
+<!ENTITY roadmap       SYSTEM "src/roadmap.xml">
 <!ENTITY license       SYSTEM "src/license.xml">
 
 <!ENTITY % man_entities SYSTEM "src/man_entities.sgml">
@@ -36,7 +40,7 @@
       <firstname>Marc</firstname>
       <surname>Munro</surname>
     </personname>
-    <contrib>(Marc is skit&apos;s prime developer)</contrib>
+    <contrib>(Marc is skit&apos;s original developer)</contrib>
    </author>
   <productname>skit</productname>
   <productnumber>&version;</productnumber>
@@ -52,14 +56,15 @@
    &usage;
    &feedback;
  </part>
-<!--
  <part label="II">
-   <title>Skit Developer's Guide></title>
+   <title>Skit Developer's Guide</title>
+   &dev_intro;
    &architecture;
-   &skit_xml;
+   <!-- &skit_xml; -->
    &policy;
+   &roadmap;
+   &building;
  </part>
--->
  <part label="III - Appendices">
    &license;
    &man;

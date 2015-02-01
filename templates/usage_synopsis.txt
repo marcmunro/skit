@@ -1,0 +1,29 @@
+SYNOPSIS
+       skit [ | [--db | --dbtype [=] dbtype-name]
+             |[-e | --extract [ --db | --dbtype [=] dbtype-name ] [ -c | --connect [=] connection-string ] [ -d | --database [=] database-name ] [ -h | --host [=] hostname ] [ -p | --port [=] port-number ] [ -u | --username [=] username ] [ -p | --password [=] password ]]
+             |[-s | --scatter] [ -o | --path [=] directory-name ] [ -v | --verbose ] [ --ch | --checkonly ] [ -q | --quiet | --si | --silent ] [filename]
+             |[-d | --diff] [ -s | --swap ] [ filename1 [ filename2 ] ]
+             |[-g | -n | --generate] [ -b | --build ] [ -d | --drop ] [ --de | --debug ] [filename]
+             |[-l | --list] [ --gra | --grants ] [ -c | --contexts ] [ -f | --fallbacks ] [ -a | --all ] [filename]
+             |[-a | --adddeps] [filename]
+             |[-t | --template] filename [optional-args | [optional-parameters]...]
+             |[-p | --print] [ [-x | --xml] ] [ [-d | --full] ] | [-f | --pf | --printfull] | [-x | --px | --printxml] [filename]
+             |[-h | --help | -u | --usage] [ --long-optionname | -short-optionname ]
+             |[-v | --version]...]
+
+DESCRIPTION
+       skit is a command-line tool that enables you to: capture the definition
+       of a database in an XML file or a directory hierarchy of such files;
+       generate the SQL to rebuild a database; compare databases; and generate
+       the SQL to bring one database into line with another.
+
+       Its primary purpose is to allow database development to be managed with
+       industry-standard Source Code Management tools.
+
+       Each primary option causes a specific skit command to be executed, with
+       options and parameters. Each such command may add or remove XML streams
+       from skit's internal stack, This stack allows skit commands to be
+       “pipelined”, passing the results of one command into the next. If skit
+       terminates with exactly one XML stream left on the stack, an implicit
+       print command is issued.
+

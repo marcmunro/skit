@@ -6,6 +6,10 @@
     <title>Bug Reporting and Other Feedback</title>
     <para>
       The <application>skit</application> developers welcome feedback.
+      If you like skit, if you don&apos;t, if you want new features, if
+      the documentation sucks, if you've found a bug, or if you'd like
+      to get involved, we'd like to hear from you.  Email us at
+      <email>skit-general@lists.pgfoundry.org</email>.
     </para>
     <para>
       If <application>skit</application> fails to do what it claims,
@@ -19,25 +23,62 @@
     <section>
       <title>How to file a bug report</title>
       <para>
-	By email to TODO
+	By email to <email>skit-general@lists.pgfoundry.org </email>.
       </para>
     </section>
     <section>
       <title>What to include in a bug report</title>
       <para>
-	Skit version.  A short description of the problem.  Any clues
-	you can provide based on your attempts to get around the issue.
-	A means of reproducing the problem (copies of the source xml
-	files, or a pg_dump, without data, of the source database would
-	be very useful).
+	If we can reproduce your problem, you are much more likely to
+	get a fix in a reasonable time.  So the more information you
+	provide, the better.  Please give us:
+	<itemizedlist>
+	  <listitem>
+	    <para>
+	      the skit version;
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      a short description of the problem;
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      the RDBMS version;
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	     instructions for reproducing the problem;
+	    </para>
+	    <para>
+	      Copies of the source xml files, or a pg_dump, without
+	      data, of the source database would be very useful, though
+	      if these are large files, it would be better to offer them
+	      and wait for a response from the developers.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      any clues	you can provide based on your attempts to get
+	      around the issue.
+	    </para>
+	  </listitem>
+	</itemizedlist>
       </para>
     </section>
   </section>
   <section>
     <title>Getting Involved in the Development of Skit</title>
     <para>
-      translations, implementations for other RDBMS or other systems,
-      involvement in discussion of features, bug fixes, enhancements, 
+      If you would like to be involved in the development of skit, we
+      would like to hear from you at
+      <email>skit-general@lists.pgfoundry.org</email>.
+    </para>
+    <para>
+      If you wish to contact the author offlist, you can find him at his
+      website, <ulink url="http://bloodnok.com/Marc.Munro">bloodnok.com</ulink>.
     </para>
   </section>
 </chapter>

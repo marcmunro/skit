@@ -1,0 +1,12 @@
+       -d, --diff
+
+           -s, --swap
+               Invert the order of the two input streams.
+
+           Takes two input streams and performs a diff on them, creating an
+           XML diff stream which can (and should) bepassed to the skit
+           generate command.
+
+           If filenames are provided to this command, the file(s) will be read
+           and added to the stack before processing.
+

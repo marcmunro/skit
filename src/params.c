@@ -72,7 +72,6 @@ String *
 usage_msg(String *usage_for)
 {
     String *filename;
-    String *path;
     String *msg;
 
     if (usage_for) {
@@ -81,14 +80,9 @@ usage_msg(String *usage_for)
     else {
 	filename = stringNew("usage_synopsis.txt");
     }
-    path = findFile(filename);
-
-    if (path) {
-	msg = readFile(path);
-    }
+    msg = readFile(filename);
 
     objectFree((Object *) filename, TRUE);
-    objectFree((Object *) path, TRUE);
     return msg;
 }
 

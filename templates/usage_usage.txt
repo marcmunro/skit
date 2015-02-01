@@ -1,0 +1,17 @@
+       -h, --help, -u, --usage
+
+           --db, --dbtype
+               Specify the type of database for which we are looking for usage
+               information. This governs the search path used by the skit
+               engine for finding the appropriate version of the usage
+               description. This defaults to “postgres”.
+
+           -short-optionname, --long-optionname
+               Any of the major command options can be given here, in long or
+               short form, to select a more detailed help message for that
+               option.
+
+           Provide a help message containing the command synopsis. If an extra
+           option is provided, provide more detailed help for that specific
+           option.
+

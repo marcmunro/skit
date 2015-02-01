@@ -92,4 +92,26 @@ PRE.LITERALLAYOUT, .SCREEN, .SYNOPSIS, .PROGRAMLISTING {
 VAR		{ font-family: monospace; font-style: italic; }
 /* Konqueror's standard style for ACRONYM is italic. */
 ACRONYM		{ font-style: inherit; }
+
+/* Make lists with the compact attribute, truly compact. */
+ul[compact="compact"] li p{
+ margin: 0;
+}
+
+/* Give programlistings a nice appearance. */
+pre[class="programlisting"], div[class="footnote"] {
+	padding-left: 15px;
+	background: #E0E0E0;
+	border-radius: 15px;
+	margin-left: 20px;
+	margin-right: 20px;
+}
+
+pre[class="programlisting"] {
+	padding-top: 15px;
+	font-family: monospace; 
+}
+div[class="footnote"] {
+	font-size: 0.75em;
+}
 </style>

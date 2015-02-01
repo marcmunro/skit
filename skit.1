@@ -1,0 +1,491 @@
+'\" t
+.\"     Title: skit
+.\"    Author: Marc Munro
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 01/31/2015
+.\"    Manual: Skit 0.1 alpha Documentation
+.\"    Source: skit 0.1 alpha
+.\"  Language: English
+.\"
+.TH "SKIT" "1" "01/31/2015" "skit 0.1 alpha" "Skit 0.1 alpha Documentation"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+skit \- Database development management tool
+.SH "SYNOPSIS"
+.HP \w'\fBskit\fR\ 'u
+\fBskit\fR [ | [\-\-db\ |\ \-\-dbtype\ [=]\ \fIdbtype\-name\fR]
+.br
+ |[\-e\ |\ \-\-extract\ [\ \-\-db\ |\ \-\-dbtype\ [=]\ \fIdbtype\-name\fR\ ]\ [\ \-c\ |\ \-\-connect\ [=]\ \fIconnection\-string\fR\ ]\ [\ \-d\ |\ \-\-database\ [=]\ \fIdatabase\-name\fR\ ]\ [\ \-h\ |\ \-\-host\ [=]\ \fIhostname\fR\ ]\ [\ \-p\ |\ \-\-port\ [=]\ \fIport\-number\fR\ ]\ [\ \-u\ |\ \-\-username\ [=]\ \fIusername\fR\ ]\ [\ \-p\ |\ \-\-password\ [=]\ \fIpassword\fR\ ]]
+.br
+ |[\-s\ |\ \-\-scatter\ [\ \-o\ |\ \-\-path\ [=]\ \fIdirectory\-name\fR\ ]\ [\ \-v\ |\ \-\-verbose\ ]\ [\ \-\-ch\ |\ \-\-checkonly\ ]\ [\ \-q\ |\ \-\-quiet\ |\ \-\-si\ |\ \-\-silent\ ]\ [\fBfilename\fR]]
+.br
+ |[\-d\ |\ \-\-diff\ [\ \-s\ |\ \-\-swap\ ]\ [\ \fBfilename1\fR\ [\ \fBfilename2\fR\ ]\ ]]
+.br
+ |[\-g\ |\ \-n\ |\ \-\-generate\ [\ \-b\ |\ \-\-build\ ]\ [\ \-d\ |\ \-\-drop\ ]\ [\ \-\-de\ |\ \-\-debug\ ]\ [\fBfilename\fR]]
+.br
+ |[\-l\ |\ \-\-list\ [\ \-\-gra\ |\ \-\-grants\ ]\ [\ \-c\ |\ \-\-contexts\ ]\ [\ \-f\ |\ \-\-fallbacks\ ]\ [\ \-a\ |\ \-\-all\ ]\ [\fBfilename\fR]]
+.br
+ |[\-a\ |\ \-\-adddeps\ [\fBfilename\fR]]
+.br
+ |[\-t\ |\ \-\-template\ \fBfilename\fR\ [optional\-args\ |\ [\fBoptional\-parameters\fR]...]]
+.br
+ |[]
+.br
+ |[\-h\ |\ \-\-help\ |\ \-u\ |\ \-\-usage]\ [\ \-\-\fIlong\-optionname\fR\ |\ \-\fIshort\-optionname\fR\ ]
+.br
+ |[\-v\ |\ \-\-version]...]
+.SH "DESCRIPTION"
+.PP
+
+skit
+is a command\-line tool that enables you to: capture the definition of a database in an
+XML
+file or a directory hierarchy of such files; generate the
+SQL
+to rebuild a database; compare databases; and generate the
+SQL
+to bring one database into line with another\&.
+.PP
+Its primary purpose is to allow database development to be managed with industry\-standard Source Code Management tools\&.
+.PP
+Each primary option causes a specific skit command to be executed, with options and parameters\&. Each such command may add or remove
+XML
+streams from
+skit\*(Aqs internal stack, This stack allows
+skit
+commands to be
+\(lqpipelined\(rq, passing the results of one command into the next\&. If skit terminates with exactly one
+XML
+stream left on the stack, an implicit
+\fBprint\fR
+command is issued\&.
+.SH "OPTIONS"
+.PP
+\-\-db, \-\-dbtype
+.RS 4
+Specify the type of database to which we will connect\&. This governs the search path used by the
+skit
+engine for finding the appropriate version of the templates that will drive the extract operation\&. This defaults to
+\(lqpostgres\(rq\&.
+.RE
+.PP
+\-e, \-\-extract
+.RS 4
+.PP
+\-\-db, \-\-dbtype
+.RS 4
+Specify the type of database to which we will connect\&. This governs the search path used by the
+skit
+engine for finding the appropriate version of the templates that will drive the extract operation\&. This defaults to
+\(lqpostgres\(rq\&.
+.RE
+.PP
+\-c, \-\-connect
+.RS 4
+Specify a database connection string\&. This may be provided instead of all of the individual details like database name, host, etc\&.
+.RE
+.PP
+\-d, \-\-database
+.RS 4
+Specify the name of the database to which we will connect\&. This can be provided instead of the connect option, or as well as\&. If both are provided the database name is appended to whatever value was given for connect\&.
+.RE
+.PP
+\-h, \-\-hostname
+.RS 4
+Specify the hostname for the database server to which we will connect\&. This may be a server name or an ip address\&. This can be provided instead of the connect option, or as well as\&. If both are provided the database name is appended to whatever value was given for connect\&.
+.RE
+.PP
+\-p, \-\-port
+.RS 4
+Specify the port to which we will connect\&. This can be provided instead of the connect option, or as well as\&. If both are provided the database name is appended to whatever value was given for connect\&.
+.RE
+.PP
+\-u, \-\-username
+.RS 4
+Specify the username to be used for the database connection\&. This can be provided instead of the connect option, or as well as\&. If both are provided the database name is appended to whatever value was given for connect\&. Note that
+postgres
+allows the username to default to the connected user, so this parameter is entirely optional\&.
+.RE
+.PP
+\-\-pass, \-\-password
+.RS 4
+Specify the password to be used for the database connection\&. This can be provided instead of the connect option, or as well as\&. If both are provided the database name is appended to whatever value was given for connect\&. Note that
+postgres
+allows some users to connect without passwords, so this parameter is entirely optional\&.
+.RE
+.sp
+Connect to the specified database and generate an
+XML
+stream describing each database object\&.
+.RE
+.PP
+\-s, \-\-scatter
+.RS 4
+.PP
+\-v, \-\-verbose
+.RS 4
+Print, to the
+XML
+print stream, summary data for
+\fIall\fR
+files rather than just those that have been changed\&.
+.RE
+.PP
+\-\-ch, \-\-checkonly
+.RS 4
+Produce only the
+XML
+print stream, IE do not write any output files\&.
+.RE
+.PP
+\-q, \-\-quiet, \-\-si, \-\-silent
+.RS 4
+Do not print summary data to the output stream\&. These flags take precedence over the
+\fBverbose\fR
+flags\&.
+.RE
+.sp
+Scatters the contents of an
+XML
+stream into a directory tree with one file per major database object\&. The resulting directory hierarchy is suitable for inclusion into a repository managed by a Source Code Management (SCM) system\&.
+.sp
+The rootmost entry of the scattered directory tree is always called
+cluster\&.xml\&. If this file is provided a parameter to any
+skit
+command, the entire directory tree will be read\&. IE, for
+skit\*(Aqs purposes there is no difference between a file containing an
+XML
+stream, and the root file of a scattered directory tree\&.
+.sp
+If a filename is provided to this command, the file will be read and added to the stack\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Unless one of the
+\fBquiet\fR
+flags is provided, an
+XML
+print stream will be generated which will provide a summary of files created and/or modified\&.
+.sp .5v
+.RE
+.RE
+.PP
+\-d, \-\-diff
+.RS 4
+.PP
+\-s, \-\-swap
+.RS 4
+Invert the order of the two input streams\&.
+.RE
+.sp
+Takes two input streams and performs a diff on them, creating an
+XML
+diff stream which can (and should) be passed to the
+skit
+\fBgenerate\fR
+command\&.
+.sp
+If filenames are provided to this command, the file(s) will be read and added to the stack before processing\&.
+.RE
+.PP
+\-g, \-n, \-\-generate
+.RS 4
+.PP
+\-d, \-\-drop
+.RS 4
+Generate
+DDL
+statements to drop all objects in the source stream\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+If the source stream is a diff stream, this flag is ignored\&.
+.sp .5v
+.RE
+.RE
+.PP
+\-b, \-\-build
+.RS 4
+Generate
+DDL
+statements to build all objects in the source stream\&. This can be combined with
+\fB\-\-drop\fR
+to create a script that drops and then rebuilds the database\&. This is the default option for the
+skit
+\fBgenerate\fR
+command so is unnecessary uxcept in combination with
+\fB\-\-drop\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+If the source stream is a diff stream, this flag is ignored\&.
+.sp .5v
+.RE
+.RE
+.PP
+\-\-de, \-\-debug
+.RS 4
+This causes the raw
+XML
+produced by the skit:tsort action to be written to stdout\&.
+.RE
+.sp
+Takes an input stream and generates
+DDL
+to create, build or drop a database\&. If the input is a diff stream (from the
+skit
+\fBdiff\fR
+command, generate
+DDL
+to bring the one database into line with the other\&.
+.sp
+The
+DDL
+is generated an an
+XML
+print stream which can be printed as text using the
+skit
+\fBprint\fR
+command\&.
+.sp
+The output is in the form of an executable shell script, though this may change in future versions\&. You should not execute this script directly, but should examine it carefully to ensure that it does what you expect\&.
+.RE
+.PP
+\-l, \-\-list
+.RS 4
+.PP
+\-\-gra, \-\-grants
+.RS 4
+Add details of grants to the list output\&. By default grants are not shown because they are considered generally uninteresting\&.
+.RE
+.PP
+\-c, \-\-contexts
+.RS 4
+Add details of contexts to the list output\&. Contexts are relevant only when
+\fBlist\fR
+is run on a stream created by
+\fBgenerate\fR\&. Context entries show where the generated script switches the effective user before performing an operation, ie the context describes the user that performs
+DDL
+operations\&.
+.sp
+By default context is not shown because it is an artefact of the generated
+DDL
+script and not part of the resulting database\&.
+.RE
+.PP
+\-f, \-\-fallbacks
+.RS 4
+Add details of fallbacks to the list output\&. Fallbacks are relevant only when
+\fBlist\fR
+is run on a stream created by
+\fBgenerate\fR\&. Fallback entries show where the generated script temporarily provides extra privileges to a role before performing an operation\&.
+.sp
+By default fallbacks are not shown because they are artefacts of the generated
+DDL
+script and not part of the resulting database\&.
+.RE
+.sp
+Takes an input stream and generates an
+XML
+print stream, which summarises its contents\&. The source stream can be a stream produced by
+\fBextract\fR,
+\fBdiff\fR, or
+\fBgenerate\fR\&.
+.sp
+If a filename is provided to this command, the file will be read and added to the stack before processing\&.
+.RE
+.PP
+\-a, \-\-adddeps
+.RS 4
+Takes an
+XML
+stream as created by
+\fBextract\fR
+and wraps each database object in
+<dbobject>
+elements containing dependency and context information\&. This is normally an operation that is performed automatically when XML streams are read\&. This command is intended for use primarily for debugging skit\&. The dependency elements added by this command are used by the generate command in order to properly order the DDL produced\&.
+.sp
+If the input stream already contains
+<dbobject>
+elements, this command leave the
+XML
+stream unaffected\&.
+.sp
+If a filename is provided to this command, the file will be read and added to the stack before processing\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+By default, the
+\fBprint\fR
+performs a remove deps operation before producing output so if you want to see the transformation created by this command, you will need to use the
+\fB\-\-full\fR
+of
+\fBprint\fR\&.
+.sp .5v
+.RE
+.RE
+.PP
+\-t, \-\-template
+.RS 4
+This command evaluates a skit
+XML
+template file\&. Such template files can perform any action of which skit is capable, including reading from databases\&.
+.sp
+This command is actually the basis for almost all of
+skit\*(Aqs built\-in commands, and the following shell commands are entirely equivalent:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ skit \-\-generate \-\-build mydb\&.xml
+
+$ skit \-\-template generate\&.xml \-\-build mydb\&.xml
+	      
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.PP
+\-p, \-\-print
+.RS 4
+.PP
+\-x, \-\-xml
+.RS 4
+Print the output as a pure
+XML
+stream without interpretation\&. This is only useful for examining the contents of print streams\&. Applying this option to any other sort of
+XML
+stream will have no effect\&.
+.RE
+.PP
+\-f, \-\-full
+.RS 4
+Print the output as a pure
+XML
+stream and also leave any
+<dbobject>
+elements added by
+\fBadddeps\fR
+commands, in place\&. Note that for diff streams
+<dbobject>
+elements are always left in place, so this option will have no effect\&.
+.RE
+.sp
+Print an
+XML
+stream to standard output\&. By default, the stream is interpreted allowing print streams to be printed as pure text\&.
+.sp
+If a filename is provided to this command, the file will be read and added to the stack before processing\&.
+.RE
+.PP
+\-pf, \-\-printfull
+.RS 4
+As
+\fB\-\-print \-\-full\fR\&.
+.RE
+.PP
+\-x, \-\-px, \-\-printxml
+.RS 4
+As
+\fB\-\-print \-\-xml\fR\&.
+.RE
+.PP
+\-h, \-\-help, \-u, \-\-usage
+.RS 4
+.PP
+\-\-db, \-\-dbtype
+.RS 4
+Specify the type of database for which we are looking for usage information\&. This governs the search path used by the
+skit
+engine for finding the appropriate version of the usage description\&. This defaults to
+\(lqpostgres\(rq\&.
+.RE
+.PP
+\-\fIshort\-optionname\fR, \-\-\fIlong\-optionname\fR
+.RS 4
+Any of the major command options can be given here, in long or short form, to select a more detailed help message for that option\&.
+.RE
+.sp
+Provide a help message containing the command synopsis\&. If an extra option is provided, provide more detailed help for that specific option\&.
+.RE
+.PP
+\-v, \-\-version
+.RS 4
+Provide the version number of the
+skit
+application\&.
+.RE
+.SH "EXIT STATUS"
+.PP
+
+skit
+returns 0 to the shell if it finished normally\&.
+.SH "SUPPORTED DATABASES"
+.PP
+
+Skit
+currently supports the PostgreSQL
+RDBMS, versions 8\&.4 to 9\&.4\&.
+.SH "AUTHOR"
+.PP
+\fBMarc Munro\fR
+.RS 4
+(Marc is skit's original developer)
+.RE
