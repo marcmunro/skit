@@ -37,6 +37,7 @@ include $(SUBDIRS:%=%/Makefile)
 
 CCNAME := $(shell echo $(CC) | tr '[a-z]' '[A-Z]')
 
+TARFLAGS = cvz --exclude-vcs -f 
 
 # compile and generate dependency info
 %.o: %.c
@@ -80,6 +81,10 @@ uninstall: uninstall_man
 	rm -f "$(BINDIR)"/skit
 	rm -rf "$(DATADIR)"
 
+tar:	clean
+	@rm -f $(TARNAME).tgz
+	cd ..; tar $(TARFLAGS) $(TARNAME).tgz skit; mv $(TARNAME).tgz skit
+
 
 # Provide a list of the targets buildable by this makefile.
 do_help: $(SUBDIRS:%=%_help)
@@ -89,6 +94,7 @@ do_help: $(SUBDIRS:%=%_help)
 	@echo "distclean        - as clean but also remove all auto-generated files"
 	@echo "install          - install skit (as superuser)"
 	@echo "uninstall        - deinstall skit (as superuser)"
+	@echo "tar              - create a skit tarball"
 
 help:
 	@echo "Major targets of this makefile:"
