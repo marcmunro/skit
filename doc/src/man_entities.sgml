@@ -220,7 +220,7 @@
     <term><arg choice='plain'>--checkonly</arg></term>
     <listitem>
       <para>
-	Produce only the <acronym>XML</acronym> print stream, IE do not
+	Produce only the <acronym>XML</acronym> print stream, ie do not
 	write any output files.
       </para>
     </listitem>
@@ -328,7 +328,7 @@
 	<option>--drop</option> to create a script that drops and then
 	rebuilds the database.  This is the default option for the
 	<application>skit</application> <command>generate</command>
-	command so is unnecessary uxcept in combination with 
+	command so is unnecessary except in combination with 
         <option>--drop</option>.
       </para>
       <note>
@@ -344,7 +344,10 @@
     <listitem>
       <para>
 	This causes the raw <acronym>XML</acronym> produced by the
-	skit:tsort action to be written to stdout.
+	<literal>skit:tsort</literal> action to be written to stdout.
+	For more information, the developer guide will eventually
+	describe this, but for now look in the
+	file <filename>templates/generate.xml</filename>.
       </para>
     </listitem>
   </varlistentry>

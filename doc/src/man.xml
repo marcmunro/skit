@@ -15,7 +15,21 @@
 	Database development management tool
       </refpurpose>
     </refnamediv>
-    
+
+    <info>
+      <copyright>
+	<year>2015</year>
+	<holder>Marc Munro</holder>
+      </copyright>
+      <legalnotice>
+	<para>
+	  Skit is free software; you can redistribute it and/or modify
+	  it under the terms of the GNU General Public License version 3,
+	  as published by the Free Software Foundation.
+	</para>
+      </legalnotice>
+    </info>
+
     <refsynopsisdiv>
       <cmdsynopsis>
 	<command>skit</command>
@@ -63,10 +77,6 @@
 	  <sbr/>
 	  <arg>
 	    &template_command;
-	  </arg>
-	  
-	  <sbr/>
-	  <arg>
 	  </arg>
 	  
 	  <!-- usage -->

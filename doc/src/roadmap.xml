@@ -40,6 +40,27 @@
       </listitem>
       <listitem>
 	<para>
+	  support for metadata;
+	</para>
+	<para>
+	  Databases are rarely defined entirely by their schema.
+	  Usually meta-data is also part of a database design.  Skit
+	  should support this.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  support for data impacted by schema changes;
+	</para>
+	<para>
+	  Better support is required for handling the impacts on
+	  existing database data of schema changes.  This is tricky and
+	  is a big area.  If you have ideas or use cases, the skit
+	  developers would love to hear from you.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
 	  improved code comments and doxygen;
 	</para>
       </listitem>

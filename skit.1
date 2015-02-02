@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: skit
-.\"    Author: Marc Munro
+.\"    Author: 
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 01/31/2015
+.\"      Date: 02/01/2015
 .\"    Manual: Skit 0.1 alpha Documentation
 .\"    Source: skit 0.1 alpha
 .\"  Language: English
 .\"
-.TH "SKIT" "1" "01/31/2015" "skit 0.1 alpha" "Skit 0.1 alpha Documentation"
+.TH "SKIT" "1" "02/01/2015" "skit 0.1 alpha" "Skit 0.1 alpha Documentation"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -46,8 +46,6 @@ skit \- Database development management tool
  |[\-a\ |\ \-\-adddeps\ [\fBfilename\fR]]
 .br
  |[\-t\ |\ \-\-template\ \fBfilename\fR\ [optional\-args\ |\ [\fBoptional\-parameters\fR]...]]
-.br
- |[]
 .br
  |[\-h\ |\ \-\-help\ |\ \-u\ |\ \-\-usage]\ [\ \-\-\fIlong\-optionname\fR\ |\ \-\fIshort\-optionname\fR\ ]
 .br
@@ -153,7 +151,7 @@ files rather than just those that have been changed\&.
 .RS 4
 Produce only the
 XML
-print stream, IE do not write any output files\&.
+print stream, ie do not write any output files\&.
 .RE
 .PP
 \-q, \-\-quiet, \-\-si, \-\-silent
@@ -249,7 +247,7 @@ statements to build all objects in the source stream\&. This can be combined wit
 to create a script that drops and then rebuilds the database\&. This is the default option for the
 skit
 \fBgenerate\fR
-command so is unnecessary uxcept in combination with
+command so is unnecessary except in combination with
 \fB\-\-drop\fR\&.
 .if n \{\
 .sp
@@ -272,7 +270,10 @@ If the source stream is a diff stream, this flag is ignored\&.
 .RS 4
 This causes the raw
 XML
-produced by the skit:tsort action to be written to stdout\&.
+produced by the
+skit:tsort
+action to be written to stdout\&. For more information, the developer guide will eventually describe this, but for now look in the file
+templates/generate\&.xml\&.
 .RE
 .sp
 Takes an input stream and generates
@@ -489,3 +490,10 @@ RDBMS, versions 8\&.4 to 9\&.4\&.
 .RS 4
 (Marc is skit's original developer)
 .RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2015 Marc Munro
+.br
+.PP
+Skit is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 3, as published by the Free Software Foundation\&.
+.sp

@@ -12,7 +12,7 @@
     subsystem, which records each malloc call in a hash so that we can
     ensure that it is subsequently freed.  This adds a significant
     overhead.  To disable memory tracking, add
-    <arg>--enable-mtrack=np</arg> to the <command>configure</command>
+    <arg>--enable-mtrack=no</arg> to the <command>configure</command>
     when building skit.
   </para>
 </chapter>

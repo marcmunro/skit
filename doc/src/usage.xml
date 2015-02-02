@@ -249,7 +249,11 @@ $ skit --extract  --database regressdb --generate --build --drop >rebuild.sql
 	  <term>none</term>
 	  <listitem>
 	    <para>
-	      The object in both source streams is effectively identical.
+	      The object in both source streams is effectively identical
+	      (ie diff chooses not to be interested in any such
+	      difference - see the templates under
+	      <filename>templates/&lt;dbname&gt;/&lt;version&gt;/diff</filename>
+	      for the specifics of what attributes diff considers).
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -301,9 +305,17 @@ $ skit --extract  --database regressdb --generate --build --drop >rebuild.sql
 	  <listitem>
 	    <para>
 	      This describes the action of arriving at a context.
-	      The context may be the database in which an action is to
-	      be performed, or the owner for which it is to be
-	      performed.
+	    </para>
+	    <para>
+	      Each database object may exist in several contexts.  A
+	      context may be the ownership of an object, or its
+	      parentage.  Tables, for example, exist in the context of a
+	      parent schema and many objects also exist in the context
+	      of ownership.  Changing context, for the purpose of
+	      generating <acronym>DDL</acronym>, may involve switching
+	      the effective user that is running that
+	      <acronym>DDL</acronym>, which is why we need context
+	      arrival and departure.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -509,9 +521,9 @@ $ skit --adddeps dumpfile.xml --print --full
 	  custom user-defined behaviour to override existing templates;
 	</listitem>
 	<listitem>
-	  support for new versions of a database to be done by only
-	  creating new versions of files for those objetcts where
-	  changes are needed.
+	  support for new versions of a database to be achieved by
+	  simply creating new versions of files only for those objects
+	  where changes are needed.
 	</listitem>
       </itemizedlist>
     </para>
@@ -538,7 +550,7 @@ $ skit --template coding_standards.xml dbdump.xml
     <title>Print</title>
     <para>	
       Print an <acronym>XML</acronym> stream to standard output.  By
-      default, the stream is interpreted allowing print streams to
+      default, the stream is interpreted, allowing print streams to
       be printed as pure text.
     </para>
     <section id="print_syntax">
