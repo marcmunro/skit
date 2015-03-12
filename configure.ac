@@ -3,13 +3,13 @@
 
 AC_PREREQ(2.61)
 m4_define([SKIT_VERSION],
-   esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+   esyscmd([grep 'SKIT_VERSION ' src/skit.h | \
             cut -d\" -f2 | tr -d '\n']))
 
 AC_INIT(skit, SKIT_VERSION, skit-general@pgfoundry.org)
-AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+AC_SUBST(MAJOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit.h | \
             cut -d\" -f2 | cut -d. -f1 | tr -d '\n']))
-AC_SUBST(MINOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit_lib.h | \
+AC_SUBST(MINOR_VERSION, esyscmd([grep 'SKIT_VERSION ' src/skit.h | \
             cut -d\" -f2 | cut -d. -f2 | cut -d\  -f1 | tr -d '\n']))
 
 AC_CONFIG_SRCDIR([test/check_filepath.c])
@@ -211,9 +211,6 @@ else
 fi
 
 
-
-
-
 # Docbook
 #
 #PGAC_PROG_NSGMLS
@@ -222,6 +219,43 @@ fi
 #PGAC_PATH_DOCBOOK_STYLESHEETS
 #PGAC_PATH_COLLATEINDEX
 AC_CHECK_PROGS(XSLTPROC, xsltproc)
+
+dnl Find docbook entities file
+
+
+AC_DEFUN([SKIT_PATH_DOCBOOK_ENTITIES],
+[AC_ARG_VAR(DOCBOOKENT, [location of Docbook entities])dnl
+AC_MSG_CHECKING([for DocBook entities])
+AC_CACHE_VAL([pgac_cv_path_entities],
+[if test -n "$DOCBOOKENT"; then
+  skit_path=$DOCBOOKENT
+else
+  for skit_prefix in /usr /usr/local /opt /sw; do
+    for skit_infix in share lib; do
+      for skit_postfix in \
+        xml/docbook/schema/dtd/4.5 \
+	sgml/docbook/dtd/4.5 \
+	sgml/docbook/xml-dtd-4.5
+      do
+        skit_candidate=$skit_prefix/$skit_infix/$skit_postfix
+        if test -r "$skit_candidate/dbcentx.mod" 
+        then
+          skit_path=$skit_candidate/dbcentx.mod
+          break 3
+        fi
+      done
+    done
+  done
+fi])
+DOCBOOKENT=$skit_path
+AC_SUBST([DOCBOOKENT])
+if test -n "$DOCBOOKENT"; then
+  AC_MSG_RESULT([$DOCBOOKENT])
+else
+  AC_MSG_RESULT(no)
+fi])
+
+SKIT_PATH_DOCBOOK_ENTITIES
 
 
 

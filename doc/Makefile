@@ -16,10 +16,11 @@
 # attempt, possibly misguided, to avoid recursive make (see the article
 # "Recursive make considered harmful" for a rationale).
 
-.PHONY: html man doc_version usage
+.PHONY: html man doc_version doc_entities usage
 
 DOC_DIR = doc
 DOC_VERSION = $(DOC_DIR)/version.sgml
+DOC_ENTITIES = $(DOC_DIR)/docbook_entities.sgml
 DOC_SOURCES = $(DOC_DIR)/skit.xml $(DOC_VERSION) \
 		$(wildcard $(DOC_DIR)/src/*.xml) \
 		$(wildcard $(DOC_DIR)/src/*.sgml) 
@@ -42,10 +43,16 @@ $(DOC_VERSION): configure
 	  echo "<!ENTITY majorversion \"$(MAJOR_VERSION)\">"; \
 	} > $(DOC_VERSION)
 
-# Create html docs
-html : $(HTMLINDEX) $(DOC_VERSION)
+doc_entities : $(DOC_ENTITIES)
+$(DOC_ENTITIES):
+	ln -s $(DOCBOOK_ENTITIES) $@
 
-$(HTMLINDEX): $(DOC_SOURCES) $(XHTML)  $(DOC_VERSION) $(XHTML_XSL)
+
+# Create html docs
+html : $(HTMLINDEX)
+
+$(HTMLINDEX): $(DOC_SOURCES) $(XHTML) $(DOC_VERSION) $(DOC_ENTITIES) \
+	      $(XHTML_XSL)
 	-$(XSLTPROC) $(XSLTPROCFLAGS) --output $(HTMLDIR)/ \
 		$(XHTML_XSL)  $(DOC_DIR)/skit.xml
 	@# There is a problem with our use of custom.css.source which
@@ -67,7 +74,7 @@ templates/usage_dbtype.txt: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
 
 # Remove all generated/intermediate filedoc_clean: 
 doc_clean:
-	@rm -rf $(DOC_VERSION) $(HTMLDIR)
+	@rm -rf $(DOC_VERSION) $(DOC_ENTITIES) $(HTMLDIR)
 
 doc_distclean: 
 

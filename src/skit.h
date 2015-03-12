@@ -22,7 +22,7 @@
 #include <libxml/xpath.h>
 
 
-#define SKIT_VERSION "0.1 alpha"
+#define SKIT_VERSION "0.1.1 alpha"
 
 /* The xml versions are bumped when changes are made to xml file formats
  * other than the introuduction of new elements and attributes.  This

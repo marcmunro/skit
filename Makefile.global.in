@@ -66,6 +66,7 @@ override LDFLAGS := @GLIB_LIBS@ @PQLIB@ @EXSLT_LIBS@ $(LDFLAGS)
 LIBCHECK = @CHECK_LIBS@
 
 XSLTPROC = @XSLTPROC@
+DOCBOOK_ENTITIES = @DOCBOOKENT@
 
 ifeq ($(CC), gcc)
 	CFLAGS += -Wall -Wmissing-prototypes -Wmissing-declarations \
