@@ -44,6 +44,7 @@ $(DOC_VERSION): configure
 	} > $(DOC_VERSION)
 
 doc_entities : $(DOC_ENTITIES)
+
 $(DOC_ENTITIES):
 	ln -s $(DOCBOOK_ENTITIES) $@
 
@@ -61,9 +62,9 @@ $(HTMLINDEX): $(DOC_SOURCES) $(XHTML) $(DOC_VERSION) $(DOC_ENTITIES) \
 	cp -f $(DOC_DIR)/skit_docbook.css $(HTMLDIR)
 
 
-man : $(MANPAGES) $(DOC_VERSION)
+man : $(MANPAGES) $(DOC_VERSION) $(DOC_ENTITIES)
 
-skit.1: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
+skit.1: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES) $(DOC_ENTITIES)
 	$(XSLTPROC) $(XSLTPROCFLAGS) $(MAN_XSL) $(DOC_DIR)/skit.xml
 
 usage: templates/usage_dbtype.txt man
@@ -74,7 +75,7 @@ templates/usage_dbtype.txt: $(DOC_DIR)/stylesheet_man.xsl $(DOC_SOURCES)
 
 # Remove all generated/intermediate filedoc_clean: 
 doc_clean:
-	@rm -rf $(DOC_VERSION) $(DOC_ENTITIES) $(HTMLDIR)
+	@rm -rf $(DOC_VERSION) $(DOC_ENTITIES) $(HTMLDIR) $(MANPAGES)
 
 doc_distclean: 
 
